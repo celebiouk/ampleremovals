@@ -38,3 +38,7 @@ next-env.d.ts
 # local dev/test artifacts
 dev.log
 shot-*.png
+
+# Secret / local-only files — never commit
+vercel-env.txt
+.claude/settings.local.json
