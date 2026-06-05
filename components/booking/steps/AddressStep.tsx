@@ -14,6 +14,18 @@ interface AddressStepProps {
   addressField: string;
 }
 
+/**
+ * Combined postcode lookup + address selection step.
+ *
+ * When getAddress.io is configured (GETADDRESS_API_KEY env var), it returns
+ * full property-level addresses ("1 Rosedale Gardens, Thatcham, RG19 3LE")
+ * shown as a scrollable selectable list — just like comparemymove.com.
+ *
+ * Falls back to a simple area + manual-entry UI when only postcodes.io is
+ * available (no API key configured).
+ *
+ * Always has an "Enter address manually" escape hatch.
+ */
 export function AddressStep({ label, postcodeField, addressField }: AddressStepProps) {
   const { control } = useFormContext();
   const postcodeCtrl = useController({ name: postcodeField, control });
@@ -24,99 +36,116 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
   const [searched, setSearched] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [manual, setManual] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
-  // Manual fields state
+  // Manual fields
   const [line1, setLine1] = useState("");
   const [line2, setLine2] = useState("");
   const [city, setCity] = useState("");
-  const [postcode, setPostcode] = useState(
+  const [manualPostcode, setManualPostcode] = useState(
     String(postcodeCtrl.field.value ?? "")
   );
 
-  const commitAddress = (addr: AddressOption) => {
-    addressCtrl.field.onChange(addr);
-  };
+  // When getAddress.io returns full addresses each one has a real line_1.
+  // When only postcodes.io is available line_1 is empty (area-level only).
+  const hasFullAddresses = addresses.length > 0 && addresses[0].line_1 !== "";
 
   const handleFind = async () => {
+    setSearched(false);
+    setSelectedIdx(null);
+    addressCtrl.field.onChange(undefined);
     const found = await lookup(String(postcodeCtrl.field.value ?? ""));
     setSearched(true);
-    setSelectedIdx(null);
     if (found?.length) {
-      // Pre-fill city from first result
+      setManualPostcode(found[0].postcode);
       setCity(found[0].city ?? "");
-      setPostcode(found[0].postcode ?? String(postcodeCtrl.field.value ?? ""));
+      // If only one address (area fallback) auto-select it
+      if (found.length === 1 && found[0].line_1 === "") {
+        setSelectedIdx(0);
+        // Don't commit yet — user still needs to fill line_1
+      }
     }
   };
 
   const selectAddress = (idx: number) => {
     setSelectedIdx(idx);
     const opt = addresses[idx];
-    commitAddress({
-      line_1: line1 || "",
-      line_2: opt.line_2 ?? undefined,
-      city: opt.city ?? city,
-      postcode: opt.postcode,
-    });
-    // Sync postcode field to matched postcode
     postcodeCtrl.field.onChange(opt.postcode);
+    addressCtrl.field.onChange({
+      line_1: opt.line_1,
+      line_2: opt.line_2,
+      city: opt.city,
+      postcode: opt.postcode,
+    } satisfies AddressOption);
   };
 
   const commitManual = (l1: string, l2: string, ct: string, pc: string) => {
-    if (!l1.trim()) { addressCtrl.field.onChange(undefined); return; }
-    commitAddress({ line_1: l1.trim(), line_2: l2.trim() || undefined, city: ct.trim() || undefined, postcode: pc.trim() });
     postcodeCtrl.field.onChange(pc.trim());
+    if (!l1.trim()) { addressCtrl.field.onChange(undefined); return; }
+    addressCtrl.field.onChange({
+      line_1: l1.trim(),
+      line_2: l2.trim() || undefined,
+      city: ct.trim() || undefined,
+      postcode: pc.trim(),
+    } satisfies AddressOption);
   };
 
   const enterManually = () => {
     setManual(true);
     setSearched(false);
+    addressCtrl.field.onChange(undefined);
   };
 
   const exitManual = () => {
     setManual(false);
+    setSearched(false);
     addressCtrl.field.onChange(undefined);
     setLine1(""); setLine2("");
   };
 
-  return (
-    <div>
-      <StepHeading title={label} />
+  // How many cards to show before "show more"
+  const VISIBLE_LIMIT = 8;
+  const visibleAddresses = showAll ? addresses : addresses.slice(0, VISIBLE_LIMIT);
 
-      {/* ── Manual entry mode ───────────────────────────────── */}
-      {manual ? (
+  /* ── Manual entry mode ────────────────────────────────────────────── */
+  if (manual) {
+    return (
+      <div>
+        <StepHeading title={label} />
+
+        <div className="mb-5 flex items-center justify-between rounded-xl bg-brand-purple-50 px-4 py-3">
+          <span className="text-sm font-semibold text-brand-purple-800">
+            Entering address manually
+          </span>
+          <button
+            type="button"
+            onClick={exitManual}
+            className="flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-brand-purple-800"
+          >
+            <X className="h-4 w-4" /> Use postcode lookup
+          </button>
+        </div>
+
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl bg-brand-purple-50 px-4 py-3">
-            <span className="text-sm font-semibold text-brand-purple-800">
-              Entering address manually
-            </span>
-            <button
-              type="button"
-              onClick={exitManual}
-              className="flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-brand-purple-800"
-            >
-              <X className="h-4 w-4" /> Use postcode lookup
-            </button>
-          </div>
-
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-700">
               Building number / name &amp; street <span className="text-destructive">*</span>
             </label>
             <input
               value={line1}
-              onChange={(e) => { setLine1(e.target.value); commitManual(e.target.value, line2, city, postcode); }}
-              placeholder="e.g. 12 Oak Avenue"
+              onChange={(e) => { setLine1(e.target.value); commitManual(e.target.value, line2, city, manualPostcode); }}
+              placeholder="e.g. 12 Rosedale Gardens"
               className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
             />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-700">
-              Address line 2 <span className="text-slate-400 font-normal">(optional)</span>
+              Address line 2 <span className="font-normal text-slate-400">(optional)</span>
             </label>
             <input
               value={line2}
-              onChange={(e) => { setLine2(e.target.value); commitManual(line1, e.target.value, city, postcode); }}
-              placeholder="Flat, apartment, suite, etc."
+              onChange={(e) => { setLine2(e.target.value); commitManual(line1, e.target.value, city, manualPostcode); }}
+              placeholder="Flat, apartment, suite…"
               className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
             />
           </div>
@@ -125,7 +154,7 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
               <label className="mb-2 block text-sm font-semibold text-slate-700">City / Town</label>
               <input
                 value={city}
-                onChange={(e) => { setCity(e.target.value); commitManual(line1, line2, e.target.value, postcode); }}
+                onChange={(e) => { setCity(e.target.value); commitManual(line1, line2, e.target.value, manualPostcode); }}
                 placeholder="e.g. London"
                 className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
               />
@@ -135,122 +164,165 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
                 Postcode <span className="text-destructive">*</span>
               </label>
               <input
-                value={postcode}
-                onChange={(e) => { const v = e.target.value.toUpperCase(); setPostcode(v); commitManual(line1, line2, city, v); postcodeCtrl.field.onChange(v); }}
-                placeholder="e.g. SW1A 1AA"
+                value={manualPostcode}
+                onChange={(e) => { const v = e.target.value.toUpperCase(); setManualPostcode(v); commitManual(line1, line2, city, v); }}
+                placeholder="e.g. RG19 3LE"
                 className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base font-medium uppercase outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
               />
             </div>
           </div>
-          <FieldError message={(addressCtrl.fieldState.error as { line_1?: { message?: string } })?.line_1?.message ?? addressCtrl.fieldState.error?.message} />
         </div>
-      ) : (
-        /* ── Postcode lookup mode ───────────────────────────── */
-        <div>
-          {/* Postcode input + Find button */}
-          <label className="mb-2 block text-sm font-semibold text-slate-700">Postcode</label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              value={String(postcodeCtrl.field.value ?? "")}
-              onChange={(e) => {
-                postcodeCtrl.field.onChange(e.target.value.toUpperCase());
-                setSearched(false);
-                setSelectedIdx(null);
-              }}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleFind(); } }}
-              inputMode="text"
-              autoComplete="postal-code"
-              placeholder="e.g. SW1A 1AA"
-              className="h-12 flex-1 rounded-xl border-2 border-slate-200 px-4 text-base font-medium uppercase outline-none transition-colors placeholder:normal-case placeholder:font-normal placeholder:text-slate-400 focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
-            />
-            <button
-              type="button"
-              onClick={handleFind}
-              disabled={loading}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-purple-800 px-6 font-bold text-white transition-colors hover:bg-brand-purple-700 disabled:opacity-60"
-            >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-              Find address
-            </button>
+
+        <FieldError message={
+          (addressCtrl.fieldState.error as { line_1?: { message?: string } })?.line_1?.message
+          ?? addressCtrl.fieldState.error?.message
+        } />
+      </div>
+    );
+  }
+
+  /* ── Postcode lookup mode ─────────────────────────────────────────── */
+  return (
+    <div>
+      <StepHeading title={label} />
+
+      {/* Postcode input + button */}
+      <label className="mb-2 block text-sm font-semibold text-slate-700">Postcode</label>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <input
+          value={String(postcodeCtrl.field.value ?? "")}
+          onChange={(e) => {
+            postcodeCtrl.field.onChange(e.target.value.toUpperCase());
+            setSearched(false);
+            setSelectedIdx(null);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleFind(); } }}
+          inputMode="text"
+          autoComplete="postal-code"
+          placeholder="e.g. RG19 3LE"
+          className="h-12 flex-1 rounded-xl border-2 border-slate-200 px-4 text-base font-medium uppercase outline-none transition-colors placeholder:normal-case placeholder:font-normal placeholder:text-slate-400 focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
+        />
+        <button
+          type="button"
+          onClick={handleFind}
+          disabled={loading}
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-purple-800 px-6 font-bold text-white transition-colors hover:bg-brand-purple-700 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+          Find address
+        </button>
+      </div>
+
+      <FieldError message={lookupError ?? postcodeCtrl.fieldState.error?.message} />
+
+      {/* ── Results — full individual addresses (getAddress.io) ─────── */}
+      {searched && !lookupError && hasFullAddresses && (
+        <div className="mt-5">
+          <p className="mb-3 text-sm font-semibold text-slate-600">
+            {addresses.length} address{addresses.length !== 1 ? "es" : ""} found — select yours
+          </p>
+
+          <div className="max-h-72 overflow-y-auto rounded-xl border-2 border-slate-200">
+            {visibleAddresses.map((opt, idx) => {
+              const fullAddress = [opt.line_1, opt.line_2, opt.city, opt.postcode]
+                .filter(Boolean).join(", ");
+              const selected = selectedIdx === idx;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => selectAddress(idx)}
+                  className={cn(
+                    "flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-left last:border-b-0 transition-colors",
+                    selected
+                      ? "bg-brand-purple-50 text-brand-purple-900"
+                      : "bg-white text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  <MapPin className={cn("h-4 w-4 shrink-0", selected ? "text-brand-purple-600" : "text-slate-400")} />
+                  <span className="flex-1 text-sm font-medium">{fullAddress}</span>
+                  {selected && (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-white">
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          <FieldError message={lookupError ?? postcodeCtrl.fieldState.error?.message} />
-
-          {/* Address results */}
-          {searched && !lookupError && addresses.length > 0 && (
-            <div className="mt-5 space-y-3">
-              <p className="text-sm font-semibold text-slate-600">
-                Select your address then add your building number/name below
-              </p>
-
-              {/* Address area cards */}
-              <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
-                {addresses.map((opt, idx) => {
-                  const summary = [opt.line_2, opt.city, opt.postcode].filter(Boolean).join(", ");
-                  const selected = selectedIdx === idx;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => selectAddress(idx)}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg border-2 bg-white p-3.5 text-left transition-all duration-150 hover:border-brand-purple-300",
-                        selected ? "border-brand-purple-600 bg-brand-purple-50" : "border-transparent"
-                      )}
-                    >
-                      <MapPin className={cn("h-4 w-4 shrink-0", selected ? "text-brand-purple-700" : "text-slate-400")} />
-                      <span className="flex-1 text-sm font-medium text-slate-700">
-                        {summary || opt.postcode}
-                      </span>
-                      {selected && (
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-white">
-                          <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Building number / name input (required) */}
-              <div className="mt-4">
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Building number / name &amp; street <span className="text-destructive">*</span>
-                </label>
-                <input
-                  value={line1}
-                  onChange={(e) => {
-                    setLine1(e.target.value);
-                    if (selectedIdx !== null) {
-                      const opt = addresses[selectedIdx];
-                      commitAddress({
-                        line_1: e.target.value.trim(),
-                        line_2: opt.line_2 ?? undefined,
-                        city: opt.city ?? city,
-                        postcode: opt.postcode,
-                      });
-                    }
-                  }}
-                  placeholder="e.g. 42 Oak Avenue"
-                  className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
-                />
-              </div>
-            </div>
+          {addresses.length > VISIBLE_LIMIT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((s) => !s)}
+              className="mt-2.5 text-sm font-semibold text-brand-purple-700 hover:underline"
+            >
+              {showAll
+                ? "Show fewer addresses"
+                : `Show ${addresses.length - VISIBLE_LIMIT} more addresses`}
+            </button>
           )}
 
-          <FieldError message={(addressCtrl.fieldState.error as { line_1?: { message?: string } })?.line_1?.message ?? addressCtrl.fieldState.error?.message} />
-
-          {/* Enter manually link */}
-          <button
-            type="button"
-            onClick={enterManually}
-            className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-brand-purple-700 hover:underline"
-          >
-            <PencilLine className="h-4 w-4" />
-            Enter address manually instead
-          </button>
+          <FieldError message={addressCtrl.fieldState.error?.message} />
         </div>
       )}
+
+      {/* ── Results — area-level fallback (postcodes.io only) ───────── */}
+      {searched && !lookupError && !hasFullAddresses && addresses.length > 0 && (
+        <div className="mt-5 space-y-4">
+          <div className={cn(
+            "flex items-center gap-3 rounded-xl border-2 px-4 py-3.5",
+            "border-brand-purple-600 bg-brand-purple-50"
+          )}>
+            <MapPin className="h-4 w-4 shrink-0 text-brand-purple-600" />
+            <span className="flex-1 text-sm font-medium text-slate-700">
+              {[addresses[0].line_2, addresses[0].city, addresses[0].postcode].filter(Boolean).join(", ")}
+            </span>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-white">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+            </span>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">
+              Building number / name &amp; street <span className="text-destructive">*</span>
+            </label>
+            <input
+              value={line1}
+              onChange={(e) => {
+                setLine1(e.target.value);
+                const opt = addresses[0];
+                if (e.target.value.trim()) {
+                  addressCtrl.field.onChange({
+                    line_1: e.target.value.trim(),
+                    line_2: opt.line_2,
+                    city: opt.city,
+                    postcode: opt.postcode,
+                  });
+                } else {
+                  addressCtrl.field.onChange(undefined);
+                }
+              }}
+              placeholder="e.g. 12 Rosedale Gardens"
+              className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
+            />
+          </div>
+          <FieldError message={
+            (addressCtrl.fieldState.error as { line_1?: { message?: string } })?.line_1?.message
+            ?? addressCtrl.fieldState.error?.message
+          } />
+        </div>
+      )}
+
+      {/* Enter manually link */}
+      <button
+        type="button"
+        onClick={enterManually}
+        className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-brand-purple-700 hover:underline"
+      >
+        <PencilLine className="h-4 w-4" />
+        Enter address manually instead
+      </button>
     </div>
   );
 }
