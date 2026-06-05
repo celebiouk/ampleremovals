@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, Phone, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SERVICES } from "@/lib/services";
@@ -10,6 +11,7 @@ import { AmpleLogo } from "@/components/shared/AmpleLogo";
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -40,15 +42,27 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-0.5 lg:flex">
-          {SERVICES.map((s) => (
-            <Link
-              key={s.slug}
-              href={`/booking/${s.slug}`}
-              className="rounded-lg px-3.5 py-2 text-[0.92rem] font-semibold text-slate-600 transition-colors hover:bg-brand-purple-50 hover:text-brand-purple-800"
-            >
-              {s.shortTitle}
-            </Link>
-          ))}
+          {SERVICES.map((s) => {
+            const active = pathname === `/booking/${s.slug}`;
+            return (
+              <Link
+                key={s.slug}
+                href={`/booking/${s.slug}`}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative rounded-lg px-3.5 py-2 text-[0.92rem] font-semibold transition-colors",
+                  active
+                    ? "text-brand-purple-800"
+                    : "text-slate-600 hover:bg-brand-purple-50 hover:text-brand-purple-800"
+                )}
+              >
+                {s.shortTitle}
+                {active && (
+                  <span className="absolute inset-x-3.5 -bottom-0.5 h-0.5 rounded-full bg-brand-green-600" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-3">

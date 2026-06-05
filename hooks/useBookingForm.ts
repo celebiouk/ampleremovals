@@ -1,65 +1,117 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
+import { useForm, type FieldValues } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { WizardConfig } from "@/components/booking/types";
 
 /**
- * Lightweight multi-step booking form state manager. The booking wizard
- * (Phase 2) builds on top of this — it tracks the current step and an
- * accumulating, loosely-typed payload that each step contributes to.
+ * Orchestrates a service booking wizard: React Hook Form + Zod, per-step
+ * validation, step navigation (with slide direction) and final submission to
+ * the relevant /api/bookings/[service] route.
  */
-export function useBookingForm<T extends Record<string, unknown>>(
-  totalSteps: number,
-  initialData: Partial<T> = {}
-) {
+export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
+  const router = useRouter();
+  const totalSteps = config.steps.length;
+
+  const form = useForm<T>({
+    resolver: zodResolver(config.schema),
+    defaultValues: config.defaultValues,
+    mode: "onTouched",
+  });
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState<Partial<T>>(initialData);
-  const [submitting, setSubmitting] = useState(false);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
+  const currentMeta = config.steps[currentStep];
 
-  const updateData = useCallback((patch: Partial<T>) => {
-    setData((prev) => ({ ...prev, ...patch }));
-  }, []);
+  /** Validate the fields owned by the current step. */
+  const validateStep = useCallback(async () => {
+    const fields = currentMeta?.fields ?? [];
+    if (fields.length === 0) return true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return form.trigger(fields as any, { shouldFocus: true });
+  }, [currentMeta, form]);
 
-  const next = useCallback(() => {
+  const next = useCallback(async () => {
+    const ok = await validateStep();
+    if (!ok) return;
+    setDirection(1);
     setCurrentStep((s) => Math.min(s + 1, totalSteps - 1));
-  }, [totalSteps]);
+  }, [validateStep, totalSteps]);
 
   const back = useCallback(() => {
+    setDirection(-1);
     setCurrentStep((s) => Math.max(s - 1, 0));
   }, []);
 
   const goToStep = useCallback(
     (step: number) => {
+      setDirection(step > currentStep ? 1 : -1);
       setCurrentStep(Math.max(0, Math.min(step, totalSteps - 1)));
     },
-    [totalSteps]
-  );
-
-  const reset = useCallback(() => {
-    setCurrentStep(0);
-    setData(initialData);
-    setSubmitting(false);
-  }, [initialData]);
-
-  const progress = useMemo(
-    () => Math.round(((currentStep + 1) / totalSteps) * 100),
     [currentStep, totalSteps]
   );
 
+  const submit = useCallback(async () => {
+    const valid = await form.trigger();
+    if (!valid) {
+      toast.error("Please complete all required fields before submitting.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const values = form.getValues();
+      const res = await fetch(config.apiPath, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = (await res.json()) as {
+        success: boolean;
+        reference?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !data.success || !data.reference) {
+        throw new Error(data.error || "Something went wrong. Please try again.");
+      }
+
+      router.push(
+        `/confirmation?ref=${encodeURIComponent(
+          data.reference
+        )}&service=${config.slug}`
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+      toast.error(message);
+      setIsSubmitting(false);
+    }
+  }, [config.apiPath, config.slug, form, router]);
+
   return {
+    form,
     currentStep,
-    data,
-    submitting,
-    setSubmitting,
+    totalSteps,
+    direction,
+    currentMeta,
     isFirstStep,
     isLastStep,
-    progress,
-    updateData,
+    isSubmitting,
     next,
     back,
     goToStep,
-    reset,
+    submit,
   };
 }
+
+export type BookingFormApi<T extends FieldValues = FieldValues> = ReturnType<
+  typeof useBookingForm<T>
+>;

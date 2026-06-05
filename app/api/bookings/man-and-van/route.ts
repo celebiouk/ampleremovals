@@ -1,12 +1,9 @@
-import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
+import { handleBookingRoute } from "@/lib/bookings/handleBookingRoute";
+import { ManAndVanFormSchema } from "@/lib/schemas/booking";
 
-/**
- * POST /api/bookings/man-and-van
- * Phase 1 scaffold — implemented in Phase 2.
- */
-export async function POST() {
-  return NextResponse.json(
-    { error: "Not implemented yet. Man & Van booking API arrives in Phase 2." },
-    { status: 501 }
-  );
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  return handleBookingRoute(request, "man_and_van", ManAndVanFormSchema);
 }

@@ -1,13 +1,9 @@
-import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
+import { handleBookingRoute } from "@/lib/bookings/handleBookingRoute";
+import { RemovalsFormSchema } from "@/lib/schemas/booking";
 
-/**
- * POST /api/bookings/removals
- * Phase 1 scaffold — the booking-creation pipeline (validation, customer +
- * address + booking inserts, notifications) is implemented in Phase 2.
- */
-export async function POST() {
-  return NextResponse.json(
-    { error: "Not implemented yet. Removals booking API arrives in Phase 2." },
-    { status: 501 }
-  );
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  return handleBookingRoute(request, "removals", RemovalsFormSchema);
 }
