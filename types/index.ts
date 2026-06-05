@@ -1,0 +1,260 @@
+/**
+ * Ample Removals — shared TypeScript types.
+ * These mirror the PostgreSQL schema (see supabase/schema.sql).
+ */
+
+// ── Enums (mirror Postgres ENUM types) ────────────────────
+export type ServiceType =
+  | "removals"
+  | "man_and_van"
+  | "house_clearance"
+  | "house_cleaning"
+  | "end_of_tenancy";
+
+export type RemovalType = "domestic" | "business";
+
+export type PropertyType = "flat" | "house" | "bungalow";
+
+export type BedroomCount = "studio" | "1" | "2" | "3" | "4" | "5+";
+
+export type VanType = "small" | "medium" | "large";
+
+export type CleaningType = "regular" | "deep" | "one_off";
+
+export type CleaningFrequency =
+  | "one_off"
+  | "weekly"
+  | "fortnightly"
+  | "monthly";
+
+export type ClearanceType = "full" | "partial" | "single_room";
+
+export type BookingStatus =
+  | "inquiry"
+  | "called"
+  | "not_called"
+  | "answered"
+  | "not_answered"
+  | "processing"
+  | "pending"
+  | "deposit_invoice_sent"
+  | "deposit_paid_job_confirmed"
+  | "full_invoice_sent"
+  | "full_balance_paid"
+  | "job_completed"
+  | "bad_lead"
+  | "not_a_good_fit";
+
+export type InvoiceType = "deposit" | "full_balance";
+
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "paid"
+  | "overdue"
+  | "cancelled";
+
+// ── Core tables ───────────────────────────────────────────
+export interface Customer {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Address {
+  id: string;
+  line_1: string;
+  line_2: string | null;
+  city: string | null;
+  county: string | null;
+  postcode: string;
+  country: string;
+  created_at: string;
+}
+
+export interface Booking {
+  id: string;
+  reference: string;
+  service_type: ServiceType;
+  customer_id: string;
+  origin_address_id: string | null;
+  destination_address_id: string | null;
+  status: BookingStatus;
+  move_date: string | null;
+  is_flexible_date: boolean;
+  flexible_date_from: string | null;
+  flexible_date_to: string | null;
+  description: string | null;
+  internal_notes: string | null;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  // Optional joined relations
+  customer?: Customer;
+  origin_address?: Address | null;
+  destination_address?: Address | null;
+}
+
+// ── Service detail tables ─────────────────────────────────
+export interface RemovalsDetails {
+  id: string;
+  booking_id: string;
+  removal_type: RemovalType;
+  property_type: PropertyType;
+  bedrooms: BedroomCount;
+}
+
+export interface ManAndVanDetails {
+  id: string;
+  booking_id: string;
+  van_type: VanType;
+}
+
+export interface HouseClearanceDetails {
+  id: string;
+  booking_id: string;
+  clearance_type: ClearanceType;
+  property_type: PropertyType;
+  bedrooms: BedroomCount;
+  items_of_note: string[];
+}
+
+export interface HouseCleaningDetails {
+  id: string;
+  booking_id: string;
+  cleaning_type: CleaningType;
+  frequency: CleaningFrequency;
+  property_type: PropertyType;
+  bedrooms: BedroomCount;
+  preferred_time_slot: string | null;
+  access_instructions: string | null;
+}
+
+export interface EndOfTenancyDetails {
+  id: string;
+  booking_id: string;
+  property_type: PropertyType;
+  bedrooms: BedroomCount;
+  tenancy_end_date: string | null;
+  access_instructions: string | null;
+  addons: string[];
+}
+
+export interface AdditionalServices {
+  id: string;
+  booking_id: string;
+  packing_services: boolean;
+  packing_materials: boolean;
+  disassemble_furniture: boolean;
+  assemble_furniture: boolean;
+}
+
+// ── Activity / audit tables ───────────────────────────────
+export interface BookingNote {
+  id: string;
+  booking_id: string;
+  note: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface StatusHistoryEntry {
+  id: string;
+  booking_id: string;
+  previous_status: BookingStatus | null;
+  new_status: BookingStatus;
+  changed_by: string;
+  changed_at: string;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  booking_id: string | null;
+  customer_id: string | null;
+  action: string;
+  metadata: Record<string, unknown> | null;
+  performed_by: string;
+  created_at: string;
+}
+
+// ── Billing ───────────────────────────────────────────────
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  booking_id: string;
+  customer_id: string;
+  type: InvoiceType;
+  status: InvoiceStatus;
+  line_items: InvoiceLineItem[];
+  subtotal: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  due_date: string | null;
+  stripe_payment_link: string | null;
+  stripe_payment_intent_id: string | null;
+  pdf_url: string | null;
+  notes: string | null;
+  sent_at: string | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  booking_id: string;
+  customer_id: string;
+  amount: number;
+  stripe_payment_intent_id: string | null;
+  payment_method: string | null;
+  paid_at: string;
+}
+
+export interface ServerLog {
+  id: string;
+  level: string;
+  message: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+// ── Composite / view models ───────────────────────────────
+export interface BookingWithDetails extends Booking {
+  customer: Customer;
+  origin_address: Address | null;
+  destination_address: Address | null;
+  removals_details?: RemovalsDetails | null;
+  man_and_van_details?: ManAndVanDetails | null;
+  house_clearance_details?: HouseClearanceDetails | null;
+  house_cleaning_details?: HouseCleaningDetails | null;
+  end_of_tenancy_details?: EndOfTenancyDetails | null;
+  additional_services?: AdditionalServices | null;
+  notes?: BookingNote[];
+  status_history?: StatusHistoryEntry[];
+  invoices?: Invoice[];
+}
+
+// ── Postcode lookup ───────────────────────────────────────
+export interface AddressOption {
+  line_1: string;
+  line_2?: string;
+  city?: string;
+  postcode: string;
+}
+
+export interface PostcodeResult {
+  postcode: string;
+  addresses: AddressOption[];
+}
