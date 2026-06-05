@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import type { DefaultValues, FieldValues } from "react-hook-form";
 import type { WizardConfig, WizardStep } from "@/components/booking/types";
 import { SERVICE_SCHEMAS } from "@/lib/schemas/booking";
-import { PostcodeStep } from "@/components/booking/steps/PostcodeStep";
-import { AddressSelectStep } from "@/components/booking/steps/AddressSelectStep";
+import { AddressStep } from "@/components/booking/steps/AddressStep";
 import { PropertyDetailsStep } from "@/components/booking/steps/PropertyDetailsStep";
 import { AdditionalServicesStep } from "@/components/booking/steps/AdditionalServicesStep";
 import { DescriptionStep } from "@/components/booking/steps/DescriptionStep";
@@ -84,24 +83,22 @@ const removals: Builder = (initialPostcode) => ({
   } as DefaultValues<FieldValues>,
   steps: [
     step("removalType", "Removal type", ["removalType"], <RemovalTypeStep />),
-    step("originPostcode", "Current postcode", ["originPostcode"], <PostcodeStep label="What is your current postcode?" name="originPostcode" group="origin" />),
-    step("originAddress", "Current address", ["originAddress"], <AddressSelectStep label="Select your current address" name="originAddress" group="origin" />),
+    step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
     step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
-    step("destPostcode", "Destination postcode", ["destinationPostcode"], <PostcodeStep label="What is the postcode you are moving to?" name="destinationPostcode" group="destination" />),
-    step("destAddress", "Destination address", ["destinationAddress"], <AddressSelectStep label="Select your destination address" name="destinationAddress" group="destination" />),
+    step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="What is the address you are moving to?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
     step("extras", "Additional services", [], <AdditionalServicesStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
       { title: "Removal", editStep: 0, rows: [{ label: "Type", key: "removalType" }] },
-      { title: "From", editStep: 2, rows: [{ label: "Address", key: "originAddress" }] },
-      { title: "Property", editStep: 3, rows: [{ label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "To", editStep: 5, rows: [{ label: "Address", key: "destinationAddress" }] },
-      { title: "Extras", editStep: 6, rows: [{ label: "Services", key: "additionalServices" }] },
-      { title: "About", editStep: 7, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 8, rows: dateRows },
-      { title: "Contact", editStep: 9, rows: contactRows },
+      { title: "From", editStep: 1, rows: [{ label: "Address", key: "originAddress" }] },
+      { title: "Property", editStep: 2, rows: [{ label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+      { title: "To", editStep: 3, rows: [{ label: "Address", key: "destinationAddress" }] },
+      { title: "Extras", editStep: 4, rows: [{ label: "Services", key: "additionalServices" }] },
+      { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
+      { title: "Date", editStep: 6, rows: dateRows },
+      { title: "Contact", editStep: 7, rows: contactRows },
     ]),
   ],
 });
@@ -130,23 +127,21 @@ const manAndVan: Builder = (initialPostcode) => ({
     confirmed: false,
   } as DefaultValues<FieldValues>,
   steps: [
-    step("originPostcode", "Current postcode", ["originPostcode"], <PostcodeStep label="What is your current postcode?" name="originPostcode" group="origin" />),
-    step("originAddress", "Current address", ["originAddress"], <AddressSelectStep label="Select your current address" name="originAddress" group="origin" />),
-    step("destPostcode", "Destination postcode", ["destinationPostcode"], <PostcodeStep label="Where are you going?" name="destinationPostcode" group="destination" />),
-    step("destAddress", "Destination address", ["destinationAddress"], <AddressSelectStep label="Select your destination address" name="destinationAddress" group="destination" />),
+    step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
+    step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="Where are you going?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
     step("vanType", "Van size", ["vanType"], <VanTypeStep />),
     step("extras", "Additional services", [], <AdditionalServicesStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
-      { title: "From", editStep: 1, rows: [{ label: "Address", key: "originAddress" }] },
-      { title: "To", editStep: 3, rows: [{ label: "Address", key: "destinationAddress" }] },
-      { title: "Van", editStep: 4, rows: [{ label: "Size", key: "vanType" }] },
-      { title: "Extras", editStep: 5, rows: [{ label: "Services", key: "additionalServices" }] },
-      { title: "About", editStep: 6, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 7, rows: dateRows },
-      { title: "Contact", editStep: 8, rows: contactRows },
+      { title: "From", editStep: 0, rows: [{ label: "Address", key: "originAddress" }] },
+      { title: "To", editStep: 1, rows: [{ label: "Address", key: "destinationAddress" }] },
+      { title: "Van", editStep: 2, rows: [{ label: "Size", key: "vanType" }] },
+      { title: "Extras", editStep: 3, rows: [{ label: "Services", key: "additionalServices" }] },
+      { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
+      { title: "Date", editStep: 5, rows: dateRows },
+      { title: "Contact", editStep: 6, rows: contactRows },
     ]),
   ],
 });
@@ -175,8 +170,7 @@ const houseClearance: Builder = (initialPostcode) => ({
     confirmed: false,
   } as DefaultValues<FieldValues>,
   steps: [
-    step("originPostcode", "Property postcode", ["originPostcode"], <PostcodeStep label="What is the postcode of the property to be cleared?" name="originPostcode" group="origin" />),
-    step("originAddress", "Property address", ["originAddress"], <AddressSelectStep label="Select the property address" name="originAddress" group="origin" />),
+    step("originAddress", "Property address", ["originPostcode", "originAddress"], <AddressStep label="What is the address of the property to be cleared?" postcodeField="originPostcode" addressField="originAddress" />),
     step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
     step("clearanceType", "Clearance type", ["clearanceType"], <ClearanceTypeStep />),
     step("items", "Items of note", [], <ItemsOfNoteStep />),
@@ -184,11 +178,11 @@ const houseClearance: Builder = (initialPostcode) => ({
     step("date", "Preferred date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
-      { title: "Property", editStep: 1, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "Clearance", editStep: 3, rows: [{ label: "Type", key: "clearanceType" }, { label: "Items", key: "itemsOfNote" }] },
-      { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 6, rows: dateRows },
-      { title: "Contact", editStep: 7, rows: contactRows },
+      { title: "Property", editStep: 0, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+      { title: "Clearance", editStep: 2, rows: [{ label: "Type", key: "clearanceType" }, { label: "Items", key: "itemsOfNote" }] },
+      { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
+      { title: "Date", editStep: 5, rows: dateRows },
+      { title: "Contact", editStep: 6, rows: contactRows },
     ]),
   ],
 });
@@ -215,8 +209,7 @@ const houseCleaning: Builder = (initialPostcode) => ({
     confirmed: false,
   } as DefaultValues<FieldValues>,
   steps: [
-    step("originPostcode", "Property postcode", ["originPostcode"], <PostcodeStep label="What is the postcode of the property to be cleaned?" name="originPostcode" group="origin" />),
-    step("originAddress", "Property address", ["originAddress"], <AddressSelectStep label="Select the property address" name="originAddress" group="origin" />),
+    step("originAddress", "Property address", ["originPostcode", "originAddress"], <AddressStep label="What is the address of the property to be cleaned?" postcodeField="originPostcode" addressField="originAddress" />),
     step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
     step("cleaningType", "Cleaning type", ["cleaningType"], <CleaningTypeStep />),
     step("frequency", "Frequency", ["frequency"], <FrequencyStep />),
@@ -224,11 +217,11 @@ const houseCleaning: Builder = (initialPostcode) => ({
     step("access", "Access", [], <AccessInstructionsStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
-      { title: "Property", editStep: 1, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "Cleaning", editStep: 3, rows: [{ label: "Type", key: "cleaningType" }, { label: "Frequency", key: "frequency" }] },
-      { title: "Date & time", editStep: 5, rows: [{ label: "Date", key: "moveDate" }, { label: "Time", key: "timeSlot" }] },
-      { title: "Access", editStep: 6, rows: [{ label: "Instructions", key: "accessInstructions" }] },
-      { title: "Contact", editStep: 7, rows: contactRows },
+      { title: "Property", editStep: 0, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+      { title: "Cleaning", editStep: 2, rows: [{ label: "Type", key: "cleaningType" }, { label: "Frequency", key: "frequency" }] },
+      { title: "Date & time", editStep: 4, rows: [{ label: "Date", key: "moveDate" }, { label: "Time", key: "timeSlot" }] },
+      { title: "Access", editStep: 5, rows: [{ label: "Instructions", key: "accessInstructions" }] },
+      { title: "Contact", editStep: 6, rows: contactRows },
     ]),
   ],
 });
@@ -253,19 +246,18 @@ const endOfTenancy: Builder = (initialPostcode) => ({
     confirmed: false,
   } as DefaultValues<FieldValues>,
   steps: [
-    step("originPostcode", "Property postcode", ["originPostcode"], <PostcodeStep label="What is the postcode of the property?" name="originPostcode" group="origin" />),
-    step("originAddress", "Property address", ["originAddress"], <AddressSelectStep label="Select the property address" name="originAddress" group="origin" />),
+    step("originAddress", "Property address", ["originPostcode", "originAddress"], <AddressStep label="What is the address of the property?" postcodeField="originPostcode" addressField="originAddress" />),
     step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
     step("addons", "Add-ons", [], <AddOnsStep />),
     step("tenancyEnd", "Tenancy end date", ["tenancyEndDate"], <SingleDateStep name="tenancyEndDate" label="When does your tenancy end?" subtitle="No past dates." />),
     step("access", "Access", [], <AccessInstructionsStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
-      { title: "Property", editStep: 1, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "Add-ons", editStep: 3, rows: [{ label: "Selected", key: "addons" }] },
-      { title: "Tenancy", editStep: 4, rows: [{ label: "End date", key: "tenancyEndDate" }] },
-      { title: "Access", editStep: 5, rows: [{ label: "Instructions", key: "accessInstructions" }] },
-      { title: "Contact", editStep: 6, rows: contactRows },
+      { title: "Property", editStep: 0, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+      { title: "Add-ons", editStep: 2, rows: [{ label: "Selected", key: "addons" }] },
+      { title: "Tenancy", editStep: 3, rows: [{ label: "End date", key: "tenancyEndDate" }] },
+      { title: "Access", editStep: 4, rows: [{ label: "Instructions", key: "accessInstructions" }] },
+      { title: "Contact", editStep: 5, rows: contactRows },
     ]),
   ],
 });
