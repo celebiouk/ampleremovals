@@ -39,3 +39,31 @@ white" cliché by going dark/textured in atmospheric sections and keeping white 
 ### Note
 Repo had no git history/remote and `gh` is not installed — committed locally with the
 requested message. Pushing needs a GitHub remote (see summary).
+
+---
+
+## Task: Redesign v2 — light, photo-led (client feedback)
+
+Client disliked the dark editorial direction and the Syne font, and wanted a
+comparemymove-style hero with a **postcode entry** and the real **van photo**.
+
+### Done
+- Fonts swapped: Syne/DM Sans → **Bricolage Grotesque** (display) + **Plus Jakarta
+  Sans** (body).
+- `heroimage.png` moved to `/public`, served via `next/image` (optimised).
+- New **AmpleLogo** (house mark, "Ample" purple / "Removals" green) in nav + footer.
+- Functional **PostcodeSearch** widget (light + dark variants) → carries postcode
+  into `/booking/removals?postcode=`.
+- Light, airy homepage: split hero (copy + postcode + photo with floating
+  review/insured badges), clean service cards, 3-step how-it-works, why-us,
+  review quote, and a purple CTA band with the postcode box again.
+- Navbar rebuilt light/clean with phone + green CTA.
+- Hero entrance moved from Framer `initial=hidden` (JS-gated, blank-flash risk) to
+  **CSS `animate-fade-up`** so above-the-fold is always SSR-visible. Below-fold keeps
+  Framer `whileInView` reveals.
+
+### Review
+Verified via headless screenshots: light, professional, on-brand. Build clean (23
+routes), hero image served + optimised, postcode widget renders.
+Watch out: below-the-fold uses JS scroll-reveal (fine for real browsers; appears
+blank only in one-shot headless captures).

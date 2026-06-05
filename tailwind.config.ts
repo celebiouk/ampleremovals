@@ -17,8 +17,8 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-syne)", "var(--font-dm-sans)", "sans-serif"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-body)", "sans-serif"],
       },
       colors: {
         background: "hsl(var(--background))",
@@ -88,6 +88,8 @@ const config: Config = {
           },
           green: {
             50: "#f0fdf4",
+            100: "#dcfce7",
+            200: "#bbf7d0",
             400: "#4ade80",
             500: "#22c55e",
             600: "#16a34a", // ACCENT
@@ -117,7 +119,7 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-up": "fade-up 0.6s ease-out forwards",
+        "fade-up": "fade-up 0.7s cubic-bezier(0.22,1,0.36,1) both",
       },
     },
   },

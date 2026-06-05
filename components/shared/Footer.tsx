@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Truck, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { SERVICES } from "@/lib/services";
+import { AmpleLogo } from "@/components/shared/AmpleLogo";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -10,13 +11,8 @@ export function Footer() {
       <div className="container grid gap-10 py-14 md:grid-cols-3">
         {/* Company info */}
         <div className="space-y-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-brand-purple-800">
-              <Truck className="h-5 w-5" />
-            </span>
-            <span className="font-display text-xl font-extrabold">
-              Ample Removals
-            </span>
+          <Link href="/" className="inline-flex">
+            <AmpleLogo variant="white" />
           </Link>
           <p className="max-w-xs text-sm leading-relaxed text-white/70">
             Professional, fully insured removal and cleaning services across the

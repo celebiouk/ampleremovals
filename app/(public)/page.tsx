@@ -1,297 +1,222 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
-import {
-  motion,
-  useScroll,
-  useTransform,
-  type Variants,
-} from "framer-motion";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
-  ArrowUpRight,
+  Star,
   ShieldCheck,
   BadgeCheck,
   Receipt,
-  Star,
-  Sparkles,
+  Clock,
+  Check,
   ClipboardList,
   PhoneCall,
-  Boxes,
-  MapPin,
+  Truck,
+  Quote,
 } from "lucide-react";
-import { HeroTruck } from "@/components/shared/HeroTruck";
+import { PostcodeSearch } from "@/components/shared/PostcodeSearch";
 import { SERVICES } from "@/lib/services";
 
-/* ── Motion variants ──────────────────────────────────────── */
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const container: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } },
-};
-
-const rise: Variants = {
-  hidden: { opacity: 0, y: 28 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
 const inView = {
-  initial: { opacity: 0, y: 36 },
+  initial: { opacity: 0, y: 28 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-80px" },
-  transition: { duration: 0.7, ease: EASE },
+  viewport: { once: true, margin: "-70px" },
+  transition: { duration: 0.6, ease: EASE },
 };
-
-/* ── Static content ───────────────────────────────────────── */
-const STATS = [
-  { value: "12k+", label: "Moves completed" },
-  { value: "4.9★", label: "Average rating" },
-  { value: "100%", label: "Insured & vetted" },
-  { value: "48hr", label: "Avg. quote-to-book" },
-];
-
-const AREAS = [
-  "London",
-  "Manchester",
-  "Birmingham",
-  "Leeds",
-  "Bristol",
-  "Liverpool",
-  "Glasgow",
-  "Sheffield",
-  "Nationwide",
-];
 
 const HOW_IT_WORKS = [
   {
     icon: ClipboardList,
-    title: "Tell us about your move",
+    title: "Enter your postcode",
     description:
-      "Answer a few quick questions and get an instant indicative quote — no payment details, no pressure.",
+      "Tell us where you're moving from and to, and a few details about the job.",
   },
   {
     icon: PhoneCall,
-    title: "We review & confirm",
+    title: "Get your fixed quote",
     description:
-      "A real person checks the details, answers your questions and locks in a fixed, transparent price.",
+      "A real person reviews your move and confirms a clear, all-in price — no surprises.",
   },
   {
-    icon: Boxes,
-    title: "Move day, handled",
+    icon: Truck,
+    title: "Sit back on move day",
     description:
-      "A vetted, fully insured crew arrives on time and takes care of everything, end to end.",
+      "Your vetted, fully insured crew turns up on time and handles everything, end to end.",
   },
 ];
 
 const WHY_US = [
   {
     icon: ShieldCheck,
-    title: "Fully Insured",
-    description: "Goods-in-transit & public liability cover on every single job.",
+    title: "Fully insured",
+    description: "Goods-in-transit and public liability cover on every job.",
   },
   {
     icon: BadgeCheck,
-    title: "Vetted Professionals",
-    description: "Background-checked, trained movers and cleaners — never a gamble.",
+    title: "Vetted professionals",
+    description: "Background-checked, trained movers and cleaners.",
   },
   {
     icon: Receipt,
-    title: "Transparent Pricing",
-    description: "Fixed quotes agreed up front. No hidden fees, no move-day surprises.",
+    title: "Transparent pricing",
+    description: "Fixed quotes agreed up front. No hidden fees, ever.",
   },
   {
-    icon: Star,
-    title: "5-Star Rated",
-    description: "Thousands of happy customers across the UK and a 4.9 average.",
+    icon: Clock,
+    title: "On time, every time",
+    description: "Punctual crews and clear communication from quote to keys.",
   },
 ];
 
-export default function HomePage() {
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  // Parallax: background drifts slower, artwork floats up.
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const artY = useTransform(scrollYProgress, [0, 1], ["0%", "-18%"]);
-  const heroFade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+const TRUST = [
+  "Fully insured",
+  "No deposit to quote",
+  "DBS-checked teams",
+  "Free, no-obligation quotes",
+];
 
+export default function HomePage() {
   return (
     <>
       {/* ════════════════ HERO ════════════════ */}
-      <section
-        ref={heroRef}
-        className="grain relative flex min-h-screen items-center overflow-hidden"
-      >
-        {/* parallax mesh background */}
-        <motion.div
-          style={{ y: bgY }}
-          className="mesh-aubergine absolute inset-0 -z-10 scale-110"
-        />
-        <div className="bg-grid-pattern absolute inset-0 -z-10 opacity-50" />
-        {/* glow accents */}
-        <div className="absolute -left-40 top-20 -z-10 h-[28rem] w-[28rem] rounded-full bg-brand-purple-500/30 blur-[120px]" />
-        <div className="absolute -right-32 bottom-0 -z-10 h-96 w-96 rounded-full bg-brand-green-600/20 blur-[120px]" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-purple-50 to-white pb-16 pt-28 lg:pb-24 lg:pt-36">
+        <div className="absolute -right-32 -top-24 -z-10 h-[30rem] w-[30rem] rounded-full bg-brand-purple-100/70 blur-3xl" />
+        <div className="absolute -left-24 top-40 -z-10 h-80 w-80 rounded-full bg-brand-green-100/60 blur-3xl" />
 
-        <motion.div
-          style={{ opacity: heroFade }}
-          className="container relative grid items-center gap-12 pb-28 pt-32 lg:grid-cols-[1.1fr_0.9fr]"
-        >
-          {/* Left: copy */}
-          <motion.div variants={container} initial="hidden" animate="show">
-            <motion.span
-              variants={rise}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur"
+        <div className="container grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* Left: copy + postcode (CSS entrance — always SSR-visible) */}
+          <div>
+            <div
+              className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-brand-purple-100 bg-white px-3.5 py-1.5 text-sm font-semibold text-brand-purple-800 shadow-sm"
+              style={{ animationDelay: "0ms" }}
             >
-              <span className="flex -space-x-1.5">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="h-4 w-4 rounded-full border border-brand-purple-900 bg-gradient-to-br from-brand-green-400 to-brand-green-600"
-                  />
+              <span className="flex items-center gap-0.5 text-brand-green-600">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-current" />
                 ))}
               </span>
-              Trusted by 12,000+ UK movers
-            </motion.span>
+              Rated 4.9 / 5 by 2,000+ movers
+            </div>
 
-            <motion.h1
-              variants={rise}
-              className="mt-7 font-display text-[clamp(3rem,8.5vw,8rem)] font-extrabold leading-[0.9] tracking-[-0.03em] text-white"
+            <h1
+              className="animate-fade-up mt-6 font-display text-[clamp(2.5rem,5.5vw,4.5rem)] font-extrabold leading-[1.02] tracking-tight text-brand-purple-950"
+              style={{ animationDelay: "90ms" }}
             >
-              Your move,
+              Moving day,
               <br />
-              <span className="text-gradient-green">simplified.</span>
-            </motion.h1>
+              <span className="text-brand-green-600">minus the stress.</span>
+            </h1>
 
-            <motion.p
-              variants={rise}
-              className="mt-7 max-w-md text-lg leading-relaxed text-white/70"
+            <p
+              className="animate-fade-up mt-5 max-w-md text-lg leading-relaxed text-slate-600"
+              style={{ animationDelay: "180ms" }}
             >
-              Premium removals, clearances and cleaning across the UK — fully
-              insured, fairly priced, and genuinely stress-free. Get your quote
-              in minutes.
-            </motion.p>
+              Professional, fully insured removals, clearances and cleaning
+              across the UK. Enter your postcode for an instant, no-obligation
+              quote.
+            </p>
 
-            <motion.div
-              variants={rise}
-              className="mt-10 flex flex-col gap-3 sm:flex-row"
+            <div
+              className="animate-fade-up mt-8"
+              style={{ animationDelay: "270ms" }}
             >
-              <Link
-                href="/booking/removals"
-                className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-green-600 px-7 py-4 text-base font-semibold text-white shadow-xl shadow-brand-green-600/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-green-500 hover:shadow-2xl hover:shadow-brand-green-500/40"
-              >
-                Get a Free Quote
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="#services"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition-all duration-300 hover:border-white/40 hover:bg-white/10"
-              >
-                Explore services
-              </Link>
-            </motion.div>
+              <PostcodeSearch />
+              <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                <Check className="h-4 w-4 text-brand-green-600" />
+                Free quote in minutes — no payment details needed.
+              </p>
+            </div>
 
-            <motion.div
-              variants={rise}
-              className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-white/60"
+            <div
+              className="animate-fade-up mt-8 flex flex-wrap items-center gap-x-6 gap-y-2"
+              style={{ animationDelay: "360ms" }}
             >
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-brand-green-400" /> Fully
-                insured
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-brand-green-400" /> No deposit
-                to quote
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Star className="h-4 w-4 fill-brand-green-400 text-brand-green-400" />{" "}
-                4.9 / 5 rated
-              </span>
-            </motion.div>
-          </motion.div>
-
-          {/* Right: architectural artwork */}
-          <motion.div
-            style={{ y: artY }}
-            initial={{ opacity: 0, scale: 0.9, rotate: -3 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 1, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="relative hidden lg:block"
-          >
-            <HeroTruck className="w-full max-w-xl" />
-          </motion.div>
-        </motion.div>
-
-        {/* overlapping stats bar — bridges hero into services */}
-        <div className="absolute inset-x-0 bottom-0 z-20 translate-y-1/2">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.8 }}
-              className="glass grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-white/60 shadow-2xl shadow-brand-purple-900/20 md:grid-cols-4"
-            >
-              {STATS.map((s) => (
-                <div key={s.label} className="bg-white/60 px-6 py-7 text-center">
-                  <p className="font-display text-3xl font-extrabold text-brand-purple-900 sm:text-4xl">
-                    {s.value}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {s.label}
-                  </p>
-                </div>
+              {TRUST.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"
+                >
+                  <ShieldCheck className="h-4 w-4 text-brand-green-600" />
+                  {t}
+                </span>
               ))}
-            </motion.div>
+            </div>
+          </div>
+
+          {/* Right: hero photo + floating cards */}
+          <div
+            className="animate-fade-up relative"
+            style={{ animationDelay: "220ms" }}
+          >
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-2xl shadow-brand-purple-900/20 ring-1 ring-black/5">
+              <Image
+                src="/heroimage.png"
+                alt="Ample Removals movers loading furniture into a branded van"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
+            </div>
+
+            {/* floating review badge */}
+            <div className="absolute -left-4 bottom-6 hidden rounded-2xl bg-white p-4 shadow-xl shadow-brand-purple-900/15 ring-1 ring-black/5 sm:block">
+              <div className="flex items-center gap-1 text-brand-green-600">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
+              <p className="mt-1 text-sm font-bold text-brand-purple-950">
+                “Brilliant, careful team”
+              </p>
+              <p className="text-xs text-slate-500">2,000+ verified reviews</p>
+            </div>
+
+            {/* floating insured chip */}
+            <div className="absolute -right-3 top-6 hidden items-center gap-2 rounded-full bg-brand-purple-900 px-4 py-2.5 text-sm font-bold text-white shadow-xl sm:flex">
+              <ShieldCheck className="h-5 w-5 text-brand-green-400" />
+              Fully insured
+            </div>
           </div>
         </div>
       </section>
 
       {/* ════════════════ SERVICES ════════════════ */}
-      <section id="services" className="bg-brand-purple-50 pb-28 pt-44 lg:pt-52">
+      <section id="services" className="bg-white py-20 lg:py-28">
         <div className="container">
-          <motion.div {...inView} className="mb-16 max-w-2xl">
-            <p className="mb-3 inline-flex items-center gap-2 font-semibold uppercase tracking-[0.2em] text-brand-purple-700">
-              <span className="h-px w-8 bg-brand-green-600" /> What we do
+          <motion.div {...inView} className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="mb-3 font-bold uppercase tracking-[0.18em] text-brand-green-600">
+              Our services
             </p>
-            <h2 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-brand-purple-950 sm:text-6xl">
-              One team for every
-              <br />
-              <span className="text-brand-green-600">stage of the move.</span>
+            <h2 className="font-display text-4xl font-extrabold tracking-tight text-brand-purple-950 sm:text-5xl">
+              One trusted team for every move
             </h2>
+            <p className="mt-4 text-lg text-slate-600">
+              From a single sofa to a full home or office — we&apos;ve got the
+              right crew and the right van.
+            </p>
           </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((s, i) => (
               <motion.div
                 key={s.slug}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 32 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{
-                  duration: 0.6,
-                  delay: (i % 3) * 0.1,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className={i % 2 === 1 ? "lg:translate-y-7" : ""}
+                transition={{ duration: 0.55, delay: (i % 3) * 0.08, ease: EASE }}
               >
                 <Link
                   href={`/booking/${s.slug}`}
-                  className="group glass relative flex h-full flex-col gap-5 overflow-hidden rounded-3xl border border-white/70 p-7 shadow-lg shadow-brand-purple-900/5 transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-purple-200 hover:shadow-2xl hover:shadow-brand-purple-800/15"
+                  className="group flex h-full flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-purple-200 hover:shadow-xl hover:shadow-brand-purple-900/10"
                 >
-                  {/* hover glow */}
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-brand-green-400/0 blur-3xl transition-all duration-500 group-hover:bg-brand-green-400/25" />
-
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-purple-700 to-brand-purple-900 text-white shadow-lg shadow-brand-purple-800/30 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                    <s.icon className="h-8 w-8" />
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-purple-50 text-brand-purple-800 transition-colors duration-300 group-hover:bg-brand-purple-800 group-hover:text-white">
+                    <s.icon className="h-7 w-7" />
                   </span>
-
                   <div className="flex-1">
                     <h3 className="font-display text-xl font-bold text-brand-purple-950">
                       {s.title}
@@ -300,8 +225,7 @@ export default function HomePage() {
                       {s.description}
                     </p>
                   </div>
-
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green-700">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-green-700">
                     Get a quote
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </span>
@@ -311,31 +235,26 @@ export default function HomePage() {
 
             {/* CTA tile */}
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 32 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:translate-y-7"
+              transition={{ duration: 0.55, delay: 0.16, ease: EASE }}
             >
               <Link
                 href="/booking/removals"
-                className="grain group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-brand-purple-800 to-brand-purple-950 p-7 text-white shadow-xl shadow-brand-purple-900/30 transition-all duration-500 hover:-translate-y-1.5"
+                className="flex h-full flex-col justify-between gap-4 rounded-2xl bg-gradient-to-br from-brand-purple-800 to-brand-purple-950 p-7 text-white shadow-lg shadow-brand-purple-900/20 transition-transform duration-300 hover:-translate-y-1"
               >
-                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-green-600/30 blur-2xl" />
-                <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-                  <Sparkles className="h-8 w-8 text-brand-green-400" />
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                  <PhoneCall className="h-7 w-7 text-brand-green-400" />
                 </span>
-                <div className="relative mt-5">
+                <div>
                   <h3 className="font-display text-xl font-bold">
-                    Not sure what you need?
+                    Prefer to talk it through?
                   </h3>
                   <p className="mt-2 text-[0.95rem] leading-relaxed text-white/70">
-                    Start a quote and we&apos;ll guide you to the right service.
+                    Call our friendly team on 0330 000 0000 — we&apos;re happy to
+                    help.
                   </p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green-400">
-                    Start now
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </span>
                 </div>
               </Link>
             </motion.div>
@@ -344,125 +263,88 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════ HOW IT WORKS ════════════════ */}
-      <section className="relative overflow-hidden bg-white py-28">
+      <section className="bg-brand-purple-50 py-20 lg:py-28">
         <div className="container">
-          <motion.div {...inView} className="mb-20 max-w-2xl">
-            <p className="mb-3 inline-flex items-center gap-2 font-semibold uppercase tracking-[0.2em] text-brand-green-600">
-              <span className="h-px w-8 bg-brand-purple-800" /> Simple &amp;
-              stress-free
+          <motion.div {...inView} className="mx-auto mb-16 max-w-2xl text-center">
+            <p className="mb-3 font-bold uppercase tracking-[0.18em] text-brand-green-600">
+              How it works
             </p>
-            <h2 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-brand-purple-950 sm:text-6xl">
-              Three steps. Zero hassle.
+            <h2 className="font-display text-4xl font-extrabold tracking-tight text-brand-purple-950 sm:text-5xl">
+              A quote in three easy steps
             </h2>
           </motion.div>
 
-          <div className="relative grid gap-x-8 gap-y-16 md:grid-cols-3">
-            {/* animated connecting path (desktop) */}
-            <svg
-              className="absolute left-0 right-0 top-12 hidden h-2 w-full md:block"
-              preserveAspectRatio="none"
-              viewBox="0 0 100 2"
-            >
-              <motion.line
-                x1="8"
-                y1="1"
-                x2="92"
-                y2="1"
-                stroke="#d8b4fe"
-                strokeWidth="2"
-                strokeDasharray="3 3"
-                initial={{ pathLength: 0 }}
-                whileInView={{ pathLength: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.6, ease: "easeInOut" }}
-              />
-            </svg>
-
+          <div className="grid gap-8 md:grid-cols-3">
             {HOW_IT_WORKS.map((step, i) => (
               <motion.div
                 key={step.title}
-                initial={{ opacity: 0, y: 32 }}
+                initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.6, delay: i * 0.15 }}
-                className="relative"
+                transition={{ duration: 0.55, delay: i * 0.12, ease: EASE }}
+                className="relative rounded-3xl border border-brand-purple-100 bg-white p-8 shadow-sm"
               >
-                {/* oversized ghost number */}
-                <span className="pointer-events-none absolute -top-10 right-0 select-none font-display text-[8rem] font-extrabold leading-none text-brand-purple-100">
+                <span className="absolute right-6 top-5 font-display text-5xl font-extrabold text-brand-purple-100">
                   {`0${i + 1}`}
                 </span>
-
-                <div className="relative">
-                  <span className="relative z-10 flex h-[68px] w-[68px] items-center justify-center rounded-2xl bg-brand-purple-900 text-white shadow-xl shadow-brand-purple-900/25">
-                    <step.icon className="h-7 w-7" />
-                    <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-brand-green-600 text-xs font-bold text-white ring-4 ring-white">
-                      {i + 1}
-                    </span>
-                  </span>
-                  <h3 className="mt-7 font-display text-2xl font-bold text-brand-purple-950">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 max-w-xs text-[0.98rem] leading-relaxed text-slate-600">
-                    {step.description}
-                  </p>
-                </div>
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-purple-800 text-white shadow-lg shadow-brand-purple-800/25">
+                  <step.icon className="h-7 w-7" />
+                </span>
+                <h3 className="mt-6 font-display text-xl font-bold text-brand-purple-950">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-[0.96rem] leading-relaxed text-slate-600">
+                  {step.description}
+                </p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ════════════════ AREAS MARQUEE ════════════════ */}
-      <section className="border-y border-brand-purple-100 bg-brand-purple-50 py-7">
-        <div className="mask-fade-x flex overflow-hidden">
-          <div className="animate-marquee flex shrink-0 items-center gap-10 pr-10">
-            {[...AREAS, ...AREAS].map((area, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-brand-purple-300"
-              >
-                <MapPin className="h-4 w-4 text-brand-green-500" />
-                {area}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════ WHY US (dark band) ════════════════ */}
-      <section className="grain relative overflow-hidden bg-brand-purple-950 py-28">
-        <div className="mesh-aubergine absolute inset-0 -z-10 opacity-80" />
-        <div className="bg-grid-pattern absolute inset-0 -z-10 opacity-40" />
-        <div className="container">
-          <motion.div {...inView} className="mb-16 max-w-2xl">
-            <p className="mb-3 inline-flex items-center gap-2 font-semibold uppercase tracking-[0.2em] text-brand-green-400">
-              <span className="h-px w-8 bg-brand-green-400" /> The Ample
-              difference
+      {/* ════════════════ WHY CHOOSE US ════════════════ */}
+      <section className="bg-white py-20 lg:py-28">
+        <div className="container grid items-center gap-14 lg:grid-cols-2">
+          <motion.div {...inView}>
+            <p className="mb-3 font-bold uppercase tracking-[0.18em] text-brand-green-600">
+              Why Ample
             </p>
-            <h2 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-white sm:text-6xl">
-              Premium, without
+            <h2 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-brand-purple-950 sm:text-5xl">
+              Movers you can
               <br />
-              the premium drama.
+              actually trust
             </h2>
+            <p className="mt-5 max-w-md text-lg text-slate-600">
+              Thousands of UK households and businesses choose Ample because we
+              treat every move like it&apos;s our own — careful, on time, and
+              fairly priced.
+            </p>
+            <Link
+              href="/booking/removals"
+              className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-brand-purple-800 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-brand-purple-800/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-purple-900"
+            >
+              Get your free quote
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
           </motion.div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2">
             {WHY_US.map((item, i) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 32 }}
+                initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="glass-dark group rounded-3xl border border-white/10 p-7 transition-all duration-500 hover:border-brand-green-400/40 hover:bg-brand-purple-800/40"
+                transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}
+                className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm"
               >
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-green-600/15 text-brand-green-400 ring-1 ring-brand-green-400/20 transition-transform duration-500 group-hover:scale-110">
-                  <item.icon className="h-7 w-7" />
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-green-50 text-brand-green-600">
+                  <item.icon className="h-6 w-6" />
                 </div>
-                <h3 className="font-display text-lg font-bold text-white">
+                <h3 className="font-display text-lg font-bold text-brand-purple-950">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/60">
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
                   {item.description}
                 </p>
               </motion.div>
@@ -471,30 +353,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════════════ FINAL CTA ════════════════ */}
-      <section className="bg-white py-24">
+      {/* ════════════════ REVIEW STRIP ════════════════ */}
+      <section className="bg-brand-purple-50 py-20">
+        <div className="container">
+          <motion.figure {...inView} className="mx-auto max-w-3xl text-center">
+            <Quote className="mx-auto h-10 w-10 text-brand-purple-300" />
+            <blockquote className="mt-6 font-display text-2xl font-bold leading-snug text-brand-purple-950 sm:text-3xl">
+              “Booked in 5 minutes, the price was exactly as quoted, and the team
+              were friendly and careful with everything. Genuinely the easiest
+              move we&apos;ve ever had.”
+            </blockquote>
+            <figcaption className="mt-6 flex items-center justify-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-purple-800 font-display font-bold text-white">
+                SJ
+              </span>
+              <span className="text-left">
+                <span className="block font-bold text-brand-purple-950">
+                  Sarah J.
+                </span>
+                <span className="flex items-center gap-0.5 text-brand-green-600">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </span>
+              </span>
+            </figcaption>
+          </motion.figure>
+        </div>
+      </section>
+
+      {/* ════════════════ CTA BAND (postcode again) ════════════════ */}
+      <section className="bg-white py-20">
         <div className="container">
           <motion.div
             {...inView}
-            className="grain relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-purple-800 via-brand-purple-900 to-brand-purple-950 px-8 py-20 text-center shadow-2xl shadow-brand-purple-900/30 sm:px-16"
+            className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-purple-800 via-brand-purple-900 to-brand-purple-950 px-8 py-16 shadow-2xl shadow-brand-purple-900/30 sm:px-14"
           >
-            <div className="absolute -left-20 top-0 h-72 w-72 rounded-full bg-brand-green-600/20 blur-3xl" />
-            <div className="absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-brand-purple-500/30 blur-3xl" />
-            <div className="relative">
-              <h2 className="mx-auto max-w-2xl font-display text-4xl font-extrabold leading-[1.02] tracking-tight text-white sm:text-6xl">
-                Ready to get moving?
-              </h2>
-              <p className="mx-auto mt-5 max-w-xl text-lg text-white/70">
-                Free, no-obligation quotes in minutes. No payment details
-                required — just tell us about your move.
-              </p>
-              <Link
-                href="/booking/removals"
-                className="group mt-9 inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-green-600 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-brand-green-600/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-green-500"
-              >
-                Start your free quote
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
+            <div className="absolute -left-16 top-0 h-64 w-64 rounded-full bg-brand-green-600/20 blur-3xl" />
+            <div className="absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-brand-purple-500/30 blur-3xl" />
+            <div className="relative grid items-center gap-8 lg:grid-cols-2">
+              <div>
+                <h2 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+                  Get your free quote today
+                </h2>
+                <p className="mt-3 max-w-md text-white/70">
+                  Pop in your postcode and we&apos;ll do the rest. No deposit, no
+                  obligation, no hassle.
+                </p>
+              </div>
+              <div className="lg:justify-self-end">
+                <PostcodeSearch variant="dark" />
+              </div>
             </div>
           </motion.div>
         </div>
