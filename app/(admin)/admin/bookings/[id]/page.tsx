@@ -433,9 +433,15 @@ export default function BookingDetailPage() {
                     className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
                   <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Message…" rows={6}
                     className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-purple-400" />
-                  {selectedTemplate && (
+                  {selectedTemplate && data && (
                     <p className="text-xs text-slate-400">
-                      📱 SMS will also be sent: &ldquo;{selectedTemplate.smsBody.slice(0, 80)}…&rdquo;
+                      📱 SMS will also be sent: &ldquo;{selectedTemplate.smsBody
+                        .replace(/\{\{name\}\}/g, data.customer.full_name.split(" ")[0])
+                        .replace(/\{\{service\}\}/g, data.booking.service_type)
+                        .replace(/\{\{ref\}\}/g, data.booking.reference)
+                        .replace(/\{\{company_phone\}\}/g, "07344 683477")
+                        .replace(/\{\{company_name\}\}/g, "Ample Removals")
+                        .slice(0, 100)}…&rdquo;
                     </p>
                   )}
                   <button onClick={sendEmail} disabled={isSendingEmail || emailBody.length < 5}
