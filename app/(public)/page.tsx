@@ -252,7 +252,7 @@ export default function HomePage() {
                     Prefer to talk it through?
                   </h3>
                   <p className="mt-2 text-[0.95rem] leading-relaxed text-white/70">
-                    Call our friendly team on 0330 000 0000 — we&apos;re happy to
+                    Call our friendly team on 07344 683477 — we&apos;re happy to
                     help.
                   </p>
                 </div>
