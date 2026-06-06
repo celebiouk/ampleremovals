@@ -15,6 +15,11 @@ config used `hsl(var(--token))`, breaking every themed colour.
 **Rule going forward:** In this project, `:root` tokens are space-separated HSL
 triplets (e.g. `--primary: 274 67% 39%`) consumed via `hsl(var(--primary))`.
 
+## Lesson 5 — Set spread requires --downlevelIteration or es2015 target
+**What happened:** `[...mySet]` in a client component caused TS2802.
+**Root cause:** TypeScript's spread of iterables requires explicit `downlevelIteration` or ES2015+ target.
+**Rule going forward:** Always use `Array.from(mySet)` instead of `[...mySet]` to spread Sets/Maps — it works at all targets.
+
 ## Lesson 4 — Exclude standalone scripts from tsconfig
 **What happened:** Test scripts in scripts/ used top-level `const` declarations.
 TypeScript treated all files as one global scope (no `export {}`) and reported

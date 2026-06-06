@@ -30,7 +30,7 @@ function LoginForm() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError("Invalid email or password. Please try again.");
       setLoading(false);
       return;
     }

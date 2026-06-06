@@ -1,36 +1,37 @@
-## Task: Phase 3 — Booking Submission API, Backend Logic & Notifications
+## Task: Phase 4 — Admin Dashboard & Full CRM Pipeline
 
 ### Context
-Phase 1 ✅ — scaffold, schema, SDKs
-Phase 2 ✅ — all 5 booking wizards, form submission to API routes
-Phase 3 ✅ (THIS) — server-side API hardening, notifications, error logging
+Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅ (THIS)
 
 ### Plan
 - [x] Write this plan to tasks/todo.md
-- [x] lib/supabase/server.ts — export createAdminClient() (alias for createServiceClient)
-- [x] lib/utils.ts — add normaliseUKPhone()
-- [x] lib/log-error.ts — logError() utility using createAdminClient
-- [x] lib/bookings/createBooking.ts — return { reference, bookingId, customerId }
-- [x] lib/notifications.ts — sendCustomerConfirmationEmail, sendAdminNewBookingEmail, sendCustomerConfirmationSMS
-- [x] lib/bookings/handleBookingRoute.ts — call all 3 notifications after successful createBooking
-- [x] scripts/test-postcode.ts
-- [x] scripts/test-removals.ts
-- [x] scripts/test-man-and-van.ts
-- [x] scripts/test-house-clearance.ts
-- [x] scripts/test-house-cleaning.ts
-- [x] scripts/test-end-of-tenancy.ts
-- [x] docs/api-collection.json — Postman collection
-- [x] tsc --noEmit clean (scripts/ excluded from tsconfig)
+- [x] lib/constants.ts — STATUS_LABELS, STATUS_COLOURS, SERVICE_LABELS, SERVICE_COLOURS
+- [x] Fix login page — generic error message
+- [x] components/admin/StatusBadge.tsx
+- [x] components/admin/ServiceBadge.tsx
+- [x] components/admin/StatCard.tsx
+- [x] components/admin/ConfirmDialog.tsx
+- [x] components/admin/AdminSkeleton.tsx
+- [x] hooks/useBookingDetail.ts
+- [x] hooks/useBookingsList.ts
+- [x] app/api/admin/bookings/[id]/status/route.ts
+- [x] app/api/admin/bookings/bulk-status/route.ts
+- [x] app/api/admin/send-email/route.ts
+- [x] app/api/admin/send-sms/route.ts
+- [x] app/(admin)/admin/page.tsx — live stats + tabs + bookings table
+- [x] app/(admin)/admin/bookings/page.tsx — full list with filters, pagination, bulk
+- [x] app/(admin)/admin/bookings/[id]/page.tsx — full CRM booking detail
+- [x] app/(admin)/admin/customers/page.tsx
+- [x] app/(admin)/admin/customers/[id]/page.tsx
+- [x] app/(admin)/admin/reports/page.tsx — 4 Recharts charts
+- [x] tsc --noEmit clean
 - [x] tasks/lessons.md updated
 - [x] Git commit + push
 
 ### Review
-All Phase 3 deliverables complete.
-- createBooking() now returns { reference, bookingId, customerId }
-- All 3 notifications fire in parallel via Promise.allSettled — a notification
-  failure never blocks the booking response
-- Twilio silently skips when credentials are placeholders (null-safe)
-- logError() writes to server_logs with console.error fallback
-- tsc --noEmit passes clean (scripts/ dir excluded from compilation)
-- Resend API key is live in .env.local — customer + admin emails will fire
-- Twilio needs real credentials in .env.local + Vercel for SMS to send
+Phase 4 fully complete. Every admin page is live with real data.
+Key decisions:
+- Client-side Supabase fetching (anon key + auth session) for all reads
+- API routes (service role) for all mutations (status, notes, email, SMS)
+- Promise.allSettled for parallel notification firing
+- Set spread replaced with Array.from() to satisfy TS target
