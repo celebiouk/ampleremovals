@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
@@ -29,12 +30,13 @@ export function DateField({
   minDate,
   invalid,
 }: DateFieldProps) {
+  const [open, setOpen] = useState(false);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const disabledBefore = minDate ?? today;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -55,7 +57,7 @@ export function DateField({
         <Calendar
           mode="single"
           selected={value}
-          onSelect={onChange}
+          onSelect={(date) => { onChange(date); setOpen(false); }}
           disabled={{ before: disabledBefore }}
           defaultMonth={value ?? disabledBefore}
           initialFocus
