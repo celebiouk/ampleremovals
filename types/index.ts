@@ -258,3 +258,30 @@ export interface PostcodeResult {
   postcode: string;
   addresses: AddressOption[];
 }
+
+// ── Invoice PDF data ──────────────────────────────────────────────────────
+export interface InvoicePDFData {
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  type: InvoiceType;
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  originAddress: string;
+  bookingReference: string;
+  serviceType: string;
+  moveDate: string;
+  lineItems: InvoiceLineItem[];
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  total: number;
+  stripePaymentLink: string;
+  notes?: string;
+}
