@@ -99,7 +99,7 @@ export default function HomePage() {
                   <Star key={i} className="h-3.5 w-3.5 fill-current" />
                 ))}
               </span>
-              Rated 4.9 / 5 by 2,000+ movers
+              5-star rated removal service
             </div>
 
             <h1
@@ -173,7 +173,7 @@ export default function HomePage() {
               <p className="mt-1 text-sm font-bold text-brand-purple-950">
                 “Brilliant, careful team”
               </p>
-              <p className="text-xs text-slate-500">2,000+ verified reviews</p>
+              <p className="text-xs text-slate-500">Verified customer review</p>
             </div>
 
             {/* floating insured chip */}
@@ -315,9 +315,8 @@ export default function HomePage() {
               actually trust
             </h2>
             <p className="mt-5 max-w-md text-lg text-slate-600">
-              Thousands of UK households and businesses choose Ample because we
-              treat every move like it&apos;s our own — careful, on time, and
-              fairly priced.
+              UK households and businesses choose Ample because we treat every
+              move like it&apos;s our own — careful, on time, and fairly priced.
             </p>
             <Link
               href="/booking/removals"
