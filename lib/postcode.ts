@@ -52,15 +52,13 @@ export async function getAddressesByPostcode(
         { headers: { Accept: "application/json" }, next: { revalidate: 0 } }
       );
 
-      if (res.status === 404) return { postcode: normalised, addresses: [] };
-      if (res.status === 401)
-        throw new Error("getAddress.io API key invalid or expired");
+      // Any non-200 (incl. 401 bad key, 404 not found) falls through to postcodes.io
+      if (!res.ok) throw new Error(`getAddress.io responded ${res.status}`);
 
       const data = (await res.json()) as GetAddressResponse;
 
-      if (!data.addresses?.length) {
-        return { postcode: normalised, addresses: [] };
-      }
+      // Empty address list from getAddress.io — fall through to postcodes.io
+      if (!data.addresses?.length) throw new Error("getAddress.io: no addresses");
 
       const addresses = data.addresses.map((raw) =>
         parseGetAddressLine(raw, normalised)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Phone, ArrowRight } from "lucide-react";
+import { Phone, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SERVICES } from "@/lib/services";
 import { AmpleLogo } from "@/components/shared/AmpleLogo";
@@ -89,9 +89,22 @@ export function Navbar() {
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((o) => !o)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-brand-purple-900 transition-colors hover:bg-brand-purple-50 lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-purple-800 text-white shadow-md shadow-brand-purple-800/30 transition-all duration-200 hover:bg-brand-purple-900 lg:hidden"
           >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileOpen ? (
+              /* Bold X — green */
+              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+                <line x1="5" y1="5" x2="19" y2="19" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" />
+                <line x1="19" y1="5" x2="5" y2="19" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            ) : (
+              /* Thick three-line hamburger — white on purple */
+              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+                <line x1="3" y1="6"  x2="21" y2="6"  stroke="white" strokeWidth="2.8" strokeLinecap="round" />
+                <line x1="3" y1="12" x2="21" y2="12" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
+                <line x1="3" y1="18" x2="21" y2="18" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
