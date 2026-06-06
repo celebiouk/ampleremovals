@@ -1,37 +1,47 @@
-## Task: Phase 4 — Admin Dashboard & Full CRM Pipeline
+## Task: Phase 4B — World-Class CRM Upgrade
 
 ### Context
-Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅ (THIS)
+Phase 4 ✅ — Admin dashboard with CRM basics built
+Phase 4B (THIS) — Full redesign + Kanban + Calendar + Automations + Realtime
+
+### New packages installed
+- cmdk@1.1.1 (command palette)
+- @dnd-kit/core@6.3.1 + @dnd-kit/sortable@10.0.0 (kanban)
+- papaparse@5.5.3 (CSV export)
+
+### Database migrations required (run in Supabase SQL editor)
+See: supabase/migrations/phase4b.sql
 
 ### Plan
-- [x] Write this plan to tasks/todo.md
-- [x] lib/constants.ts — STATUS_LABELS, STATUS_COLOURS, SERVICE_LABELS, SERVICE_COLOURS
-- [x] Fix login page — generic error message
-- [x] components/admin/StatusBadge.tsx
-- [x] components/admin/ServiceBadge.tsx
-- [x] components/admin/StatCard.tsx
-- [x] components/admin/ConfirmDialog.tsx
-- [x] components/admin/AdminSkeleton.tsx
-- [x] hooks/useBookingDetail.ts
-- [x] hooks/useBookingsList.ts
-- [x] app/api/admin/bookings/[id]/status/route.ts
-- [x] app/api/admin/bookings/bulk-status/route.ts
-- [x] app/api/admin/send-email/route.ts
-- [x] app/api/admin/send-sms/route.ts
-- [x] app/(admin)/admin/page.tsx — live stats + tabs + bookings table
-- [x] app/(admin)/admin/bookings/page.tsx — full list with filters, pagination, bulk
-- [x] app/(admin)/admin/bookings/[id]/page.tsx — full CRM booking detail
-- [x] app/(admin)/admin/customers/page.tsx
-- [x] app/(admin)/admin/customers/[id]/page.tsx
-- [x] app/(admin)/admin/reports/page.tsx — 4 Recharts charts
-- [x] tsc --noEmit clean
-- [x] tasks/lessons.md updated
-- [x] Git commit + push
+- [x] Install packages
+- [x] Write plan to tasks/todo.md
+- [ ] supabase/migrations/phase4b.sql — all new tables + columns
+- [ ] Rebuild AdminShell (dark sidebar, grouped nav, collapse, badge)
+- [ ] Build AdminTopBar (breadcrumb, command palette trigger, notifications, quick add)
+- [ ] Build CommandPalette component (cmdk, ⌘K)
+- [ ] Build NotificationCentre component (slide-in panel)
+- [ ] Rebuild dashboard page (KPI cards, charts, activity feed, upcoming jobs)
+- [ ] Build lib/realtime.ts helper
+- [ ] Build Kanban pipeline page (/admin/pipeline) with @dnd-kit
+- [ ] Enhance booking detail page (pipeline tracker, quick actions, lead score, flag, inline edit, related bookings)
+- [ ] Build lib/automation-templates.ts with renderTemplate()
+- [ ] Build app/api/cron/automations/route.ts (secured cron)
+- [ ] Build automations management page (/admin/automations)
+- [ ] Build calendar page (/admin/calendar) — simplified without FullCalendar
+- [ ] Build payments page (/admin/payments) with CSV export
+- [ ] Build settings page (/admin/settings) with 4 tabs
+- [ ] Add vercel.json cron config
+- [ ] Page transition animations (Framer Motion)
+- [ ] tsc --noEmit clean
+- [ ] tasks/lessons.md updated
+- [ ] Git push (multiple commits throughout)
+
+### Architecture decisions
+- FullCalendar skipped (heavy dep) — using custom calendar built with date-fns
+- Realtime via Supabase client channels
+- Sidebar state persisted in localStorage
+- Command palette uses cmdk library
+- Kanban uses @dnd-kit (lighter than react-beautiful-dnd)
 
 ### Review
-Phase 4 fully complete. Every admin page is live with real data.
-Key decisions:
-- Client-side Supabase fetching (anon key + auth session) for all reads
-- API routes (service role) for all mutations (status, notes, email, SMS)
-- Promise.allSettled for parallel notification firing
-- Set spread replaced with Array.from() to satisfy TS target
+(to fill in on completion)
