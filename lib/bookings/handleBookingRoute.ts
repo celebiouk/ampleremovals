@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
-import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import {
   sendCustomerConfirmationEmail,
