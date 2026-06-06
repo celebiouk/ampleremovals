@@ -10,6 +10,13 @@ import type { ServiceType } from "@/types";
 
 interface LineItem { description: string; quantity: number; unitPrice: number }
 
+interface AdditionalServices {
+  packing_services?: boolean;
+  packing_materials?: boolean;
+  disassemble_furniture?: boolean;
+  assemble_furniture?: boolean;
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -18,6 +25,7 @@ interface Props {
   bookingReference: string;
   customerName: string;
   serviceType: ServiceType;
+  additionalServices?: AdditionalServices | null;
   onSuccess: (invoice: { id: string; invoiceNumber: string; total: number; pdfUrl: string; stripePaymentLink: string }) => void;
 }
 
@@ -26,7 +34,7 @@ const defaultDueDate = () => {
   return d.toISOString().slice(0, 10);
 };
 
-export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, onSuccess }: Props) {
+export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, additionalServices, onSuccess }: Props) {
   const serviceLabel = SERVICE_LABELS_SHORT[serviceType];
   const typeLabel = type === "deposit" ? "Deposit" : "Full Balance";
 
@@ -36,6 +44,8 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
   const [vatEnabled, setVatEnabled] = useState(false);
   const [dueDate, setDueDate] = useState(defaultDueDate);
   const [notes, setNotes] = useState("");
+  const [fullJobValue, setFullJobValue] = useState<number>(0);
+  const [depositPercent, setDepositPercent] = useState<number>(25);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
@@ -45,11 +55,28 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
     if (!isOpen) {
       setLineItems([{ description: `${typeLabel} — ${serviceLabel} Service`, quantity: 1, unitPrice: 0 }]);
       setVatEnabled(false); setDueDate(defaultDueDate()); setNotes("");
-      setPreview(null); setError("");
+      setPreview(null); setError(""); setFullJobValue(0); setDepositPercent(25);
+    } else {
+      // Pre-populate additional services as line items
+      const extras: LineItem[] = [];
+      if (additionalServices?.packing_services) extras.push({ description: "Packing Services", quantity: 1, unitPrice: 0 });
+      if (additionalServices?.packing_materials) extras.push({ description: "Packing Materials", quantity: 1, unitPrice: 0 });
+      if (additionalServices?.disassemble_furniture) extras.push({ description: "Furniture Disassembly", quantity: 1, unitPrice: 0 });
+      if (additionalServices?.assemble_furniture) extras.push({ description: "Furniture Assembly", quantity: 1, unitPrice: 0 });
+      if (extras.length > 0) {
+        setLineItems([{ description: `${typeLabel} — ${serviceLabel} Service`, quantity: 1, unitPrice: 0 }, ...extras]);
+      }
     }
-  }, [isOpen, typeLabel, serviceLabel]);
+  }, [isOpen, typeLabel, serviceLabel, additionalServices]);
 
-  const subtotal = lineItems.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
+  // For deposit: auto-calculate deposit amount from full job value + %
+  const isDeposit = type === "deposit";
+  const depositAmount = isDeposit && fullJobValue > 0 ? Math.round(fullJobValue * (depositPercent / 100) * 100) / 100 : 0;
+  const balanceRemaining = isDeposit && fullJobValue > 0 ? Math.round((fullJobValue - depositAmount) * 100) / 100 : 0;
+
+  const subtotal = isDeposit && fullJobValue > 0
+    ? depositAmount
+    : lineItems.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
   const vatAmount = vatEnabled ? subtotal * 0.2 : 0;
   const total = subtotal + vatAmount;
 
@@ -61,16 +88,29 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
   const removeItem = (idx: number) => setLineItems(prev => prev.filter((_, i) => i !== idx));
 
   const handleGenerate = async () => {
-    if (lineItems.some(i => !i.description.trim() || i.unitPrice <= 0)) {
-      setError("All line items must have a description and a price greater than £0."); return;
+    if (isDeposit && fullJobValue > 0) {
+      if (depositPercent <= 0 || depositPercent >= 100) { setError("Deposit percentage must be between 1 and 99%."); return; }
+    } else if (!isDeposit) {
+      if (lineItems.some(i => !i.description.trim() || i.unitPrice <= 0)) {
+        setError("All line items must have a description and a price greater than £0."); return;
+      }
     }
     setError(""); setIsGenerating(true);
+
+    // For deposit: build a single line item from the deposit amount
+    const submittedLineItems = isDeposit && fullJobValue > 0
+      ? [{ description: `Deposit (${depositPercent}%) — ${serviceLabel} Service`, quantity: 1, unitPrice: depositAmount }]
+      : lineItems.map(i => ({ description: i.description, quantity: i.quantity, unitPrice: i.unitPrice }));
+
     const res = await fetch("/api/admin/invoices/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         bookingId, type, vatRate: vatEnabled ? 20 : 0, dueDate, notes: notes || undefined,
-        lineItems: lineItems.map(i => ({ description: i.description, quantity: i.quantity, unitPrice: i.unitPrice })),
+        lineItems: submittedLineItems,
+        fullJobValue: isDeposit && fullJobValue > 0 ? fullJobValue : undefined,
+        depositPercentage: isDeposit && fullJobValue > 0 ? depositPercent : undefined,
+        balanceRemaining: isDeposit && fullJobValue > 0 ? balanceRemaining : undefined,
       }),
     });
     const data = await res.json() as { success: boolean; invoiceId?: string; invoiceNumber?: string; total?: number; pdfUrl?: string; stripePaymentLink?: string; error?: string };
@@ -118,8 +158,40 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
                 : "This is the final balance invoice. Send this after the job is complete."}
             </div>
 
-            {/* Line items */}
-            <div>
+            {/* Deposit-specific: full job value + deposit % */}
+            {isDeposit && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <p className="text-sm font-semibold text-amber-900">Job Pricing</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-amber-800">Full Job Price (£)</label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">£</span>
+                      <input type="number" min={0} step={0.01} value={fullJobValue || ""} onChange={e => setFullJobValue(Number(e.target.value))}
+                        placeholder="0.00" className="h-9 w-full rounded-lg border border-amber-200 bg-white pl-6 pr-2 text-sm outline-none focus:border-amber-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-amber-800">Deposit %</label>
+                    <div className="relative">
+                      <input type="number" min={1} max={99} value={depositPercent} onChange={e => setDepositPercent(Number(e.target.value))}
+                        className="h-9 w-full rounded-lg border border-amber-200 bg-white px-3 pr-6 text-sm outline-none focus:border-amber-400" />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span>
+                    </div>
+                  </div>
+                </div>
+                {fullJobValue > 0 && (
+                  <div className="rounded-lg bg-white border border-amber-200 p-3 text-xs space-y-1">
+                    <div className="flex justify-between"><span className="text-slate-500">Full Job Price</span><span className="font-semibold">{formatCurrency(fullJobValue)}</span></div>
+                    <div className="flex justify-between text-amber-800"><span>Deposit Due ({depositPercent}%)</span><span className="font-bold">{formatCurrency(depositAmount)}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Balance Remaining</span><span className="font-semibold">{formatCurrency(balanceRemaining)}</span></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Line items — hidden for deposits with full job value set */}
+            <div className={isDeposit && fullJobValue > 0 ? "hidden" : ""}>
               <div className="mb-2 grid grid-cols-[1fr_60px_90px_80px_32px] gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 <span>Description</span><span className="text-center">Qty</span><span className="text-right">Unit Price</span><span className="text-right">Total</span><span></span>
               </div>

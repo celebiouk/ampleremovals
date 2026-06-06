@@ -284,4 +284,8 @@ export interface InvoicePDFData {
   total: number;
   stripePaymentLink: string;
   notes?: string;
+  // Deposit-specific fields
+  fullJobValue?: number;
+  depositPercentage?: number;
+  balanceRemaining?: number;
 }

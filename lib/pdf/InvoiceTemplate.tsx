@@ -104,6 +104,7 @@ export function InvoiceDocument({ data }: Props) {
     bookingReference, serviceType, moveDate,
     lineItems, subtotal, vatRate, vatAmount, total,
     stripePaymentLink, notes,
+    fullJobValue, depositPercentage, balanceRemaining,
   } = data;
 
   return (
@@ -184,21 +185,55 @@ export function InvoiceDocument({ data }: Props) {
 
         {/* TOTALS */}
         <View style={styles.totalsBlock}>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Subtotal</Text>
-            <Text style={styles.totalsValue}>£{subtotal.toFixed(2)}</Text>
-          </View>
-          {vatRate > 0 && (
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>VAT ({vatRate}%)</Text>
-              <Text style={styles.totalsValue}>£{vatAmount.toFixed(2)}</Text>
-            </View>
+          {/* For deposit invoices — show full job breakdown */}
+          {type === "deposit" && fullJobValue && fullJobValue > 0 ? (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Full Job Price</Text>
+                <Text style={styles.totalsValue}>£{fullJobValue.toFixed(2)}</Text>
+              </View>
+              {vatRate > 0 && (
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsLabel}>VAT ({vatRate}%)</Text>
+                  <Text style={styles.totalsValue}>£{vatAmount.toFixed(2)}</Text>
+                </View>
+              )}
+              <View style={styles.totalsDivider} />
+              <View style={styles.totalsRow}>
+                <Text style={[styles.totalsLabel, { color: "#92400e" }]}>
+                  Deposit Due Now{depositPercentage ? ` (${depositPercentage}%)` : ""}
+                </Text>
+                <Text style={[styles.totalsValue, { color: "#92400e" }]}>£{total.toFixed(2)}</Text>
+              </View>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Balance Remaining</Text>
+                <Text style={styles.totalsValue}>£{(balanceRemaining ?? (fullJobValue - total)).toFixed(2)}</Text>
+              </View>
+              <View style={styles.totalsDivider} />
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalLabel}>PAY NOW</Text>
+                <Text style={styles.totalValue}>£{total.toFixed(2)}</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Subtotal</Text>
+                <Text style={styles.totalsValue}>£{subtotal.toFixed(2)}</Text>
+              </View>
+              {vatRate > 0 && (
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsLabel}>VAT ({vatRate}%)</Text>
+                  <Text style={styles.totalsValue}>£{vatAmount.toFixed(2)}</Text>
+                </View>
+              )}
+              <View style={styles.totalsDivider} />
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalLabel}>TOTAL DUE</Text>
+                <Text style={styles.totalValue}>£{total.toFixed(2)}</Text>
+              </View>
+            </>
           )}
-          <View style={styles.totalsDivider} />
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalLabel}>TOTAL DUE</Text>
-            <Text style={styles.totalValue}>£{total.toFixed(2)}</Text>
-          </View>
         </View>
 
         {/* PAYMENT INSTRUCTIONS */}

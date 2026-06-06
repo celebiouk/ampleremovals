@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -45,6 +46,8 @@ export default function BookingDetailPage() {
   const [smsBody, setSmsBody] = useState("");
   const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
+  const [templateCategory, setTemplateCategory] = useState("all");
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const activityRef = useRef<HTMLDivElement>(null);
@@ -100,15 +103,26 @@ export default function BookingDetailPage() {
   };
 
   const sendEmail = async () => {
-    if (emailBody.length < 20) return;
+    if (emailBody.length < 5) return;
     setIsSendingEmail(true);
+    // Build SMS version: use template SMS body or derive from email body
+    const smsText = selectedTemplate
+      ? selectedTemplate.smsBody
+          .replace(/\{\{name\}\}/g, data?.customer.full_name.split(" ")[0] ?? "")
+          .replace(/\{\{service\}\}/g, data?.booking.service_type ?? "")
+          .replace(/\{\{ref\}\}/g, data?.booking.reference ?? "")
+          .replace(/\{\{company_phone\}\}/g, "07344 683477")
+          .replace(/\{\{company_name\}\}/g, "Ample Removals")
+      : undefined;
     const res = await fetch("/api/admin/send-email", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId, subject: emailSubject, message: emailBody }),
+      body: JSON.stringify({ bookingId, subject: emailSubject, message: emailBody, smsMessage: smsText }),
     });
     const json = await res.json() as { success: boolean };
-    if (json.success) { toast.success("Email sent successfully"); setEmailExpanded(false); setEmailBody(""); refresh(); }
-    else toast.error("Failed to send email");
+    if (json.success) {
+      toast.success(selectedTemplate ? "Email + SMS sent" : "Email sent");
+      setEmailExpanded(false); setEmailBody(""); setSelectedTemplate(null); refresh();
+    } else toast.error("Failed to send email");
     setIsSendingEmail(false);
   };
 
@@ -378,24 +392,58 @@ export default function BookingDetailPage() {
             )}
           </Card>
 
-          {/* Send email */}
+          {/* Send email + templates */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-900">Send Email to Customer</h3>
-              <button onClick={() => setEmailExpanded(!emailExpanded)} className="text-sm font-medium text-brand-purple-600 hover:underline">
+              <button onClick={() => { setEmailExpanded(!emailExpanded); if (!emailExpanded) { setSelectedTemplate(null); setEmailSubject(""); setEmailBody(""); } }}
+                className="text-sm font-medium text-brand-purple-600 hover:underline">
                 {emailExpanded ? "Cancel" : "Compose Email"}
               </button>
             </div>
             {emailExpanded && (
-              <div className="mt-4 space-y-3">
-                <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject"
-                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
-                <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Message (min 20 chars)" rows={5}
-                  className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-purple-400" />
-                <button onClick={sendEmail} disabled={isSendingEmail || emailBody.length < 20}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-purple-800 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-                  {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}Send Email
-                </button>
+              <div className="mt-4 space-y-4">
+                {/* Template picker */}
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Choose a template</p>
+                  {/* Category tabs */}
+                  <div className="mb-3 flex gap-1 flex-wrap">
+                    {TEMPLATE_CATEGORIES.map(cat => (
+                      <button key={cat.id} onClick={() => setTemplateCategory(cat.id)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${templateCategory === cat.id ? "bg-brand-purple-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto">
+                    {EMAIL_TEMPLATES.filter(t => templateCategory === "all" || t.category === templateCategory).map(t => (
+                      <button key={t.id} onClick={() => {
+                        setSelectedTemplate(t);
+                        setEmailSubject(t.subject.replace(/\{\{service\}\}/g, booking.service_type).replace(/\{\{ref\}\}/g, booking.reference));
+                        setEmailBody(t.body.replace(/\{\{name\}\}/g, customer.full_name).replace(/\{\{service\}\}/g, booking.service_type).replace(/\{\{ref\}\}/g, booking.reference).replace(/\{\{company_phone\}\}/g, "07344 683477").replace(/\{\{company_name\}\}/g, "Ample Removals"));
+                      }}
+                        className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${selectedTemplate?.id === t.id ? "border-brand-purple-400 bg-brand-purple-50 text-brand-purple-800" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-brand-purple-200 hover:bg-white"}`}>
+                        <span className="font-medium">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-slate-100 pt-3 space-y-3">
+                  <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject"
+                    className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
+                  <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Message…" rows={6}
+                    className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-purple-400" />
+                  {selectedTemplate && (
+                    <p className="text-xs text-slate-400">
+                      📱 SMS will also be sent: &ldquo;{selectedTemplate.smsBody.slice(0, 80)}…&rdquo;
+                    </p>
+                  )}
+                  <button onClick={sendEmail} disabled={isSendingEmail || emailBody.length < 5}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-purple-800 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                    {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    Send Email {selectedTemplate ? "+ SMS" : ""}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -452,6 +500,7 @@ export default function BookingDetailPage() {
           bookingReference={data.booking.reference}
           customerName={data.customer.full_name}
           serviceType={data.booking.service_type as ServiceType}
+          additionalServices={data.additionalServices}
           onSuccess={() => { refresh(); setGenerateInvoiceType(null); }}
         />
       )}

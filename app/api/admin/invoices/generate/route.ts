@@ -22,6 +22,9 @@ const schema = z.object({
   vatRate: z.number().refine(v => v === 0 || v === 20),
   dueDate: z.string().min(8),
   notes: z.string().optional(),
+  fullJobValue: z.number().optional(),
+  depositPercentage: z.number().optional(),
+  balanceRemaining: z.number().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ success: false, error: "Invalid payload" }, { status: 400 });
 
-  const { bookingId, type, lineItems, vatRate, dueDate, notes } = parsed.data;
+  const { bookingId, type, lineItems, vatRate, dueDate, notes, fullJobValue, depositPercentage, balanceRemaining } = parsed.data;
   const supabase = createAdminClient();
 
   try {
@@ -128,6 +131,9 @@ export async function POST(request: NextRequest) {
         stripe_price_id: priceId,
         stripe_product_id: productId,
         notes: notes ?? null,
+        full_job_value: fullJobValue ?? null,
+        deposit_percentage: depositPercentage ?? null,
+        balance_remaining: balanceRemaining ?? null,
       })
       .select("id")
       .single();
@@ -160,6 +166,9 @@ export async function POST(request: NextRequest) {
       total,
       stripePaymentLink: paymentLink,
       notes,
+      fullJobValue,
+      depositPercentage,
+      balanceRemaining,
     };
 
     let pdfUrl = "";
