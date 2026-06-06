@@ -1,39 +1,31 @@
 import type { PostcodeResult, AddressOption } from "@/types";
 
-/**
- * getAddress.io response (basic tier — addresses as comma-separated strings).
- * e.g. "1 Rosedale Gardens, , , Thatcham, West Berkshire"
- */
-interface GetAddressResponse {
-  postcode?: string;
-  latitude?: number;
-  longitude?: number;
-  addresses?: string[];
-  Message?: string; // error message from API
+interface AutocompleteSuggestion {
+  address: string;
+  url: string;
+  id: string;
 }
 
-/**
- * Parse a getAddress.io address string into an AddressOption.
- *
- * Format: "line1, line2, line3, town_or_city, county"
- * Empty segments are returned as empty strings by the API.
- */
-function parseGetAddressLine(raw: string, postcode: string): AddressOption {
-  const parts = raw.split(",").map((s) => s.trim());
-  const line1 = parts[0] ?? "";
-  // parts[1] and parts[2] are optional extra lines (usually empty)
-  const line2 = [parts[1], parts[2]].filter(Boolean).join(", ") || undefined;
-  const city = parts[3] || parts[4] || undefined;
+interface AutocompleteResponse {
+  suggestions?: AutocompleteSuggestion[];
+  Message?: string;
+}
 
+/** Parse an autocomplete address string into an AddressOption.
+ *  Format: "1 Rosedale Gardens, Thatcham, West Berkshire"
+ */
+function parseAutocompleteSuggestion(suggestion: AutocompleteSuggestion, postcode: string): AddressOption {
+  const parts = suggestion.address.split(",").map((s) => s.trim()).filter(Boolean);
+  const line1 = parts[0] ?? "";
+  const line2 = parts.length > 2 ? parts[1] : undefined;
+  const city = parts[parts.length - 2] || parts[parts.length - 1] || undefined;
   return { line_1: line1, line_2: line2, city, postcode };
 }
 
 /**
- * Look up individual UK property addresses for a postcode using getAddress.io.
- *
- * Returns every matching property (e.g. "1 Rosedale Gardens, Thatcham, RG19 3LE").
- * Falls back to a postcodes.io area-level result if no API key is configured.
- * Always resolves — invalid postcodes return an empty `addresses` array.
+ * Look up individual UK property addresses for a postcode using getAddress.io
+ * autocomplete API (current v2+ endpoint).
+ * Falls back to postcodes.io area-level result if no API key is configured.
  */
 export async function getAddressesByPostcode(
   postcode: string
@@ -44,34 +36,31 @@ export async function getAddressesByPostcode(
 
   const apiKey = process.env.GETADDRESS_API_KEY;
 
-  /* ── getAddress.io (full individual addresses) ─────────────────────── */
+  /* ── getAddress.io autocomplete (server-side with API key) ─────────── */
   if (apiKey) {
     try {
       const res = await fetch(
-        `https://api.getaddress.io/find/${encodeURIComponent(trimmed)}?api-key=${apiKey}&sort=true`,
+        `https://api.getaddress.io/autocomplete/${encodeURIComponent(trimmed)}?api-key=${apiKey}&all=true`,
         { headers: { Accept: "application/json" }, next: { revalidate: 0 } }
       );
 
-      // Any non-200 (incl. 401 bad key, 404 not found) falls through to postcodes.io
       if (!res.ok) throw new Error(`getAddress.io responded ${res.status}`);
 
-      const data = (await res.json()) as GetAddressResponse;
+      const data = (await res.json()) as AutocompleteResponse;
 
-      // Empty address list from getAddress.io — fall through to postcodes.io
-      if (!data.addresses?.length) throw new Error("getAddress.io: no addresses");
+      if (!data.suggestions?.length) throw new Error("getAddress.io: no suggestions");
 
-      const addresses = data.addresses.map((raw) =>
-        parseGetAddressLine(raw, normalised)
+      const addresses = data.suggestions.map((s) =>
+        parseAutocompleteSuggestion(s, normalised)
       );
 
       return { postcode: normalised, addresses };
     } catch (err) {
       console.error("[postcode] getAddress.io error:", err);
-      // Fall through to postcodes.io fallback
     }
   }
 
-  /* ── postcodes.io fallback (area-level only — no API key needed) ───── */
+  /* ── postcodes.io fallback (area-level only) ───────────────────────── */
   try {
     const res = await fetch(
       `https://api.postcodes.io/postcodes/${encodeURIComponent(trimmed)}`,
@@ -95,11 +84,7 @@ export async function getAddressesByPostcode(
       return { postcode: normalised, addresses: [] };
 
     const r = data.result;
-    const city =
-      r.admin_district ??
-      r.parliamentary_constituency ??
-      r.region ??
-      undefined;
+    const city = r.admin_district ?? r.parliamentary_constituency ?? r.region ?? undefined;
 
     return {
       postcode: r.postcode,

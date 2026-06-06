@@ -11,16 +11,22 @@ interface UsePostcodeLookupReturn {
   reset: () => void;
 }
 
-interface GetAddressResponse {
-  addresses?: string[];
+interface AutocompleteSuggestion {
+  address: string;
+  url: string;
+  id: string;
+}
+
+interface AutocompleteResponse {
+  suggestions?: AutocompleteSuggestion[];
   Message?: string;
 }
 
-function parseGetAddressLine(raw: string, postcode: string): AddressOption {
-  const parts = raw.split(",").map((s) => s.trim());
+function parseAutocompleteSuggestion(suggestion: AutocompleteSuggestion, postcode: string): AddressOption {
+  const parts = suggestion.address.split(",").map((s) => s.trim()).filter(Boolean);
   const line1 = parts[0] ?? "";
-  const line2 = [parts[1], parts[2]].filter(Boolean).join(", ") || undefined;
-  const city = parts[3] || parts[4] || undefined;
+  const line2 = parts.length > 2 ? parts[1] : undefined;
+  const city = parts[parts.length - 2] || parts[parts.length - 1] || undefined;
   return { line_1: line1, line_2: line2, city, postcode };
 }
 
@@ -47,22 +53,23 @@ export function usePostcodeLookup(): UsePostcodeLookupReturn {
     setLoading(true);
     setError(null);
 
-    const apiKey = process.env.NEXT_PUBLIC_GETADDRESS_API_KEY;
+    // Domain token (dtoken_...) for safe browser-side calls — set NEXT_PUBLIC_GETADDRESS_DOMAIN_TOKEN
+    const domainToken = process.env.NEXT_PUBLIC_GETADDRESS_DOMAIN_TOKEN;
 
-    /* ── Direct browser call to getAddress.io ── */
-    if (apiKey) {
+    /* ── Direct browser call to getAddress.io autocomplete ── */
+    if (domainToken) {
       try {
         const res = await fetch(
-          `https://api.getaddress.io/find/${encodeURIComponent(postcode.trim())}?api-key=${apiKey}&sort=true`,
+          `https://api.getaddress.io/autocomplete/${encodeURIComponent(postcode.trim())}?api-key=${domainToken}&all=true`,
           { headers: { Accept: "application/json" } }
         );
 
         if (res.ok) {
-          const data = (await res.json()) as GetAddressResponse;
-          if (data.addresses?.length) {
+          const data = (await res.json()) as AutocompleteResponse;
+          if (data.suggestions?.length) {
             const normalised = postcode.trim().toUpperCase();
-            const parsed = data.addresses.map((raw) =>
-              parseGetAddressLine(raw, normalised)
+            const parsed = data.suggestions.map((s) =>
+              parseAutocompleteSuggestion(s, normalised)
             );
             cache.current.set(key, parsed);
             setAddresses(parsed);
@@ -70,13 +77,12 @@ export function usePostcodeLookup(): UsePostcodeLookupReturn {
             return parsed;
           }
         }
-        // Non-OK or empty — fall through to proxy
       } catch {
-        // Network error — fall through to proxy
+        // fall through to server proxy
       }
     }
 
-    /* ── Server proxy fallback (postcodes.io) ── */
+    /* ── Server proxy fallback (postcodes.io area-level) ── */
     try {
       const res = await fetch(
         `/api/postcode/lookup?postcode=${encodeURIComponent(postcode.trim())}`
