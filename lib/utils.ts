@@ -55,6 +55,17 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Normalise a UK phone number to E.164 format (+44XXXXXXXXXX).
+ * Handles 07xxx, 01xxx, 02xxx and already-normalised +44 numbers.
+ */
+export function normaliseUKPhone(phone: string): string {
+  const stripped = phone.replace(/[\s\-().]/g, "");
+  if (stripped.startsWith("+44")) return stripped;
+  if (stripped.startsWith("0")) return "+44" + stripped.slice(1);
+  return stripped;
+}
+
+/**
  * Format a date as `DD/MM/YYYY` (UK style).
  */
 export function formatDate(date: string | Date): string {

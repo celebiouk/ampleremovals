@@ -15,6 +15,14 @@ config used `hsl(var(--token))`, breaking every themed colour.
 **Rule going forward:** In this project, `:root` tokens are space-separated HSL
 triplets (e.g. `--primary: 274 67% 39%`) consumed via `hsl(var(--primary))`.
 
+## Lesson 4 — Exclude standalone scripts from tsconfig
+**What happened:** Test scripts in scripts/ used top-level `const` declarations.
+TypeScript treated all files as one global scope (no `export {}`) and reported
+"Cannot redeclare block-scoped variable" across files.
+**Root cause:** tsconfig `include` was `**/*.ts` which caught the scripts dir.
+**Rule going forward:** Add `"scripts"` to tsconfig `exclude` for any directory
+containing standalone node scripts that are not part of the Next.js app.
+
 ## Lesson 3 — framer-motion v12 needs literal easing
 **What happened:** `ease: "easeOut"` typed as `string` failed the build.
 **Rule going forward:** Type variants as `Variants` and use `ease: "easeOut" as const`.

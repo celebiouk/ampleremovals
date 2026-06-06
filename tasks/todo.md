@@ -1,31 +1,36 @@
-## Task: Phase 2 — Public multi-step booking wizard (all 5 services)
+## Task: Phase 3 — Booking Submission API, Backend Logic & Notifications
 
-### Architecture
-- Config-driven generic `BookingWizard` shell + per-service step lists.
-- React Hook Form + Zod (per-step `trigger` validation), Framer Motion slide
-  transitions (AnimatePresence mode="wait"), StepIndicator progress.
-- Wizard context carries fetched postcode addresses + goToStep between steps.
-- Real (minimal) submission API so the flow works end-to-end (Phase 3 adds
-  email/SMS/logging).
+### Context
+Phase 1 ✅ — scaffold, schema, SDKs
+Phase 2 ✅ — all 5 booking wizards, form submission to API routes
+Phase 3 ✅ (THIS) — server-side API hardening, notifications, error logging
 
 ### Plan
-- [ ] lib/schemas/booking.ts — Zod schemas + types for all 5 services
-- [ ] hooks/usePostcodeLookup.ts — cache last result
-- [ ] hooks/useBookingForm.ts — RHF+Zod orchestration, submit, step nav
-- [ ] Booking primitives: SelectableCard, OptionChip, FieldError, DateField
-- [ ] WizardContext + BookingWizard shell (indicator, transitions, buttons, mobile bar)
-- [ ] Shared steps: Postcode, AddressSelect, PropertyDetails, AdditionalServices,
-      Description, MoveDate, ContactDetails, Review
-- [ ] Service-specific steps: RemovalType, VanType, ClearanceType, ItemsOfNote,
-      CleaningType, Frequency, CleaningDateTime, AddOns, AccessInstructions, SingleDate
-- [ ] Wizard registry (slug → steps + schema + defaults + apiPath + serviceType)
-- [ ] /booking/[service] page → renders the right wizard (+ prefill ?postcode)
-- [ ] Confirmation page — animated SVG check, reference, next steps
-- [ ] API routes (5) — Zod validate + persist + return {success, reference}
-- [ ] createBooking helper (customer/address/booking/details/history inserts)
-- [ ] Navbar active-service highlight
-- [ ] tsc --noEmit clean + build + dev smoke test (375px & 1280px, valid/invalid postcode)
-- [ ] Commit: "feat: multi-step booking wizard for all 5 services"
+- [x] Write this plan to tasks/todo.md
+- [x] lib/supabase/server.ts — export createAdminClient() (alias for createServiceClient)
+- [x] lib/utils.ts — add normaliseUKPhone()
+- [x] lib/log-error.ts — logError() utility using createAdminClient
+- [x] lib/bookings/createBooking.ts — return { reference, bookingId, customerId }
+- [x] lib/notifications.ts — sendCustomerConfirmationEmail, sendAdminNewBookingEmail, sendCustomerConfirmationSMS
+- [x] lib/bookings/handleBookingRoute.ts — call all 3 notifications after successful createBooking
+- [x] scripts/test-postcode.ts
+- [x] scripts/test-removals.ts
+- [x] scripts/test-man-and-van.ts
+- [x] scripts/test-house-clearance.ts
+- [x] scripts/test-house-cleaning.ts
+- [x] scripts/test-end-of-tenancy.ts
+- [x] docs/api-collection.json — Postman collection
+- [x] tsc --noEmit clean (scripts/ excluded from tsconfig)
+- [x] tasks/lessons.md updated
+- [x] Git commit + push
 
 ### Review
-(to fill in on completion)
+All Phase 3 deliverables complete.
+- createBooking() now returns { reference, bookingId, customerId }
+- All 3 notifications fire in parallel via Promise.allSettled — a notification
+  failure never blocks the booking response
+- Twilio silently skips when credentials are placeholders (null-safe)
+- logError() writes to server_logs with console.error fallback
+- tsc --noEmit passes clean (scripts/ dir excluded from compilation)
+- Resend API key is live in .env.local — customer + admin emails will fire
+- Twilio needs real credentials in .env.local + Vercel for SMS to send

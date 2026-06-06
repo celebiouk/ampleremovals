@@ -46,3 +46,9 @@ export function createServiceClient() {
     }
   );
 }
+
+/**
+ * Alias for createServiceClient — used in API routes and notification/logging
+ * utilities that need to bypass RLS.
+ */
+export const createAdminClient = createServiceClient;

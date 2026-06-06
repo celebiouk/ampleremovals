@@ -32,17 +32,21 @@ async function insertAddress(
   return data.id as string;
 }
 
+export interface BookingResult {
+  reference: string;
+  bookingId: string;
+  customerId: string;
+}
+
 /**
  * Persists a validated booking: customer (upsert), address(es), booking,
  * service-specific detail row, additional services, status history and
- * activity log. Returns the generated booking reference.
- *
- * Phase 3 layers Resend/Twilio notifications on top of this.
+ * activity log. Returns { reference, bookingId, customerId }.
  */
 export async function createBooking(
   serviceType: ServiceType,
   data: AnyBookingForm
-): Promise<string> {
+): Promise<BookingResult> {
   const supabase = createServiceClient();
 
   // 1. Customer (upsert by unique email).
@@ -180,5 +184,5 @@ export async function createBooking(
     performed_by: "website",
   });
 
-  return reference;
+  return { reference, bookingId, customerId };
 }

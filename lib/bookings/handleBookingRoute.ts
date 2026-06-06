@@ -1,58 +1,94 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { logError } from "@/lib/log-error";
+import {
+  sendCustomerConfirmationEmail,
+  sendAdminNewBookingEmail,
+  sendCustomerConfirmationSMS,
+  type NotificationPayload,
+} from "@/lib/notifications";
 import type { ServiceType } from "@/types";
-import type { AnyBookingForm as FormData } from "@/lib/schemas/booking";
+import type { AnyBookingForm } from "@/lib/schemas/booking";
 
 /**
- * Shared booking-submission handler: server-side Zod validation, persistence,
- * and error logging to `server_logs`. Returns { success, reference } on
- * success or { success, error } on failure.
+ * Shared booking-submission handler: validates, persists, fires notifications,
+ * and returns { success, reference, bookingId }.
  */
 export async function handleBookingRoute(
   request: NextRequest,
   serviceType: ServiceType,
   schema: z.ZodTypeAny
 ) {
+  let body: unknown;
   try {
-    const body = await request.json();
-    const parsed = schema.safeParse(body);
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Invalid request body." },
+      { status: 400 }
+    );
+  }
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Please check your details and try again.",
-        },
-        { status: 400 }
-      );
-    }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, error: "Please check your details and try again." },
+      { status: 400 }
+    );
+  }
 
-    const reference = await createBooking(serviceType, parsed.data as FormData);
-    return NextResponse.json({ success: true, reference });
+  const data = parsed.data as AnyBookingForm;
+
+  let reference: string;
+  let bookingId: string;
+  let customerId: string;
+
+  try {
+    ({ reference, bookingId, customerId } = await createBooking(serviceType, data));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-
-    // Best-effort error log — never let logging break the response.
-    try {
-      const supabase = createServiceClient();
-      await supabase.from("server_logs").insert({
-        level: "error",
-        message: `booking submission failed (${serviceType}): ${message}`,
-        metadata: { serviceType },
-      });
-    } catch {
-      /* swallow */
-    }
-
+    await logError({
+      message: `booking submission failed (${serviceType}): ${message}`,
+      metadata: { serviceType },
+    });
     return NextResponse.json(
       {
         success: false,
-        error:
-          "We couldn't submit your booking right now. Please try again or call us on 07344 683477.",
+        error: "We couldn't submit your booking right now. Please try again or call us on 07344 683477.",
       },
       { status: 500 }
     );
   }
+
+  // Build notification payload from validated form data
+  const notifPayload: NotificationPayload = {
+    bookingId,
+    customerId,
+    reference,
+    serviceType,
+    customerName: data.fullName,
+    email: data.email,
+    phone: data.phone,
+    originAddress: data.originAddress ?? null,
+    destinationAddress: "destinationAddress" in data ? (data.destinationAddress ?? null) : null,
+    moveDate: "moveDate" in data && data.moveDate ? String(data.moveDate) : null,
+    isFlexibleDate: "isFlexibleDate" in data ? Boolean(data.isFlexibleDate) : false,
+    flexibleDateFrom: "flexibleDateFrom" in data && data.flexibleDateFrom ? String(data.flexibleDateFrom) : null,
+    flexibleDateTo: "flexibleDateTo" in data && data.flexibleDateTo ? String(data.flexibleDateTo) : null,
+    description: "description" in data ? (data.description as string) : null,
+    additionalServices: "additionalServices" in data
+      ? (data.additionalServices as NotificationPayload["additionalServices"])
+      : null,
+  };
+
+  // Fire all 3 notifications in parallel — failures never block the response
+  await Promise.allSettled([
+    sendCustomerConfirmationEmail(notifPayload),
+    sendAdminNewBookingEmail(notifPayload),
+    sendCustomerConfirmationSMS(notifPayload),
+  ]);
+
+  return NextResponse.json({ success: true, reference, bookingId });
 }

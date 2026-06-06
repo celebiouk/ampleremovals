@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "Ample Removals API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Postcode Lookup",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/postcode/lookup?postcode=RG19%203LE"
+      }
+    },
+    {
+      "name": "Removals Booking",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/bookings/removals",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"removalType\": \"domestic\",\n  \"originPostcode\": \"RG19 3LE\",\n  \"originAddress\": { \"line_1\": \"12 Rosedale Gardens\", \"city\": \"Thatcham\", \"postcode\": \"RG19 3LE\" },\n  \"propertyType\": \"house\",\n  \"bedrooms\": \"3\",\n  \"destinationPostcode\": \"SW1A 1AA\",\n  \"destinationAddress\": { \"line_1\": \"1 Parliament Square\", \"city\": \"London\", \"postcode\": \"SW1A 1AA\" },\n  \"additionalServices\": {\n    \"packingServices\": true,\n    \"packingMaterials\": false,\n    \"disassembleFurniture\": false,\n    \"assembleFurniture\": false\n  },\n  \"description\": \"Moving a 3-bedroom house with a piano and large wardrobe.\",\n  \"isFlexibleDate\": false,\n  \"moveDate\": \"2026-07-15T09:00:00.000Z\",\n  \"fullName\": \"Sarah Jones\",\n  \"email\": \"sarah@example.com\",\n  \"phone\": \"07700900000\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Man and Van Booking",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/bookings/man-and-van",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vanType\": \"medium\",\n  \"originPostcode\": \"RG19 3LE\",\n  \"originAddress\": { \"line_1\": \"8 Loundyes Close\", \"city\": \"Thatcham\", \"postcode\": \"RG19 3LE\" },\n  \"propertyType\": \"flat\",\n  \"bedrooms\": \"1\",\n  \"destinationPostcode\": \"RG14 1AA\",\n  \"destinationAddress\": { \"line_1\": \"5 Market Place\", \"city\": \"Newbury\", \"postcode\": \"RG14 1AA\" },\n  \"additionalServices\": {\n    \"packingServices\": false,\n    \"packingMaterials\": false,\n    \"disassembleFurniture\": false,\n    \"assembleFurniture\": false\n  },\n  \"description\": \"Moving a 1-bed flat. Just furniture and boxes.\",\n  \"isFlexibleDate\": false,\n  \"moveDate\": \"2026-07-10T09:00:00.000Z\",\n  \"fullName\": \"James Smith\",\n  \"email\": \"james@example.com\",\n  \"phone\": \"07700900001\"\n}"
+        }
+      }
+    },
+    {
+      "name": "House Clearance Booking",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/bookings/house-clearance",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clearanceType\": \"full\",\n  \"originPostcode\": \"RG19 3LE\",\n  \"originAddress\": { \"line_1\": \"14 Rosedale Gardens\", \"city\": \"Thatcham\", \"postcode\": \"RG19 3LE\" },\n  \"propertyType\": \"house\",\n  \"bedrooms\": \"4\",\n  \"itemsOfNote\": [\"piano\", \"large fridge-freezer\"],\n  \"description\": \"Full clearance of a 4-bed house including furniture and white goods.\",\n  \"isFlexibleDate\": true,\n  \"flexibleDateFrom\": \"2026-07-07T00:00:00.000Z\",\n  \"flexibleDateTo\": \"2026-07-21T00:00:00.000Z\",\n  \"fullName\": \"Maria Brown\",\n  \"email\": \"maria@example.com\",\n  \"phone\": \"07700900002\"\n}"
+        }
+      }
+    },
+    {
+      "name": "House Cleaning Booking",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/bookings/house-cleaning",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cleaningType\": \"deep\",\n  \"frequency\": \"one_off\",\n  \"originPostcode\": \"RG19 3LE\",\n  \"originAddress\": { \"line_1\": \"6 Loundyes Close\", \"city\": \"Thatcham\", \"postcode\": \"RG19 3LE\" },\n  \"propertyType\": \"flat\",\n  \"bedrooms\": \"2\",\n  \"moveDate\": \"2026-07-08T09:00:00.000Z\",\n  \"timeSlot\": \"morning\",\n  \"accessInstructions\": \"Key under the mat.\",\n  \"description\": \"Deep clean of 2-bed flat before moving in. Focus on kitchen and bathrooms.\",\n  \"isFlexibleDate\": false,\n  \"fullName\": \"Lucy White\",\n  \"email\": \"lucy@example.com\",\n  \"phone\": \"07700900003\"\n}"
+        }
+      }
+    },
+    {
+      "name": "End of Tenancy Booking",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/bookings/end-of-tenancy",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"originPostcode\": \"RG19 3LE\",\n  \"originAddress\": { \"line_1\": \"10 Rosedale Gardens\", \"city\": \"Thatcham\", \"postcode\": \"RG19 3LE\" },\n  \"propertyType\": \"flat\",\n  \"bedrooms\": \"1\",\n  \"tenancyEndDate\": \"2026-07-12T00:00:00.000Z\",\n  \"addons\": [\"carpet_cleaning\", \"oven_cleaning\"],\n  \"accessInstructions\": \"Speak to the letting agent on arrival.\",\n  \"description\": \"End of tenancy clean for a 1-bed flat. Tenancy ends on 12 July.\",\n  \"isFlexibleDate\": false,\n  \"fullName\": \"Tom Davis\",\n  \"email\": \"tom@example.com\",\n  \"phone\": \"07700900004\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    }
+  ]
+}
