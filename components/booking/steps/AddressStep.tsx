@@ -216,39 +216,49 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
       {/* ── Results — full individual addresses (getAddress.io) ─────── */}
       {searched && !lookupError && hasFullAddresses && (
         <div className="mt-5">
-          <p className="mb-3 text-sm font-semibold text-slate-600">
-            {addresses.length} address{addresses.length !== 1 ? "es" : ""} found — select yours
-          </p>
-
-          <div className="max-h-72 overflow-y-auto rounded-xl border-2 border-slate-200">
-            {visibleAddresses.map((opt, idx) => {
-              const fullAddress = [opt.line_1, opt.line_2, opt.city, opt.postcode]
-                .filter(Boolean).join(", ");
-              const selected = selectedIdx === idx;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => selectAddress(idx)}
-                  className={cn(
-                    "flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-left last:border-b-0 transition-colors",
-                    selected
-                      ? "bg-brand-purple-50 text-brand-purple-900"
-                      : "bg-white text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  <MapPin className={cn("h-4 w-4 shrink-0", selected ? "text-brand-purple-600" : "text-slate-400")} />
-                  <span className="flex-1 text-sm font-medium">{fullAddress}</span>
-                  {selected && (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-white">
-                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
+          {selectedIdx === null ? (
+            <>
+              <p className="mb-3 text-sm font-semibold text-slate-600">
+                {addresses.length} address{addresses.length !== 1 ? "es" : ""} found — select yours
+              </p>
+              <div className="max-h-72 overflow-y-auto rounded-xl border-2 border-slate-200">
+                {visibleAddresses.map((opt, idx) => {
+                  const fullAddress = [opt.line_1, opt.line_2, opt.city, opt.postcode]
+                    .filter(Boolean).join(", ");
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => selectAddress(idx)}
+                      className="flex w-full items-center gap-3 border-b border-slate-100 bg-white px-4 py-3.5 text-left text-slate-700 last:border-b-0 transition-colors hover:bg-brand-purple-50 hover:text-brand-purple-900"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="flex-1 text-sm font-medium">{fullAddress}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between rounded-xl border-2 border-brand-green-500 bg-brand-green-50 px-4 py-3.5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-white">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {[addresses[selectedIdx].line_1, addresses[selectedIdx].line_2, addresses[selectedIdx].city, addresses[selectedIdx].postcode]
+                    .filter(Boolean).join(", ")}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setSelectedIdx(null); addressCtrl.field.onChange(undefined); }}
+                className="ml-4 shrink-0 text-sm font-semibold text-brand-purple-700 hover:underline"
+              >
+                Change
+              </button>
+            </div>
+          )}
 
           <FieldError message={addressCtrl.fieldState.error?.message} />
         </div>
