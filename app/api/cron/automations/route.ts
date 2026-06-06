@@ -22,6 +22,24 @@ export async function GET(request: NextRequest) {
   let executed = 0, skipped = 0, failed = 0;
 
   try {
+    // ── Overdue invoice detection ──────────────────────────────────────
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: overdueInvoices } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, total, booking_id, customer_id")
+      .eq("status", "sent")
+      .lt("due_date", today);
+
+    for (const inv of (overdueInvoices ?? [])) {
+      await supabase.from("invoices").update({ status: "overdue" }).eq("id", inv.id as string);
+      await supabase.from("notifications").insert({
+        type: "invoice_overdue",
+        title: "Invoice Overdue",
+        description: `Invoice ${inv.invoice_number} for £${inv.total} is overdue.`,
+        booking_id: inv.booking_id,
+      });
+    }
+
     // Fetch all active rules
     const { data: rules } = await supabase
       .from("automation_rules")

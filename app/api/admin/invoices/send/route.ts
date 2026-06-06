@@ -72,21 +72,18 @@ export async function POST(request: NextRequest) {
 
   // Send email (PDF attached if available)
   try {
-    const emailPayload: Parameters<typeof resend.emails.send>[0] = {
-      from: resendFrom,
-      to: customer.email,
-      subject,
-      html: emailHtml,
-    };
-
+      const attachments: { filename: string; content: string }[] = [];
     if (pdfUrl) {
       try {
         const pdfBuffer = await downloadInvoicePDF(booking.id, invoiceId);
-        (emailPayload as Record<string, unknown>).attachments = [{ filename: `${invoice.invoice_number}.pdf`, content: pdfBuffer.toString("base64") }];
-      } catch { /* attach failure doesn't block */ }
+        attachments.push({ filename: `${invoice.invoice_number}.pdf`, content: pdfBuffer.toString("base64") });
+      } catch { /* non-critical */ }
     }
 
-    await resend.emails.send(emailPayload);
+    await resend.emails.send({
+      from: resendFrom, to: customer.email, subject, html: emailHtml,
+      ...(attachments.length ? { attachments } : {}),
+    } as Parameters<typeof resend.emails.send>[0]);
   } catch (err) {
     await logError({ message: `Invoice email failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
   }

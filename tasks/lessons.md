@@ -15,6 +15,16 @@ config used `hsl(var(--token))`, breaking every themed colour.
 **Rule going forward:** In this project, `:root` tokens are space-separated HSL
 triplets (e.g. `--primary: 274 67% 39%`) consumed via `hsl(var(--primary))`.
 
+## Lesson 7 — Supabase insert returns a query builder, not a Promise with .catch()
+**What happened:** Used `.catch(() => null)` on a Supabase `.insert()` call. TypeScript (and Supabase's types) don't expose `.catch()` on the query builder.
+**Root cause:** Supabase query builders are thenables but don't expose `.catch()` directly on the type.
+**Rule going forward:** Always wrap Supabase calls in `try { await ... } catch { /* non-critical */ }` blocks instead of chaining `.catch()`.
+
+## Lesson 6 — @react-pdf/renderer renderToBuffer type conflict with React elements
+**What happened:** `renderToBuffer(React.createElement(...))` caused TS2345 because the element type doesn't match `ReactElement<DocumentProps>`.
+**Root cause:** `@react-pdf/renderer` uses its own JSX types that don't perfectly align with React's.
+**Rule going forward:** Use `require("@react-pdf/renderer")` instead of the ESM import for `renderToBuffer` to bypass the type conflict. This is the standard workaround for this library.
+
 ## Lesson 5 — Set spread requires --downlevelIteration or es2015 target
 **What happened:** `[...mySet]` in a client component caused TS2802.
 **Root cause:** TypeScript's spread of iterables requires explicit `downlevelIteration` or ES2015+ target.

@@ -86,8 +86,10 @@ export async function POST(request: NextRequest) {
 
         // Trigger job confirmed automation
         if (inv.type === "deposit") {
-          const { data: rule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
-          if (rule) await supabase.from("automation_logs").insert({ rule_id: rule.id, booking_id: inv.booking_id, triggered_at: now, status: "pending" }).catch(() => null);
+          try {
+            const { data: rule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
+            if (rule) await supabase.from("automation_logs").insert({ rule_id: rule.id, booking_id: inv.booking_id, triggered_at: now, status: "pending" });
+          } catch { /* non-critical */ }
         }
         break;
       }
@@ -106,26 +108,14 @@ export async function POST(request: NextRequest) {
           metadata: { invoiceId, stripePaymentIntentId: pi.id },
           performed_by: "system",
         });
-
-        await supabase.from("notifications").insert({
-          type: "payment_failed",
-          title: "Payment Failed",
-          description: `Payment failed for invoice ${inv.invoice_number}`,
-          booking_id: inv.booking_id,
-        });
-        break;
-      }
-
-      case "payment_link.completed": {
-        await supabase.from("activity_log").insert({
-          action: "Stripe Payment Link completed",
-          metadata: { eventId: event.id },
-          performed_by: "system",
-        });
+        try {
+          await supabase.from("notifications").insert({ type: "payment_failed", title: "Payment Failed", description: `Payment failed for invoice ${inv.invoice_number}`, booking_id: inv.booking_id });
+        } catch { /* non-critical */ }
         break;
       }
 
       default:
+        // Log unknown events silently
         break;
     }
   } catch (err) {

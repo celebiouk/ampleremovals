@@ -45,12 +45,11 @@ export async function POST(request: NextRequest) {
   const subject = `Reminder: Invoice ${invoice.invoice_number} — ${formatCurrency(invoice.total)} due ${invoice.due_date ? formatDate(invoice.due_date) : ""}`;
 
   try {
-    const emailPayload: Parameters<typeof resend.emails.send>[0] = {
+    await resend.emails.send({
       from: resendFrom, to: customer.email, subject,
       html: `<p>Hi ${customer.full_name},</p><p>This is a reminder that your ${typeLabel} invoice (${invoice.invoice_number}) for <strong>${formatCurrency(invoice.total)}</strong> is awaiting payment.</p><p><a href="${invoice.stripe_payment_link}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Pay Now →</a></p>`,
-    };
-    if (pdfAttachment) (emailPayload as Record<string, unknown>).attachments = [pdfAttachment];
-    await resend.emails.send(emailPayload);
+      ...(pdfAttachment ? { attachments: [pdfAttachment] } : {}),
+    } as Parameters<typeof resend.emails.send>[0]);
   } catch (err) {
     await logError({ message: `Invoice resend email failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
   }

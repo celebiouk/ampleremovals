@@ -1,4 +1,5 @@
-import { renderToBuffer } from "@react-pdf/renderer";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { renderToBuffer } = require("@react-pdf/renderer");
 import React from "react";
 import { InvoiceDocument } from "./InvoiceTemplate";
 import type { InvoicePDFData } from "@/types";
@@ -9,6 +10,7 @@ import type { InvoicePDFData } from "@/types";
  */
 export async function generateInvoicePDF(data: InvoicePDFData): Promise<Buffer> {
   const element = React.createElement(InvoiceDocument, { data });
-  const buffer = await renderToBuffer(element);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const buffer = await renderToBuffer(element) as ArrayBuffer;
   return Buffer.from(buffer);
 }

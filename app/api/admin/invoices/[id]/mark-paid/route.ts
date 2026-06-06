@@ -71,20 +71,21 @@ export async function PATCH(
       performed_by: "admin",
     });
 
-    // Insert notification
-    await supabase.from("notifications").insert({
-      type: "invoice_paid",
-      title: "Invoice Paid (Manual)",
-      description: `Invoice ${invoice.invoice_number} for £${invoice.total} manually marked as paid.`,
-      booking_id: invoice.booking_id,
-    }).catch(() => null);
+    // Insert notification (best-effort)
+    try {
+      await supabase.from("notifications").insert({
+        type: "invoice_paid", title: "Invoice Paid (Manual)",
+        description: `Invoice ${invoice.invoice_number} for £${invoice.total} manually marked as paid.`,
+        booking_id: invoice.booking_id,
+      });
+    } catch { /* non-critical */ }
 
     // Trigger automation if deposit paid
     if (invoice.type === "deposit") {
-      const { data: confirmedRule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
-      if (confirmedRule) {
-        await supabase.from("automation_logs").insert({ rule_id: confirmedRule.id, booking_id: invoice.booking_id, triggered_at: now, status: "pending" }).catch(() => null);
-      }
+      try {
+        const { data: confirmedRule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
+        if (confirmedRule) await supabase.from("automation_logs").insert({ rule_id: confirmedRule.id, booking_id: invoice.booking_id, triggered_at: now, status: "pending" });
+      } catch { /* non-critical */ }
     }
 
     return NextResponse.json({ success: true });

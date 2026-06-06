@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft, Copy, Check, Mail, Phone, MessageSquare, Smartphone,
   ArrowRight, Plus, Receipt, Trash2, ChevronDown, ChevronUp, Loader2,
+  ExternalLink, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -14,9 +15,11 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate } from "@/lib/utils";
+import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
+import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
+import { formatDate, formatCurrency } from "@/lib/utils";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
-import type { BookingStatus } from "@/types";
+import type { BookingStatus, ServiceType } from "@/types";
 
 function formatAddress(addr: { line_1: string; line_2?: string | null; city?: string | null; postcode: string } | null): string {
   if (!addr) return "N/A";
@@ -40,6 +43,8 @@ export default function BookingDetailPage() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [smsBody, setSmsBody] = useState("");
+  const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
+  const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const activityRef = useRef<HTMLDivElement>(null);
@@ -270,17 +275,48 @@ export default function BookingDetailPage() {
             {invoices.length > 0 ? (
               <div className="mb-4 space-y-2">
                 {invoices.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
-                    <span className="font-mono font-semibold text-slate-700">{inv.invoice_number}</span>
-                    <span className="capitalize text-slate-500">{inv.type}</span>
-                    <span className="font-semibold">£{inv.total.toLocaleString()}</span>
+                  <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
+                    <span className="font-mono font-semibold text-brand-purple-700">{inv.invoice_number}</span>
+                    <span className="capitalize text-slate-500">{inv.type.replace("_", " ")}</span>
+                    <span className="font-semibold">{formatCurrency(inv.total)}</span>
+                    <StatusBadge status={inv.status as BookingStatus} />
+                    <button onClick={() => setViewingInvoiceId(inv.id)} className="ml-auto flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
+                      <ExternalLink className="h-3 w-3" /> View
+                    </button>
                   </div>
                 ))}
+                {/* Totals */}
+                <div className="mt-2 rounded-xl bg-slate-50 p-3 text-xs space-y-1">
+                  {[
+                    ["Total Invoiced", invoices.reduce((a, i) => a + i.total, 0)],
+                    ["Total Paid", invoices.filter(i => i.status === "paid").reduce((a, i) => a + i.total, 0)],
+                    ["Outstanding", invoices.filter(i => ["sent","overdue"].includes(i.status)).reduce((a, i) => a + i.total, 0)],
+                  ].map(([label, val]) => (
+                    <div key={label as string} className="flex justify-between">
+                      <span className="text-slate-500">{label as string}</span>
+                      <span className="font-semibold">{formatCurrency(val as number)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : <p className="mb-4 text-sm text-slate-400">No invoices yet</p>}
             <div className="flex gap-2">
-              <button disabled title="Coming in Phase 5" className="cursor-not-allowed rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-400">Generate Deposit Invoice</button>
-              <button disabled title="Coming in Phase 5" className="cursor-not-allowed rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-400">Generate Full Invoice</button>
+              {(() => {
+                const hasDeposit = invoices.some(i => i.type === "deposit" && i.status !== "cancelled");
+                const hasFull = invoices.some(i => i.type === "full_balance" && i.status !== "cancelled");
+                return <>
+                  <button onClick={() => setGenerateInvoiceType("deposit")} disabled={hasDeposit}
+                    title={hasDeposit ? "A deposit invoice already exists" : undefined}
+                    className="rounded-xl border border-brand-purple-200 bg-brand-purple-50 px-3 py-2 text-sm font-medium text-brand-purple-800 hover:bg-brand-purple-100 disabled:cursor-not-allowed disabled:opacity-50">
+                    + Deposit Invoice
+                  </button>
+                  <button onClick={() => setGenerateInvoiceType("full_balance")} disabled={hasFull}
+                    title={hasFull ? "A full balance invoice already exists" : undefined}
+                    className="rounded-xl border border-brand-purple-200 bg-brand-purple-50 px-3 py-2 text-sm font-medium text-brand-purple-800 hover:bg-brand-purple-100 disabled:cursor-not-allowed disabled:opacity-50">
+                    + Full Balance Invoice
+                  </button>
+                </>;
+              })()}
             </div>
           </Card>
         </div>
@@ -405,6 +441,26 @@ export default function BookingDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Invoice modals */}
+      {data && generateInvoiceType && (
+        <GenerateInvoiceModal
+          isOpen={!!generateInvoiceType}
+          onClose={() => setGenerateInvoiceType(null)}
+          bookingId={bookingId}
+          type={generateInvoiceType}
+          bookingReference={data.booking.reference}
+          customerName={data.customer.full_name}
+          serviceType={data.booking.service_type as ServiceType}
+          onSuccess={() => { refresh(); setGenerateInvoiceType(null); }}
+        />
+      )}
+      <InvoiceDetailModal
+        isOpen={!!viewingInvoiceId}
+        onClose={() => setViewingInvoiceId(null)}
+        invoiceId={viewingInvoiceId}
+        onActionComplete={refresh}
+      />
 
       <ConfirmDialog isOpen={deletingNoteId !== null} title="Delete note"
         description="Are you sure? This cannot be undone." confirmLabel="Delete" confirmVariant="destructive"

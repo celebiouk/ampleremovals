@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
       total: Math.round(i.quantity * i.unitPrice * 100) / 100,
     }));
 
-    const customer = booking.customers as { full_name: string; email: string; phone: string } | null;
-    const originAddr = booking.origin_addr as { line_1: string; line_2?: string | null; city?: string | null; postcode: string } | null;
+    const customer = (Array.isArray(booking.customers) ? booking.customers[0] : booking.customers) as { full_name: string; email: string; phone: string } | null;
+    const originAddr = (Array.isArray(booking.origin_addr) ? booking.origin_addr[0] : booking.origin_addr) as { line_1: string; line_2?: string | null; city?: string | null; postcode: string } | null;
     const originAddress = originAddr ? [originAddr.line_1, originAddr.line_2, originAddr.city, originAddr.postcode].filter(Boolean).join(", ") : "";
     const serviceLabel = SERVICE_LABELS[booking.service_type as ServiceType] ?? booking.service_type;
     const moveDate = booking.is_flexible_date
