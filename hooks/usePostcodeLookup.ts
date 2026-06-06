@@ -11,25 +11,6 @@ interface UsePostcodeLookupReturn {
   reset: () => void;
 }
 
-interface AutocompleteSuggestion {
-  address: string;
-  url: string;
-  id: string;
-}
-
-interface AutocompleteResponse {
-  suggestions?: AutocompleteSuggestion[];
-  Message?: string;
-}
-
-function parseAutocompleteSuggestion(suggestion: AutocompleteSuggestion, postcode: string): AddressOption {
-  const parts = suggestion.address.split(",").map((s) => s.trim()).filter(Boolean);
-  const line1 = parts[0] ?? "";
-  const line2 = parts.length > 2 ? parts[1] : undefined;
-  const city = parts[parts.length - 2] || parts[parts.length - 1] || undefined;
-  return { line_1: line1, line_2: line2, city, postcode };
-}
-
 export function usePostcodeLookup(): UsePostcodeLookupReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,36 +34,6 @@ export function usePostcodeLookup(): UsePostcodeLookupReturn {
     setLoading(true);
     setError(null);
 
-    // Domain token (dtoken_...) for safe browser-side calls — set NEXT_PUBLIC_GETADDRESS_DOMAIN_TOKEN
-    const domainToken = process.env.NEXT_PUBLIC_GETADDRESS_DOMAIN_TOKEN;
-
-    /* ── Direct browser call to getAddress.io autocomplete ── */
-    if (domainToken) {
-      try {
-        const res = await fetch(
-          `https://api.getaddress.io/autocomplete/${encodeURIComponent(postcode.trim())}?api-key=${domainToken}&all=true`,
-          { headers: { Accept: "application/json" } }
-        );
-
-        if (res.ok) {
-          const data = (await res.json()) as AutocompleteResponse;
-          if (data.suggestions?.length) {
-            const normalised = postcode.trim().toUpperCase();
-            const parsed = data.suggestions.map((s) =>
-              parseAutocompleteSuggestion(s, normalised)
-            );
-            cache.current.set(key, parsed);
-            setAddresses(parsed);
-            setLoading(false);
-            return parsed;
-          }
-        }
-      } catch {
-        // fall through to server proxy
-      }
-    }
-
-    /* ── Server proxy fallback (postcodes.io area-level) ── */
     try {
       const res = await fetch(
         `/api/postcode/lookup?postcode=${encodeURIComponent(postcode.trim())}`

@@ -1,30 +1,22 @@
 import type { PostcodeResult, AddressOption } from "@/types";
 
-interface AutocompleteSuggestion {
-  address: string;
-  url: string;
-  id: string;
+interface IdealPostcodesAddress {
+  line_1: string;
+  line_2: string;
+  line_3: string;
+  post_town: string;
+  county: string;
+  postcode: string;
 }
 
-interface AutocompleteResponse {
-  suggestions?: AutocompleteSuggestion[];
-  Message?: string;
-}
-
-/** Parse an autocomplete address string into an AddressOption.
- *  Format: "1 Rosedale Gardens, Thatcham, West Berkshire"
- */
-function parseAutocompleteSuggestion(suggestion: AutocompleteSuggestion, postcode: string): AddressOption {
-  const parts = suggestion.address.split(",").map((s) => s.trim()).filter(Boolean);
-  const line1 = parts[0] ?? "";
-  const line2 = parts.length > 2 ? parts[1] : undefined;
-  const city = parts[parts.length - 2] || parts[parts.length - 1] || undefined;
-  return { line_1: line1, line_2: line2, city, postcode };
+interface IdealPostcodesResponse {
+  code: number;
+  message: string;
+  result?: IdealPostcodesAddress[];
 }
 
 /**
- * Look up individual UK property addresses for a postcode using getAddress.io
- * autocomplete API (current v2+ endpoint).
+ * Look up individual UK property addresses for a postcode via Ideal Postcodes.
  * Falls back to postcodes.io area-level result if no API key is configured.
  */
 export async function getAddressesByPostcode(
@@ -34,29 +26,34 @@ export async function getAddressesByPostcode(
   const normalised = trimmed.toUpperCase();
   if (!trimmed) return { postcode: normalised, addresses: [] };
 
-  const apiKey = process.env.GETADDRESS_API_KEY;
+  const apiKey = process.env.IDEAL_POSTCODES_API_KEY;
 
-  /* ── getAddress.io autocomplete (server-side with API key) ─────────── */
+  /* ── Ideal Postcodes (full individual addresses) ───────────────────── */
   if (apiKey) {
     try {
+      const slug = normalised.replace(/\s+/g, "");
       const res = await fetch(
-        `https://api.getaddress.io/autocomplete/${encodeURIComponent(trimmed)}?api-key=${apiKey}&all=true`,
+        `https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(slug)}?api_key=${apiKey}`,
         { headers: { Accept: "application/json" }, next: { revalidate: 0 } }
       );
 
-      if (!res.ok) throw new Error(`getAddress.io responded ${res.status}`);
+      if (!res.ok) throw new Error(`Ideal Postcodes responded ${res.status}`);
 
-      const data = (await res.json()) as AutocompleteResponse;
+      const data = (await res.json()) as IdealPostcodesResponse;
 
-      if (!data.suggestions?.length) throw new Error("getAddress.io: no suggestions");
+      if (data.code !== 2000 || !data.result?.length)
+        throw new Error("Ideal Postcodes: no results");
 
-      const addresses = data.suggestions.map((s) =>
-        parseAutocompleteSuggestion(s, normalised)
-      );
+      const addresses: AddressOption[] = data.result.map((a) => ({
+        line_1: a.line_1,
+        line_2: [a.line_2, a.line_3].filter(Boolean).join(", ") || undefined,
+        city: a.post_town || a.county || undefined,
+        postcode: a.postcode,
+      }));
 
       return { postcode: normalised, addresses };
     } catch (err) {
-      console.error("[postcode] getAddress.io error:", err);
+      console.error("[postcode] Ideal Postcodes error:", err);
     }
   }
 
@@ -76,7 +73,6 @@ export async function getAddressesByPostcode(
         admin_district?: string | null;
         admin_ward?: string | null;
         region?: string | null;
-        parliamentary_constituency?: string | null;
       } | null;
     };
 
@@ -84,11 +80,9 @@ export async function getAddressesByPostcode(
       return { postcode: normalised, addresses: [] };
 
     const r = data.result;
-    const city = r.admin_district ?? r.parliamentary_constituency ?? r.region ?? undefined;
-
     return {
       postcode: r.postcode,
-      addresses: [{ line_1: "", line_2: r.admin_ward ?? undefined, city, postcode: r.postcode }],
+      addresses: [{ line_1: "", line_2: r.admin_ward ?? undefined, city: r.admin_district ?? undefined, postcode: r.postcode }],
     };
   } catch {
     return { postcode: normalised, addresses: [] };
