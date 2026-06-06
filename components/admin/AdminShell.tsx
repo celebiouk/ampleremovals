@@ -173,8 +173,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 label={item.label}
                 icon={item.icon}
-                exact={item.exact}
-                badge={item.showBadge ? inquiryCount : 0}
+                exact={"exact" in item ? item.exact : false}
+                badge={"showBadge" in item && item.showBadge ? inquiryCount : 0}
                 collapsed={collapsed}
               />
             ))}
