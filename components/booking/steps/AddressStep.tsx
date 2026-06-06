@@ -36,7 +36,7 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
   const [searched, setSearched] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [manual, setManual] = useState(false);
-  const [showAll, setShowAll] = useState(false);
+
 
   // Manual fields
   const [line1, setLine1] = useState("");
@@ -103,9 +103,7 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
     setLine1(""); setLine2("");
   };
 
-  // How many cards to show before "show more"
-  const VISIBLE_LIMIT = 8;
-  const visibleAddresses = showAll ? addresses : addresses.slice(0, VISIBLE_LIMIT);
+  const visibleAddresses = addresses;
 
   /* ── Manual entry mode ────────────────────────────────────────────── */
   if (manual) {
@@ -251,17 +249,6 @@ export function AddressStep({ label, postcodeField, addressField }: AddressStepP
             })}
           </div>
 
-          {addresses.length > VISIBLE_LIMIT && (
-            <button
-              type="button"
-              onClick={() => setShowAll((s) => !s)}
-              className="mt-2.5 text-sm font-semibold text-brand-purple-700 hover:underline"
-            >
-              {showAll
-                ? "Show fewer addresses"
-                : `Show ${addresses.length - VISIBLE_LIMIT} more addresses`}
-            </button>
-          )}
 
           <FieldError message={addressCtrl.fieldState.error?.message} />
         </div>
