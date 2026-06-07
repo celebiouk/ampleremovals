@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
+import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -286,6 +287,9 @@ export default function BookingDetailPage() {
               <blockquote className="rounded-xl border-l-4 border-brand-purple-300 bg-slate-50 p-4 text-sm italic leading-relaxed text-slate-700">&ldquo;{booking.description}&rdquo;</blockquote>
             ) : <p className="text-sm text-slate-400">No description provided</p>}
           </Card>
+
+          {/* Documents Panel */}
+          <DocumentsPanel bookingId={bookingId} />
 
           <Card title="Quote">
             {booking.quote_total && booking.quote_line_items && Array.isArray(booking.quote_line_items) ? (
