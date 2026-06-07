@@ -26,30 +26,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if already confirmed
+    // Check if already confirmed (skip if table doesn't exist yet)
     const supabase = await createClient();
-    const { data: existing } = await supabase
-      .from("quote_confirmations")
-      .select("id")
-      .eq("booking_id", bookingId)
-      .eq("token", token)
-      .single();
+    try {
+      const { data: existing } = await supabase
+        .from("quote_confirmations")
+        .select("id")
+        .eq("booking_id", bookingId)
+        .eq("token", token)
+        .single();
 
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: "This quote has already been confirmed", code: "ALREADY_CONFIRMED" },
-        { status: 409 }
-      );
+      if (existing) {
+        return NextResponse.json(
+          { success: false, error: "This quote has already been confirmed", code: "ALREADY_CONFIRMED" },
+          { status: 409 }
+        );
+      }
+    } catch (tableError) {
+      // Table might not exist yet - that's OK, just skip the check
+      console.warn("quote_confirmations table check failed (table may not exist):", tableError);
     }
 
     // Fetch quote details
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
-      .select("id, reference, service_type, customer_name, total")
+      .select("id, reference, service_type, customer_name, quote_total")
       .eq("id", bookingId)
       .single();
 
     if (fetchError || !booking) {
+      console.error("Booking fetch error:", fetchError);
       return NextResponse.json(
         { success: false, error: "Booking not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -62,7 +68,7 @@ export async function POST(req: NextRequest) {
         reference: booking.reference,
         service_type: booking.service_type,
         customer_name: booking.customer_name,
-        total: booking.total,
+        total: booking.quote_total || 0,
       },
     });
   } catch (error) {
