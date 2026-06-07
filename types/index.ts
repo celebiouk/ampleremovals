@@ -247,6 +247,35 @@ export interface ServerLog {
   created_at: string;
 }
 
+// ── Admin System ──────────────────────────────────────────
+export type AdminRole = "super_admin" | "admin";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: AdminRole;
+  supabase_user_id: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface AdminActivityLog {
+  id: string;
+  admin_user_id: string | null;
+  admin_email: string;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
 // ── Quote PDF generation ──────────────────────────────────
 export interface QuotePDFData {
   quote_number: string;

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
-  Truck, ChevronLeft, ChevronRight, Bell, Plus, Search,
+  Truck, ChevronLeft, ChevronRight, Bell, Plus, Search, Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -184,6 +184,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Footer */}
       <div className="shrink-0 border-t border-purple-900/50 p-3 space-y-1">
+        <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={collapsed} />
         <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={collapsed} />
         {!collapsed && (
           <div className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2">
