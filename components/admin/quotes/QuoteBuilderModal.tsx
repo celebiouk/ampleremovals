@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { QuoteLineItem } from "@/types";
@@ -78,7 +78,7 @@ export function QuoteBuilderModal({
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>(
     existingQuote?.line_items || generateInitialLineItems(serviceData)
   );
-  const [vatRate, setVatRate] = useState(existingQuote?.vat_rate || 20);
+  const [vatEnabled, setVatEnabled] = useState(existingQuote ? existingQuote.vat_rate > 0 : false);
   const [validUntil, setValidUntil] = useState(
     existingQuote?.valid_until || getDefaultValidUntil()
   );
@@ -91,6 +91,25 @@ export function QuoteBuilderModal({
     date.setDate(date.getDate() + 7); // 7 days from now
     return date.toISOString().split("T")[0];
   }
+
+  // Reset form when modal opens/closes or when serviceData changes
+  useEffect(() => {
+    if (isOpen) {
+      if (existingQuote) {
+        // Editing existing quote
+        setLineItems(existingQuote.line_items);
+        setVatEnabled(existingQuote.vat_rate > 0);
+        setValidUntil(existingQuote.valid_until || getDefaultValidUntil());
+        setNotes(existingQuote.notes || "");
+      } else {
+        // Creating new quote - pre-populate from service data
+        setLineItems(generateInitialLineItems(serviceData));
+        setVatEnabled(false);
+        setValidUntil(getDefaultValidUntil());
+        setNotes("");
+      }
+    }
+  }, [isOpen, existingQuote, serviceData]);
 
   const updateLineItem = (index: number, field: keyof QuoteLineItem, value: string | number) => {
     const updated = [...lineItems];
@@ -115,6 +134,7 @@ export function QuoteBuilderModal({
   };
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+  const vatRate = vatEnabled ? 20 : 0;
   const vatAmount = (subtotal * vatRate) / 100;
   const total = subtotal + vatAmount;
 
@@ -285,28 +305,39 @@ export function QuoteBuilderModal({
             </button>
           </div>
 
+          {/* VAT toggle */}
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-slate-800">Apply VAT (20%)</p>
+              <p className="text-xs text-slate-500">Adds 20% VAT to the subtotal</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVatEnabled(!vatEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                vatEnabled ? "bg-brand-green-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  vatEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
           {/* Totals */}
           <div className="bg-slate-50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-slate-600">Subtotal:</span>
               <span className="font-semibold">£{subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm items-center">
-              <span className="text-slate-600">VAT:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={vatRate}
-                  onChange={(e) => setVatRate(Number(e.target.value))}
-                  className="w-16 px-2 py-1 border border-slate-300 rounded text-sm text-right"
-                />
-                <span className="text-slate-600">%</span>
-                <span className="font-semibold w-24 text-right">£{vatAmount.toFixed(2)}</span>
+            {vatEnabled && (
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">VAT (20%):</span>
+                <span className="font-semibold">£{vatAmount.toFixed(2)}</span>
               </div>
-            </div>
+            )}
             <div className="border-t border-slate-300 pt-2 mt-2 flex justify-between text-base">
               <span className="font-bold text-purple-700">Total:</span>
               <span className="font-bold text-purple-700">£{total.toFixed(2)}</span>
