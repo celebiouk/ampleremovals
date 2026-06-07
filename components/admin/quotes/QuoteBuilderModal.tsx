@@ -19,7 +19,7 @@ interface QuoteBuilderModalProps {
   };
   serviceData?: {
     service_type: string;
-    bedrooms?: number;
+    bedrooms?: string | number;
     property_type?: string;
     additional_services?: Array<{ name: string; price?: number }>;
   };

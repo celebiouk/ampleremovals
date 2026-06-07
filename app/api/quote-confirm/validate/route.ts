@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if already confirmed
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: existing } = await supabase
       .from("quote_confirmations")
       .select("id")

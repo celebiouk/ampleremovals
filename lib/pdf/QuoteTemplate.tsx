@@ -74,6 +74,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
         {/* HEADER */}
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src="/logo.png" style={styles.logo} />
             <Text style={styles.companyName}>Ample Removals</Text>
             <Text style={styles.companyDetail}>London&apos;s Premier Moving & Cleaning Services</Text>

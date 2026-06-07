@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check if already confirmed
     const { data: existing } = await supabase

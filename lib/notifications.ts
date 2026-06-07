@@ -1,4 +1,4 @@
-import { resend, resendFrom, resendAdminEmail, resendAdminEmails } from "@/lib/resend";
+import { resend, resendFrom, resendAdminEmails } from "@/lib/resend";
 import { twilioClient, twilioFrom } from "@/lib/twilio";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";

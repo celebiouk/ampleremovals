@@ -15,3 +15,22 @@ export const resendAdminEmails = [
 // Single admin email for backwards compatibility
 export const resendAdminEmail =
   process.env.RESEND_ADMIN_EMAIL ?? "ampleremovals@gmail.com";
+
+/**
+ * Send an email using Resend
+ */
+export async function sendEmail(params: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  from?: string;
+}) {
+  const { to, subject, html, from = resendFrom } = params;
+
+  return await resend.emails.send({
+    from,
+    to,
+    subject,
+    html,
+  });
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -102,11 +102,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     if (stored) setCollapsed(stored === "true");
   }, []);
 
-  const toggleCollapsed = () => {
+  const toggleCollapsed = useCallback(() => {
     const next = !collapsed;
     setCollapsed(next);
     localStorage.setItem("sidebar-collapsed", String(next));
-  };
+  }, [collapsed]);
 
   useEffect(() => {
     const fetchInquiries = async () => {

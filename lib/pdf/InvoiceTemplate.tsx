@@ -115,6 +115,7 @@ export function InvoiceDocument({ data }: Props) {
         {/* HEADER */}
         <View style={styles.row}>
           <View style={styles.headerLeft}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src="/logo.png" style={styles.logo} />
             <Text style={styles.companyName}>{companyName}</Text>
             {companyAddress.split("\n").map((line, i) => (
