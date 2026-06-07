@@ -116,7 +116,10 @@ export function InvoiceDocument({ data }: Props) {
         <View style={styles.row}>
           <View style={styles.headerLeft}>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image src="/logo.png" style={styles.logo} />
+            <Image
+              src={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ampleremovals.com'}/logo.png`}
+              style={styles.logo}
+            />
             <Text style={styles.companyName}>{companyName}</Text>
             {companyAddress.split("\n").map((line, i) => (
               <Text key={i} style={styles.companyDetail}>{line}</Text>
