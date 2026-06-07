@@ -115,9 +115,11 @@ export async function POST(
       })
       .eq("id", bookingId);
 
-    // Generate confirmation token
+    // Generate confirmation token (if feature is enabled)
     const confirmToken = generateQuoteConfirmToken(bookingId);
-    const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${bookingId}/${confirmToken}`;
+    const confirmUrl = confirmToken
+      ? `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${bookingId}/${confirmToken}`
+      : null;
 
     // Prepare communication content
     const emailSubject = `Your Quote from Ample Removals — ${booking.reference}`;
@@ -139,6 +141,7 @@ export async function POST(
 
         <p>Please find the complete quote attached as a PDF.</p>
 
+        ${confirmUrl ? `
         <div style="text-align: center; margin: 30px 0;">
           <a href="${confirmUrl}" style="display: inline-block; padding: 14px 28px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
             ✓ Confirm This Quote
@@ -152,6 +155,14 @@ export async function POST(
           <li>We'll send you a deposit invoice to secure your booking</li>
           <li>Once paid, your booking is confirmed!</li>
         </ol>
+        ` : `
+        <p><strong>Next Steps:</strong></p>
+        <ol>
+          <li>Review the attached quote carefully</li>
+          <li>Reply to this email or call us to confirm</li>
+          <li>We'll send you a deposit invoice to secure your booking</li>
+        </ol>
+        `}
 
         <p>If you have any questions, please don't hesitate to reach out.</p>
 

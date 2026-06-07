@@ -3,11 +3,13 @@ import crypto from "crypto";
 /**
  * Generate a secure token for quote confirmation
  * Format: HMAC-SHA256 hash of bookingId + timestamp + secret
+ * Returns null if QUOTE_CONFIRM_SECRET is not set (feature disabled)
  */
-export function generateQuoteConfirmToken(bookingId: string): string {
+export function generateQuoteConfirmToken(bookingId: string): string | null {
   const secret = process.env.QUOTE_CONFIRM_SECRET;
   if (!secret) {
-    throw new Error("QUOTE_CONFIRM_SECRET environment variable is not set");
+    console.warn("⚠️ QUOTE_CONFIRM_SECRET not set - quote confirmation disabled");
+    return null;
   }
 
   const timestamp = Date.now();
