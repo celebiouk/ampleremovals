@@ -55,11 +55,17 @@ export async function POST(req: NextRequest) {
       console.warn("quote_confirmations table check failed (table may not exist):", tableError);
     }
 
-    // Fetch quote details
+    // Fetch quote details with customer join
     console.log("📋 Fetching booking...");
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
-      .select("id, reference, service_type, customer_name, quote_total")
+      .select(`
+        id,
+        reference,
+        service_type,
+        quote_total,
+        customer:customers(full_name)
+      `)
       .eq("id", bookingId)
       .single();
 
@@ -79,6 +85,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
     console.log("✅ Booking found:", booking.reference);
 
     return NextResponse.json({
@@ -86,7 +93,7 @@ export async function POST(req: NextRequest) {
       quote: {
         reference: booking.reference,
         service_type: booking.service_type,
-        customer_name: booking.customer_name,
+        customer_name: customer?.full_name || "Customer",
         total: booking.quote_total || 0,
       },
     });
