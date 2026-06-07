@@ -25,7 +25,8 @@ export const LOCATIONS: Location[] = [
   { slug: "london", name: "London", county: "Greater London", region: "London", nearbyAreas: ["Slough", "Guildford", "Woking", "Reading"] },
 
   // Berkshire
-  { slug: "newbury", name: "Newbury", county: "Berkshire", region: "South East England", nearbyAreas: ["Reading", "Basingstoke", "Swindon"] },
+  { slug: "newbury", name: "Newbury", county: "Berkshire", region: "South East England", nearbyAreas: ["Reading", "Basingstoke", "Swindon", "Thatcham"] },
+  { slug: "thatcham", name: "Thatcham", county: "Berkshire", region: "South East England", nearbyAreas: ["Newbury", "Reading", "Basingstoke"] },
   { slug: "reading", name: "Reading", county: "Berkshire", region: "South East England", nearbyAreas: ["Newbury", "Slough", "High Wycombe", "Oxford"] },
   { slug: "slough", name: "Slough", county: "Berkshire", region: "South East England", nearbyAreas: ["Reading", "London", "High Wycombe"] },
 
