@@ -184,14 +184,24 @@ export function QuoteBuilderModal({
     }
   }, [isOpen, existingQuote, serviceData]);
 
-  // Calculate distance and suggest pricing when modal opens for new quotes
+  // Calculate distance and suggest pricing when modal opens for new quotes or empty quotes
   useEffect(() => {
+    console.log("🗺️ Distance calculation check:");
+    console.log("  - isOpen:", isOpen);
+    console.log("  - existingQuote:", !!existingQuote);
+    console.log("  - origin_postcode:", serviceData?.origin_postcode);
+    console.log("  - destination_postcode:", serviceData?.destination_postcode);
+
+    // Check if existing quote has items
+    const hasExistingItems = existingQuote && existingQuote.line_items && existingQuote.line_items.length > 0;
+
     if (
       isOpen &&
-      !existingQuote &&
+      !hasExistingItems &&
       serviceData?.origin_postcode &&
       serviceData?.destination_postcode
     ) {
+      console.log("📍 Calculating distance...");
       setCalculatingDistance(true);
       fetch("/api/postcode/distance", {
         method: "POST",
@@ -201,8 +211,12 @@ export function QuoteBuilderModal({
           to: serviceData.destination_postcode,
         }),
       })
-        .then((res) => res.json())
-        .then((data: { distance: number | null }) => {
+        .then((res) => {
+          console.log("📡 Distance API response status:", res.status);
+          return res.json();
+        })
+        .then((data: { distance: number | null; success?: boolean; error?: string }) => {
+          console.log("📊 Distance API data:", data);
           if (data.distance !== null) {
             setDistance(data.distance);
 
@@ -224,14 +238,19 @@ export function QuoteBuilderModal({
               }
               return prev;
             });
+          } else {
+            console.log("⚠️ Distance returned null");
           }
         })
         .catch((err) => {
-          console.error("Distance calculation failed:", err);
+          console.error("❌ Distance calculation failed:", err);
         })
         .finally(() => {
           setCalculatingDistance(false);
+          console.log("✅ Distance calculation complete");
         });
+    } else {
+      console.log("⏭️ Skipping distance calculation");
     }
   }, [isOpen, existingQuote, serviceData]);
 
