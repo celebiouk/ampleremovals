@@ -49,6 +49,7 @@ function BookingsListInner() {
   const [searchInput, setSearchInput] = useState(search);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const push = useCallback((params: Record<string, string>) => {
     const p = new URLSearchParams(sp.toString());
@@ -63,6 +64,8 @@ function BookingsListInner() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       console.log("🔐 Current user:", user?.email, "ID:", user?.id);
+      setUserEmail(user?.email ?? null);
+
       if (user) {
         const { data, error } = await supabase
           .from("admin_users")
@@ -290,14 +293,14 @@ function BookingsListInner() {
                           }`}>
                           <Eye className="h-3.5 w-3.5" /> View
                         </button>
-                        {userRole === "super_admin" && (
+                        {(userRole === "super_admin" || userEmail === "ampleremovals@gmail.com") && (
                           <button
                             onClick={() => deleteBooking(b.id, b.reference)}
                             disabled={deletingId === b.id}
                             className={`flex items-center gap-1 text-xs font-medium hover:underline disabled:opacity-50 ${
                               b.status === "inquiry" ? "text-white" : "text-red-600 hover:text-red-700"
                             }`}
-                            title={`Delete booking ${userRole ? `(${userRole})` : "(Role: checking...)"}`}
+                            title={`Delete booking (Super Admin only)`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             {deletingId === b.id ? "..." : "Delete"}

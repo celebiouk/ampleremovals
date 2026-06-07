@@ -22,7 +22,7 @@ export async function DELETE(
       );
     }
 
-    // Check if user is super_admin
+    // Check if user is super_admin or hardcoded super user
     const { data: adminUser, error: roleError } = await supabaseAuth
       .from("admin_users")
       .select("role, email")
@@ -30,20 +30,26 @@ export async function DELETE(
       .single();
 
     console.log("🔍 Delete permission check:");
+    console.log("  User Email:", user.email);
     console.log("  User ID:", user.id);
     console.log("  Admin User:", adminUser);
     console.log("  Role Error:", roleError);
 
-    if (!adminUser || adminUser.role !== "super_admin") {
+    // Allow if super_admin role OR hardcoded email
+    const isSuperAdmin = adminUser?.role === "super_admin" || user.email === "ampleremovals@gmail.com";
+
+    if (!isSuperAdmin) {
       return NextResponse.json(
         {
           success: false,
-          error: `Only super admins can delete bookings. Your role: ${adminUser?.role || "not found"}`,
-          debug: { adminUser, roleError }
+          error: `Only super admins can delete bookings. Your email: ${user.email}, Role: ${adminUser?.role || "not found"}`,
+          debug: { adminUser, roleError, userEmail: user.email }
         },
         { status: 403 }
       );
     }
+
+    console.log("✅ Delete permission granted for:", user.email);
 
     const { id: bookingId } = await context.params;
     const supabase = createAdminClient();
