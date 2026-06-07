@@ -4,11 +4,11 @@ import type { BookingStatus, ServiceType } from "@/types";
 
 export const STATUS_LABELS: Record<BookingStatus, string> = {
   inquiry:                    "Inquiry",
-  called:                     "Called",
-  not_called:                 "Not Called",
-  answered:                   "Answered",
-  not_answered:               "Not Answered",
-  processing:                 "Processing",
+  called:                     "Called - Answered",
+  not_called:                 "Called - Not Answered",
+  answered:                   "Called - Answered",
+  not_answered:               "Called - Not Answered",
+  processing:                 "Pending", // Processing removed, show as Pending
   pending:                    "Pending",
   deposit_invoice_sent:       "Deposit Invoice Sent",
   deposit_paid_job_confirmed: "Job Confirmed",
@@ -22,35 +22,35 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 // ── Status badge colours (Tailwind classes) ────────────────────────────────
 
 export const STATUS_COLOURS: Record<BookingStatus, string> = {
-  inquiry:                    "bg-red-100 text-red-700", // Red to indicate not contacted yet
-  called:                     "bg-blue-100 text-blue-700",
-  not_called:                 "bg-amber-100 text-amber-700",
-  answered:                   "bg-cyan-100 text-cyan-700",
-  not_answered:               "bg-orange-100 text-orange-700",
-  processing:                 "bg-indigo-100 text-indigo-700",
+  inquiry:                    "bg-red-100 text-red-700", // Badge color (row is bright orange)
+  called:                     "bg-red-100 text-red-700", // Light red - called and answered
+  not_called:                 "bg-red-100 text-red-700", // Light red - called but not answered
+  answered:                   "bg-red-100 text-red-700", // Light red - answered
+  not_answered:               "bg-red-100 text-red-700", // Light red - not answered
+  processing:                 "bg-yellow-100 text-yellow-700", // Same as pending
   pending:                    "bg-yellow-100 text-yellow-700",
   deposit_invoice_sent:       "bg-violet-100 text-violet-700",
-  deposit_paid_job_confirmed: "bg-green-100 text-green-700",
+  deposit_paid_job_confirmed: "bg-green-500 text-white", // Green - job confirmed
   full_invoice_sent:          "bg-purple-100 text-purple-700",
   full_balance_paid:          "bg-emerald-100 text-emerald-700",
-  job_completed:              "bg-green-200 text-green-900",
+  job_completed:              "bg-green-600 text-white", // Strong green - completed
   bad_lead:                   "bg-red-100 text-red-700",
   not_a_good_fit:             "bg-rose-100 text-rose-700",
 };
 
 export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
-  inquiry:                    "bg-red-500", // Red dot for not contacted
-  called:                     "bg-blue-500",
-  not_called:                 "bg-amber-500",
-  answered:                   "bg-cyan-500",
-  not_answered:               "bg-orange-500",
-  processing:                 "bg-indigo-500",
+  inquiry:                    "bg-orange-500", // Orange dot for not contacted
+  called:                     "bg-red-400", // Light red
+  not_called:                 "bg-red-400", // Light red
+  answered:                   "bg-red-400", // Light red
+  not_answered:               "bg-red-400", // Light red
+  processing:                 "bg-yellow-500",
   pending:                    "bg-yellow-500",
   deposit_invoice_sent:       "bg-violet-500",
-  deposit_paid_job_confirmed: "bg-green-500",
+  deposit_paid_job_confirmed: "bg-green-600", // Green for confirmed
   full_invoice_sent:          "bg-purple-500",
   full_balance_paid:          "bg-emerald-500",
-  job_completed:              "bg-green-700",
+  job_completed:              "bg-green-700", // Dark green for completed
   bad_lead:                   "bg-red-500",
   not_a_good_fit:             "bg-rose-500",
 };

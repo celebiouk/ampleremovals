@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { TableSkeleton } from "@/components/admin/AdminSkeleton";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { formatDate } from "@/lib/utils";
 import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
@@ -50,6 +51,8 @@ function BookingsListInner() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<{ id: string; reference: string } | null>(null);
 
   const push = useCallback((params: Record<string, string>) => {
     const p = new URLSearchParams(sp.toString());
@@ -131,12 +134,19 @@ function BookingsListInner() {
     searchRef.current = setTimeout(() => push({ search: val }), 300);
   };
 
-  const deleteBooking = async (id: string, reference: string) => {
-    if (!window.confirm(`Are you sure you want to permanently delete booking ${reference}?\n\nThis will delete:\n- The booking and all details\n- Customer information\n- Notes and history\n- Invoices and quotes\n\nThis action CANNOT be undone.`)) return;
+  const openDeleteDialog = (id: string, reference: string) => {
+    setBookingToDelete({ id, reference });
+    setDeleteDialogOpen(true);
+  };
 
-    setDeletingId(id);
+  const confirmDelete = async () => {
+    if (!bookingToDelete) return;
+
+    setDeletingId(bookingToDelete.id);
+    setDeleteDialogOpen(false);
+
     try {
-      const res = await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/bookings/${bookingToDelete.id}`, { method: "DELETE" });
       const data = await res.json();
 
       if (data.success) {
@@ -149,6 +159,7 @@ function BookingsListInner() {
       toast.error("Failed to delete booking");
     } finally {
       setDeletingId(null);
+      setBookingToDelete(null);
     }
   };
 
@@ -295,7 +306,7 @@ function BookingsListInner() {
                         </button>
                         {(userRole === "super_admin" || userEmail === "ampleremovals@gmail.com") && (
                           <button
-                            onClick={() => deleteBooking(b.id, b.reference)}
+                            onClick={() => openDeleteDialog(b.id, b.reference)}
                             disabled={deletingId === b.id}
                             className={`flex items-center gap-1 text-xs font-medium hover:underline disabled:opacity-50 ${
                               b.status === "inquiry" ? "text-white" : "text-red-600 hover:text-red-700"
@@ -303,7 +314,7 @@ function BookingsListInner() {
                             title={`Delete booking (Super Admin only)`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            {deletingId === b.id ? "..." : "Delete"}
+                            {deletingId === b.id ? "Deleting..." : "Delete"}
                           </button>
                         )}
                       </div>
@@ -337,6 +348,17 @@ function BookingsListInner() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setBookingToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        bookingReference={bookingToDelete?.reference || ""}
+      />
     </div>
   );
 }
