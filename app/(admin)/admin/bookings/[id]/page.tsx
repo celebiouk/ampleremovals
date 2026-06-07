@@ -585,14 +585,19 @@ export default function BookingDetailPage() {
           }
           serviceData={{
             service_type: data.booking.service_type,
+            removal_type: data.removalsDetails?.removal_type,
             bedrooms: data.removalsDetails?.bedrooms || data.houseClearanceDetails?.bedrooms || data.endOfTenancyDetails?.bedrooms,
             property_type: data.removalsDetails?.property_type || data.houseClearanceDetails?.property_type || data.endOfTenancyDetails?.property_type,
+            origin_city: data.originAddress?.city || undefined,
+            destination_city: data.destinationAddress?.city || undefined,
+            origin_postcode: data.originAddress?.postcode || undefined,
+            destination_postcode: data.destinationAddress?.postcode || undefined,
             additional_services: data.additionalServices ? [
-              data.additionalServices.packing_services && { name: "Packing Services" },
-              data.additionalServices.packing_materials && { name: "Packing Materials" },
-              data.additionalServices.disassemble_furniture && { name: "Disassemble Furniture" },
-              data.additionalServices.assemble_furniture && { name: "Assemble Furniture" },
-            ].filter(Boolean) as Array<{ name: string }> : undefined,
+              data.additionalServices.packing_services && { name: "Packing Services", price: 50 },
+              data.additionalServices.packing_materials && { name: "Packing Materials", price: 20 },
+              data.additionalServices.disassemble_furniture && { name: "Disassemble Furniture", price: 0 },
+              data.additionalServices.assemble_furniture && { name: "Assemble Furniture", price: 0 },
+            ].filter(Boolean) as Array<{ name: string; price?: number }> : undefined,
           }}
           isOpen={quoteModalOpen}
           onClose={() => setQuoteModalOpen(false)}

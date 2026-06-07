@@ -19,8 +19,13 @@ interface QuoteBuilderModalProps {
   };
   serviceData?: {
     service_type: string;
+    removal_type?: string;
     bedrooms?: string | number;
     property_type?: string;
+    origin_city?: string;
+    destination_city?: string;
+    origin_postcode?: string;
+    destination_postcode?: string;
     additional_services?: Array<{ name: string; price?: number }>;
   };
   isOpen: boolean;
@@ -35,30 +40,68 @@ function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceD
 
   const items: QuoteLineItem[] = [];
 
-  // Main service description
-  let mainDescription = serviceData.service_type.replace(/_/g, " ");
-  if (serviceData.bedrooms) {
-    mainDescription = `${serviceData.bedrooms} bedroom ${mainDescription}`;
+  // Main service description: "Removal type + bedrooms + property + service + in City"
+  // Example: "Domestic removal for 4 bedroom house in Thatcham"
+  let mainDescription = "";
+
+  // Add removal type if available (e.g., "Domestic", "Commercial")
+  if (serviceData.removal_type) {
+    mainDescription = serviceData.removal_type.charAt(0).toUpperCase() + serviceData.removal_type.slice(1);
   }
-  if (serviceData.property_type) {
-    mainDescription += ` (${serviceData.property_type})`;
+
+  // Add service type
+  const serviceLabel = serviceData.service_type.replace(/_/g, " ");
+  if (mainDescription) {
+    mainDescription += ` ${serviceLabel}`;
+  } else {
+    mainDescription = serviceLabel.charAt(0).toUpperCase() + serviceLabel.slice(1);
+  }
+
+  // Add "for X bedroom property" if available
+  if (serviceData.bedrooms && serviceData.property_type) {
+    mainDescription += ` for ${serviceData.bedrooms} bedroom ${serviceData.property_type.toLowerCase()}`;
+  } else if (serviceData.bedrooms) {
+    mainDescription += ` for ${serviceData.bedrooms} bedroom property`;
+  } else if (serviceData.property_type) {
+    mainDescription += ` for ${serviceData.property_type.toLowerCase()}`;
+  }
+
+  // Add "in City" if available
+  if (serviceData.origin_city) {
+    mainDescription += ` in ${serviceData.origin_city}`;
   }
 
   items.push({
     description: mainDescription.charAt(0).toUpperCase() + mainDescription.slice(1),
     quantity: 1,
-    unit_price: 0, // Admin will set price
+    unit_price: 0, // Admin will set price (or calculated base)
     total: 0,
   });
 
-  // Additional services
+  // Additional services with pricing logic
   if (serviceData.additional_services && serviceData.additional_services.length > 0) {
+    const bedrooms = serviceData.bedrooms;
+    const bedroomNum = typeof bedrooms === "string" ? parseInt(bedrooms) || 0 : bedrooms || 0;
+
     serviceData.additional_services.forEach((service) => {
+      let price = service.price || 0;
+
+      // Apply bedroom-based pricing for assembly/disassembly
+      if (service.name.includes("Disassemble") || service.name.includes("Assemble")) {
+        if (bedroomNum === 1) {
+          price = 50;
+        } else if (bedroomNum === 2) {
+          price = 65;
+        } else if (bedroomNum >= 3) {
+          price = 80;
+        }
+      }
+
       items.push({
         description: service.name,
         quantity: 1,
-        unit_price: service.price || 0,
-        total: service.price || 0,
+        unit_price: price,
+        total: price,
       });
     });
   }
@@ -85,6 +128,8 @@ export function QuoteBuilderModal({
   const [notes, setNotes] = useState(existingQuote?.notes || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [calculatingDistance, setCalculatingDistance] = useState(false);
 
   function getDefaultValidUntil(): string {
     const date = new Date();
@@ -108,6 +153,57 @@ export function QuoteBuilderModal({
         setValidUntil(getDefaultValidUntil());
         setNotes("");
       }
+    }
+  }, [isOpen, existingQuote, serviceData]);
+
+  // Calculate distance and suggest pricing when modal opens for new quotes
+  useEffect(() => {
+    if (
+      isOpen &&
+      !existingQuote &&
+      serviceData?.origin_postcode &&
+      serviceData?.destination_postcode
+    ) {
+      setCalculatingDistance(true);
+      fetch("/api/postcode/distance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: serviceData.origin_postcode,
+          to: serviceData.destination_postcode,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data: { distance: number | null }) => {
+          if (data.distance !== null) {
+            setDistance(data.distance);
+
+            // Calculate suggested price: £2/mile + base £50
+            const baseFee = 50;
+            const perMile = 2;
+            const suggestedPrice = baseFee + data.distance * perMile;
+
+            // Update the first line item price
+            setLineItems((prev) => {
+              if (prev.length > 0) {
+                const updated = [...prev];
+                updated[0] = {
+                  ...updated[0],
+                  unit_price: Math.round(suggestedPrice * 100) / 100,
+                  total: Math.round(suggestedPrice * 100) / 100,
+                };
+                return updated;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch((err) => {
+          console.error("Distance calculation failed:", err);
+        })
+        .finally(() => {
+          setCalculatingDistance(false);
+        });
     }
   }, [isOpen, existingQuote, serviceData]);
 
@@ -304,6 +400,39 @@ export function QuoteBuilderModal({
               Add Line Item
             </button>
           </div>
+
+          {/* Distance calculation info */}
+          {serviceData?.origin_postcode && serviceData?.destination_postcode && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">
+                    Distance Calculation
+                  </p>
+                  {calculatingDistance ? (
+                    <p className="text-xs text-blue-700">Calculating distance...</p>
+                  ) : distance !== null ? (
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <p>
+                        <strong>{distance} miles</strong> from {serviceData.origin_postcode} to{" "}
+                        {serviceData.destination_postcode}
+                      </p>
+                      <p className="text-blue-600">
+                        Estimated base: £{(50 + distance * 2).toFixed(2)} (£50 base + £2/mile)
+                      </p>
+                      <p className="text-blue-500 italic">
+                        Price automatically suggested in line 1. You can edit it.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-blue-600">
+                      Unable to calculate distance. Please set price manually.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* VAT toggle */}
           <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
