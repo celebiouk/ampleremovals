@@ -7,6 +7,7 @@ export const resendFrom =
 
 // Multiple admin emails for new booking notifications
 export const resendAdminEmails = [
+  "hello@ampleremovals.com",
   "bookings@ampleremovals.com",
   "rita@ampleremovals.com",
   "amanda@ampleremovals.com",
