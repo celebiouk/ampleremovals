@@ -12,9 +12,7 @@ import { createClient } from "@/lib/supabase/server";
  * // Proceed with route logic, auth.userId is available
  * ```
  */
-export async function requireAdminAuth(
-  request: Request
-): Promise<{ userId: string; userEmail: string } | NextResponse> {
+export async function requireAdminAuth(): Promise<{ userId: string; userEmail: string } | NextResponse> {
   try {
     const supabase = await createClient();
 
@@ -31,7 +29,7 @@ export async function requireAdminAuth(
       userId: user.id,
       userEmail: user.email || "",
     };
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { success: false, error: "Authentication failed" },
       { status: 401 }

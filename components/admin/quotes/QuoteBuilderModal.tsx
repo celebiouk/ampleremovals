@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { QuoteLineItem } from "@/types";

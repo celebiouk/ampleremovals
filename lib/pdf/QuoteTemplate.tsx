@@ -3,10 +3,8 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 const PURPLE = "#6b21a8";
 const GREEN = "#16a34a";
-const AMBER = "#d97706";
 const GREY = "#64748b";
 const LIGHT_GREY = "#f8fafc";
-const BORDER = "#e2e8f0";
 
 const styles = StyleSheet.create({
   page: { fontFamily: "Helvetica", fontSize: 10, color: "#1e293b", padding: 40, backgroundColor: "#ffffff" },
@@ -76,7 +74,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.companyName}>Ample Removals</Text>
-            <Text style={styles.companyDetail}>London's Premier Moving & Cleaning Services</Text>
+            <Text style={styles.companyDetail}>London&apos;s Premier Moving & Cleaning Services</Text>
             <Text style={styles.companyDetail}>Phone: 020 XXXX XXXX</Text>
             <Text style={styles.companyDetail}>Email: bookings@ampleremovals.co.uk</Text>
           </View>
@@ -110,7 +108,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
         <View style={styles.quoteBanner}>
           <Text style={[styles.quoteBannerText, { fontFamily: "Helvetica-Bold", color: "#4c1d95" }]}>THIS IS A QUOTE — NOT AN INVOICE</Text>
           <Text style={styles.quoteBannerText}>
-            This quote outlines the full cost of your {data.service_type} service. To confirm your booking, simply accept this quote and we'll send you a deposit invoice. Prices are valid until {data.valid_until}.
+            This quote outlines the full cost of your {data.service_type} service. To confirm your booking, simply accept this quote and we&apos;ll send you a deposit invoice. Prices are valid until {data.valid_until}.
           </Text>
         </View>
 

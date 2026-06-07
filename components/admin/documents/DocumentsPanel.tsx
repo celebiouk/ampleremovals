@@ -53,7 +53,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
       } else {
         toast.error(data.error || "Failed to load documents");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load documents");
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
       } else {
         toast.error(data.error || `Failed to upload ${file.name}`);
       }
-    } catch (err) {
+    } catch {
       toast.error(`Failed to upload ${file.name}`);
     } finally {
       // Remove from uploading map
@@ -169,7 +169,7 @@ export function DocumentsPanel({ bookingId }: DocumentsPanelProps) {
       } else {
         toast.error(data.error || "Failed to delete document");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete document");
     }
   };

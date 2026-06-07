@@ -97,7 +97,7 @@ export async function POST(
     const pdfBuffer = await generateQuotePDF(pdfData);
 
     // Upload to storage
-    const storagePath = await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
+    await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
     const pdfUrl = await getQuoteSignedURL(bookingId, booking.reference);
 
     // Update booking with PDF URL and sent timestamp
