@@ -5,6 +5,7 @@ import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
 import { uploadQuotePDF, getQuoteSignedURL } from "@/lib/storage";
 import { formatCurrency } from "@/lib/utils";
+import { generateQuoteConfirmToken } from "@/lib/tokens";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -109,6 +110,10 @@ export async function POST(
       })
       .eq("id", bookingId);
 
+    // Generate confirmation token
+    const confirmToken = generateQuoteConfirmToken(bookingId);
+    const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${bookingId}/${confirmToken}`;
+
     // Prepare communication content
     const emailSubject = `Your Quote from Ample Removals — ${booking.reference}`;
     const emailBody = `
@@ -129,16 +134,29 @@ export async function POST(
 
         <p>Please find the complete quote attached as a PDF.</p>
 
-        <p><strong>Next Steps:</strong></p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${confirmUrl}" style="display: inline-block; padding: 14px 28px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            ✓ Confirm This Quote
+          </a>
+          <p style="margin-top: 12px; font-size: 13px; color: #64748b;">Click the button above to confirm your booking instantly</p>
+        </div>
+
+        <p><strong>What happens next?</strong></p>
         <ol>
-          <li>Review the attached quote carefully</li>
-          <li>Reply to this email or call us to confirm</li>
+          <li>Click the confirmation button above</li>
           <li>We'll send you a deposit invoice to secure your booking</li>
+          <li>Once paid, your booking is confirmed!</li>
         </ol>
 
         <p>If you have any questions, please don't hesitate to reach out.</p>
 
-        <p style="margin-top: 30px;">Best regards,<br/><strong>Ample Removals Team</strong><br/>020 XXXX XXXX</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+        <p style="font-size: 14px; color: #64748b;">
+          Best regards,<br><br>
+          Daniel<br>
+          Ample Removal Team<br>
+          07344683477
+        </p>
       </div>
     `;
 

@@ -17,21 +17,66 @@ interface QuoteBuilderModalProps {
     valid_until: string | null;
     notes: string | null;
   };
+  serviceData?: {
+    service_type: string;
+    bedrooms?: number;
+    property_type?: string;
+    additional_services?: Array<{ name: string; price?: number }>;
+  };
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
+}
+
+function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceData"]): QuoteLineItem[] {
+  if (!serviceData) {
+    return [{ description: "", quantity: 1, unit_price: 0, total: 0 }];
+  }
+
+  const items: QuoteLineItem[] = [];
+
+  // Main service description
+  let mainDescription = serviceData.service_type.replace(/_/g, " ");
+  if (serviceData.bedrooms) {
+    mainDescription = `${serviceData.bedrooms} bedroom ${mainDescription}`;
+  }
+  if (serviceData.property_type) {
+    mainDescription += ` (${serviceData.property_type})`;
+  }
+
+  items.push({
+    description: mainDescription.charAt(0).toUpperCase() + mainDescription.slice(1),
+    quantity: 1,
+    unit_price: 0, // Admin will set price
+    total: 0,
+  });
+
+  // Additional services
+  if (serviceData.additional_services && serviceData.additional_services.length > 0) {
+    serviceData.additional_services.forEach((service) => {
+      items.push({
+        description: service.name,
+        quantity: 1,
+        unit_price: service.price || 0,
+        total: service.price || 0,
+      });
+    });
+  }
+
+  return items;
 }
 
 export function QuoteBuilderModal({
   bookingId,
   bookingReference,
   existingQuote,
+  serviceData,
   isOpen,
   onClose,
   onSaved,
 }: QuoteBuilderModalProps) {
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>(
-    existingQuote?.line_items || [{ description: "", quantity: 1, unit_price: 0, total: 0 }]
+    existingQuote?.line_items || generateInitialLineItems(serviceData)
   );
   const [vatRate, setVatRate] = useState(existingQuote?.vat_rate || 20);
   const [validUntil, setValidUntil] = useState(

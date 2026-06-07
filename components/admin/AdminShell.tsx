@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
-  Truck, ChevronLeft, ChevronRight, Bell, Plus, Search, Shield,
+  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -149,9 +150,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-full flex-col" style={{ background: "#1e1040" }}>
       {/* Logo */}
       <div className={cn("flex h-16 shrink-0 items-center border-b border-purple-900/50 px-4", collapsed ? "justify-center" : "gap-3 px-5")}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 shadow-lg">
-          <Truck className="h-5 w-5 text-white" />
-        </span>
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl">
+          <Image
+            src="/logo.png"
+            alt="Ample Removals"
+            width={40}
+            height={40}
+            className="h-full w-full object-cover"
+          />
+        </div>
         {!collapsed && (
           <span className="font-display text-base font-extrabold text-white tracking-tight">Ample CRM</span>
         )}

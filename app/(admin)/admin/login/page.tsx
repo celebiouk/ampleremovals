@@ -2,7 +2,8 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Truck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +44,15 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-purple-950 via-brand-purple-900 to-brand-purple-800 px-6">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white p-8 shadow-2xl">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-purple-800 text-white">
-            <Truck className="h-6 w-6" />
-          </span>
+          <div className="mb-4 h-20 w-20 overflow-hidden rounded-xl">
+            <Image
+              src="/logo.png"
+              alt="Ample Removals"
+              width={80}
+              height={80}
+              className="h-full w-full object-cover"
+            />
+          </div>
           <h1 className="font-display text-2xl font-extrabold text-foreground">
             Ample CRM
           </h1>

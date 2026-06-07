@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  Document, Page, Text, View, StyleSheet,
+  Document, Page, Text, View, StyleSheet, Image,
 } from "@react-pdf/renderer";
 import type { InvoicePDFData } from "@/types";
 
@@ -17,6 +17,7 @@ const styles = StyleSheet.create({
   page: { fontFamily: "Helvetica", fontSize: 10, color: "#1e293b", padding: 40, backgroundColor: "#ffffff" },
   row: { flexDirection: "row" },
   // Header
+  logo: { width: 50, height: 50, marginBottom: 8, borderRadius: 8 },
   headerLeft: { flex: 1 },
   headerRight: { alignItems: "flex-end" },
   companyName: { fontSize: 16, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 3 },
@@ -114,6 +115,7 @@ export function InvoiceDocument({ data }: Props) {
         {/* HEADER */}
         <View style={styles.row}>
           <View style={styles.headerLeft}>
+            <Image src="/logo.png" style={styles.logo} />
             <Text style={styles.companyName}>{companyName}</Text>
             {companyAddress.split("\n").map((line, i) => (
               <Text key={i} style={styles.companyDetail}>{line}</Text>

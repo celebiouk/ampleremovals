@@ -55,9 +55,9 @@ Ample Removal Team
 
 ---
 
-## ⏸️ TO BE IMPLEMENTED (Require More Work)
+## ✅ RECENTLY IMPLEMENTED
 
-### 4. Pre-populate Quote Builder
+### 4. Pre-populate Quote Builder ✅
 **What:** Auto-fill quote line items from booking
 **Details:**
 - Line 1: Service description (e.g., "Removal of 3 bedroom flat")
@@ -68,12 +68,19 @@ Ample Removal Team
 - Mapping additional services to descriptions
 - Price suggestions (manual override still needed)
 
-**Complexity:** Medium (2-3 hours)
-**Priority:** Medium (saves admin time but not blocking)
+**Status:** IMPLEMENTED ✅
+**Files changed:** 
+- `components/admin/quotes/QuoteBuilderModal.tsx` (added serviceData prop and auto-population logic)
+- `app/(admin)/admin/bookings/[id]/page.tsx` (passes serviceData to modal)
+
+**How it works:**
+- When opening quote builder, first line item auto-fills with service description
+- Additional services (packing, assembly, etc.) added as separate line items
+- Admin can still edit all prices and descriptions
 
 ---
 
-### 5. Invoice VAT Toggle + Quote Breakdown
+### 5. Invoice VAT Toggle + Quote Breakdown ✅
 **What:** 
 - Change VAT from percentage input to On/Off toggle (always 20%)
 - Show quote amount prominently
@@ -85,12 +92,17 @@ Ample Removal Team
 - PDF template updates
 - Backwards compatibility for existing invoices
 
-**Complexity:** High (4-5 hours)
-**Priority:** Medium (current system works, just not optimal)
+**Status:** ALREADY IMPLEMENTED ✅
+**Note:** The invoice modal already uses a VAT toggle (On/Off for 20%) and displays the breakdown:
+- Subtotal
+- VAT (20%) if enabled
+- Total
+
+No changes needed — feature was already built correctly!
 
 ---
 
-### 6. Add Logo to PDFs and UI
+### 6. Add Logo to PDFs and UI ✅
 **What:** Use `public/logo.png` in multiple places:
 - PDF invoices (top left)
 - PDF quotes (top left)
@@ -103,14 +115,21 @@ Ample Removal Team
 - UI layout adjustments for logo
 - Testing across all contexts
 
-**Complexity:** Medium (3-4 hours)
-**Priority:** High (branding/professional appearance)
+**Status:** IMPLEMENTED ✅
+**Files changed:**
+- `lib/pdf/InvoiceTemplate.tsx` (added Image component and logo)
+- `lib/pdf/QuoteTemplate.tsx` (added Image component and logo)
+- `app/(admin)/admin/login/page.tsx` (replaced icon with logo image)
+- `components/admin/AdminShell.tsx` (replaced Truck icon with logo in sidebar)
 
-**File location:** `c:\Users\User\Ampleremovals\public\logo.png`
+**How it works:**
+- PDFs display logo (50x50px) at top left
+- Admin login shows logo (80x80px) centered above form
+- Admin sidebar shows logo (40x40px) in header
 
 ---
 
-### 7. Quote Confirmation Flow
+### 7. Quote Confirmation Flow ✅
 **What:** Add "Confirm Quote" button in quote emails
 **Flow:**
 1. Customer receives quote email
@@ -130,34 +149,89 @@ Ample Removal Team
 - Email template updates
 - Status workflow updates
 
-**Complexity:** High (5-6 hours)
-**Priority:** High (improves conversion, professional)
+**Status:** IMPLEMENTED ✅
+**Files created:**
+- `lib/tokens.ts` (HMAC-SHA256 token generation and verification)
+- `supabase/migrations/add_quote_confirmations.sql` (tracking table)
+- `app/(public)/confirm-quote/[bookingId]/[token]/page.tsx` (public confirmation page)
+- `app/api/quote-confirm/route.ts` (confirmation API)
+- `app/api/quote-confirm/validate/route.ts` (validation API)
 
-**Security considerations:**
-- Signed tokens (prevent tampering)
-- One-time use (prevent replay)
-- Expiry (24-48 hours)
+**Files modified:**
+- `app/api/admin/bookings/[id]/quote/send/route.ts` (added token generation and button to email)
+- `.env.local` (added QUOTE_CONFIRM_SECRET)
+- `.env.example` (documented QUOTE_CONFIRM_SECRET)
+
+**How it works:**
+1. Admin sends quote via email
+2. Quote email includes green "✓ Confirm This Quote" button
+3. Customer clicks → lands on `/confirm-quote/[bookingId]/[token]`
+4. Page validates token (HMAC signature + 48hr expiry)
+5. Customer reviews quote details and confirms
+6. Status → `deposit_invoice_sent`, emails sent to customer + admin
+7. Token marked as used (prevents replay attacks)
+
+**Security implemented:**
+- HMAC-SHA256 signed tokens
+- Timing-safe comparison
+- 48-hour expiry
+- One-time use tracking in DB
+- IP address & user agent logging
 
 ---
 
-## 📊 Implementation Priority
+## 📊 Implementation Status
 
 **Phase 1 (DONE ✅):**
 - Multiple email recipients
-- Email signature
+- Email signature  
 - Activity log improvements
 
-**Phase 2 (Next Session - High Priority):**
-- Logo integration
-- Quote confirmation flow
+**Phase 2 (DONE ✅):**
+- Logo integration (PDFs + Admin UI)
+- Quote confirmation flow (complete with security)
 
-**Phase 3 (Future - Nice to Have):**
+**Phase 3 (DONE ✅):**
 - Pre-populate quote builder
-- Invoice VAT toggle
+- Invoice VAT toggle (was already implemented)
+
+🎉 **ALL IMPROVEMENTS COMPLETED!**
 
 ---
 
-## 💡 Quick Implementation Guide
+## 🚀 Deployment Checklist
+
+Before deploying these improvements to production:
+
+1. **Database Migration**
+   ```bash
+   # Run the quote confirmations migration via Supabase dashboard or CLI
+   # File: supabase/migrations/add_quote_confirmations.sql
+   ```
+
+2. **Environment Variables**
+   - Add `QUOTE_CONFIRM_SECRET` to production environment
+   - Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+3. **Logo File**
+   - Ensure `public/logo.png` is committed and deployed
+   - File is already present in the repo
+
+4. **Test Quote Confirmation Flow**
+   - Send a test quote
+   - Click confirmation button in email
+   - Verify status changes to `deposit_invoice_sent`
+   - Check admin receives notification
+
+5. **Verify Logo Rendering**
+   - Generate a test invoice PDF
+   - Generate a test quote PDF
+   - Login to admin panel (check logo)
+   - Check admin sidebar (check logo)
+
+---
+
+## 💡 Original Implementation Guide (Archive)
 
 ### For Logo Integration:
 ```typescript

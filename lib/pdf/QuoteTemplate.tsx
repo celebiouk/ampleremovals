@@ -1,5 +1,5 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 
 const PURPLE = "#6b21a8";
 const GREEN = "#16a34a";
@@ -10,6 +10,7 @@ const styles = StyleSheet.create({
   page: { fontFamily: "Helvetica", fontSize: 10, color: "#1e293b", padding: 40, backgroundColor: "#ffffff" },
   row: { flexDirection: "row" },
   // Header
+  logo: { width: 50, height: 50, marginBottom: 8, borderRadius: 8 },
   companyName: { fontSize: 16, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 3 },
   companyDetail: { fontSize: 9, color: GREY, marginBottom: 1 },
   quoteTitle: { fontSize: 42, fontFamily: "Helvetica-Bold", color: PURPLE, letterSpacing: 2 },
@@ -73,6 +74,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
         {/* HEADER */}
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
+            <Image src="/logo.png" style={styles.logo} />
             <Text style={styles.companyName}>Ample Removals</Text>
             <Text style={styles.companyDetail}>London&apos;s Premier Moving & Cleaning Services</Text>
             <Text style={styles.companyDetail}>Phone: 020 XXXX XXXX</Text>

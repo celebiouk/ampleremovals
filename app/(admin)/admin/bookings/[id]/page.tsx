@@ -583,6 +583,17 @@ export default function BookingDetailPage() {
                 }
               : undefined
           }
+          serviceData={{
+            service_type: data.booking.service_type,
+            bedrooms: data.removalsDetails?.bedrooms || data.houseClearanceDetails?.bedrooms || data.endOfTenancyDetails?.bedrooms,
+            property_type: data.removalsDetails?.property_type || data.houseClearanceDetails?.property_type || data.endOfTenancyDetails?.property_type,
+            additional_services: data.additionalServices ? [
+              data.additionalServices.packing_services && { name: "Packing Services" },
+              data.additionalServices.packing_materials && { name: "Packing Materials" },
+              data.additionalServices.disassemble_furniture && { name: "Disassemble Furniture" },
+              data.additionalServices.assemble_furniture && { name: "Assemble Furniture" },
+            ].filter(Boolean) as Array<{ name: string }> : undefined,
+          }}
           isOpen={quoteModalOpen}
           onClose={() => setQuoteModalOpen(false)}
           onSaved={refresh}
