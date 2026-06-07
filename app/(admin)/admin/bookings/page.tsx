@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, X, Eye, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -47,6 +47,8 @@ function BookingsListInner() {
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const searchRef = useRef<NodeJS.Timeout | null>(null);
   const [searchInput, setSearchInput] = useState(search);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const push = useCallback((params: Record<string, string>) => {
     const p = new URLSearchParams(sp.toString());
@@ -54,6 +56,23 @@ function BookingsListInner() {
     p.set("page", "1");
     router.push(`${pathname}?${p.toString()}`);
   }, [router, pathname, sp]);
+
+  // Check user role on mount
+  useEffect(() => {
+    const checkRole = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("admin_users")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+        setUserRole(data?.role ?? null);
+      }
+    };
+    checkRole();
+  }, []);
 
   const loadBookings = useCallback(async () => {
     setIsLoading(true);
@@ -105,6 +124,27 @@ function BookingsListInner() {
     setSearchInput(val);
     if (searchRef.current) clearTimeout(searchRef.current);
     searchRef.current = setTimeout(() => push({ search: val }), 300);
+  };
+
+  const deleteBooking = async (id: string, reference: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete booking ${reference}?\n\nThis will delete:\n- The booking and all details\n- Customer information\n- Notes and history\n- Invoices and quotes\n\nThis action CANNOT be undone.`)) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Booking deleted successfully");
+        loadBookings(); // Refresh list
+      } else {
+        toast.error(data.error || "Failed to delete booking");
+      }
+    } catch {
+      toast.error("Failed to delete booking");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -223,7 +263,11 @@ function BookingsListInner() {
               <tbody>
                 {bookings.map((b) => (
                   <tr key={b.id} onClick={() => router.push(`/admin/bookings/${b.id}`)}
-                    className="cursor-pointer border-b border-slate-50 hover:bg-slate-50">
+                    className={`cursor-pointer border-b ${
+                      b.status === "inquiry"
+                        ? "bg-red-50 hover:bg-red-100 border-red-100"
+                        : "border-slate-50 hover:bg-slate-50"
+                    }`}>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggleSelect(b.id)}
                         className="rounded border-slate-300 accent-brand-purple-700" />
@@ -237,10 +281,23 @@ function BookingsListInner() {
                     <td className="px-4 py-3 text-sm text-slate-400">{relativeTime(b.created_at)}</td>
                     <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => router.push(`/admin/bookings/${b.id}`)}
-                        className="flex items-center gap-1 text-xs font-medium text-brand-purple-600 hover:underline">
-                        <Eye className="h-3.5 w-3.5" /> View
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => router.push(`/admin/bookings/${b.id}`)}
+                          className="flex items-center gap-1 text-xs font-medium text-brand-purple-600 hover:underline">
+                          <Eye className="h-3.5 w-3.5" /> View
+                        </button>
+                        {userRole === "super_admin" && (
+                          <button
+                            onClick={() => deleteBooking(b.id, b.reference)}
+                            disabled={deletingId === b.id}
+                            className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                            title="Delete booking (Super Admin only)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {deletingId === b.id ? "..." : "Delete"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

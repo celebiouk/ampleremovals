@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { LOCATIONS, LOCATION_MAP, SERVICE_KEYWORDS } from "@/lib/locations";
 import { Phone, Mail, MapPin, CheckCircle2, ArrowRight, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -104,7 +105,9 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-purple-800 to-brand-purple-950 py-20 text-white">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Text */}
+            <div className="max-w-2xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm backdrop-blur-sm">
               <MapPin className="h-4 w-4" />
               <span>{location.county}, {location.region}</span>
@@ -127,13 +130,28 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
                 </Button>
               </Link>
               <a href="tel:07344683477">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-brand-purple-800">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-brand-purple-800 backdrop-blur-sm">
                   <Phone className="mr-2 h-5 w-5" />
                   Call: 07344683477
                 </Button>
               </a>
             </div>
           </div>
+
+          {/* Right Column - Hero Image */}
+          <div className="relative hidden lg:block">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/20">
+              <Image
+                src="/heroimage.png"
+                alt={`Ample Removals professional movers in ${location.name}`}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -279,13 +297,13 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
               </Button>
             </Link>
             <a href="tel:07344683477">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-brand-purple-900">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-brand-purple-900 backdrop-blur-sm">
                 <Phone className="mr-2 h-5 w-5" />
                 07344683477
               </Button>
             </a>
             <a href="mailto:hello@ampleremovals.com">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-brand-purple-900">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-brand-purple-900 backdrop-blur-sm">
                 <Mail className="mr-2 h-5 w-5" />
                 Email Us
               </Button>
