@@ -19,7 +19,7 @@ import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoic
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
@@ -540,7 +540,7 @@ export default function BookingDetailPage() {
                   </span>
                   <div>
                     <p className="text-sm text-slate-800">{entry.action}</p>
-                    <p className="text-xs text-slate-400">{formatDate(entry.created_at)} · {entry.performed_by}</p>
+                    <p className="text-xs text-slate-400">{formatDateTime(entry.created_at)} · {entry.performed_by}</p>
                   </div>
                 </div>
               ))}

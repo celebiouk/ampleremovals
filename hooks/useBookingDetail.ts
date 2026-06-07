@@ -79,7 +79,7 @@ export function useBookingDetail(bookingId: string) {
         supabase.from("additional_services").select("*").eq("booking_id", bookingId).maybeSingle(),
         supabase.from("booking_notes").select("*").eq("booking_id", bookingId).order("created_at", { ascending: false }),
         supabase.from("status_history").select("*").eq("booking_id", bookingId).order("changed_at", { ascending: false }),
-        supabase.from("activity_log").select("*").eq("booking_id", bookingId).order("created_at", { ascending: true }),
+        supabase.from("activity_log").select("*").eq("booking_id", bookingId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*").eq("booking_id", bookingId).order("created_at", { ascending: false }),
       ]);
 

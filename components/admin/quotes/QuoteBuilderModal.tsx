@@ -217,8 +217,8 @@ export function QuoteBuilderModal({
           if (data.distance !== null) {
             setDistance(data.distance);
 
-            // Calculate suggested price: £2/mile + base £50
-            const baseFee = 50;
+            // Calculate suggested price: £2/mile + base £100
+            const baseFee = 100;
             const perMile = 2;
             const suggestedPrice = baseFee + data.distance * perMile;
 
@@ -462,7 +462,7 @@ export function QuoteBuilderModal({
                         {serviceData.destination_postcode}
                       </p>
                       <p className="text-blue-600">
-                        Estimated base: £{(50 + distance * 2).toFixed(2)} (£50 base + £2/mile)
+                        Estimated base: £{(100 + distance * 2).toFixed(2)} (£100 base + £2/mile)
                       </p>
                       <p className="text-blue-500 italic">
                         Price automatically suggested in line 1. You can edit it.
