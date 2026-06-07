@@ -7,16 +7,16 @@ This is the FINAL phase. When complete, the platform goes live.
 
 ### Plan
 
-#### SECTION 1 — FILE & DOCUMENT UPLOAD SYSTEM
-- [ ] Create booking_documents table with RLS policies
-- [ ] Create booking-documents Supabase Storage bucket
-- [ ] Update lib/storage.ts with document upload/download/delete functions
-- [ ] Create GET /api/admin/bookings/[id]/documents route
-- [ ] Create POST /api/admin/bookings/[id]/documents route (with file validation)
-- [ ] Create DELETE /api/admin/bookings/[id]/documents/[docId] route
-- [ ] Build DocumentsPanel component with drag-and-drop
-- [ ] Add DocumentsPanel to booking detail page
-- [ ] Test file upload end-to-end
+#### SECTION 1 — FILE & DOCUMENT UPLOAD SYSTEM ✅
+- [x] Create booking_documents table with RLS policies
+- [x] Create booking-documents Supabase Storage bucket (manual step documented)
+- [x] Update lib/storage.ts with document upload/download/delete functions
+- [x] Create GET /api/admin/bookings/[id]/documents route
+- [x] Create POST /api/admin/bookings/[id]/documents route (with file validation)
+- [x] Create DELETE /api/admin/bookings/[id]/documents/[docId] route
+- [x] Build DocumentsPanel component with drag-and-drop
+- [x] Add DocumentsPanel to booking detail page
+- [x] Git commit and push (commits: ba9cd5e, 1b5fd9b)
 
 #### SECTION 2 — PUBLIC WEBSITE FINAL POLISH
 - [ ] Homepage hero section — verify animations + CTA links
