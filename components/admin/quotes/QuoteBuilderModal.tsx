@@ -34,7 +34,10 @@ interface QuoteBuilderModalProps {
 }
 
 function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceData"]): QuoteLineItem[] {
+  console.log("🏗️ generateInitialLineItems called with:", serviceData);
+
   if (!serviceData) {
+    console.log("⚠️ No serviceData provided, returning empty item");
     return [{ description: "", quantity: 1, unit_price: 0, total: 0 }];
   }
 
@@ -47,6 +50,7 @@ function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceD
   // Add removal type if available (e.g., "Domestic", "Commercial")
   if (serviceData.removal_type) {
     mainDescription = serviceData.removal_type.charAt(0).toUpperCase() + serviceData.removal_type.slice(1);
+    console.log("✅ Added removal_type:", mainDescription);
   }
 
   // Add service type
@@ -71,15 +75,21 @@ function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceD
     mainDescription += ` in ${serviceData.origin_city}`;
   }
 
+  const finalDescription = mainDescription.charAt(0).toUpperCase() + mainDescription.slice(1);
+  console.log("📝 Final main description:", finalDescription);
+
   items.push({
-    description: mainDescription.charAt(0).toUpperCase() + mainDescription.slice(1),
+    description: finalDescription,
     quantity: 1,
     unit_price: 0, // Admin will set price (or calculated base)
     total: 0,
   });
 
+  console.log("✅ Main line item added. Total items so far:", items.length);
+
   // Additional services with pricing logic
   if (serviceData.additional_services && serviceData.additional_services.length > 0) {
+    console.log("🔧 Processing additional services:", serviceData.additional_services);
     const bedrooms = serviceData.bedrooms;
     const bedroomNum = typeof bedrooms === "string" ? parseInt(bedrooms) || 0 : bedrooms || 0;
 
@@ -103,9 +113,14 @@ function generateInitialLineItems(serviceData?: QuoteBuilderModalProps["serviceD
         unit_price: price,
         total: price,
       });
+      console.log(`  ➕ Added: ${service.name} @ £${price}`);
     });
+    console.log("✅ All additional services added");
+  } else {
+    console.log("ℹ️ No additional services to add");
   }
 
+  console.log("🎯 Final generated items:", items);
   return items;
 }
 
@@ -140,15 +155,23 @@ export function QuoteBuilderModal({
   // Reset form when modal opens/closes or when serviceData changes
   useEffect(() => {
     if (isOpen) {
+      console.log("🔍 Quote Builder Modal Opened");
+      console.log("📦 serviceData:", serviceData);
+      console.log("📝 existingQuote:", existingQuote);
+
       if (existingQuote) {
         // Editing existing quote
+        console.log("✏️ Editing existing quote");
         setLineItems(existingQuote.line_items);
         setVatEnabled(existingQuote.vat_rate > 0);
         setValidUntil(existingQuote.valid_until || getDefaultValidUntil());
         setNotes(existingQuote.notes || "");
       } else {
         // Creating new quote - pre-populate from service data
-        setLineItems(generateInitialLineItems(serviceData));
+        console.log("🆕 Creating new quote");
+        const generatedItems = generateInitialLineItems(serviceData);
+        console.log("✨ Generated line items:", generatedItems);
+        setLineItems(generatedItems);
         setVatEnabled(false);
         setValidUntil(getDefaultValidUntil());
         setNotes("");
