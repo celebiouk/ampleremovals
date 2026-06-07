@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  const executed = 0, skipped = 0, failed = 0;
+  const counts = { executed: 0, skipped: 0, failed: 0 };
 
   try {
     // ── Overdue invoice detection ──────────────────────────────────────
@@ -56,13 +56,13 @@ export async function GET(request: NextRequest) {
     for (const rule of rules) {
       try {
         if (rule.trigger_event === "booking_created") {
-          await processBookingCreatedRule(rule, supabase, companyPhone, googleReviewLink, { executed, skipped, failed });
+          await processBookingCreatedRule(rule, supabase, companyPhone, googleReviewLink, counts);
         } else if (rule.trigger_event === "move_date_tomorrow") {
-          await processDayBeforeRule(rule, supabase, companyPhone, { executed, skipped, failed });
+          await processDayBeforeRule(rule, supabase, companyPhone, counts);
         }
         // Status-based triggers are handled in the status update route
       } catch (err) {
-        failed++;
+        counts.failed++;
         await logError({ message: `Automation rule ${rule.id} failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { ruleId: rule.id } });
       }
     }
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
-  return NextResponse.json({ executed, skipped, failed });
+  return NextResponse.json(counts);
 }
 
 async function processBookingCreatedRule(
