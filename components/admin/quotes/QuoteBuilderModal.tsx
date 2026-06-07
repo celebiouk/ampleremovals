@@ -159,22 +159,27 @@ export function QuoteBuilderModal({
       console.log("📦 serviceData:", serviceData);
       console.log("📝 existingQuote:", existingQuote);
 
-      if (existingQuote) {
-        // Editing existing quote
-        console.log("✏️ Editing existing quote");
+      // Check if existing quote has actual line items
+      const hasExistingItems = existingQuote && existingQuote.line_items && existingQuote.line_items.length > 0;
+
+      if (hasExistingItems) {
+        // Editing existing quote WITH items
+        console.log("✏️ Editing existing quote with items");
         setLineItems(existingQuote.line_items);
         setVatEnabled(existingQuote.vat_rate > 0);
         setValidUntil(existingQuote.valid_until || getDefaultValidUntil());
         setNotes(existingQuote.notes || "");
       } else {
-        // Creating new quote - pre-populate from service data
-        console.log("🆕 Creating new quote");
+        // Creating new quote OR editing empty quote - pre-populate from service data
+        console.log("🆕 Creating new quote / Empty quote - pre-populating from service data");
         const generatedItems = generateInitialLineItems(serviceData);
         console.log("✨ Generated line items:", generatedItems);
         setLineItems(generatedItems);
-        setVatEnabled(false);
-        setValidUntil(getDefaultValidUntil());
-        setNotes("");
+
+        // Keep VAT setting if editing empty quote, otherwise default to false
+        setVatEnabled(existingQuote ? existingQuote.vat_rate > 0 : false);
+        setValidUntil(existingQuote?.valid_until || getDefaultValidUntil());
+        setNotes(existingQuote?.notes || "");
       }
     }
   }, [isOpen, existingQuote, serviceData]);
