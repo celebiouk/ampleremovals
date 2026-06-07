@@ -25,7 +25,7 @@ export function generateQuoteConfirmToken(bookingId: string): string | null {
 
 /**
  * Verify a quote confirmation token
- * Returns bookingId if valid, null if invalid or expired
+ * Returns true if valid, false if invalid/expired/secret missing
  */
 export function verifyQuoteConfirmToken(
   bookingId: string,
@@ -34,7 +34,8 @@ export function verifyQuoteConfirmToken(
 ): boolean {
   const secret = process.env.QUOTE_CONFIRM_SECRET;
   if (!secret) {
-    throw new Error("QUOTE_CONFIRM_SECRET environment variable is not set");
+    console.warn("⚠️ QUOTE_CONFIRM_SECRET not set - cannot verify token, returning false");
+    return false;
   }
 
   try {

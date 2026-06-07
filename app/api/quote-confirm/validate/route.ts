@@ -8,9 +8,13 @@ import { verifyQuoteConfirmToken } from "@/lib/tokens";
  */
 export async function POST(req: NextRequest) {
   try {
+    console.log("🔐 Quote validation called");
     const { bookingId, token } = await req.json();
+    console.log("  bookingId:", bookingId);
+    console.log("  token:", token?.substring(0, 20) + "...");
 
     if (!bookingId || !token) {
+      console.log("❌ Missing params");
       return NextResponse.json(
         { success: false, error: "Missing bookingId or token", code: "MISSING_PARAMS" },
         { status: 400 }
@@ -18,8 +22,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify token signature and expiry
+    console.log("🔍 Verifying token...");
     const isValid = verifyQuoteConfirmToken(bookingId, token, 48);
+    console.log("  Token valid:", isValid);
+
     if (!isValid) {
+      console.log("❌ Invalid token");
       return NextResponse.json(
         { success: false, error: "Invalid or expired confirmation link", code: "INVALID_TOKEN" },
         { status: 401 }
@@ -48,19 +56,30 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch quote details
+    console.log("📋 Fetching booking...");
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
       .select("id, reference, service_type, customer_name, quote_total")
       .eq("id", bookingId)
       .single();
 
+    console.log("  Booking data:", booking);
+    console.log("  Fetch error:", fetchError);
+
     if (fetchError || !booking) {
-      console.error("Booking fetch error:", fetchError);
+      console.error("❌ Booking fetch failed:", fetchError?.message || "No booking returned");
       return NextResponse.json(
-        { success: false, error: "Booking not found", code: "NOT_FOUND" },
+        {
+          success: false,
+          error: "Booking not found",
+          code: "NOT_FOUND",
+          details: fetchError?.message,
+        },
         { status: 404 }
       );
     }
+
+    console.log("✅ Booking found:", booking.reference);
 
     return NextResponse.json({
       success: true,
