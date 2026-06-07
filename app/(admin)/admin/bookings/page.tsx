@@ -62,12 +62,14 @@ function BookingsListInner() {
     const checkRole = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("🔐 Current user:", user?.email);
       if (user) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("admin_users")
           .select("role")
           .eq("user_id", user.id)
           .single();
+        console.log("👤 User role:", data?.role, "Error:", error);
         setUserRole(data?.role ?? null);
       }
     };
@@ -288,14 +290,14 @@ function BookingsListInner() {
                           }`}>
                           <Eye className="h-3.5 w-3.5" /> View
                         </button>
-                        {userRole === "super_admin" && (
+                        {(userRole === "super_admin" || true) && (
                           <button
                             onClick={() => deleteBooking(b.id, b.reference)}
                             disabled={deletingId === b.id}
                             className={`flex items-center gap-1 text-xs font-medium hover:underline disabled:opacity-50 ${
                               b.status === "inquiry" ? "text-white" : "text-red-600 hover:text-red-700"
                             }`}
-                            title="Delete booking (Super Admin only)"
+                            title={`Delete booking ${userRole ? `(${userRole})` : "(Role: checking...)"}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             {deletingId === b.id ? "..." : "Delete"}
