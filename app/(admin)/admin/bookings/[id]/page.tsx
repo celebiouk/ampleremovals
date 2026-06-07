@@ -545,7 +545,7 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
-      {/* Invoice modals */}
+      {/* Invoice modal */}
       {data && generateInvoiceType && (
         <GenerateInvoiceModal
           isOpen={!!generateInvoiceType}
@@ -559,6 +559,10 @@ export default function BookingDetailPage() {
           quoteTotal={data.booking.quote_total}
           onSuccess={() => { refresh(); setGenerateInvoiceType(null); }}
         />
+      )}
+
+      {/* Quote modal */}
+      {data && (
         <QuoteBuilderModal
           bookingId={bookingId}
           bookingReference={data.booking.reference}
