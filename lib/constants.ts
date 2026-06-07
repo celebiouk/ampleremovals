@@ -22,7 +22,7 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 // ── Status badge colours (Tailwind classes) ────────────────────────────────
 
 export const STATUS_COLOURS: Record<BookingStatus, string> = {
-  inquiry:                    "bg-slate-100 text-slate-700",
+  inquiry:                    "bg-red-100 text-red-700", // Red to indicate not contacted yet
   called:                     "bg-blue-100 text-blue-700",
   not_called:                 "bg-amber-100 text-amber-700",
   answered:                   "bg-cyan-100 text-cyan-700",
@@ -39,7 +39,7 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
 };
 
 export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
-  inquiry:                    "bg-slate-400",
+  inquiry:                    "bg-red-500", // Red dot for not contacted
   called:                     "bg-blue-500",
   not_called:                 "bg-amber-500",
   answered:                   "bg-cyan-500",
