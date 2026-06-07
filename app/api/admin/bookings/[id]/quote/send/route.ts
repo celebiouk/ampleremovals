@@ -20,7 +20,9 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log("📧 Quote send route called");
     const { id: bookingId } = await context.params;
+    console.log("  bookingId:", bookingId);
     const supabase = await createClient();
 
     // Fetch booking with all quote data
@@ -95,7 +97,10 @@ export async function POST(
     };
 
     // Generate PDF
+    console.log("📄 Generating quote PDF...");
+    console.log("  PDF data:", JSON.stringify(pdfData, null, 2));
     const pdfBuffer = await generateQuotePDF(pdfData);
+    console.log("✅ PDF generated, size:", pdfBuffer.length);
 
     // Upload to storage
     await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
@@ -235,14 +240,25 @@ export async function POST(
       },
     });
   } catch (err) {
+    console.error("❌ Quote send error:", err);
+    console.error("Stack:", err instanceof Error ? err.stack : "No stack");
+
     const supabase = await createClient();
     await supabase.from("server_logs").insert({
       level: "error",
       message: "Quote send exception",
-      metadata: { error: String(err) },
+      metadata: {
+        error: String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        message: err instanceof Error ? err.message : String(err),
+      },
     });
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Internal server error",
+        details: process.env.NODE_ENV === "development" ? String(err) : undefined,
+      },
       { status: 500 }
     );
   }
