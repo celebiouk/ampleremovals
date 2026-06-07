@@ -62,14 +62,14 @@ function BookingsListInner() {
     const checkRole = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("🔐 Current user:", user?.email);
+      console.log("🔐 Current user:", user?.email, "ID:", user?.id);
       if (user) {
         const { data, error } = await supabase
           .from("admin_users")
-          .select("role")
-          .eq("user_id", user.id)
+          .select("role, email")
+          .eq("supabase_user_id", user.id)
           .single();
-        console.log("👤 User role:", data?.role, "Error:", error);
+        console.log("👤 User role:", data?.role, "Email:", data?.email, "Error:", error);
         setUserRole(data?.role ?? null);
       }
     };
@@ -290,7 +290,7 @@ function BookingsListInner() {
                           }`}>
                           <Eye className="h-3.5 w-3.5" /> View
                         </button>
-                        {(userRole === "super_admin" || true) && (
+                        {userRole === "super_admin" && (
                           <button
                             onClick={() => deleteBooking(b.id, b.reference)}
                             disabled={deletingId === b.id}

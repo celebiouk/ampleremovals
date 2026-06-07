@@ -23,15 +23,24 @@ export async function DELETE(
     }
 
     // Check if user is super_admin
-    const { data: adminUser } = await supabaseAuth
+    const { data: adminUser, error: roleError } = await supabaseAuth
       .from("admin_users")
-      .select("role")
-      .eq("user_id", user.id)
+      .select("role, email")
+      .eq("supabase_user_id", user.id)
       .single();
+
+    console.log("🔍 Delete permission check:");
+    console.log("  User ID:", user.id);
+    console.log("  Admin User:", adminUser);
+    console.log("  Role Error:", roleError);
 
     if (!adminUser || adminUser.role !== "super_admin") {
       return NextResponse.json(
-        { success: false, error: "Only super admins can delete bookings" },
+        {
+          success: false,
+          error: `Only super admins can delete bookings. Your role: ${adminUser?.role || "not found"}`,
+          debug: { adminUser, roleError }
+        },
         { status: 403 }
       );
     }
