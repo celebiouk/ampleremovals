@@ -184,7 +184,7 @@ export function QuoteBuilderModal({
     }
   }, [isOpen, existingQuote, serviceData]);
 
-  // Calculate distance and suggest pricing when modal opens for new quotes or empty quotes
+  // Calculate distance and suggest pricing when modal opens
   useEffect(() => {
     console.log("🗺️ Distance calculation check:");
     console.log("  - isOpen:", isOpen);
@@ -192,12 +192,9 @@ export function QuoteBuilderModal({
     console.log("  - origin_postcode:", serviceData?.origin_postcode);
     console.log("  - destination_postcode:", serviceData?.destination_postcode);
 
-    // Check if existing quote has items
-    const hasExistingItems = existingQuote && existingQuote.line_items && existingQuote.line_items.length > 0;
-
+    // Always calculate distance if we have both postcodes
     if (
       isOpen &&
-      !hasExistingItems &&
       serviceData?.origin_postcode &&
       serviceData?.destination_postcode
     ) {

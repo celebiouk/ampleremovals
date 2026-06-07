@@ -81,8 +81,8 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
             />
             <Text style={styles.companyName}>Ample Removals</Text>
             <Text style={styles.companyDetail}>London&apos;s Premier Moving & Cleaning Services</Text>
-            <Text style={styles.companyDetail}>Phone: 020 XXXX XXXX</Text>
-            <Text style={styles.companyDetail}>Email: bookings@ampleremovals.co.uk</Text>
+            <Text style={styles.companyDetail}>Phone: 07344683477</Text>
+            <Text style={styles.companyDetail}>Email: bookings@ampleremovals.com</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.quoteTitle}>QUOTE</Text>
@@ -166,7 +166,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
           <Text style={styles.nextHeading}>How to Accept This Quote</Text>
           {[
             "Review the details above and confirm everything is correct.",
-            "Call us on 020 XXXX XXXX or reply to the email to confirm you'd like to proceed.",
+            "Call us on 07344683477 or reply to the email to confirm you'd like to proceed.",
             "We will send you a deposit invoice to secure your booking.",
             "Once the deposit is paid, your booking is confirmed and we'll be in touch with arrival details.",
           ].map((step, i) => (
