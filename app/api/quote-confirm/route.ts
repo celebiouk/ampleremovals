@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail, resendAdminEmails } from "@/lib/resend";
 
 /**
  * POST /api/quote-confirm
@@ -141,9 +141,9 @@ export async function POST(req: NextRequest) {
         `,
       });
 
-      // Notify admin
+      // Notify admin (all admin emails including daniel@)
       await sendEmail({
-        to: ["bookings@ampleremovals.com", "rita@ampleremovals.com", "amanda@ampleremovals.com"],
+        to: resendAdminEmails,
         subject: `🎉 Quote Confirmed - ${booking.reference}`,
         html: `
           <div style="font-family: sans-serif;">

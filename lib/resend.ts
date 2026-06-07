@@ -6,7 +6,9 @@ export const resendFrom =
   process.env.RESEND_FROM_EMAIL ?? "Bookings - Ample Removals <bookings@ampleremovals.com>";
 
 // Multiple admin emails for new booking notifications
+// daniel@ampleremovals.com is the MAIN email - must receive ALL notifications
 export const resendAdminEmails = [
+  "daniel@ampleremovals.com",  // MAIN - receives everything
   "hello@ampleremovals.com",
   "bookings@ampleremovals.com",
   "rita@ampleremovals.com",
