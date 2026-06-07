@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
+import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -46,6 +47,7 @@ export default function BookingDetailPage() {
   const [smsBody, setSmsBody] = useState("");
   const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -285,6 +287,53 @@ export default function BookingDetailPage() {
             ) : <p className="text-sm text-slate-400">No description provided</p>}
           </Card>
 
+          <Card title="Quote">
+            {booking.quote_total && booking.quote_line_items && Array.isArray(booking.quote_line_items) ? (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-green-50 border border-green-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-green-900">Quote Total</span>
+                    <span className="text-lg font-bold text-green-900">{formatCurrency(booking.quote_total)}</span>
+                  </div>
+                  {booking.quote_sent_at && (
+                    <p className="text-xs text-green-700">Sent to customer on {formatDate(booking.quote_sent_at)}</p>
+                  )}
+                  {booking.quote_valid_until && (
+                    <p className="text-xs text-green-700">Valid until {formatDate(booking.quote_valid_until)}</p>
+                  )}
+                </div>
+                <div className="text-xs text-slate-500 space-y-1">
+                  <p className="font-semibold">Line Items:</p>
+                  {booking.quote_line_items.map((item: { description: string; quantity: number; unit_price: number; total: number }, idx: number) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{item.description} (x{item.quantity})</span>
+                      <span className="font-medium">{formatCurrency(item.total)}</span>
+                    </div>
+                  ))}
+                </div>
+                {booking.quote_pdf_url && (
+                  <a href={booking.quote_pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
+                    <ExternalLink className="h-3 w-3" /> View Quote PDF
+                  </a>
+                )}
+                <button
+                  onClick={() => setQuoteModalOpen(true)}
+                  className="w-full rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-800 hover:bg-green-100">
+                  Edit Quote
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="mb-4 text-sm text-slate-400">No quote created yet</p>
+                <button
+                  onClick={() => setQuoteModalOpen(true)}
+                  className="rounded-xl border border-brand-purple-200 bg-brand-purple-50 px-3 py-2 text-sm font-medium text-brand-purple-800 hover:bg-brand-purple-100">
+                  + Create Quote
+                </button>
+              </div>
+            )}
+          </Card>
+
           <Card title="Invoices">
             {invoices.length > 0 ? (
               <div className="mb-4 space-y-2">
@@ -507,7 +556,28 @@ export default function BookingDetailPage() {
           customerName={data.customer.full_name}
           serviceType={data.booking.service_type as ServiceType}
           additionalServices={data.additionalServices}
+          quoteTotal={data.booking.quote_total}
           onSuccess={() => { refresh(); setGenerateInvoiceType(null); }}
+        />
+        <QuoteBuilderModal
+          bookingId={bookingId}
+          bookingReference={data.booking.reference}
+          existingQuote={
+            data.booking.quote_line_items && Array.isArray(data.booking.quote_line_items)
+              ? {
+                  line_items: data.booking.quote_line_items,
+                  subtotal: data.booking.quote_subtotal || 0,
+                  vat_rate: data.booking.quote_vat_rate || 20,
+                  vat_amount: data.booking.quote_vat_amount || 0,
+                  total: data.booking.quote_total || 0,
+                  valid_until: data.booking.quote_valid_until,
+                  notes: data.booking.quote_notes,
+                }
+              : undefined
+          }
+          isOpen={quoteModalOpen}
+          onClose={() => setQuoteModalOpen(false)}
+          onSaved={refresh}
         />
       )}
       <InvoiceDetailModal

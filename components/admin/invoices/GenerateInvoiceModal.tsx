@@ -26,6 +26,7 @@ interface Props {
   customerName: string;
   serviceType: ServiceType;
   additionalServices?: AdditionalServices | null;
+  quoteTotal?: number | null; // Quote total from booking
   onSuccess: (invoice: { id: string; invoiceNumber: string; total: number; pdfUrl: string; stripePaymentLink: string }) => void;
 }
 
@@ -34,7 +35,7 @@ const defaultDueDate = () => {
   return d.toISOString().slice(0, 10);
 };
 
-export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, additionalServices, onSuccess }: Props) {
+export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, additionalServices, quoteTotal, onSuccess }: Props) {
   const serviceLabel = SERVICE_LABELS_SHORT[serviceType];
   const typeLabel = type === "deposit" ? "Deposit" : "Full Balance";
 
@@ -57,6 +58,10 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
       setVatEnabled(false); setDueDate(defaultDueDate()); setNotes("");
       setPreview(null); setError(""); setFullJobValue(0); setDepositPercent(25);
     } else {
+      // If quote total exists, pre-fill it as the full job value
+      if (quoteTotal && quoteTotal > 0) {
+        setFullJobValue(quoteTotal);
+      }
       // Pre-populate additional services as line items
       const extras: LineItem[] = [];
       if (additionalServices?.packing_services) extras.push({ description: "Packing Services", quantity: 1, unitPrice: 0 });
@@ -67,7 +72,7 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
         setLineItems([{ description: `${typeLabel} — ${serviceLabel} Service`, quantity: 1, unitPrice: 0 }, ...extras]);
       }
     }
-  }, [isOpen, typeLabel, serviceLabel, additionalServices]);
+  }, [isOpen, typeLabel, serviceLabel, additionalServices, quoteTotal]);
 
   // For deposit: auto-calculate deposit amount from full job value + %
   const isDeposit = type === "deposit";
@@ -157,6 +162,13 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
                 ? "This is a deposit invoice. The customer will need to pay this to confirm their booking."
                 : "This is the final balance invoice. Send this after the job is complete."}
             </div>
+
+            {/* Quote total banner */}
+            {quoteTotal && quoteTotal > 0 && (
+              <div className="rounded-xl p-3 text-sm bg-green-50 text-green-800 border border-green-200">
+                ✓ Quote found: {formatCurrency(quoteTotal)} — Auto-filled as full job price below.
+              </div>
+            )}
 
             {/* Deposit-specific: full job value + deposit % */}
             {isDeposit && (

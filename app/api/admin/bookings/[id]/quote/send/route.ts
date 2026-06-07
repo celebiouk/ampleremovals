@@ -1,0 +1,231 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { Resend } from "resend";
+import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
+import { uploadQuotePDF, getQuoteSignedURL } from "@/lib/storage";
+import { formatCurrency } from "@/lib/utils";
+import type { QuotePDFData, QuoteLineItem } from "@/types";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bookings@ampleremovals.co.uk";
+
+/**
+ * POST /api/admin/bookings/[id]/quote/send
+ * Generate quote PDF, upload to storage, and send via Email (with PDF), SMS, and WhatsApp.
+ */
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: bookingId } = await context.params;
+    const supabase = await createClient();
+
+    // Fetch booking with all quote data
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .select(`
+        id,
+        reference,
+        service_type,
+        quote_line_items,
+        quote_subtotal,
+        quote_vat_rate,
+        quote_vat_amount,
+        quote_total,
+        quote_valid_until,
+        quote_notes,
+        customer:customers(full_name, email, phone),
+        origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
+        destination_address:addresses!destination_address_id(line_1, line_2, city, postcode)
+      `)
+      .eq("id", bookingId)
+      .single();
+
+    if (bookingError || !booking) {
+      return NextResponse.json(
+        { success: false, error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    if (!booking.quote_total || !booking.quote_line_items || !Array.isArray(booking.quote_line_items)) {
+      return NextResponse.json(
+        { success: false, error: "Quote data not found. Please save a quote first." },
+        { status: 400 }
+      );
+    }
+
+    const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
+    const originAddress = Array.isArray(booking.origin_address) ? booking.origin_address[0] : booking.origin_address;
+    const destinationAddress = Array.isArray(booking.destination_address) ? booking.destination_address[0] : booking.destination_address;
+
+    if (!customer) {
+      return NextResponse.json(
+        { success: false, error: "Customer not found" },
+        { status: 404 }
+      );
+    }
+
+    // Format addresses
+    const formatAddress = (addr: typeof originAddress) => {
+      if (!addr) return "N/A";
+      return [addr.line_1, addr.line_2, addr.city, addr.postcode].filter(Boolean).join(", ");
+    };
+
+    // Prepare PDF data
+    const pdfData: QuotePDFData = {
+      quote_number: `QUOTE-${booking.reference}`,
+      customer_name: customer.full_name,
+      customer_email: customer.email,
+      customer_phone: customer.phone,
+      service_type: booking.service_type.replace(/_/g, " ").toUpperCase(),
+      origin_address: formatAddress(originAddress),
+      destination_address: destinationAddress ? formatAddress(destinationAddress) : undefined,
+      date: new Date().toLocaleDateString("en-GB"),
+      valid_until: booking.quote_valid_until || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB"),
+      line_items: booking.quote_line_items as QuoteLineItem[],
+      subtotal: Number(booking.quote_subtotal),
+      vat_rate: Number(booking.quote_vat_rate),
+      vat_amount: Number(booking.quote_vat_amount),
+      total: Number(booking.quote_total),
+      notes: booking.quote_notes || undefined,
+    };
+
+    // Generate PDF
+    const pdfBuffer = await generateQuotePDF(pdfData);
+
+    // Upload to storage
+    const storagePath = await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
+    const pdfUrl = await getQuoteSignedURL(bookingId, booking.reference);
+
+    // Update booking with PDF URL and sent timestamp
+    await supabase
+      .from("bookings")
+      .update({
+        quote_pdf_url: pdfUrl,
+        quote_sent_at: new Date().toISOString(),
+      })
+      .eq("id", bookingId);
+
+    // Prepare communication content
+    const emailSubject = `Your Quote from Ample Removals — ${booking.reference}`;
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #6b21a8;">Your Quote is Ready!</h2>
+        <p>Dear ${customer.full_name},</p>
+        <p>Thank you for your inquiry. We're pleased to provide you with a detailed quote for your <strong>${booking.service_type.replace(/_/g, " ")}</strong> service.</p>
+
+        <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; font-size: 14px;"><strong>Quote Total:</strong> ${formatCurrency(Number(booking.quote_total))}</p>
+          <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>Valid Until:</strong> ${pdfData.valid_until}</p>
+        </div>
+
+        <p><strong>Quote Summary:</strong></p>
+        <ul>
+          ${(booking.quote_line_items as QuoteLineItem[]).map((item) => `<li>${item.description} — ${formatCurrency(item.total)}</li>`).join("")}
+        </ul>
+
+        <p>Please find the complete quote attached as a PDF.</p>
+
+        <p><strong>Next Steps:</strong></p>
+        <ol>
+          <li>Review the attached quote carefully</li>
+          <li>Reply to this email or call us to confirm</li>
+          <li>We'll send you a deposit invoice to secure your booking</li>
+        </ol>
+
+        <p>If you have any questions, please don't hesitate to reach out.</p>
+
+        <p style="margin-top: 30px;">Best regards,<br/><strong>Ample Removals Team</strong><br/>020 XXXX XXXX</p>
+      </div>
+    `;
+
+    const smsBody = `Ample Removals: Your quote for ${booking.service_type.replace(/_/g, " ")} is ready! Total: ${formatCurrency(Number(booking.quote_total))}. Check your email for the full PDF. Valid until ${pdfData.valid_until}. Reply to confirm. Ref: ${booking.reference}`;
+
+    const whatsappBody = `Hi ${customer.full_name}! Your Ample Removals quote is ready:\n\n📋 Service: ${booking.service_type.replace(/_/g, " ")}\n💷 Total: ${formatCurrency(Number(booking.quote_total))}\n📅 Valid until: ${pdfData.valid_until}\n\nFull PDF sent to your email. Reply here or call us to confirm!\n\nRef: ${booking.reference}`;
+
+    // Send Email with PDF attachment
+    let emailSuccess = false;
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: customer.email,
+        subject: emailSubject,
+        html: emailBody,
+        attachments: [{
+          filename: `Quote-${booking.reference}.pdf`,
+          content: pdfBuffer,
+        }],
+      });
+      emailSuccess = true;
+    } catch (emailErr) {
+      await supabase.from("server_logs").insert({
+        level: "error",
+        message: "Failed to send quote email",
+        metadata: { booking_id: bookingId, error: String(emailErr) },
+      });
+    }
+
+    // Send SMS
+    let smsSuccess = false;
+    const smsResult = await sendSMS(customer.phone, smsBody);
+    if (smsResult.success) {
+      smsSuccess = true;
+    } else {
+      await supabase.from("server_logs").insert({
+        level: "error",
+        message: "Failed to send quote SMS",
+        metadata: { booking_id: bookingId, error: smsResult.error },
+      });
+    }
+
+    // Send WhatsApp
+    let whatsappSuccess = false;
+    const whatsappResult = await sendWhatsApp(customer.phone, whatsappBody);
+    if (whatsappResult.success) {
+      whatsappSuccess = true;
+    } else {
+      await supabase.from("server_logs").insert({
+        level: "warn",
+        message: "Failed to send quote WhatsApp",
+        metadata: { booking_id: bookingId, error: whatsappResult.error },
+      });
+    }
+
+    // Log activity
+    await supabase.from("activity_log").insert({
+      booking_id: bookingId,
+      action: "Quote sent to customer",
+      metadata: {
+        total: booking.quote_total,
+        email_sent: emailSuccess,
+        sms_sent: smsSuccess,
+        whatsapp_sent: whatsappSuccess,
+      },
+      performed_by: "admin",
+    });
+
+    return NextResponse.json({
+      success: true,
+      pdf_url: pdfUrl,
+      channels: {
+        email: emailSuccess,
+        sms: smsSuccess,
+        whatsapp: whatsappSuccess,
+      },
+    });
+  } catch (err) {
+    const supabase = await createClient();
+    await supabase.from("server_logs").insert({
+      level: "error",
+      message: "Quote send exception",
+      metadata: { error: String(err) },
+    });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

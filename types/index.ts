@@ -90,6 +90,16 @@ export interface Booking {
   description: string | null;
   internal_notes: string | null;
   source: string;
+  // Quote fields
+  quote_line_items: QuoteLineItem[] | null;
+  quote_subtotal: number | null;
+  quote_vat_rate: number | null;
+  quote_vat_amount: number | null;
+  quote_total: number | null;
+  quote_valid_until: string | null;
+  quote_notes: string | null;
+  quote_pdf_url: string | null;
+  quote_sent_at: string | null;
   created_at: string;
   updated_at: string;
   // Optional joined relations
@@ -181,6 +191,13 @@ export interface ActivityLogEntry {
 }
 
 // ── Billing ───────────────────────────────────────────────
+export interface QuoteLineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
 export interface InvoiceLineItem {
   description: string;
   quantity: number;
@@ -228,6 +245,25 @@ export interface ServerLog {
   message: string;
   metadata: Record<string, unknown> | null;
   created_at: string;
+}
+
+// ── Quote PDF generation ──────────────────────────────────
+export interface QuotePDFData {
+  quote_number: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  service_type: string;
+  origin_address: string;
+  destination_address?: string;
+  date: string;
+  valid_until: string;
+  line_items: QuoteLineItem[];
+  subtotal: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  notes?: string;
 }
 
 // ── Composite / view models ───────────────────────────────
