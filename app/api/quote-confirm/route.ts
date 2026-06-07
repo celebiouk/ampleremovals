@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { sendEmail } from "@/lib/resend";
 
@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS (public users can't read bookings)
+    const supabase = createAdminClient();
 
     // Check if already confirmed (skip if table doesn't exist)
     let alreadyConfirmed = false;
@@ -107,19 +108,25 @@ export async function POST(req: NextRequest) {
     // Fetch booking details for email
     const { data: booking } = await supabase
       .from("bookings")
-      .select("reference, customer_name, customer_email, service_type")
+      .select(`
+        reference,
+        service_type,
+        customer:customers(full_name, email)
+      `)
       .eq("id", bookingId)
       .single();
 
     if (booking) {
+      const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
+
       // Send confirmation email to customer
       await sendEmail({
-        to: booking.customer_email,
+        to: customer?.email || "",
         subject: `Quote Confirmed - ${booking.reference}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #6b21a8;">Quote Confirmed!</h1>
-            <p>Hi ${booking.customer_name},</p>
+            <p>Hi ${customer?.full_name || "there"},</p>
             <p>Thank you for confirming your quote for <strong>${booking.service_type}</strong>.</p>
             <p>Your booking reference is: <strong>${booking.reference}</strong></p>
             <p>We're preparing your deposit invoice and will send it to you shortly.</p>
@@ -141,7 +148,7 @@ export async function POST(req: NextRequest) {
         html: `
           <div style="font-family: sans-serif;">
             <h2 style="color: #16a34a;">Customer Confirmed Quote</h2>
-            <p><strong>${booking.customer_name}</strong> confirmed their quote via email.</p>
+            <p><strong>${customer?.full_name || "Customer"}</strong> confirmed their quote via email.</p>
             <p><strong>Booking:</strong> ${booking.reference}</p>
             <p><strong>Service:</strong> ${booking.service_type}</p>
             <p><strong>Next step:</strong> Send deposit invoice</p>
