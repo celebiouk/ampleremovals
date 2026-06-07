@@ -1,4 +1,4 @@
-import { resend, resendFrom, resendAdminEmail } from "@/lib/resend";
+import { resend, resendFrom, resendAdminEmail, resendAdminEmails } from "@/lib/resend";
 import { twilioClient, twilioFrom } from "@/lib/twilio";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
@@ -366,7 +366,7 @@ export async function sendAdminNewBookingEmail(
 
     const { error } = await resend.emails.send({
       from: resendFrom,
-      to: resendAdminEmail,
+      to: resendAdminEmails,
       subject: `🔔 New Booking — ${SERVICE_LABEL_SHORT[payload.serviceType]} — Ref: ${payload.reference}`,
       html: adminEmailHtml({
         reference: payload.reference,
@@ -388,7 +388,7 @@ export async function sendAdminNewBookingEmail(
 
     await logActivity(payload.bookingId, payload.customerId, "Admin notification email sent", {
       reference: payload.reference,
-      adminEmail: resendAdminEmail,
+      adminEmails: resendAdminEmails,
     });
   } catch (err) {
     await logError({
