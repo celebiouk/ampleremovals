@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   TrendingUp, TrendingDown, ClipboardList, CalendarCheck,
-  PoundSterling, Target, AlertCircle, Eye, RefreshCw,
+  Target, Eye, RefreshCw,
   ArrowRight, Phone,
 } from "lucide-react";
 import {
@@ -17,7 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT, IN_PROGRESS_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -208,9 +208,6 @@ export default function AdminDashboardPage() {
     const lastRev = (lastMonthInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
     const outstanding = (outstandingInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
     const convRate = (totalCount ?? 0) > 0 ? Math.round(((completedCount ?? 0) / (totalCount ?? 1)) * 100) : 0;
-    const revTrend = lastRev > 0 ? Math.round(((monthRev - lastRev) / lastRev) * 100) : 0;
-    const dayTrend = (yesterdayCount ?? 0) > 0 ? Math.round((((todayCount ?? 0) - (yesterdayCount ?? 0)) / (yesterdayCount ?? 1)) * 100) : 0;
-
     setKpi({
       todayBookings: todayCount ?? 0,
       yesterdayBookings: yesterdayCount ?? 0,

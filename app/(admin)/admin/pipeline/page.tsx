@@ -10,9 +10,8 @@ import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { STATUS_COLOURS, STATUS_DOT_COLOURS } from "@/lib/constants";
+import { STATUS_DOT_COLOURS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import type { BookingStatus, ServiceType } from "@/types";
 

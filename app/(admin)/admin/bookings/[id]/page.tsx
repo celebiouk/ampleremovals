@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft, Copy, Check, Mail, Phone, MessageSquare, Smartphone,
   ArrowRight, Plus, Receipt, Trash2, ChevronDown, ChevronUp, Loader2,
-  ExternalLink, Send,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";

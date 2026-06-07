@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  let executed = 0, skipped = 0, failed = 0;
+  const executed = 0, skipped = 0, failed = 0;
 
   try {
     // ── Overdue invoice detection ──────────────────────────────────────

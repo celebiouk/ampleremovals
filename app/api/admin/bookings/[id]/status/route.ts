@@ -10,7 +10,7 @@ const schema = z.object({
   status: z.enum(ALL_STATUSES as [BookingStatus, ...BookingStatus[]]),
 });
 
-async function getAuthUser(request: NextRequest) {
+async function getAuthUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return user;
@@ -20,7 +20,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getAuthUser(request);
+  const user = await getAuthUser();
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => null);

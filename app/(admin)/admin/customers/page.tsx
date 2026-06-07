@@ -39,8 +39,8 @@ function CustomersListInner() {
       .range(from, from + PAGE_SIZE - 1);
 
     const ids = (data ?? []).map((c: { id: string }) => c.id);
-    let bookingCounts: Record<string, number> = {};
-    let lastDates: Record<string, string> = {};
+    const bookingCounts: Record<string, number> = {};
+    const lastDates: Record<string, string> = {};
 
     if (ids.length > 0) {
       const { data: bData } = await supabase

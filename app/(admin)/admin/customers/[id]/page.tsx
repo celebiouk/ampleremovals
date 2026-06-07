@@ -7,7 +7,7 @@ import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
-import { Skeleton, TableSkeleton } from "@/components/admin/AdminSkeleton";
+import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { formatDate } from "@/lib/utils";
 import type { BookingStatus, ServiceType } from "@/types";
 

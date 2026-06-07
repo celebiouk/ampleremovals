@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { SERVICE_LABELS_SHORT, STATUS_LABELS, SERVICE_COLOURS, STATUS_COLOURS } from "@/lib/constants";
+import { SERVICE_LABELS_SHORT, STATUS_LABELS } from "@/lib/constants";
 import type { ServiceType, BookingStatus } from "@/types";
 
 type Range = "7d" | "30d" | "90d" | "year" | "all";

@@ -33,8 +33,8 @@ export function InvoiceDetailModal({ isOpen, onClose, invoiceId, onActionComplet
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
-  const [isVoiding, setIsVoiding] = useState(false);
+  const [, setIsMarkingPaid] = useState(false);
+  const [, setIsVoiding] = useState(false);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       : booking.move_date ? formatDate(booking.move_date) : "TBC";
 
     // Create Stripe Payment Link
-    const { paymentLink, paymentLinkId, priceId, productId } = await createStripePaymentLink({
+    const { paymentLink, priceId, productId } = await createStripePaymentLink({
       invoiceId: "pending", // placeholder until we have the DB id
       invoiceNumber,
       amount: Math.round(total * 100),
