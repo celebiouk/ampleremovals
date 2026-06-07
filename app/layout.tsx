@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -89,6 +90,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn(bricolage.variable, jakarta.variable)}>
       <body className="font-sans antialiased">
+        <GoogleAnalytics />
         {children}
         <Toaster richColors position="top-right" />
       </body>
