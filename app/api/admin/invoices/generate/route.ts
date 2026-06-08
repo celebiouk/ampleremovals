@@ -34,7 +34,14 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ success: false, error: "Invalid payload" }, { status: 400 });
+  if (!parsed.success) {
+    console.error("❌ Validation error:", parsed.error.issues);
+    return NextResponse.json({
+      success: false,
+      error: "Invalid payload",
+      details: process.env.NODE_ENV === "development" ? parsed.error.issues : undefined
+    }, { status: 400 });
+  }
 
   const { bookingId, type, lineItems, vatRate, dueDate, notes, fullJobValue, depositPercentage, balanceRemaining } = parsed.data;
   const supabase = createAdminClient();
@@ -192,7 +199,24 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, invoiceId, invoiceNumber, total, stripePaymentLink: paymentLink, pdfUrl });
   } catch (err) {
-    await logError({ message: `Invoice generate failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { bookingId } });
-    return NextResponse.json({ success: false, error: "Failed to generate invoice" }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
+
+    await logError({
+      message: `Invoice generate failed: ${errorMessage}`,
+      metadata: { bookingId, errorStack, body: parsed?.data }
+    });
+
+    console.error("❌ Invoice generation error:", {
+      error: errorMessage,
+      stack: errorStack,
+      bookingId,
+    });
+
+    return NextResponse.json({
+      success: false,
+      error: "Failed to generate invoice",
+      details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+    }, { status: 500 });
   }
 }
