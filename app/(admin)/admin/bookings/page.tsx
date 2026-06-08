@@ -277,30 +277,36 @@ function BookingsListInner() {
                 </tr>
               </thead>
               <tbody>
-                {bookings.map((b) => (
+                {bookings.map((b) => {
+                  const isInquiry = b.status === "inquiry";
+                  const isCalled = b.status === "called" || b.status === "not_called" || b.status === "answered" || b.status === "not_answered";
+
+                  return (
                   <tr key={b.id} onClick={() => router.push(`/admin/bookings/${b.id}`)}
                     className={`cursor-pointer border-b ${
-                      b.status === "inquiry"
+                      isInquiry
                         ? "bg-orange-400 hover:bg-orange-500 border-orange-500 text-white font-semibold"
+                        : isCalled
+                        ? "bg-red-50 hover:bg-red-100 border-red-100"
                         : "border-slate-50 hover:bg-slate-50"
                     }`}>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggleSelect(b.id)}
                         className="rounded border-slate-300 accent-brand-purple-700" />
                     </td>
-                    <td className={`px-4 py-3 font-mono text-sm font-semibold ${b.status === "inquiry" ? "text-white" : "text-brand-purple-700"}`}>{b.reference}</td>
-                    <td className={`px-4 py-3 text-sm ${b.status === "inquiry" ? "text-white" : "text-slate-700"}`}>{b.customer_name}</td>
+                    <td className={`px-4 py-3 font-mono text-sm font-semibold ${isInquiry ? "text-white" : "text-brand-purple-700"}`}>{b.reference}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-700"}`}>{b.customer_name}</td>
                     <td className="px-4 py-3"><ServiceBadge service={b.service_type} /></td>
-                    <td className={`px-4 py-3 text-sm ${b.status === "inquiry" ? "text-white" : "text-slate-600"}`}>{b.origin_postcode}</td>
-                    <td className={`px-4 py-3 text-sm ${b.status === "inquiry" ? "text-white" : "text-slate-600"}`}>{b.destination_postcode ?? "N/A"}</td>
-                    <td className={`px-4 py-3 text-sm ${b.status === "inquiry" ? "text-white" : "text-slate-600"}`}>{b.is_flexible_date ? "Flexible" : b.move_date ? formatDate(b.move_date) : "—"}</td>
-                    <td className={`px-4 py-3 text-sm ${b.status === "inquiry" ? "text-white" : "text-slate-400"}`}>{relativeTime(b.created_at)}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.origin_postcode}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.destination_postcode ?? "N/A"}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.is_flexible_date ? "Flexible" : b.move_date ? formatDate(b.move_date) : "—"}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-400"}`}>{relativeTime(b.created_at)}</td>
                     <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
                         <button onClick={() => router.push(`/admin/bookings/${b.id}`)}
                           className={`flex items-center gap-1 text-xs font-medium hover:underline ${
-                            b.status === "inquiry" ? "text-white" : "text-brand-purple-600"
+                            isInquiry ? "text-white" : "text-brand-purple-600"
                           }`}>
                           <Eye className="h-3.5 w-3.5" /> View
                         </button>
@@ -309,7 +315,7 @@ function BookingsListInner() {
                             onClick={() => openDeleteDialog(b.id, b.reference)}
                             disabled={deletingId === b.id}
                             className={`flex items-center gap-1 text-xs font-medium hover:underline disabled:opacity-50 ${
-                              b.status === "inquiry" ? "text-white" : "text-red-600 hover:text-red-700"
+                              isInquiry ? "text-white" : "text-red-600 hover:text-red-700"
                             }`}
                             title={`Delete booking (Super Admin only)`}
                           >
@@ -320,7 +326,8 @@ function BookingsListInner() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
