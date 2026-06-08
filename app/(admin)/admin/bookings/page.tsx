@@ -280,6 +280,7 @@ function BookingsListInner() {
                 {bookings.map((b) => {
                   const isInquiry = b.status === "inquiry";
                   const isCalled = b.status === "called" || b.status === "not_called" || b.status === "answered" || b.status === "not_answered";
+                  const isConfirmedOrCompleted = b.status === "deposit_paid_job_confirmed" || b.status === "job_completed";
 
                   return (
                   <tr key={b.id} onClick={() => router.push(`/admin/bookings/${b.id}`)}
@@ -288,6 +289,8 @@ function BookingsListInner() {
                         ? "bg-orange-400 hover:bg-orange-500 border-orange-500 text-white font-semibold"
                         : isCalled
                         ? "bg-red-50 hover:bg-red-100 border-red-100"
+                        : isConfirmedOrCompleted
+                        ? "bg-green-50 hover:bg-green-100 border-green-100"
                         : "border-slate-50 hover:bg-slate-50"
                     }`}>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
