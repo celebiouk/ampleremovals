@@ -4,8 +4,11 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { twilioClient, twilioFrom } from "@/lib/twilio";
 import { normaliseUKPhone, formatDate, formatCurrency } from "@/lib/utils";
-import { downloadInvoicePDF, getInvoiceSignedURL } from "@/lib/storage";
+import { downloadInvoicePDF, getInvoiceSignedURL, uploadInvoicePDF } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
+import { generateInvoicePDF } from "@/lib/pdf/generate-invoice-pdf";
+import { SERVICE_LABELS } from "@/lib/constants";
+import type { ServiceType, InvoicePDFData } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -36,16 +39,80 @@ export async function POST(request: NextRequest) {
   const booking = invoice.bookings as { id: string; reference: string; service_type: string; customer_id: string; customers: { full_name: string; email: string; phone: string } };
   const customer = booking.customers;
 
-  // Get fresh signed URL
+  // Fetch full booking details for PDF regeneration
+  const { data: fullBooking } = await supabase
+    .from("bookings")
+    .select("id, reference, service_type, move_date, is_flexible_date, flexible_date_from, flexible_date_to, origin_addr:addresses!origin_address_id(line_1, line_2, city, postcode)")
+    .eq("id", booking.id)
+    .single();
+
+  const originAddr = fullBooking && (Array.isArray(fullBooking.origin_addr) ? fullBooking.origin_addr[0] : fullBooking.origin_addr) as { line_1: string; line_2?: string | null; city?: string | null; postcode: string } | null;
+  const originAddress = originAddr ? [originAddr.line_1, originAddr.line_2, originAddr.city, originAddr.postcode].filter(Boolean).join(", ") : "";
+  const serviceLabel = SERVICE_LABELS[booking.service_type as ServiceType] ?? booking.service_type;
+  const moveDate = fullBooking && fullBooking.is_flexible_date
+    ? `Flexible: ${formatDate(fullBooking.flexible_date_from ?? "")} – ${formatDate(fullBooking.flexible_date_to ?? "")}`
+    : fullBooking && fullBooking.move_date ? formatDate(fullBooking.move_date) : "TBC";
+
+  // Get company settings
+  const { data: companySettings } = await supabase.from("settings").select("*").eq("id", 1).single();
+  const companyName = companySettings?.company_name ?? "Ample Removals";
+  const companyAddress = companySettings?.company_address ?? "";
+  const companyPhone = companySettings?.company_phone ?? "07344 683477";
+  const companyEmail = companySettings?.company_email ?? "hello@ampleremovals.com";
+
+  // Regenerate PDF with "sent" status
+  console.log("📄 Regenerating PDF with 'sent' status for invoice:", invoiceId);
   let pdfUrl = "";
   try {
+    const pdfData: InvoicePDFData = {
+      invoiceNumber: invoice.invoice_number,
+      invoiceDate: formatDate(invoice.created_at),
+      dueDate: formatDate(invoice.due_date),
+      status: "sent", // Important: Change status from draft to sent
+      type: invoice.type,
+      companyName,
+      companyAddress,
+      companyPhone,
+      companyEmail,
+      customerName: customer.full_name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone,
+      originAddress,
+      bookingReference: booking.reference,
+      serviceType: serviceLabel,
+      moveDate,
+      lineItems: invoice.line_items,
+      subtotal: invoice.subtotal,
+      vatRate: invoice.vat_rate,
+      vatAmount: invoice.vat_amount,
+      total: invoice.total,
+      notes: invoice.notes,
+      fullJobValue: invoice.full_job_value,
+      depositPercentage: invoice.deposit_percentage,
+      balanceRemaining: invoice.balance_remaining,
+    };
+
+    const pdfBuffer = await generateInvoicePDF(pdfData);
+    console.log("✅ PDF regenerated with 'sent' status, size:", pdfBuffer.length, "bytes");
+
+    // Upload new PDF (overwrites draft version)
+    await uploadInvoicePDF(booking.id, invoiceId, pdfBuffer);
     pdfUrl = await getInvoiceSignedURL(booking.id, invoiceId);
-  } catch { /* PDF may not exist yet */ }
+    console.log("✅ PDF uploaded and signed URL generated");
+
+    // Update invoice record with new PDF URL
+    await supabase.from("invoices").update({ pdf_url: pdfUrl }).eq("id", invoiceId);
+  } catch (pdfErr) {
+    console.error("❌ PDF regeneration failed:", pdfErr);
+    await logError({ message: `PDF regeneration failed for send: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`, metadata: { invoiceId } });
+    // Try to use existing PDF if regeneration fails
+    try {
+      pdfUrl = await getInvoiceSignedURL(booking.id, invoiceId);
+    } catch { /* No PDF available */ }
+  }
 
   const typeLabel = invoice.type === "deposit" ? "Deposit" : "Final Balance";
   const subject = `Invoice ${invoice.invoice_number} — ${booking.service_type} Booking ${booking.reference}`;
-  const settings = await supabase.from("settings").select("company_name, company_phone").eq("id", 1).single();
-  const companyName = settings.data?.company_name ?? "Ample Removals";
 
   const emailHtml = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
     <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
@@ -73,7 +140,7 @@ export async function POST(request: NextRequest) {
       </div>
       <p style="color:#64748b;font-size:13px;">Download your full invoice from the PDF attachment above.</p>
       ${invoice.type === "deposit" ? `<p style="color:#92400e;background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;">This deposit secures your booking. The remaining balance will be invoiced after your move is complete.</p>` : ""}
-      <p style="color:#475569;font-size:13px;">If you have any questions, please don't hesitate to contact us on ${settings.data?.company_phone ?? "07344 683477"}.</p>
+      <p style="color:#475569;font-size:13px;">If you have any questions, please don't hesitate to contact us on ${companyPhone}.</p>
     </div>
   </body></html>`;
 
