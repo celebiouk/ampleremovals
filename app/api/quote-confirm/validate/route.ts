@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
         reference,
         service_type,
         quote_total,
+        quote_deposit_required,
         customer:customers(full_name)
       `)
       .eq("id", bookingId)
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
         service_type: booking.service_type,
         customer_name: customer?.full_name || "Customer",
         total: booking.quote_total || 0,
+        deposit_required: booking.quote_deposit_required !== false, // Default to true if not set
       },
     });
   } catch (error) {

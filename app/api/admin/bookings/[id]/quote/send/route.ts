@@ -39,6 +39,7 @@ export async function POST(
         quote_total,
         quote_valid_until,
         quote_notes,
+        quote_deposit_required,
         customer:customers(full_name, email, phone),
         origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
         destination_address:addresses!destination_address_id(line_1, line_2, city, postcode)
@@ -121,6 +122,9 @@ export async function POST(
       ? `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${bookingId}/${confirmToken}`
       : null;
 
+    // Check if deposit is required (defaults to true if not set)
+    const depositRequired = booking.quote_deposit_required !== false;
+
     // Prepare communication content
     const emailSubject = `Your Quote from Ample Removals — ${booking.reference}`;
     const emailBody = `
@@ -152,15 +156,22 @@ export async function POST(
         <p><strong>What happens next?</strong></p>
         <ol>
           <li>Click the confirmation button above</li>
-          <li>We'll send you a deposit invoice to secure your booking</li>
-          <li>Once paid, your booking is confirmed!</li>
+          ${depositRequired
+            ? `<li>We'll send you a deposit invoice to secure your booking</li>
+              <li>Once the deposit is paid, your booking is confirmed!</li>`
+            : `<li>Your booking will be confirmed!</li>
+              <li>Full payment will be due on completion of the service</li>`
+          }
         </ol>
         ` : `
         <p><strong>Next Steps:</strong></p>
         <ol>
           <li>Review the attached quote carefully</li>
           <li>Reply to this email or call us to confirm</li>
-          <li>We'll send you a deposit invoice to secure your booking</li>
+          ${depositRequired
+            ? `<li>We'll send you a deposit invoice to secure your booking</li>`
+            : `<li>Full payment will be due on completion of the service</li>`
+          }
         </ol>
         `}
 

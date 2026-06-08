@@ -137,6 +137,7 @@ export function QuoteBuilderModal({
     existingQuote?.line_items || generateInitialLineItems(serviceData)
   );
   const [vatEnabled, setVatEnabled] = useState(existingQuote ? existingQuote.vat_rate > 0 : false);
+  const [depositRequired, setDepositRequired] = useState(true); // Default to requiring deposit
   const [validUntil, setValidUntil] = useState(
     existingQuote?.valid_until || getDefaultValidUntil()
   );
@@ -298,6 +299,7 @@ export function QuoteBuilderModal({
         total,
         valid_until: validUntil,
         notes: notes.trim() || null,
+        deposit_required: depositRequired,
       }),
     });
 
@@ -330,6 +332,7 @@ export function QuoteBuilderModal({
         subtotal,
         vat_rate: vatRate,
         vat_amount: vatAmount,
+        deposit_required: depositRequired,
         total,
         valid_until: validUntil,
         notes: notes.trim() || null,
@@ -494,6 +497,31 @@ export function QuoteBuilderModal({
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
                   vatEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Deposit Required toggle */}
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-slate-800">Require Deposit</p>
+              <p className="text-xs text-slate-500">
+                {depositRequired
+                  ? "Customer must pay deposit to confirm"
+                  : "No deposit required - full payment on completion"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDepositRequired(!depositRequired)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                depositRequired ? "bg-brand-green-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  depositRequired ? "translate-x-6" : "translate-x-1"
                 }`}
               />
             </button>

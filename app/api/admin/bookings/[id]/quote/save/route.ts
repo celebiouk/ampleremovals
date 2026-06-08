@@ -20,6 +20,7 @@ export async function PATCH(
       total: number;
       valid_until: string;
       notes?: string;
+      deposit_required?: boolean;
     };
 
     const supabase = await createClient();
@@ -49,6 +50,7 @@ export async function PATCH(
         quote_total: body.total,
         quote_valid_until: body.valid_until,
         quote_notes: body.notes || null,
+        quote_deposit_required: body.deposit_required !== undefined ? body.deposit_required : true,
       })
       .eq("id", bookingId);
 

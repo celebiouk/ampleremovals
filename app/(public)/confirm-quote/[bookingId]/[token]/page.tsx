@@ -20,6 +20,7 @@ export default function ConfirmQuotePage() {
     service_type: string;
     total: number;
     customer_name: string;
+    deposit_required: boolean;
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -136,8 +137,17 @@ export default function ConfirmQuotePage() {
               </p>
               <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
                 <li>Your booking will be confirmed</li>
-                <li>We&apos;ll send you a deposit invoice to secure your booking</li>
-                <li>Once paid, you&apos;ll receive full confirmation details</li>
+                {quoteDetails?.deposit_required ? (
+                  <>
+                    <li>We&apos;ll send you a deposit invoice to secure your booking</li>
+                    <li>Once the deposit is paid, you&apos;ll receive full confirmation details</li>
+                  </>
+                ) : (
+                  <>
+                    <li>You&apos;ll receive full confirmation details by email</li>
+                    <li>Full payment will be due on completion of the service</li>
+                  </>
+                )}
               </ul>
             </div>
 
@@ -175,15 +185,28 @@ export default function ConfirmQuotePage() {
               Quote Confirmed!
             </h1>
             <p className="text-muted-foreground mb-8">
-              Thank you for confirming your quote. We&apos;ve sent you a deposit invoice by email.
+              Thank you for confirming your quote. {quoteDetails?.deposit_required
+                ? "We've sent you a deposit invoice by email."
+                : "We've received your confirmation."
+              }
             </p>
 
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-left">
               <p className="text-sm font-semibold text-green-900 mb-2">Next Steps:</p>
               <ol className="text-sm text-green-800 space-y-2 list-decimal list-inside">
-                <li>Check your email for the deposit invoice</li>
-                <li>Pay the deposit to secure your booking</li>
-                <li>We&apos;ll contact you with arrival details</li>
+                {quoteDetails?.deposit_required ? (
+                  <>
+                    <li>Check your email for the deposit invoice</li>
+                    <li>Pay the deposit to secure your booking</li>
+                    <li>We&apos;ll contact you with arrival details</li>
+                  </>
+                ) : (
+                  <>
+                    <li>Check your email for confirmation details</li>
+                    <li>We&apos;ll contact you to finalize arrangements</li>
+                    <li>Full payment will be due on completion</li>
+                  </>
+                )}
               </ol>
             </div>
 
@@ -218,7 +241,10 @@ export default function ConfirmQuotePage() {
               Already Confirmed
             </h1>
             <p className="text-muted-foreground mb-6">
-              This quote has already been confirmed. Check your email for the deposit invoice.
+              This quote has already been confirmed. {quoteDetails?.deposit_required
+                ? "Check your email for the deposit invoice."
+                : "Check your email for confirmation details."
+              }
             </p>
             <Button
               onClick={() => router.push("/")}
