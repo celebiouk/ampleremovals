@@ -171,13 +171,35 @@ export async function POST(request: NextRequest) {
 
     let pdfUrl = "";
     try {
+      console.log("📄 Generating invoice PDF for:", invoiceId);
       const pdfBuffer = await generateInvoicePDF(pdfData);
+      console.log("✅ PDF generated, size:", pdfBuffer.length, "bytes");
+
+      console.log("📤 Uploading PDF to storage...");
       await uploadInvoicePDF(bookingId, invoiceId, pdfBuffer);
+      console.log("✅ PDF uploaded");
+
       pdfUrl = await getInvoiceSignedURL(bookingId, invoiceId);
+      console.log("✅ PDF signed URL generated:", pdfUrl);
+
       await supabase.from("invoices").update({ pdf_url: pdfUrl }).eq("id", invoiceId);
+      console.log("✅ Invoice record updated with PDF URL");
     } catch (pdfErr) {
       // PDF failure doesn't fail the invoice — log and continue
-      await logError({ message: `PDF generation failed for invoice ${invoiceId}: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`, metadata: { invoiceId } });
+      const errorMessage = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+      const errorStack = pdfErr instanceof Error ? pdfErr.stack : undefined;
+
+      console.error("❌ PDF generation failed:", {
+        error: errorMessage,
+        stack: errorStack,
+        invoiceId,
+        pdfData: JSON.stringify(pdfData, null, 2)
+      });
+
+      await logError({
+        message: `PDF generation failed for invoice ${invoiceId}: ${errorMessage}`,
+        metadata: { invoiceId, errorStack, pdfData }
+      });
     }
 
     // Log activity

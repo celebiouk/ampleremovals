@@ -79,19 +79,32 @@ export async function POST(request: NextRequest) {
 
   // Send email (PDF attached if available)
   try {
-      const attachments: { filename: string; content: string }[] = [];
+    const attachments: { filename: string; content: string }[] = [];
+    console.log("📧 Preparing invoice email. PDF URL:", pdfUrl);
+
     if (pdfUrl) {
       try {
+        console.log("📥 Downloading PDF from storage...");
         const pdfBuffer = await downloadInvoicePDF(booking.id, invoiceId);
+        console.log("✅ PDF downloaded, size:", pdfBuffer.length, "bytes");
         attachments.push({ filename: `${invoice.invoice_number}.pdf`, content: pdfBuffer.toString("base64") });
-      } catch { /* non-critical */ }
+        console.log("✅ PDF attached to email");
+      } catch (pdfDownloadErr) {
+        console.error("❌ PDF download failed:", pdfDownloadErr);
+        await logError({ message: `PDF download failed for email: ${pdfDownloadErr instanceof Error ? pdfDownloadErr.message : String(pdfDownloadErr)}`, metadata: { invoiceId } });
+      }
+    } else {
+      console.warn("⚠️ No PDF URL found, sending email without attachment");
     }
 
+    console.log("📤 Sending email to:", customer.email, "with", attachments.length, "attachment(s)");
     await resend.emails.send({
       from: resendFrom, to: customer.email, subject, html: emailHtml,
       ...(attachments.length ? { attachments } : {}),
     } as Parameters<typeof resend.emails.send>[0]);
+    console.log("✅ Invoice email sent successfully");
   } catch (err) {
+    console.error("❌ Invoice email failed:", err);
     await logError({ message: `Invoice email failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
   }
 
