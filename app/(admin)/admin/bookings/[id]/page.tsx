@@ -457,7 +457,7 @@ export default function BookingDetailPage() {
 
         {/* RIGHT PANEL */}
         <div className="space-y-5">
-          {/* Quick Actions */}
+          {/* Quick Actions - Call Back Reminders & Quote Builder */}
           <Card title="Quick Actions">
             <div className="space-y-2">
               <button
