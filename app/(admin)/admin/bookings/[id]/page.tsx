@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft, Copy, Check, Mail, Phone, MessageSquare, Smartphone,
   ArrowRight, Plus, Receipt, Trash2, ChevronDown, ChevronUp, Loader2,
-  ExternalLink,
+  ExternalLink, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +19,7 @@ import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoic
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDialog";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
+import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
@@ -54,6 +55,7 @@ export default function BookingDetailPage() {
   const [deleteInvoiceDialogOpen, setDeleteInvoiceDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string; type: string; amount: number } | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [callBackReminderOpen, setCallBackReminderOpen] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -455,6 +457,26 @@ export default function BookingDetailPage() {
 
         {/* RIGHT PANEL */}
         <div className="space-y-5">
+          {/* Quick Actions */}
+          <Card title="Quick Actions">
+            <div className="space-y-2">
+              <button
+                onClick={() => setCallBackReminderOpen(true)}
+                className="flex w-full items-center gap-2 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+              >
+                <Bell className="h-4 w-4" />
+                Set Call Back Reminder
+              </button>
+              <button
+                onClick={() => setQuoteModalOpen(true)}
+                className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Receipt className="h-4 w-4" />
+                Build Quote
+              </button>
+            </div>
+          </Card>
+
           <Card title="Booking Status">
             <div className="mb-4"><StatusBadge status={booking.status} /></div>
             <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value as BookingStatus)}
@@ -686,6 +708,16 @@ export default function BookingDetailPage() {
         invoiceNumber={invoiceToDelete?.number || ""}
         invoiceType={invoiceToDelete?.type.replace("_", " ") || ""}
         amount={invoiceToDelete?.amount || 0}
+      />
+
+      <CallBackReminderModal
+        isOpen={callBackReminderOpen}
+        onClose={() => setCallBackReminderOpen(false)}
+        bookingId={booking.id}
+        customerId={customer.id}
+        customerName={customer.full_name}
+        bookingReference={booking.reference}
+        onSaved={refresh}
       />
 
       <ConfirmDialog isOpen={deletingNoteId !== null} title="Delete note"
