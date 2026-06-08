@@ -61,10 +61,17 @@ export async function POST(request: NextRequest) {
           <tr><td style="color:#64748b;padding:4px 0;">Due Date</td><td style="font-weight:bold;text-align:right;">${invoice.due_date ? formatDate(invoice.due_date) : "—"}</td></tr>
         </table>
       </div>
-      <div style="text-align:center;margin:24px 0;">
-        <a href="${invoice.stripe_payment_link}" style="display:inline-block;background:#16a34a;color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px;">Pay Now →</a>
+      <div style="background:#f8fafc;border-radius:10px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;">
+        <h3 style="margin:0 0 12px 0;color:#1e293b;font-size:15px;">Bank Transfer Details</h3>
+        <table style="width:100%;font-size:14px;">
+          <tr><td style="color:#64748b;padding:6px 0;">Account Name</td><td style="font-weight:600;text-align:right;">Ample Removals</td></tr>
+          <tr><td style="color:#64748b;padding:6px 0;">Sort Code</td><td style="font-weight:600;text-align:right;">04-00-04</td></tr>
+          <tr><td style="color:#64748b;padding:6px 0;">Account Number</td><td style="font-weight:600;text-align:right;">11756714</td></tr>
+          <tr><td style="color:#64748b;padding:6px 0;">Reference</td><td style="font-weight:600;text-align:right;color:#6b21a8;">${invoice.invoice_number}</td></tr>
+        </table>
+        <p style="color:#64748b;font-size:12px;margin:12px 0 0 0;">⚠️ Please use your invoice number as the payment reference</p>
       </div>
-      <p style="color:#64748b;font-size:13px;">Or download your invoice from the attachment above.</p>
+      <p style="color:#64748b;font-size:13px;">Download your full invoice from the PDF attachment above.</p>
       ${invoice.type === "deposit" ? `<p style="color:#92400e;background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;">This deposit secures your booking. The remaining balance will be invoiced after your move is complete.</p>` : ""}
       <p style="color:#475569;font-size:13px;">If you have any questions, please don't hesitate to contact us on ${settings.data?.company_phone ?? "07344 683477"}.</p>
     </div>
@@ -91,7 +98,7 @@ export async function POST(request: NextRequest) {
   // Send SMS
   try {
     if (twilioClient && customer.phone) {
-      const msg = `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay: ${invoice.stripe_payment_link}`;
+      const msg = `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay by bank transfer - details in email.`;
       await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: msg.slice(0, 160) });
     }
   } catch (err) {

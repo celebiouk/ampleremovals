@@ -347,7 +347,7 @@ export interface InvoicePDFData {
   vatRate: number;
   vatAmount: number;
   total: number;
-  stripePaymentLink: string;
+  stripePaymentLink?: string; // Optional - not used with bank transfer
   notes?: string;
   // Deposit-specific fields
   fullJobValue?: number;

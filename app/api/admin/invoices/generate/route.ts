@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { generateInvoiceNumber, formatDate } from "@/lib/utils";
-import { createStripePaymentLink } from "@/lib/stripe-invoice";
 import { generateInvoicePDF } from "@/lib/pdf/generate-invoice-pdf";
 import { uploadInvoicePDF, getInvoiceSignedURL } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
@@ -107,17 +106,10 @@ export async function POST(request: NextRequest) {
       ? `Flexible: ${formatDate(booking.flexible_date_from ?? "")} – ${formatDate(booking.flexible_date_to ?? "")}`
       : booking.move_date ? formatDate(booking.move_date) : "TBC";
 
-    // Create Stripe Payment Link
-    const { paymentLink, priceId, productId } = await createStripePaymentLink({
-      invoiceId: "pending", // placeholder until we have the DB id
-      invoiceNumber,
-      amount: Math.round(total * 100),
-      customerName: customer?.full_name ?? "",
-      customerEmail: customer?.email ?? "",
-      description: `${type === "deposit" ? "Deposit" : "Final Balance"} — ${serviceLabel} (Booking ${booking.reference})`,
-      bookingReference: booking.reference,
-      metadata: { bookingId },
-    });
+    // No Stripe - using bank transfer instead
+    const paymentLink = null;
+    const priceId = null;
+    const productId = null;
 
     // Insert invoice record
     const { data: invoice, error: insertErr } = await supabase
@@ -171,7 +163,6 @@ export async function POST(request: NextRequest) {
       vatRate,
       vatAmount,
       total,
-      stripePaymentLink: paymentLink,
       notes,
       fullJobValue,
       depositPercentage,
