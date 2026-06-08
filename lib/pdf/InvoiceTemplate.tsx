@@ -247,9 +247,9 @@ export function InvoiceDocument({ data }: Props) {
           <Text style={styles.payHeading}>How to Pay</Text>
           <Text style={styles.payDetail}>Please pay by bank transfer to:</Text>
           <View style={styles.bankBox}>
-            <View style={styles.bankRow}><Text style={styles.bankLabel}>Account Name</Text><Text style={styles.bankValue}>Ample Removals</Text></View>
-            <View style={styles.bankRow}><Text style={styles.bankLabel}>Sort Code</Text><Text style={styles.bankValue}>04-00-04</Text></View>
-            <View style={styles.bankRow}><Text style={styles.bankLabel}>Account #</Text><Text style={styles.bankValue}>11756714</Text></View>
+            <View style={styles.bankRow}><Text style={styles.bankLabel}>Account Name</Text><Text style={styles.bankValue}>AMPLE LOGISTICS LIMITED</Text></View>
+            <View style={styles.bankRow}><Text style={styles.bankLabel}>Sort Code</Text><Text style={styles.bankValue}>23-11-85</Text></View>
+            <View style={styles.bankRow}><Text style={styles.bankLabel}>Account #</Text><Text style={styles.bankValue}>93265041</Text></View>
             <View style={styles.bankRow}><Text style={styles.bankLabel}>Reference</Text><Text style={styles.bankValue}>{invoiceNumber}</Text></View>
           </View>
           <Text style={[styles.payDetail, { marginTop: 6 }]}>Please use your invoice number as the payment reference.</Text>
