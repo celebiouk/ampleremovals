@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
+import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDialog";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
@@ -50,6 +51,8 @@ export default function BookingDetailPage() {
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
+  const [deleteInvoiceDialogOpen, setDeleteInvoiceDialogOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string; type: string; amount: number } | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
@@ -66,13 +69,26 @@ export default function BookingDetailPage() {
     getUser();
   }, []);
 
-  // Delete invoice (super admin only)
-  const deleteInvoice = async (invoiceId: string, invoiceNumber: string) => {
-    if (!window.confirm(`Are you sure you want to permanently delete invoice ${invoiceNumber}?\n\nThis will delete:\n- The invoice record\n- The invoice PDF\n\nThis action CANNOT be undone.`)) return;
+  // Open delete invoice dialog
+  const openDeleteInvoiceDialog = (invoice: { id: string; invoice_number: string; type: string; total: number }) => {
+    setInvoiceToDelete({
+      id: invoice.id,
+      number: invoice.invoice_number,
+      type: invoice.type,
+      amount: invoice.total
+    });
+    setDeleteInvoiceDialogOpen(true);
+  };
 
-    setDeletingInvoiceId(invoiceId);
+  // Confirm delete invoice
+  const confirmDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+
+    setDeletingInvoiceId(invoiceToDelete.id);
+    setDeleteInvoiceDialogOpen(false);
+
     try {
-      const res = await fetch(`/api/admin/invoices/${invoiceId}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/invoices/${invoiceToDelete.id}`, { method: "DELETE" });
       const data = await res.json();
 
       if (data.success) {
@@ -85,6 +101,7 @@ export default function BookingDetailPage() {
       toast.error("Failed to delete invoice");
     } finally {
       setDeletingInvoiceId(null);
+      setInvoiceToDelete(null);
     }
   };
 
@@ -388,13 +405,13 @@ export default function BookingDetailPage() {
                       </button>
                       {userEmail === "ampleremovals@gmail.com" && (
                         <button
-                          onClick={() => deleteInvoice(inv.id, inv.invoice_number)}
+                          onClick={() => openDeleteInvoiceDialog(inv)}
                           disabled={deletingInvoiceId === inv.id}
                           className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
                           title="Delete invoice (Super Admin only)"
                         >
                           <Trash2 className="h-3 w-3" />
-                          {deletingInvoiceId === inv.id ? "..." : "Delete"}
+                          {deletingInvoiceId === inv.id ? "Deleting..." : "Delete"}
                         </button>
                       )}
                     </div>
@@ -657,6 +674,18 @@ export default function BookingDetailPage() {
         onClose={() => setViewingInvoiceId(null)}
         invoiceId={viewingInvoiceId}
         onActionComplete={refresh}
+      />
+
+      <DeleteInvoiceDialog
+        isOpen={deleteInvoiceDialogOpen}
+        onClose={() => {
+          setDeleteInvoiceDialogOpen(false);
+          setInvoiceToDelete(null);
+        }}
+        onConfirm={confirmDeleteInvoice}
+        invoiceNumber={invoiceToDelete?.number || ""}
+        invoiceType={invoiceToDelete?.type.replace("_", " ") || ""}
+        amount={invoiceToDelete?.amount || 0}
       />
 
       <ConfirmDialog isOpen={deletingNoteId !== null} title="Delete note"
