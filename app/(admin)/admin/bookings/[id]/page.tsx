@@ -48,11 +48,46 @@ export default function BookingDetailPage() {
   const [smsBody, setSmsBody] = useState("");
   const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
+
+  // Get user email on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email ?? null);
+    };
+    getUser();
+  }, []);
+
+  // Delete invoice (super admin only)
+  const deleteInvoice = async (invoiceId: string, invoiceNumber: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete invoice ${invoiceNumber}?\n\nThis will delete:\n- The invoice record\n- The invoice PDF\n\nThis action CANNOT be undone.`)) return;
+
+    setDeletingInvoiceId(invoiceId);
+    try {
+      const res = await fetch(`/api/admin/invoices/${invoiceId}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Invoice deleted successfully");
+        refresh(); // Refresh booking data
+      } else {
+        toast.error(data.error || "Failed to delete invoice");
+      }
+    } catch {
+      toast.error("Failed to delete invoice");
+    } finally {
+      setDeletingInvoiceId(null);
+    }
+  };
+
   const activityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -347,9 +382,22 @@ export default function BookingDetailPage() {
                     <span className="capitalize text-slate-500">{inv.type.replace("_", " ")}</span>
                     <span className="font-semibold">{formatCurrency(inv.total)}</span>
                     <StatusBadge status={inv.status as BookingStatus} />
-                    <button onClick={() => setViewingInvoiceId(inv.id)} className="ml-auto flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
-                      <ExternalLink className="h-3 w-3" /> View
-                    </button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button onClick={() => setViewingInvoiceId(inv.id)} className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
+                        <ExternalLink className="h-3 w-3" /> View
+                      </button>
+                      {userEmail === "ampleremovals@gmail.com" && (
+                        <button
+                          onClick={() => deleteInvoice(inv.id, inv.invoice_number)}
+                          disabled={deletingInvoiceId === inv.id}
+                          className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                          title="Delete invoice (Super Admin only)"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          {deletingInvoiceId === inv.id ? "..." : "Delete"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {/* Totals */}
