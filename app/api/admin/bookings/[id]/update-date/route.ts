@@ -14,7 +14,7 @@ export async function POST(
   try {
     const { id: bookingId } = params;
     const body = await req.json();
-    const { moveDate, moveTime } = body;
+    const { moveDate, moveTime, notify = true } = body;
 
     if (!moveDate) {
       return NextResponse.json(
@@ -82,9 +82,11 @@ export async function POST(
       year: "numeric"
     });
 
-    // Notify customer
-    const emailSubject = `📅 Move Date Updated - ${booking.reference}`;
-    const emailBody = `
+    // Only notify customer if requested
+    if (notify) {
+      // Notify customer
+      const emailSubject = `📅 Move Date Updated - ${booking.reference}`;
+      const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
           <h1 style="color: white; margin: 0;">📅 Move Date Updated</h1>
@@ -137,19 +139,22 @@ export async function POST(
       console.error("SMS failed:", smsErr);
     }
 
-    // WhatsApp
-    try {
-      await sendWhatsApp(
-        customer.phone,
-        `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
-      );
-    } catch (whatsappErr) {
-      console.error("WhatsApp failed:", whatsappErr);
+      // WhatsApp
+      try {
+        await sendWhatsApp(
+          customer.phone,
+          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
+        );
+      } catch (whatsappErr) {
+        console.error("WhatsApp failed:", whatsappErr);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: "Move date updated and customer notified",
+      message: notify
+        ? "Move date updated and customer notified"
+        : "Move date updated (customer not notified)",
     });
   } catch (error) {
     console.error("Update date error:", error);

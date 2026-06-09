@@ -14,7 +14,7 @@ export async function POST(
   try {
     const { id: bookingId } = params;
     const body = await req.json();
-    const { origin, destination } = body;
+    const { origin, destination, notify = true } = body;
 
     if (!origin || !destination) {
       return NextResponse.json(
@@ -98,9 +98,11 @@ export async function POST(
     const originFormatted = formatAddress(origin);
     const destinationFormatted = formatAddress(destination);
 
-    // Notify customer
-    const emailSubject = `📍 Addresses Updated - ${booking.reference}`;
-    const emailBody = `
+    // Only notify customer if requested
+    if (notify) {
+      // Notify customer
+      const emailSubject = `📍 Addresses Updated - ${booking.reference}`;
+      const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #9333ea; padding: 24px; border-radius: 12px 12px 0 0;">
           <h1 style="color: white; margin: 0;">📍 Addresses Updated</h1>
@@ -149,19 +151,22 @@ export async function POST(
       console.error("SMS failed:", smsErr);
     }
 
-    // WhatsApp
-    try {
-      await sendWhatsApp(
-        customer.phone,
-        `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
-      );
-    } catch (whatsappErr) {
-      console.error("WhatsApp failed:", whatsappErr);
+      // WhatsApp
+      try {
+        await sendWhatsApp(
+          customer.phone,
+          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
+        );
+      } catch (whatsappErr) {
+        console.error("WhatsApp failed:", whatsappErr);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: "Addresses updated and customer notified",
+      message: notify
+        ? "Addresses updated and customer notified"
+        : "Addresses updated (customer not notified)",
     });
   } catch (error) {
     console.error("Update addresses error:", error);

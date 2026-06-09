@@ -871,7 +871,7 @@ export default function BookingDetailPage() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setEditDateModalOpen(false)}
-                  className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
@@ -886,11 +886,53 @@ export default function BookingDetailPage() {
                       const res = await fetch(`/api/admin/bookings/${bookingId}/update-date`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ moveDate: editMoveDate, moveTime: editMoveTime }),
+                        body: JSON.stringify({ moveDate: editMoveDate, moveTime: editMoveTime, notify: false }),
                       });
                       const data = await res.json();
                       if (data.success) {
-                        toast.success("Move date updated successfully");
+                        toast.success("Move date updated (customer not notified)");
+                        setEditDateModalOpen(false);
+                        refresh();
+                      } else {
+                        toast.error(data.error || "Failed to update date");
+                      }
+                    } catch {
+                      toast.error("Failed to update date");
+                    } finally {
+                      setIsSavingEdit(false);
+                    }
+                  }}
+                  disabled={isSavingEdit}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {isSavingEdit ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Only
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!editMoveDate) {
+                      toast.error("Please select a date");
+                      return;
+                    }
+                    setIsSavingEdit(true);
+                    try {
+                      const res = await fetch(`/api/admin/bookings/${bookingId}/update-date`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ moveDate: editMoveDate, moveTime: editMoveTime, notify: true }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Move date updated & customer notified!");
                         setEditDateModalOpen(false);
                         refresh();
                       } else {
@@ -908,12 +950,12 @@ export default function BookingDetailPage() {
                   {isSavingEdit ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
+                      Notifying...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4" />
-                      Save Changes
+                      <MessageSquare className="h-4 w-4" />
+                      Save & Notify
                     </>
                   )}
                 </button>
@@ -1023,7 +1065,7 @@ export default function BookingDetailPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setEditAddressModalOpen(false)}
-                className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -1045,6 +1087,7 @@ export default function BookingDetailPage() {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
+                        notify: false,
                         origin: {
                           line_1: originLine1,
                           line_2: (document.getElementById("origin-line2") as HTMLInputElement).value,
@@ -1061,7 +1104,69 @@ export default function BookingDetailPage() {
                     });
                     const data = await res.json();
                     if (data.success) {
-                      toast.success("Addresses updated successfully");
+                      toast.success("Addresses updated (customer not notified)");
+                      setEditAddressModalOpen(false);
+                      refresh();
+                    } else {
+                      toast.error(data.error || "Failed to update addresses");
+                    }
+                  } catch {
+                    toast.error("Failed to update addresses");
+                  } finally {
+                    setIsSavingEdit(false);
+                  }
+                }}
+                disabled={isSavingEdit}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {isSavingEdit ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Only
+                  </>
+                )}
+              </button>
+              <button
+                onClick={async () => {
+                  const originLine1 = (document.getElementById("origin-line1") as HTMLInputElement).value;
+                  const originPostcode = (document.getElementById("origin-postcode") as HTMLInputElement).value;
+                  const destLine1 = (document.getElementById("dest-line1") as HTMLInputElement).value;
+                  const destPostcode = (document.getElementById("dest-postcode") as HTMLInputElement).value;
+
+                  if (!originLine1 || !originPostcode || !destLine1 || !destPostcode) {
+                    toast.error("Please fill in all required fields");
+                    return;
+                  }
+
+                  setIsSavingEdit(true);
+                  try {
+                    const res = await fetch(`/api/admin/bookings/${bookingId}/update-addresses`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        notify: true,
+                        origin: {
+                          line_1: originLine1,
+                          line_2: (document.getElementById("origin-line2") as HTMLInputElement).value,
+                          city: (document.getElementById("origin-city") as HTMLInputElement).value,
+                          postcode: originPostcode,
+                        },
+                        destination: {
+                          line_1: destLine1,
+                          line_2: (document.getElementById("dest-line2") as HTMLInputElement).value,
+                          city: (document.getElementById("dest-city") as HTMLInputElement).value,
+                          postcode: destPostcode,
+                        },
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      toast.success("Addresses updated & customer notified!");
                       setEditAddressModalOpen(false);
                       refresh();
                     } else {
@@ -1079,12 +1184,12 @@ export default function BookingDetailPage() {
                 {isSavingEdit ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
+                    Notifying...
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4" />
-                    Save Changes
+                    <MessageSquare className="h-4 w-4" />
+                    Save & Notify
                   </>
                 )}
               </button>
