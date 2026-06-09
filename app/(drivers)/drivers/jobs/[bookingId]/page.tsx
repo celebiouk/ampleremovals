@@ -15,6 +15,8 @@ import {
   Home,
   Calendar,
   Loader2,
+  Users,
+  PoundSterling,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +29,8 @@ export default function DriverJobDetailPage() {
   const [currentStatus, setCurrentStatus] = useState<JobStatusUpdate | null>(null);
   const [updating, setUpdating] = useState(false);
   const [note, setNote] = useState("");
+  const [coDrivers, setCoDrivers] = useState<Array<{ name: string; isLead: boolean }>>([]);
+  const [earning, setEarning] = useState<any>(null);
 
   useEffect(() => {
     loadJobDetails();
@@ -82,6 +86,18 @@ export default function DriverJobDetailPage() {
     setJob(booking);
     setCurrentStatus(latestStatus?.status || null);
     setLoading(false);
+
+    // Fetch co-drivers + this job's earning via server route (RLS-safe)
+    try {
+      const res = await fetch(`/api/drivers/jobs/${bookingId}/extras`);
+      const extras = await res.json();
+      if (extras.success) {
+        setCoDrivers(extras.coDrivers || []);
+        setEarning(extras.earning || null);
+      }
+    } catch {
+      /* non-critical */
+    }
   }
 
   async function handleStatusUpdate(status: JobStatusUpdate) {
@@ -207,6 +223,61 @@ export default function DriverJobDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Co-drivers & My Earnings */}
+      {(coDrivers.length > 0 || earning) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {coDrivers.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="mb-3 flex items-center gap-2 text-slate-700">
+                <Users className="h-5 w-5" />
+                <span className="font-semibold">Working With</span>
+              </div>
+              <ul className="space-y-2">
+                {coDrivers.map((cd, i) => (
+                  <li key={i} className="flex items-center gap-2 text-slate-800">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple-100 text-sm font-semibold text-brand-purple-700">
+                      {cd.name[0]}
+                    </div>
+                    <span>{cd.name}</span>
+                    {cd.isLead && (
+                      <span className="rounded-full bg-brand-purple-100 px-2 py-0.5 text-xs font-semibold text-brand-purple-700">
+                        Lead
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {earning && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="mb-3 flex items-center gap-2 text-slate-700">
+                <PoundSterling className="h-5 w-5" />
+                <span className="font-semibold">My Earnings</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900">
+                £{Number(earning.total_earnings).toFixed(2)}
+              </div>
+              <dl className="mt-2 space-y-1 text-sm text-slate-600">
+                <div className="flex justify-between">
+                  <dt>Base ({earning.pay_percentage}%)</dt>
+                  <dd>£{Number(earning.gross_earnings).toFixed(2)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Tips</dt>
+                  <dd>£{Number(earning.tip_amount).toFixed(2)}</dd>
+                </div>
+                <div className="flex justify-between border-t border-slate-100 pt-1">
+                  <dt>Status</dt>
+                  <dd className="capitalize">{earning.status}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Addresses */}
       <div className="space-y-4">

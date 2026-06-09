@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { CalendarCheck, Truck, PoundSterling, Gift } from "lucide-react";
+import { CalendarCheck, Truck, PoundSterling, Gift, Calendar, MapPin, ChevronRight } from "lucide-react";
 
 export default function DriverDashboardPage() {
   const [stats, setStats] = useState({
@@ -11,6 +13,7 @@ export default function DriverDashboardPage() {
     earningsThisMonth: 0,
     tipsThisMonth: 0,
   });
+  const [upcomingJobs, setUpcomingJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -69,6 +72,39 @@ export default function DriverDashboardPage() {
       tipsThisMonth: totalTips,
     });
 
+    // Fetch upcoming jobs (assigned, move_date today or later) — next 5
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const { data: assignments } = await supabase
+      .from("booking_driver_assignments")
+      .select(
+        `
+        id,
+        booking:bookings(
+          id, reference, service_type, move_date, latest_driver_status,
+          customer:customers(full_name),
+          origin_address:addresses!origin_address_id(postcode),
+          destination_address:addresses!destination_address_id(postcode)
+        )
+      `
+      )
+      .eq("driver_id", driver.id);
+
+    const upcoming = (assignments || [])
+      .filter((a: any) => {
+        const md = a.booking?.move_date ? new Date(a.booking.move_date) : null;
+        if (md) md.setHours(0, 0, 0, 0);
+        return md && md.getTime() >= todayStart.getTime();
+      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.booking.move_date).getTime() -
+          new Date(b.booking.move_date).getTime()
+      )
+      .slice(0, 5);
+
+    setUpcomingJobs(upcoming);
     setLoading(false);
   }
 
@@ -147,12 +183,75 @@ export default function DriverDashboardPage() {
 
       {/* Upcoming Jobs Section */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
-          Upcoming Jobs
-        </h2>
-        <p className="text-slate-600">
-          No upcoming jobs scheduled. Check back soon!
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Upcoming Jobs</h2>
+          <Link
+            href="/drivers/jobs"
+            className="text-sm font-medium text-brand-purple-600 hover:text-brand-purple-700"
+          >
+            View all
+          </Link>
+        </div>
+
+        {upcomingJobs.length === 0 ? (
+          <p className="text-slate-600">No upcoming jobs scheduled. Check back soon!</p>
+        ) : (
+          <div className="space-y-3">
+            {upcomingJobs.map((assignment) => {
+              const booking = assignment.booking;
+              const isToday =
+                booking.move_date &&
+                new Date(booking.move_date).toDateString() ===
+                  new Date().toDateString();
+              return (
+                <Link
+                  key={assignment.id}
+                  href={`/drivers/jobs/${booking.id}`}
+                  className={`flex items-center justify-between gap-4 rounded-xl border bg-white p-4 transition-all hover:shadow-md ${
+                    isToday ? "border-l-4 border-l-brand-purple-600" : "border-slate-200"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-0.5 text-xs font-medium ${
+                          isToday
+                            ? "bg-brand-purple-100 text-brand-purple-700"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        <Calendar className="h-3.5 w-3.5" />
+                        {isToday
+                          ? "Today"
+                          : new Date(booking.move_date).toLocaleDateString("en-GB")}
+                      </span>
+                      <span className="rounded-lg bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                        {booking.service_type?.replace(/_/g, " ").toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="truncate font-semibold text-slate-900">
+                      {booking.customer?.full_name?.split(" ")[0]}{" "}
+                      {booking.customer?.full_name?.split(" ")[1]?.[0]}.
+                    </div>
+                    {booking.origin_address && (
+                      <div className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-600">
+                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{booking.origin_address.postcode}</span>
+                        {booking.destination_address && (
+                          <>
+                            <span>→</span>
+                            <span>{booking.destination_address.postcode}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <ChevronRight className="h-5 w-5 flex-shrink-0 text-slate-400" />
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

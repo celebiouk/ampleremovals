@@ -69,6 +69,23 @@ Phase 11 = Complete driver management system with:
 - [x] Commit Phase 11A to Git
 - [x] Push to GitHub
 
+### Phase 11B — Post-audit gaps (2026-06-10)
+- [x] CRITICAL: RLS hardening — drivers could read ALL customers/bookings/
+      invoices/other drivers' earnings via the over-broad `TO authenticated
+      USING(true)` policies. New migration add_driver_rls_hardening.sql:
+  - [x] is_driver_user() / current_driver_id() SECURITY DEFINER helpers
+  - [x] Broad admin policies on customer-data + driver tables now exclude drivers
+  - [x] Driver-scoped SELECT policies on bookings/customers/addresses
+  - [ ] ⚠️ MUST be run in Supabase (touches RLS) — see migration file
+- [x] Fixed broken "Today's Jobs" nav — /drivers/jobs/today now resolves
+      (was falling through to /jobs/[bookingId] with id="today")
+- [x] Dashboard "Upcoming Jobs" now shows real assignments (was hardcoded placeholder)
+- [x] Job detail: co-drivers ("Working With") + per-job earnings card
+      (co-drivers served via RLS-safe /api/drivers/jobs/[id]/extras)
+- [x] Refactored jobs list into reusable components/drivers/DriverJobsList
+- [ ] DEFERRED (low value): earnings monthly chart, editable address on driver profile,
+      dedicated GET driver API routes (RLS now enforces scoping for client reads)
+
 ### Phase 11A — Post-audit gaps (2026-06-10) — ALL CLOSED
 - [x] activity_log: accurate `performed_by` on all Phase 11 logs (was defaulting to 'system')
 - [x] Driver document/photo storage:
