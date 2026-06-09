@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
-import { formatDate } from "@/lib/utils";
 import crypto from "crypto";
 
 /**
