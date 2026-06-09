@@ -7,33 +7,45 @@
 -- ENUMS
 -- ============================================================
 
-CREATE TYPE driver_status AS ENUM (
-  'active',
-  'inactive',
-  'suspended',
-  'on_leave'
-);
+DO $$ BEGIN
+  CREATE TYPE driver_status AS ENUM (
+    'active',
+    'inactive',
+    'suspended',
+    'on_leave'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TYPE job_status_update AS ENUM (
-  'on_my_way',
-  'twenty_mins_away',
-  'ten_mins_away',
-  'fifteen_mins_to_delivery',
-  'job_completed'
-);
+DO $$ BEGIN
+  CREATE TYPE job_status_update AS ENUM (
+    'on_my_way',
+    'twenty_mins_away',
+    'ten_mins_away',
+    'fifteen_mins_to_delivery',
+    'job_completed'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TYPE earnings_status AS ENUM (
-  'pending',
-  'approved',
-  'paid',
-  'disputed'
-);
+DO $$ BEGIN
+  CREATE TYPE earnings_status AS ENUM (
+    'pending',
+    'approved',
+    'paid',
+    'disputed'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================================
 -- DRIVERS TABLE
 -- ============================================================
 
-CREATE TABLE drivers (
+CREATE TABLE IF NOT EXISTS drivers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- Auth
@@ -115,7 +127,7 @@ CREATE POLICY "Drivers can update own record"
 -- BOOKING DRIVER ASSIGNMENTS TABLE
 -- ============================================================
 
-CREATE TABLE booking_driver_assignments (
+CREATE TABLE IF NOT EXISTS booking_driver_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
@@ -164,7 +176,7 @@ CREATE POLICY "Drivers can view own assignments"
 -- DRIVER JOB STATUS UPDATES TABLE
 -- ============================================================
 
-CREATE TABLE driver_job_status_updates (
+CREATE TABLE IF NOT EXISTS driver_job_status_updates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
@@ -210,7 +222,7 @@ CREATE POLICY "Drivers can insert and view own updates"
 -- DRIVER EARNINGS TABLE
 -- ============================================================
 
-CREATE TABLE driver_earnings (
+CREATE TABLE IF NOT EXISTS driver_earnings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
@@ -271,7 +283,7 @@ CREATE POLICY "Drivers can view own earnings"
 -- DRIVER TIPS TABLE
 -- ============================================================
 
-CREATE TABLE driver_tips (
+CREATE TABLE IF NOT EXISTS driver_tips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
