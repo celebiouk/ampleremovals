@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/check-weather",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/anniversary-messages",
+      "schedule": "0 10 * * *"
     }
   ],
   "functions": {
@@ -114,6 +118,9 @@
       "maxDuration": 60
     },
     "app/api/cron/check-weather/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/anniversary-messages/route.ts": {
       "maxDuration": 60
     }
   }
