@@ -38,9 +38,14 @@ export default function DriversLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Don't check auth on login page
+    if (pathname === "/drivers/login") {
+      setLoading(false);
+      return;
+    }
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname]);
 
   async function checkAuth() {
     const supabase = createClient();
@@ -71,6 +76,16 @@ export default function DriversLayout({
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/drivers/login");
+  }
+
+  // For login page, render without sidebar
+  if (pathname === "/drivers/login") {
+    return (
+      <>
+        <Toaster position="top-right" />
+        {children}
+      </>
+    );
   }
 
   if (loading) {

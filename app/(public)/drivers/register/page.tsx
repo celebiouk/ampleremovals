@@ -112,9 +112,9 @@ export default function DriverRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-purple-50 to-white py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-purple-50 to-white py-12 px-4 sm:py-16">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-8 text-center">
+        <div className="mb-8 pt-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-purple-600">
             <Truck className="h-8 w-8 text-white" />
           </div>
