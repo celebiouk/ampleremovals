@@ -2,16 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Calendar, PoundSterling, Truck, Edit, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, PoundSterling, Truck, Edit, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { DRIVER_STATUS_LABELS } from "@/lib/constants";
 
 export default function DriverProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const driverId = params.id as string;
   const [driver, setDriver] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
 
   useEffect(() => {
     loadDriver();
@@ -31,6 +34,36 @@ export default function DriverProfilePage() {
       setLoading(false);
     }
   }
+
+  async function quickApprove() {
+    setApproving(true);
+    try {
+      const response = await fetch(`/api/admin/drivers/${driverId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "active",
+          default_pay_percentage: 40, // Default 40%
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Driver approved! Status set to Active with 40% pay.");
+        router.push("/admin/drivers");
+      } else {
+        toast.error("Failed to approve driver");
+      }
+    } catch (error) {
+      console.error("Approve error:", error);
+      toast.error("Failed to approve driver");
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  const isPending = driver && driver.status === "inactive" && driver.default_pay_percentage === 0;
 
   if (loading) {
     return (
@@ -74,6 +107,51 @@ export default function DriverProfilePage() {
           Edit Profile
         </Link>
       </div>
+
+      {/* Pending Approval Banner */}
+      {isPending && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+              <AlertCircle className="h-6 w-6 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="mb-1 text-lg font-bold text-amber-900">
+                Pending Approval
+              </h3>
+              <p className="mb-4 text-sm text-amber-700">
+                This driver has submitted their application and is waiting for approval.
+                Click below to approve with default settings, or edit manually.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={quickApprove}
+                  disabled={approving}
+                  className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {approving ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Approving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-5 w-5" />
+                      Quick Approve (40% Pay, Active)
+                    </>
+                  )}
+                </button>
+                <Link
+                  href={`/admin/drivers/${driverId}/edit`}
+                  className="rounded-xl border-2 border-amber-600 px-4 py-2.5 font-semibold text-amber-700 hover:bg-amber-100"
+                >
+                  Manual Approval (Custom Settings)
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column */}
