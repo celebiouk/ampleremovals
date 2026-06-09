@@ -337,7 +337,14 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 Never commit `.env.local` to Git. It is in `.gitignore` by default.
 
+
+
+When ever i say something like send a message what i actually mean is send an email, an sms and a whatsapp.
+
+
 ---
 
 *This file is the source of truth for this project. When in doubt, refer back here.*
 ````
+
+
