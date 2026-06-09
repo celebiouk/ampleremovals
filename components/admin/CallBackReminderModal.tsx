@@ -36,6 +36,7 @@ export function CallBackReminderModal({
 }: CallBackReminderModalProps) {
   const [reminderDate, setReminderDate] = useState("");
   const [reminderTime, setReminderTime] = useState("10:00");
+  const [showTimeOverride, setShowTimeOverride] = useState(false);
   const [reason, setReason] = useState("not_sure");
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -72,6 +73,7 @@ export function CallBackReminderModal({
         // Reset form
         setReminderDate("");
         setReminderTime("10:00");
+        setShowTimeOverride(false);
         setReason("not_sure");
         setNotes("");
       } else {
@@ -111,12 +113,8 @@ export function CallBackReminderModal({
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
-              <p className="font-semibold mb-1">You&apos;ll receive a reminder via:</p>
-              <ul className="text-blue-800 space-y-1">
-                <li>• Email to admin emails</li>
-                <li>• SMS to 07344683477</li>
-                <li>• WhatsApp to 07344683477</li>
-              </ul>
+              <p className="font-semibold mb-1">Reminder defaults to 10 AM - 1 PM</p>
+              <p className="text-blue-800 mb-2">You&apos;ll receive notifications via Email, SMS & WhatsApp to 07344683477</p>
             </div>
           </div>
         </div>
@@ -138,18 +136,34 @@ export function CallBackReminderModal({
             />
           </div>
 
-          {/* Time */}
+          {/* Time Override (Optional) */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              <Clock className="inline h-4 w-4 mr-1" />
-              Reminder Time
-            </label>
-            <input
-              type="time"
-              value={reminderTime}
-              onChange={(e) => setReminderTime(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-purple-500 focus:border-transparent"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-700">
+                <Clock className="inline h-4 w-4 mr-1" />
+                Call Time
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowTimeOverride(!showTimeOverride)}
+                className="text-xs text-brand-purple-600 hover:underline"
+              >
+                {showTimeOverride ? "Use default (10 AM - 1 PM)" : "Change time"}
+              </button>
+            </div>
+
+            {showTimeOverride ? (
+              <input
+                type="time"
+                value={reminderTime}
+                onChange={(e) => setReminderTime(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-purple-500 focus:border-transparent"
+              />
+            ) : (
+              <div className="px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-slate-600">
+                Default: 10:00 AM - 1:00 PM
+              </div>
+            )}
           </div>
 
           {/* Reason */}
