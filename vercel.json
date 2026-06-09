@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/send-surveys",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/quote-followup",
+      "schedule": "0 * * * *"
     }
   ],
   "functions": {
@@ -72,6 +76,9 @@
       "maxDuration": 60
     },
     "app/api/cron/send-surveys/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/quote-followup/route.ts": {
       "maxDuration": 60
     }
   }
