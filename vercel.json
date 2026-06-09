@@ -1,6 +1,14 @@
 {
   "crons": [
     {
+      "path": "/api/cron/three-day-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/one-day-reminder",
+      "schedule": "30 9 * * *"
+    },
+    {
       "path": "/api/cron/send-address-confirmations",
       "schedule": "30 7 * * *"
     },
@@ -51,6 +59,12 @@
       "maxDuration": 60
     },
     "app/api/cron/three-month-followup/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/three-day-reminder/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/one-day-reminder/route.ts": {
       "maxDuration": 60
     }
   }
