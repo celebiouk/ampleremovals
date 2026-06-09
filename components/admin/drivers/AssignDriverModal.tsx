@@ -26,6 +26,7 @@ export function AssignDriverModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [payPercentageOverride, setPayPercentageOverride] = useState("");
+  const [isLeadDriver, setIsLeadDriver] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,6 +63,7 @@ export function AssignDriverModal({
         body: JSON.stringify({
           driverId: selectedDriverId,
           payPercentageOverride: payPercentageOverride ? parseFloat(payPercentageOverride) : null,
+          isLeadDriver,
         }),
       });
 
@@ -174,6 +176,24 @@ export function AssignDriverModal({
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
                 />
               </div>
+            )}
+
+            {/* Lead driver toggle */}
+            {selectedDriverId && (
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={isLeadDriver}
+                  onChange={(e) => setIsLeadDriver(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-brand-purple-600 focus:ring-brand-purple-500"
+                />
+                <div>
+                  <div className="text-sm font-medium text-slate-900">Lead driver</div>
+                  <div className="text-xs text-slate-500">
+                    Mark this driver as the lead on this job
+                  </div>
+                </div>
+              </label>
             )}
 
             {/* Actions */}

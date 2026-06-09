@@ -69,11 +69,17 @@ Phase 11 = Complete driver management system with:
 - [x] Commit Phase 11A to Git
 - [x] Push to GitHub
 
-### Phase 11A — Post-audit gaps (2026-06-10)
+### Phase 11A — Post-audit gaps (2026-06-10) — ALL CLOSED
 - [x] activity_log: accurate `performed_by` on all Phase 11 logs (was defaulting to 'system')
-- [ ] Driver document/photo storage (driver-documents bucket + lib/storage.ts helpers + upload UI) — DEFERRED
-- [ ] /drivers/reset-password password recovery flow — DEFERRED
-- [ ] Wire up or drop dead fields: is_lead_driver, emergency_contact_relationship — DEFERRED
+- [x] Driver document/photo storage:
+  - [x] driver-documents private bucket migration + RLS (add_driver_documents_bucket.sql)
+  - [x] lib/storage.ts helpers (upload/signed-URL/delete + DRIVER_DOC_COLUMN map)
+  - [x] Driver-facing photo upload (POST /api/drivers/profile/photo + profile UI)
+  - [x] Admin doc upload (POST/GET /api/admin/drivers/[id]/documents + DriverDocuments component)
+- [x] /drivers/reset-password recovery flow (request page + update page + login link + middleware/layout bypass)
+- [x] Wire up dead fields:
+  - [x] emergency_contact_relationship (driver profile, registration form, admin display)
+  - [x] is_lead_driver (assign modal toggle → API → "Lead" badge in AssignedDrivers)
 
 ---
 

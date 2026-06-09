@@ -90,6 +90,7 @@ Create these buckets (all **private**):
 1. **invoices**
 2. **quotes**
 3. **booking-documents**
+4. **driver-documents** (or run `supabase/migrations/add_driver_documents_bucket.sql`, which creates the bucket + RLS policies)
 
 For each bucket, add this RLS policy:
 - Policy name: `Admin full access`

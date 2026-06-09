@@ -139,12 +139,19 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
                       {assignment.driver?.first_name?.[0]}{assignment.driver?.last_name?.[0]}
                     </div>
                     <div>
-                      <Link
-                        href={`/admin/drivers/${assignment.driver_id}`}
-                        className="font-medium text-slate-900 hover:text-brand-purple-600"
-                      >
-                        {assignment.driver?.first_name} {assignment.driver?.last_name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/drivers/${assignment.driver_id}`}
+                          className="font-medium text-slate-900 hover:text-brand-purple-600"
+                        >
+                          {assignment.driver?.first_name} {assignment.driver?.last_name}
+                        </Link>
+                        {assignment.is_lead_driver && (
+                          <span className="rounded-full bg-brand-purple-100 px-2 py-0.5 text-xs font-semibold text-brand-purple-700">
+                            Lead
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-600">
                         Pay: {assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}%
                       </p>

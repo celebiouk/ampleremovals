@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     const { id: bookingId } = params;
-    const { driverId, payPercentageOverride } = await req.json();
+    const { driverId, payPercentageOverride, isLeadDriver } = await req.json();
 
     if (!driverId) {
       return NextResponse.json(
@@ -58,6 +58,7 @@ export async function POST(
         booking_id: bookingId,
         driver_id: driverId,
         pay_percentage_override: payPercentageOverride,
+        is_lead_driver: isLeadDriver ?? false,
       })
       .select()
       .single();

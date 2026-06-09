@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Calendar, PoundSterling, Truck, Edit, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { DRIVER_STATUS_LABELS } from "@/lib/constants";
+import { DriverDocuments } from "@/components/admin/drivers/DriverDocuments";
 
 export default function DriverProfilePage() {
   const params = useParams();
@@ -216,7 +217,12 @@ export default function DriverProfilePage() {
                 <>
                   <div>
                     <dt className="text-sm font-medium text-slate-600">Emergency Contact</dt>
-                    <dd className="mt-1 text-slate-900">{driver.emergency_contact_name}</dd>
+                    <dd className="mt-1 text-slate-900">
+                      {driver.emergency_contact_name}
+                      {driver.emergency_contact_relationship && (
+                        <span className="text-slate-500"> ({driver.emergency_contact_relationship})</span>
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-slate-600">Emergency Phone</dt>
@@ -226,6 +232,9 @@ export default function DriverProfilePage() {
               )}
             </dl>
           </div>
+
+          {/* Documents */}
+          <DriverDocuments driverId={driverId} />
         </div>
 
         {/* Right Column */}

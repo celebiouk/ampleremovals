@@ -21,6 +21,7 @@ export default function DriverRegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState("");
   const [drivingLicenceNumber, setDrivingLicenceNumber] = useState("");
   const [drivingLicenceExpiry, setDrivingLicenceExpiry] = useState("");
 
@@ -67,6 +68,7 @@ export default function DriverRegisterPage() {
           password,
           emergencyContactName: emergencyContactName || null,
           emergencyContactPhone: emergencyContactPhone || null,
+          emergencyContactRelationship: emergencyContactRelationship || null,
           drivingLicenceNumber: drivingLicenceNumber || null,
           drivingLicenceExpiry: drivingLicenceExpiry || null,
         }),
@@ -259,6 +261,16 @@ export default function DriverRegisterPage() {
                   value={emergencyContactPhone}
                   onChange={(e) => setEmergencyContactPhone(e.target.value)}
                   placeholder="07123456789"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Relationship</label>
+                <input
+                  type="text"
+                  value={emergencyContactRelationship}
+                  onChange={(e) => setEmergencyContactRelationship(e.target.value)}
+                  placeholder="e.g. Spouse, Parent, Friend"
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
                 />
               </div>

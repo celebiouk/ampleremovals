@@ -37,9 +37,15 @@ export default function DriversLayout({
   const [driverName, setDriverName] = useState("Driver");
   const [loading, setLoading] = useState(true);
 
+  // Public, chrome-less driver pages (no sidebar, no auth gate)
+  const isPublicPage =
+    pathname === "/drivers/login" ||
+    pathname === "/drivers/register" ||
+    pathname.startsWith("/drivers/reset-password");
+
   useEffect(() => {
-    // Don't check auth on login page
-    if (pathname === "/drivers/login") {
+    // Don't check auth on public pages
+    if (isPublicPage) {
       setLoading(false);
       return;
     }
@@ -78,8 +84,8 @@ export default function DriversLayout({
     router.push("/drivers/login");
   }
 
-  // For login page, render without sidebar
-  if (pathname === "/drivers/login") {
+  // Public pages (login, register, reset-password) render without sidebar
+  if (isPublicPage) {
     return (
       <>
         <Toaster position="top-right" />

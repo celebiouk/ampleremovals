@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { User, Mail, Calendar, Loader2 } from "lucide-react";
+import { User, Mail, Calendar, Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriverProfilePage() {
@@ -15,6 +15,11 @@ export default function DriverProfilePage() {
   const [phone, setPhone] = useState("");
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState("");
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProfile();
@@ -40,9 +45,57 @@ export default function DriverProfilePage() {
       setPhone(driverData.phone || "");
       setEmergencyContactName(driverData.emergency_contact_name || "");
       setEmergencyContactPhone(driverData.emergency_contact_phone || "");
+      setEmergencyContactRelationship(driverData.emergency_contact_relationship || "");
+
+      // Resolve a signed URL for the stored photo (RLS allows drivers to read own folder)
+      if (driverData.profile_photo_url) {
+        const { data: signed } = await supabase.storage
+          .from("driver-documents")
+          .createSignedUrl(driverData.profile_photo_url, 3600);
+        if (signed?.signedUrl) setPhotoUrl(signed.signedUrl);
+      }
     }
 
     setLoading(false);
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/drivers/profile/photo", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setPhotoUrl(data.signedUrl);
+        toast.success("Photo updated");
+      } else {
+        toast.error(data.error || "Failed to upload photo");
+      }
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   async function handleSave() {
@@ -63,6 +116,7 @@ export default function DriverProfilePage() {
           phone,
           emergency_contact_name: emergencyContactName || null,
           emergency_contact_phone: emergencyContactPhone || null,
+          emergency_contact_relationship: emergencyContactRelationship || null,
           updated_at: new Date().toISOString(),
         })
         .eq("auth_user_id", user.id);
@@ -103,6 +157,54 @@ export default function DriverProfilePage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
         <p className="text-slate-600">Manage your personal information</p>
+      </div>
+
+      {/* Profile Photo */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Profile Photo</h2>
+        <div className="flex items-center gap-5">
+          <div className="relative">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt="Profile"
+                className="h-20 w-20 rounded-full object-cover ring-2 ring-slate-200"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-purple-100 text-2xl font-bold text-brand-purple-700">
+                {driver.first_name?.[0]}{driver.last_name?.[0]}
+              </div>
+            )}
+          </div>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {uploadingPhoto ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Camera className="h-4 w-4" />
+                  {photoUrl ? "Change Photo" : "Upload Photo"}
+                </>
+              )}
+            </button>
+            <p className="mt-2 text-xs text-slate-500">JPG or PNG, max 5MB</p>
+          </div>
+        </div>
       </div>
 
       {/* Personal Details (Read-Only) */}
@@ -201,6 +303,18 @@ export default function DriverProfilePage() {
               value={emergencyContactPhone}
               onChange={(e) => setEmergencyContactPhone(e.target.value)}
               placeholder="e.g. 07123456789"
+              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Relationship
+            </label>
+            <input
+              type="text"
+              value={emergencyContactRelationship}
+              onChange={(e) => setEmergencyContactRelationship(e.target.value)}
+              placeholder="e.g. Spouse, Parent, Friend"
               className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
             />
           </div>

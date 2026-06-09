@@ -47,6 +47,10 @@ export async function updateSession(request: NextRequest) {
   const isAdminLoginRoute = pathname === "/admin/login";
   const isDriverLoginRoute = pathname === "/drivers/login";
   const isDriverRegisterRoute = pathname === "/drivers/register";
+  const isDriverResetRoute = pathname.startsWith("/drivers/reset-password");
+  // Public driver routes that must bypass the driver-session gate
+  const isDriverPublicRoute =
+    isDriverLoginRoute || isDriverRegisterRoute || isDriverResetRoute;
 
   // ── Admin Routes ──────────────────────────────────────────
 
@@ -85,16 +89,16 @@ export async function updateSession(request: NextRequest) {
   // ── Driver Routes ─────────────────────────────────────────
 
   // Unauthenticated user trying to reach a protected driver route → login
-  // BUT allow /drivers/register (public registration page)
-  if (isDriverRoute && !isDriverLoginRoute && !isDriverRegisterRoute && !user) {
+  // BUT allow public driver routes (register, reset-password)
+  if (isDriverRoute && !isDriverPublicRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/drivers/login";
     url.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(url);
   }
 
-  // Authenticated user on driver route (not login, not register) → check if they're an admin
-  if (isDriverRoute && !isDriverLoginRoute && !isDriverRegisterRoute && user) {
+  // Authenticated user on driver route (not public) → check if they're an admin
+  if (isDriverRoute && !isDriverPublicRoute && user) {
     const userType = await getUserType(user.id);
     if (userType === "admin") {
       // Admin trying to access driver portal → redirect to admin dashboard

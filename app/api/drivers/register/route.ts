@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       password,
       emergencyContactName,
       emergencyContactPhone,
+      emergencyContactRelationship,
       drivingLicenceNumber,
       drivingLicenceExpiry,
     } = body;
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
         phone,
         emergency_contact_name: emergencyContactName,
         emergency_contact_phone: emergencyContactPhone,
+        emergency_contact_relationship: emergencyContactRelationship,
         driving_licence_number: drivingLicenceNumber,
         driving_licence_expiry: drivingLicenceExpiry,
         status: "inactive", // Start as inactive, admin will activate
