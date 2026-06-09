@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft, Copy, Check, Mail, Phone, MessageSquare, Smartphone,
   ArrowRight, Plus, Receipt, Trash2, ChevronDown, ChevronUp, Loader2,
-  ExternalLink, Bell, Truck, Clock, MapPin, CheckCircle,
+  ExternalLink, Bell, Truck, Clock, MapPin, CheckCircle, Save, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -61,6 +61,13 @@ export default function BookingDetailPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
+
+  // Edit modals
+  const [editDateModalOpen, setEditDateModalOpen] = useState(false);
+  const [editAddressModalOpen, setEditAddressModalOpen] = useState(false);
+  const [editMoveDate, setEditMoveDate] = useState("");
+  const [editMoveTime, setEditMoveTime] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Get user email on mount
   useEffect(() => {
@@ -262,9 +269,12 @@ export default function BookingDetailPage() {
 
   const visibleHistory = showAllHistory ? statusHistory : statusHistory.slice(0, 5);
 
-  const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const Card = ({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) => (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-4 font-semibold text-slate-900">{title}</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="font-semibold text-slate-900">{title}</h3>
+        {action}
+      </div>
       {children}
     </div>
   );
@@ -310,7 +320,31 @@ export default function BookingDetailPage() {
             <Link href={`/admin/customers/${customer.id}`} className="mt-1 text-xs text-brand-purple-600 hover:underline">View all bookings from this customer →</Link>
           </Card>
 
-          <Card title="Booking Details">
+          <Card
+            title="Booking Details"
+            action={
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditMoveDate(booking.move_date || "");
+                    setEditMoveTime("");
+                    setEditDateModalOpen(true);
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  Edit Date
+                </button>
+                <button
+                  onClick={() => setEditAddressModalOpen(true)}
+                  className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  Edit Address
+                </button>
+              </div>
+            }
+          >
             <dl className="space-y-3 text-sm">
               {[
                 ["Service", SERVICE_LABELS[booking.service_type]],
@@ -800,6 +834,264 @@ export default function BookingDetailPage() {
       <ConfirmDialog isOpen={deletingNoteId !== null} title="Delete note"
         description="Are you sure? This cannot be undone." confirmLabel="Delete" confirmVariant="destructive"
         onConfirm={() => deletingNoteId && deleteNote(deletingNoteId)} onCancel={() => setDeletingNoteId(null)} />
+
+      {/* Edit Date Modal */}
+      {editDateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900">Edit Move Date & Time</h3>
+              <button onClick={() => setEditDateModalOpen(false)} className="rounded-lg p-1 hover:bg-slate-100">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Move Date *</label>
+                <input
+                  type="date"
+                  value={editMoveDate}
+                  onChange={(e) => setEditMoveDate(e.target.value)}
+                  className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Time (Optional)</label>
+                <input
+                  type="time"
+                  value={editMoveTime}
+                  onChange={(e) => setEditMoveTime(e.target.value)}
+                  className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                />
+                <p className="mt-1 text-xs text-slate-500">Leave blank if time not confirmed</p>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setEditDateModalOpen(false)}
+                  className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!editMoveDate) {
+                      toast.error("Please select a date");
+                      return;
+                    }
+                    setIsSavingEdit(true);
+                    try {
+                      const res = await fetch(`/api/admin/bookings/${bookingId}/update-date`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ moveDate: editMoveDate, moveTime: editMoveTime }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Move date updated successfully");
+                        setEditDateModalOpen(false);
+                        refresh();
+                      } else {
+                        toast.error(data.error || "Failed to update date");
+                      }
+                    } catch {
+                      toast.error("Failed to update date");
+                    } finally {
+                      setIsSavingEdit(false);
+                    }
+                  }}
+                  disabled={isSavingEdit}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-brand-purple-700 px-4 py-2.5 font-medium text-white hover:bg-brand-purple-800 disabled:opacity-50"
+                >
+                  {isSavingEdit ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Address Modal */}
+      {editAddressModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl my-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900">Edit Addresses</h3>
+              <button onClick={() => setEditAddressModalOpen(false)} className="rounded-lg p-1 hover:bg-slate-100">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-6">Update origin or destination addresses. Customer will be notified of changes.</p>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Origin Address */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-slate-900">Origin Address</h4>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Address Line 1 *</label>
+                  <input
+                    type="text"
+                    defaultValue={originAddress?.line_1 || ""}
+                    id="origin-line1"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Address Line 2</label>
+                  <input
+                    type="text"
+                    defaultValue={originAddress?.line_2 || ""}
+                    id="origin-line2"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    defaultValue={originAddress?.city || ""}
+                    id="origin-city"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Postcode *</label>
+                  <input
+                    type="text"
+                    defaultValue={originAddress?.postcode || ""}
+                    id="origin-postcode"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Destination Address */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-slate-900">Destination Address</h4>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Address Line 1 *</label>
+                  <input
+                    type="text"
+                    defaultValue={destinationAddress?.line_1 || ""}
+                    id="dest-line1"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Address Line 2</label>
+                  <input
+                    type="text"
+                    defaultValue={destinationAddress?.line_2 || ""}
+                    id="dest-line2"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    defaultValue={destinationAddress?.city || ""}
+                    id="dest-city"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Postcode *</label>
+                  <input
+                    type="text"
+                    defaultValue={destinationAddress?.postcode || ""}
+                    id="dest-postcode"
+                    className="w-full rounded-lg border-2 border-slate-200 px-3 py-2 text-slate-900 focus:border-brand-purple-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditAddressModalOpen(false)}
+                className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const originLine1 = (document.getElementById("origin-line1") as HTMLInputElement).value;
+                  const originPostcode = (document.getElementById("origin-postcode") as HTMLInputElement).value;
+                  const destLine1 = (document.getElementById("dest-line1") as HTMLInputElement).value;
+                  const destPostcode = (document.getElementById("dest-postcode") as HTMLInputElement).value;
+
+                  if (!originLine1 || !originPostcode || !destLine1 || !destPostcode) {
+                    toast.error("Please fill in all required fields");
+                    return;
+                  }
+
+                  setIsSavingEdit(true);
+                  try {
+                    const res = await fetch(`/api/admin/bookings/${bookingId}/update-addresses`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        origin: {
+                          line_1: originLine1,
+                          line_2: (document.getElementById("origin-line2") as HTMLInputElement).value,
+                          city: (document.getElementById("origin-city") as HTMLInputElement).value,
+                          postcode: originPostcode,
+                        },
+                        destination: {
+                          line_1: destLine1,
+                          line_2: (document.getElementById("dest-line2") as HTMLInputElement).value,
+                          city: (document.getElementById("dest-city") as HTMLInputElement).value,
+                          postcode: destPostcode,
+                        },
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      toast.success("Addresses updated successfully");
+                      setEditAddressModalOpen(false);
+                      refresh();
+                    } else {
+                      toast.error(data.error || "Failed to update addresses");
+                    }
+                  } catch {
+                    toast.error("Failed to update addresses");
+                  } finally {
+                    setIsSavingEdit(false);
+                  }
+                }}
+                disabled={isSavingEdit}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-brand-purple-700 px-4 py-2.5 font-medium text-white hover:bg-brand-purple-800 disabled:opacity-50"
+              >
+                {isSavingEdit ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
