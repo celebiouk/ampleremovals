@@ -180,6 +180,15 @@ CREATE TABLE IF NOT EXISTS booking_driver_assignments (
     UNIQUE (booking_id, driver_id)
 );
 
+-- Add missing columns if table already existed
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE;
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE;
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS assigned_by UUID;
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS is_lead_driver BOOLEAN DEFAULT FALSE;
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS pay_percentage_override NUMERIC(5,2);
+
 -- Comments
 COMMENT ON TABLE booking_driver_assignments IS 'Links drivers to bookings with pay overrides';
 COMMENT ON COLUMN booking_driver_assignments.is_lead_driver IS 'Is this driver the lead on this job';
@@ -223,6 +232,15 @@ CREATE TABLE IF NOT EXISTS driver_job_status_updates (
 
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns if table already existed
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE;
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE;
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS status job_status_update;
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS note TEXT;
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS latitude NUMERIC(10, 7);
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS longitude NUMERIC(10, 7);
+ALTER TABLE driver_job_status_updates ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Comments
 COMMENT ON TABLE driver_job_status_updates IS 'Driver status updates during jobs (on my way, arrived, etc)';
@@ -284,6 +302,21 @@ CREATE TABLE IF NOT EXISTS driver_earnings (
     UNIQUE (driver_id, booking_id)
 );
 
+-- Add missing columns if table already existed
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS assignment_id UUID REFERENCES booking_driver_assignments(id) ON DELETE CASCADE;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS booking_total NUMERIC(10,2);
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS pay_percentage NUMERIC(5,2);
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS gross_earnings NUMERIC(10,2);
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS tip_amount NUMERIC(10,2) DEFAULT 0.00;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS total_earnings NUMERIC(10,2);
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS status earnings_status DEFAULT 'pending';
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Comments
 COMMENT ON TABLE driver_earnings IS 'Calculated earnings per driver per booking';
 COMMENT ON COLUMN driver_earnings.booking_total IS 'Total invoice paid amount';
@@ -329,8 +362,12 @@ CREATE TABLE IF NOT EXISTS driver_tips (
 );
 
 -- Add missing columns if table already existed
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE;
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE;
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS amount NUMERIC(10,2);
 ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS recorded_by TEXT NOT NULL DEFAULT 'admin';
 ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS note TEXT;
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Comments
 COMMENT ON TABLE driver_tips IS 'Tips given to drivers (admin-entered or customer-given)';
