@@ -21,6 +21,7 @@ import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDi
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
 import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
+import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -587,6 +588,9 @@ export default function BookingDetailPage() {
               </button>
             </div>
           </Card>
+
+          {/* Assigned Drivers */}
+          <AssignedDrivers bookingId={bookingId} bookingReference={booking.reference} />
 
           <Card title="Booking Status">
             <div className="mb-4"><StatusBadge status={booking.status} /></div>
