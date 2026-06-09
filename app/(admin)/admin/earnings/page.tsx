@@ -10,6 +10,7 @@ export default function EarningsPage() {
   const [earnings, setEarnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
 
   useEffect(() => {
     loadEarnings();
@@ -40,7 +41,7 @@ export default function EarningsPage() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Earnings approved!");
+        toast.success("Earnings approved! Driver notified by email.");
         loadEarnings();
       } else {
         toast.error("Failed to approve earnings");
@@ -50,6 +51,29 @@ export default function EarningsPage() {
       toast.error("Failed to approve earnings");
     } finally {
       setApproving(null);
+    }
+  }
+
+  async function markPaid(earningId: string) {
+    setPaying(earningId);
+    try {
+      const response = await fetch(`/api/admin/earnings/${earningId}/pay`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Marked as paid!");
+        loadEarnings();
+      } else {
+        toast.error("Failed to mark as paid");
+      }
+    } catch (error) {
+      console.error("Pay error:", error);
+      toast.error("Failed to mark as paid");
+    } finally {
+      setPaying(null);
     }
   }
 
@@ -208,10 +232,29 @@ export default function EarningsPage() {
                         </button>
                       )}
                       {earning.status === "approved" && (
-                        <span className="text-sm text-slate-600">Ready to pay</span>
+                        <button
+                          onClick={() => markPaid(earning.id)}
+                          disabled={paying === earning.id}
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                        >
+                          {paying === earning.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <PoundSterling className="h-4 w-4" />
+                              Mark as Paid
+                            </>
+                          )}
+                        </button>
                       )}
                       {earning.status === "paid" && (
-                        <span className="text-sm text-slate-500">Paid</span>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-slate-500">
+                          <Check className="h-4 w-4" />
+                          Paid
+                        </span>
                       )}
                     </td>
                   </tr>

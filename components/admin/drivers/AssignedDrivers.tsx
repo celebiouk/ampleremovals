@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Truck, X, Loader2 } from "lucide-react";
+import { Plus, Truck, X, Loader2, PoundSterling } from "lucide-react";
 import { toast } from "sonner";
 import { AssignDriverModal } from "./AssignDriverModal";
 import Link from "next/link";
@@ -17,6 +17,10 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [tipDriverId, setTipDriverId] = useState<string | null>(null);
+  const [tipAmount, setTipAmount] = useState("");
+  const [tipNote, setTipNote] = useState("");
+  const [savingTip, setSavingTip] = useState(false);
 
   useEffect(() => {
     loadAssignments();
@@ -33,6 +37,37 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
       console.error("Failed to load drivers:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRecordTip(driverId: string) {
+    const amount = parseFloat(tipAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid tip amount");
+      return;
+    }
+
+    setSavingTip(true);
+    try {
+      const response = await fetch(`/api/admin/bookings/${bookingId}/tips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ driverId, amount, note: tipNote || null }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Tip of £${amount.toFixed(2)} recorded`);
+        setTipDriverId(null);
+        setTipAmount("");
+        setTipNote("");
+      } else {
+        toast.error(data.error || "Failed to record tip");
+      }
+    } catch (error) {
+      console.error("Tip error:", error);
+      toast.error("Failed to record tip");
+    } finally {
+      setSavingTip(false);
     }
   }
 
@@ -96,36 +131,84 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
             {assignments.map((assignment) => (
               <div
                 key={assignment.id}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-purple-600 font-semibold text-white">
-                    {assignment.driver?.first_name?.[0]}{assignment.driver?.last_name?.[0]}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-purple-600 font-semibold text-white">
+                      {assignment.driver?.first_name?.[0]}{assignment.driver?.last_name?.[0]}
+                    </div>
+                    <div>
+                      <Link
+                        href={`/admin/drivers/${assignment.driver_id}`}
+                        className="font-medium text-slate-900 hover:text-brand-purple-600"
+                      >
+                        {assignment.driver?.first_name} {assignment.driver?.last_name}
+                      </Link>
+                      <p className="text-sm text-slate-600">
+                        Pay: {assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}%
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <Link
-                      href={`/admin/drivers/${assignment.driver_id}`}
-                      className="font-medium text-slate-900 hover:text-brand-purple-600"
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setTipDriverId(tipDriverId === assignment.driver_id ? null : assignment.driver_id)}
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-green-600"
+                      title="Record tip"
                     >
-                      {assignment.driver?.first_name} {assignment.driver?.last_name}
-                    </Link>
-                    <p className="text-sm text-slate-600">
-                      Pay: {assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}%
-                    </p>
+                      <PoundSterling className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleRemove(assignment.id)}
+                      disabled={removing === assignment.id}
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-red-600 disabled:opacity-50"
+                      title="Remove driver"
+                    >
+                      {removing === assignment.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleRemove(assignment.id)}
-                  disabled={removing === assignment.id}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-red-600 disabled:opacity-50"
-                  title="Remove driver"
-                >
-                  {removing === assignment.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <X className="h-4 w-4" />
-                  )}
-                </button>
+
+                {/* Inline tip form */}
+                {tipDriverId === assignment.driver_id && (
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="mb-1 block text-xs font-medium text-slate-600">Tip Amount (£)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.50"
+                          value={tipAmount}
+                          onChange={(e) => setTipAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[140px]">
+                        <label className="mb-1 block text-xs font-medium text-slate-600">Note (optional)</label>
+                        <input
+                          type="text"
+                          value={tipNote}
+                          onChange={(e) => setTipNote(e.target.value)}
+                          placeholder="e.g. Cash tip"
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleRecordTip(assignment.driver_id)}
+                        disabled={savingTip}
+                        className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {savingTip ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Tip"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
