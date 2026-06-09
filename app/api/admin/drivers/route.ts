@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 
 /**
@@ -70,6 +70,105 @@ export async function GET() {
     });
   } catch (error) {
     console.error("GET /api/admin/drivers error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/admin/drivers
+ * Create a new driver account
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      firstName,
+      lastName,
+      preferredName,
+      dateOfBirth,
+      email,
+      phone,
+      emergencyContactName,
+      emergencyContactPhone,
+      status,
+      defaultPayPercentage,
+    } = body;
+
+    // Validation
+    if (!firstName || !lastName || !dateOfBirth || !email || !phone) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createAdminClient();
+
+    // Generate temporary password
+    const tempPassword = `Driver${Math.random().toString(36).slice(2, 10)}!${Math.floor(Math.random() * 100)}`;
+
+    // Create Auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+    });
+
+    if (authError || !authData.user) {
+      console.error("Auth user creation error:", authError);
+      return NextResponse.json(
+        { success: false, error: "Failed to create auth account" },
+        { status: 500 }
+      );
+    }
+
+    // Create driver record
+    const { data: driver, error: driverError } = await supabase
+      .from("drivers")
+      .insert({
+        auth_user_id: authData.user.id,
+        first_name: firstName,
+        last_name: lastName,
+        preferred_name: preferredName,
+        date_of_birth: dateOfBirth,
+        email,
+        phone,
+        emergency_contact_name: emergencyContactName,
+        emergency_contact_phone: emergencyContactPhone,
+        status: status || "active",
+        default_pay_percentage: defaultPayPercentage || 0,
+      })
+      .select()
+      .single();
+
+    if (driverError) {
+      console.error("Driver creation error:", driverError);
+      // Cleanup: delete auth user
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json(
+        { success: false, error: "Failed to create driver record" },
+        { status: 500 }
+      );
+    }
+
+    // Log activity
+    await supabase.from("activity_log").insert({
+      action: `Driver account created: ${firstName} ${lastName}`,
+      metadata: { driver_id: driver.id, email },
+    });
+
+    // TODO: Send welcome email to driver with temporary password
+
+    return NextResponse.json({
+      success: true,
+      driver,
+      temporaryPassword: tempPassword,
+    });
+  } catch (error) {
+    console.error("POST /api/admin/drivers error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
