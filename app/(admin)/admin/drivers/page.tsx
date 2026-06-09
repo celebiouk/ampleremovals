@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, UserPlus, Truck, Calendar, Search, Loader2 } from "lucide-react";
+import { Users, UserPlus, Truck, Calendar, Search, Loader2, Link2, Check } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { DRIVER_STATUS_LABELS } from "@/lib/constants";
 
 export default function AdminDriversPage() {
@@ -17,6 +18,15 @@ export default function AdminDriversPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "active" | "inactive" | "pending">("all");
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  function copyInviteLink() {
+    const inviteUrl = `${window.location.origin}/drivers/register`;
+    navigator.clipboard.writeText(inviteUrl);
+    setLinkCopied(true);
+    toast.success("Invite link copied to clipboard!");
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
 
   useEffect(() => {
     loadDrivers();
@@ -85,13 +95,31 @@ export default function AdminDriversPage() {
           <h1 className="text-2xl font-bold text-slate-900">Drivers</h1>
           <p className="text-slate-600">Manage driver accounts and assignments</p>
         </div>
-        <Link
-          href="/admin/drivers/new"
-          className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-green-700"
-        >
-          <UserPlus className="h-5 w-5" />
-          Add New Driver
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={copyInviteLink}
+            className="flex items-center gap-2 rounded-xl border-2 border-brand-purple-600 bg-white px-4 py-2.5 font-semibold text-brand-purple-600 transition-colors hover:bg-brand-purple-50"
+          >
+            {linkCopied ? (
+              <>
+                <Check className="h-5 w-5" />
+                Link Copied!
+              </>
+            ) : (
+              <>
+                <Link2 className="h-5 w-5" />
+                Copy Invite Link
+              </>
+            )}
+          </button>
+          <Link
+            href="/admin/drivers/new"
+            className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-green-700"
+          >
+            <UserPlus className="h-5 w-5" />
+            Add New Driver
+          </Link>
+        </div>
       </div>
 
       {/* Summary Cards */}
