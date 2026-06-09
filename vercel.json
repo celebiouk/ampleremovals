@@ -1,12 +1,20 @@
 {
   "crons": [
     {
-      "path": "/api/cron/three-day-reminder",
+      "path": "/api/cron/seven-day-countdown",
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/one-day-reminder",
+      "path": "/api/cron/five-day-countdown",
+      "schedule": "15 9 * * *"
+    },
+    {
+      "path": "/api/cron/three-day-reminder",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/one-day-reminder",
+      "schedule": "45 9 * * *"
     },
     {
       "path": "/api/cron/send-address-confirmations",
@@ -93,6 +101,12 @@
       "maxDuration": 60
     },
     "app/api/cron/smart-admin-alerts/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/seven-day-countdown/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/five-day-countdown/route.ts": {
       "maxDuration": 60
     }
   }
