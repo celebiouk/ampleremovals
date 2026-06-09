@@ -97,3 +97,51 @@ export const ALL_STATUSES: BookingStatus[] = [
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
 ];
+
+// ── PHASE 11: Driver Status Labels & Colors ────────────────────────────────
+
+import type { DriverStatus, JobStatusUpdate, EarningsStatus } from "@/types";
+
+export const DRIVER_STATUS_LABELS: Record<DriverStatus, string> = {
+  active: "Active",
+  inactive: "Inactive",
+  suspended: "Suspended",
+  on_leave: "On Leave",
+};
+
+export const DRIVER_STATUS_COLORS: Record<DriverStatus, string> = {
+  active: "green",
+  inactive: "slate",
+  suspended: "red",
+  on_leave: "amber",
+};
+
+export const JOB_STATUS_LABELS: Record<JobStatusUpdate, string> = {
+  on_my_way: "On My Way",
+  twenty_mins_away: "20 Minutes Away",
+  ten_mins_away: "10 Minutes Away",
+  fifteen_mins_to_delivery: "15 Mins to Delivery",
+  job_completed: "Job Completed",
+};
+
+export const JOB_STATUS_COLORS: Record<JobStatusUpdate, string> = {
+  on_my_way: "purple",
+  twenty_mins_away: "blue",
+  ten_mins_away: "amber",
+  fifteen_mins_to_delivery: "orange",
+  job_completed: "green",
+};
+
+export const EARNINGS_STATUS_LABELS: Record<EarningsStatus, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  paid: "Paid",
+  disputed: "Disputed",
+};
+
+export const EARNINGS_STATUS_COLORS: Record<EarningsStatus, string> = {
+  pending: "slate",
+  approved: "green",
+  paid: "green",
+  disputed: "red",
+};

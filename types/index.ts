@@ -354,3 +354,102 @@ export interface InvoicePDFData {
   depositPercentage?: number;
   balanceRemaining?: number;
 }
+
+// ── PHASE 11: Driver Management Types ────────────────────────
+
+export type DriverStatus = "active" | "inactive" | "suspended" | "on_leave";
+
+export type JobStatusUpdate =
+  | "on_my_way"
+  | "twenty_mins_away"
+  | "ten_mins_away"
+  | "fifteen_mins_to_delivery"
+  | "job_completed";
+
+export type EarningsStatus = "pending" | "approved" | "paid" | "disputed";
+
+export interface Driver {
+  id: string;
+  auth_user_id: string | null;
+  // Personal
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  date_of_birth: string; // Date string
+  email: string;
+  phone: string;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relationship: string | null;
+  // Address
+  address_line_1: string | null;
+  address_line_2: string | null;
+  city: string | null;
+  county: string | null;
+  postcode: string | null;
+  // Employment
+  status: DriverStatus;
+  hire_date: string; // Date string
+  driver_notes: string | null;
+  // Pay
+  default_pay_percentage: number; // e.g. 40.00 for 40%
+  // Documents
+  profile_photo_url: string | null;
+  driving_licence_front_url: string | null;
+  driving_licence_back_url: string | null;
+  driving_licence_number: string | null;
+  driving_licence_expiry: string | null; // Date string
+  // Metadata
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BookingDriverAssignment {
+  id: string;
+  booking_id: string;
+  driver_id: string;
+  assigned_by: string | null;
+  assigned_at: string;
+  is_lead_driver: boolean;
+  notes: string | null;
+  pay_percentage_override: number | null; // Override driver's default %
+}
+
+export interface DriverJobStatusUpdate {
+  id: string;
+  booking_id: string;
+  driver_id: string;
+  status: JobStatusUpdate;
+  note: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+}
+
+export interface DriverEarnings {
+  id: string;
+  driver_id: string;
+  booking_id: string;
+  assignment_id: string;
+  booking_total: number; // Total paid for booking
+  pay_percentage: number; // % used for this calculation
+  gross_earnings: number; // booking_total × (pay_percentage / 100)
+  tip_amount: number; // Sum of tips
+  total_earnings: number; // gross_earnings + tip_amount
+  status: EarningsStatus;
+  admin_notes: string | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DriverTip {
+  id: string;
+  driver_id: string;
+  booking_id: string;
+  amount: number;
+  recorded_by: string; // 'admin' | 'stripe'
+  note: string | null;
+  created_at: string;
+}
