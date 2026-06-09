@@ -91,6 +91,35 @@ CREATE TABLE IF NOT EXISTS drivers (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add missing columns if table already existed
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS first_name TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS last_name TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS preferred_name TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS emergency_contact_relationship TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS address_line_1 TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS address_line_2 TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS county TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS postcode TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS status driver_status DEFAULT 'active';
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS hire_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS driver_notes TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS default_pay_percentage NUMERIC(5,2) DEFAULT 0.00;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS driving_licence_front_url TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS driving_licence_back_url TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS driving_licence_number TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS driving_licence_expiry DATE;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Comments
 COMMENT ON TABLE drivers IS 'Driver accounts with employment & pay details';
 COMMENT ON COLUMN drivers.auth_user_id IS 'Linked Supabase Auth user for driver login';
@@ -100,12 +129,17 @@ COMMENT ON COLUMN drivers.status IS 'Employment status: active | inactive | susp
 COMMENT ON COLUMN drivers.created_by IS 'Admin who created this driver account';
 
 -- Indexes
-CREATE INDEX idx_drivers_email ON drivers(email);
-CREATE INDEX idx_drivers_auth_user_id ON drivers(auth_user_id);
-CREATE INDEX idx_drivers_status ON drivers(status);
+CREATE INDEX IF NOT EXISTS idx_drivers_email ON drivers(email);
+CREATE INDEX IF NOT EXISTS idx_drivers_auth_user_id ON drivers(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(status);
 
 -- RLS Policies
 ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admins full access to drivers" ON drivers;
+DROP POLICY IF EXISTS "Drivers can view own record" ON drivers;
+DROP POLICY IF EXISTS "Drivers can update own record" ON drivers;
 
 -- Admins have full access
 CREATE POLICY "Admins full access to drivers"
@@ -152,9 +186,9 @@ COMMENT ON COLUMN booking_driver_assignments.is_lead_driver IS 'Is this driver t
 COMMENT ON COLUMN booking_driver_assignments.pay_percentage_override IS 'Override pay % for this booking only';
 
 -- Indexes
-CREATE INDEX idx_assignments_booking_id
+CREATE INDEX IF NOT EXISTS idx_assignments_booking_id
   ON booking_driver_assignments(booking_id);
-CREATE INDEX idx_assignments_driver_id
+CREATE INDEX IF NOT EXISTS idx_assignments_driver_id
   ON booking_driver_assignments(driver_id);
 
 -- RLS Policies
@@ -196,11 +230,11 @@ COMMENT ON COLUMN driver_job_status_updates.status IS 'on_my_way | twenty_mins_a
 COMMENT ON COLUMN driver_job_status_updates.note IS 'Optional driver note with status update';
 
 -- Indexes
-CREATE INDEX idx_job_status_booking_id
+CREATE INDEX IF NOT EXISTS idx_job_status_booking_id
   ON driver_job_status_updates(booking_id);
-CREATE INDEX idx_job_status_driver_id
+CREATE INDEX IF NOT EXISTS idx_job_status_driver_id
   ON driver_job_status_updates(driver_id);
-CREATE INDEX idx_job_status_created_at
+CREATE INDEX IF NOT EXISTS idx_job_status_created_at
   ON driver_job_status_updates(created_at DESC);
 
 -- RLS Policies
@@ -260,9 +294,9 @@ COMMENT ON COLUMN driver_earnings.total_earnings IS 'Gross + tips';
 COMMENT ON COLUMN driver_earnings.status IS 'pending | approved | paid | disputed';
 
 -- Indexes
-CREATE INDEX idx_earnings_driver_id ON driver_earnings(driver_id);
-CREATE INDEX idx_earnings_booking_id ON driver_earnings(booking_id);
-CREATE INDEX idx_earnings_status ON driver_earnings(status);
+CREATE INDEX IF NOT EXISTS idx_earnings_driver_id ON driver_earnings(driver_id);
+CREATE INDEX IF NOT EXISTS idx_earnings_booking_id ON driver_earnings(booking_id);
+CREATE INDEX IF NOT EXISTS idx_earnings_status ON driver_earnings(status);
 
 -- RLS Policies
 ALTER TABLE driver_earnings ENABLE ROW LEVEL SECURITY;
@@ -294,13 +328,17 @@ CREATE TABLE IF NOT EXISTS driver_tips (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add missing columns if table already existed
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS recorded_by TEXT NOT NULL DEFAULT 'admin';
+ALTER TABLE driver_tips ADD COLUMN IF NOT EXISTS note TEXT;
+
 -- Comments
 COMMENT ON TABLE driver_tips IS 'Tips given to drivers (admin-entered or customer-given)';
 COMMENT ON COLUMN driver_tips.recorded_by IS 'Who recorded this tip: admin | stripe';
 
 -- Indexes
-CREATE INDEX idx_tips_driver_id ON driver_tips(driver_id);
-CREATE INDEX idx_tips_booking_id ON driver_tips(booking_id);
+CREATE INDEX IF NOT EXISTS idx_tips_driver_id ON driver_tips(driver_id);
+CREATE INDEX IF NOT EXISTS idx_tips_booking_id ON driver_tips(booking_id);
 
 -- RLS Policies
 ALTER TABLE driver_tips ENABLE ROW LEVEL SECURITY;
