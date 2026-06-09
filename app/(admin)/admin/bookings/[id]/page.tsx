@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft, Copy, Check, Mail, Phone, MessageSquare, Smartphone,
   ArrowRight, Plus, Receipt, Trash2, ChevronDown, ChevronUp, Loader2,
-  ExternalLink, Bell,
+  ExternalLink, Bell, Truck, Clock, MapPin, CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -56,6 +56,7 @@ export default function BookingDetailPage() {
   const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string; type: string; amount: number } | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [callBackReminderOpen, setCallBackReminderOpen] = useState(false);
+  const [updatingDriverStatus, setUpdatingDriverStatus] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -104,6 +105,36 @@ export default function BookingDetailPage() {
     } finally {
       setDeletingInvoiceId(null);
       setInvoiceToDelete(null);
+    }
+  };
+
+  // Update driver status
+  const updateDriverStatus = async (status: string, statusLabel: string) => {
+    if (!window.confirm(`Are you sure you want to mark: ${statusLabel}?\n\nThis will send Email, SMS, and WhatsApp to the customer.`)) {
+      return;
+    }
+
+    setUpdatingDriverStatus(true);
+
+    try {
+      const res = await fetch("/api/admin/driver-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, status }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(`${statusLabel} - Customer notified!`);
+        refresh();
+      } else {
+        toast.error(data.error || "Failed to update status");
+      }
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      setUpdatingDriverStatus(false);
     }
   };
 
@@ -473,6 +504,52 @@ export default function BookingDetailPage() {
               >
                 <Receipt className="h-4 w-4" />
                 Build Quote
+              </button>
+            </div>
+          </Card>
+
+          {/* Driver Status Actions */}
+          <Card title="Driver Status">
+            <div className="space-y-2">
+              <button
+                onClick={() => updateDriverStatus("on_my_way", "Driver On My Way")}
+                disabled={updatingDriverStatus}
+                className="flex w-full items-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                <Truck className="h-4 w-4" />
+                On My Way
+              </button>
+              <button
+                onClick={() => updateDriverStatus("20_mins_away", "Driver 20 Minutes Away")}
+                disabled={updatingDriverStatus}
+                className="flex w-full items-center gap-2 rounded-xl border border-orange-500 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-900 hover:bg-orange-100 transition-colors disabled:opacity-50"
+              >
+                <Clock className="h-4 w-4" />
+                20 Minutes Away
+              </button>
+              <button
+                onClick={() => updateDriverStatus("10_mins_away", "Driver 10 Minutes Away")}
+                disabled={updatingDriverStatus}
+                className="flex w-full items-center gap-2 rounded-xl border border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold text-red-900 hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                <Clock className="h-4 w-4" />
+                10 Minutes Away
+              </button>
+              <button
+                onClick={() => updateDriverStatus("15_mins_to_delivery", "15 Minutes to Delivery")}
+                disabled={updatingDriverStatus}
+                className="flex w-full items-center gap-2 rounded-xl border border-purple-500 bg-purple-50 px-4 py-3 text-sm font-semibold text-purple-900 hover:bg-purple-100 transition-colors disabled:opacity-50"
+              >
+                <MapPin className="h-4 w-4" />
+                15 Mins to Delivery
+              </button>
+              <button
+                onClick={() => updateDriverStatus("job_completed", "Job Completed")}
+                disabled={updatingDriverStatus}
+                className="flex w-full items-center gap-2 rounded-xl border-2 border-green-600 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Job Completed
               </button>
             </div>
           </Card>
