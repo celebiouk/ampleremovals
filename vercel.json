@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/send-referral-invites",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/smart-admin-alerts",
+      "schedule": "0 * * * *"
     }
   ],
   "functions": {
@@ -86,6 +90,9 @@
       "maxDuration": 60
     },
     "app/api/cron/send-referral-invites/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/smart-admin-alerts/route.ts": {
       "maxDuration": 60
     }
   }
