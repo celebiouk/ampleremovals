@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
-  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck,
+  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/invoices", label: "Invoices", icon: Receipt },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
+      { href: "/admin/earnings", label: "Driver Earnings", icon: PoundSterling },
     ],
   },
   {

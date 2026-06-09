@@ -91,6 +91,70 @@ export async function POST(request: NextRequest) {
             if (rule) await supabase.from("automation_logs").insert({ rule_id: rule.id, booking_id: inv.booking_id, triggered_at: now, status: "pending" });
           } catch { /* non-critical */ }
         }
+
+        // ── PHASE 11D: Calculate Driver Earnings ──────────────────
+        // When full invoice is paid, calculate earnings for assigned drivers
+        if (inv.type === "full") {
+          try {
+            // Get all assigned drivers for this booking
+            const { data: assignments } = await supabase
+              .from("booking_driver_assignments")
+              .select("id, driver_id, pay_percentage_override, drivers(default_pay_percentage)")
+              .eq("booking_id", inv.booking_id);
+
+            if (assignments && assignments.length > 0) {
+              for (const assignment of assignments) {
+                // Check if earnings already exist (idempotency)
+                const { data: existingEarnings } = await supabase
+                  .from("driver_earnings")
+                  .select("id")
+                  .eq("assignment_id", assignment.id)
+                  .single();
+
+                if (existingEarnings) continue; // Already calculated
+
+                // Calculate earnings
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const payPercentage = assignment.pay_percentage_override || (assignment.drivers as any)?.default_pay_percentage || 0;
+                const grossEarnings = (inv.total * payPercentage) / 100;
+
+                // Get existing tips for this driver on this booking
+                const { data: tips } = await supabase
+                  .from("driver_tips")
+                  .select("amount")
+                  .eq("driver_id", assignment.driver_id)
+                  .eq("booking_id", inv.booking_id);
+
+                const tipAmount = tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
+                const totalEarnings = grossEarnings + tipAmount;
+
+                // Insert earnings record
+                await supabase.from("driver_earnings").insert({
+                  driver_id: assignment.driver_id,
+                  booking_id: inv.booking_id,
+                  assignment_id: assignment.id,
+                  booking_total: inv.total,
+                  pay_percentage: payPercentage,
+                  gross_earnings: grossEarnings,
+                  tip_amount: tipAmount,
+                  total_earnings: totalEarnings,
+                  status: "pending", // Requires admin approval
+                });
+
+                // Log activity
+                await supabase.from("activity_log").insert({
+                  booking_id: inv.booking_id,
+                  action: `Driver earnings calculated: £${totalEarnings.toFixed(2)} (${payPercentage}%)`,
+                  metadata: { driver_id: assignment.driver_id, earnings: totalEarnings },
+                  performed_by: "system",
+                });
+              }
+            }
+          } catch (earningsError) {
+            console.error("Driver earnings calculation error:", earningsError);
+            // Don't fail the webhook if earnings fail
+          }
+        }
         break;
       }
 

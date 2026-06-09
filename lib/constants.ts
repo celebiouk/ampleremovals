@@ -140,8 +140,8 @@ export const EARNINGS_STATUS_LABELS: Record<EarningsStatus, string> = {
 };
 
 export const EARNINGS_STATUS_COLORS: Record<EarningsStatus, string> = {
-  pending: "slate",
-  approved: "green",
-  paid: "green",
-  disputed: "red",
+  pending: "bg-amber-100 text-amber-700",
+  approved: "bg-green-100 text-green-700",
+  paid: "bg-blue-100 text-blue-700",
+  disputed: "bg-red-100 text-red-700",
 };
