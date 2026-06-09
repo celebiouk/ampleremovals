@@ -55,6 +55,10 @@
     {
       "path": "/api/cron/smart-admin-alerts",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/check-weather",
+      "schedule": "0 18 * * *"
     }
   ],
   "functions": {
@@ -107,6 +111,9 @@
       "maxDuration": 60
     },
     "app/api/cron/five-day-countdown/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/check-weather/route.ts": {
       "maxDuration": 60
     }
   }
