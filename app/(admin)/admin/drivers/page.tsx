@@ -16,6 +16,7 @@ export default function AdminDriversPage() {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterTab, setFilterTab] = useState<"all" | "active" | "inactive" | "pending">("all");
 
   useEffect(() => {
     loadDrivers();
@@ -37,7 +38,17 @@ export default function AdminDriversPage() {
     }
   }
 
-  const filteredDrivers = drivers.filter((driver) => {
+  // Filter by tab
+  const tabFilteredDrivers = drivers.filter((driver) => {
+    if (filterTab === "all") return true;
+    if (filterTab === "active") return driver.status === "active";
+    if (filterTab === "inactive") return driver.status === "inactive" || driver.status === "suspended" || driver.status === "on_leave";
+    if (filterTab === "pending") return driver.status === "inactive" && driver.default_pay_percentage === 0;
+    return true;
+  });
+
+  // Filter by search
+  const filteredDrivers = tabFilteredDrivers.filter((driver) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
@@ -47,6 +58,9 @@ export default function AdminDriversPage() {
       driver.phone?.includes(search)
     );
   });
+
+  // Count pending approvals (inactive with 0% pay = new registration)
+  const pendingCount = drivers.filter(d => d.status === "inactive" && d.default_pay_percentage === 0).length;
 
   const summaryCards = [
     { label: "Total Drivers", value: stats.total, icon: Users, color: "purple" },
@@ -102,6 +116,57 @@ export default function AdminDriversPage() {
         ))}
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setFilterTab("all")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            filterTab === "all"
+              ? "bg-brand-purple-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          All Drivers ({drivers.length})
+        </button>
+        <button
+          onClick={() => setFilterTab("active")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            filterTab === "active"
+              ? "bg-green-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Active ({stats.active})
+        </button>
+        <button
+          onClick={() => setFilterTab("inactive")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            filterTab === "inactive"
+              ? "bg-slate-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Inactive ({stats.inactive})
+        </button>
+        <button
+          onClick={() => setFilterTab("pending")}
+          className={`relative rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            filterTab === "pending"
+              ? "bg-amber-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Pending Approval
+          {pendingCount > 0 && (
+            <span className={`ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold ${
+              filterTab === "pending" ? "bg-white text-amber-600" : "bg-amber-600 text-white"
+            }`}>
+              {pendingCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Search & Filter */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
@@ -153,8 +218,10 @@ export default function AdminDriversPage() {
                   </td>
                 </tr>
               ) : (
-                filteredDrivers.map((driver) => (
-                  <tr key={driver.id} className="hover:bg-slate-50">
+                filteredDrivers.map((driver) => {
+                  const isPending = driver.status === "inactive" && driver.default_pay_percentage === 0;
+                  return (
+                  <tr key={driver.id} className={`hover:bg-slate-50 ${isPending ? "bg-amber-50" : ""}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-purple-100 font-semibold text-brand-purple-700">
@@ -179,14 +246,16 @@ export default function AdminDriversPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                          driver.status === "active"
+                          isPending
+                            ? "bg-amber-100 text-amber-700"
+                            : driver.status === "active"
                             ? "bg-green-100 text-green-700"
                             : driver.status === "suspended"
                             ? "bg-red-100 text-red-700"
                             : "bg-slate-100 text-slate-700"
                         }`}
                       >
-                        {DRIVER_STATUS_LABELS[driver.status as keyof typeof DRIVER_STATUS_LABELS]}
+                        {isPending ? "Pending Approval" : DRIVER_STATUS_LABELS[driver.status as keyof typeof DRIVER_STATUS_LABELS]}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-slate-900">
@@ -207,7 +276,8 @@ export default function AdminDriversPage() {
                       </Link>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
