@@ -3,6 +3,11 @@
 -- Track automated follow-ups for quotes that aren't confirmed
 -- ============================================================
 
+-- Add missing quote columns
+ALTER TABLE bookings
+  ADD COLUMN IF NOT EXISTS quote_confirmed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS quote_expires_at TIMESTAMPTZ;
+
 -- Add quote follow-up tracking to bookings table
 ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS quote_followup_2hr_sent_at TIMESTAMPTZ,
@@ -11,6 +16,8 @@ ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS quote_followup_7day_sent_at TIMESTAMPTZ;
 
 -- Comments
+COMMENT ON COLUMN bookings.quote_confirmed_at IS 'When customer confirmed/accepted the quote';
+COMMENT ON COLUMN bookings.quote_expires_at IS 'When the quote expires (calculated from quote_valid_until)';
 COMMENT ON COLUMN bookings.quote_followup_2hr_sent_at IS 'When 2-hour quote follow-up was sent';
 COMMENT ON COLUMN bookings.quote_followup_24hr_sent_at IS 'When 24-hour quote follow-up was sent';
 COMMENT ON COLUMN bookings.quote_followup_3day_sent_at IS 'When 3-day quote follow-up was sent';
