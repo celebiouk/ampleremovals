@@ -1,6 +1,14 @@
 {
   "crons": [
     {
+      "path": "/api/cron/send-address-confirmations",
+      "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/remind-admin-address-confirmation",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/automations",
       "schedule": "0 8 * * *"
     },
@@ -23,6 +31,12 @@
       "maxDuration": 60
     },
     "app/api/cron/check-call-back-reminders/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/send-address-confirmations/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/remind-admin-address-confirmation/route.ts": {
       "maxDuration": 60
     }
   }
