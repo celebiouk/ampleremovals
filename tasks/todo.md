@@ -40,34 +40,40 @@ Phase 11 = Complete driver management system with:
   - [x] Realtime enabled
 
 **TypeScript & Constants:**
-- [ ] Add driver types to types/index.ts
-  - [ ] Driver interface
-  - [ ] BookingDriverAssignment interface
-  - [ ] DriverJobStatusUpdate interface
-  - [ ] DriverEarnings interface
-  - [ ] DriverTip interface
-- [ ] Add constants to lib/constants.ts
-  - [ ] DRIVER_STATUS_LABELS
-  - [ ] DRIVER_STATUS_COLORS
-  - [ ] JOB_STATUS_LABELS
-  - [ ] JOB_STATUS_COLORS
-  - [ ] EARNINGS_STATUS_LABELS
+- [x] Add driver types to types/index.ts
+  - [x] Driver interface
+  - [x] BookingDriverAssignment interface
+  - [x] DriverJobStatusUpdate interface
+  - [x] DriverEarnings interface
+  - [x] DriverTip interface
+- [x] Add constants to lib/constants.ts
+  - [x] DRIVER_STATUS_LABELS
+  - [x] DRIVER_STATUS_COLORS
+  - [x] JOB_STATUS_LABELS
+  - [x] JOB_STATUS_COLORS
+  - [x] EARNINGS_STATUS_LABELS
 
 **Authentication & Routing:**
-- [ ] Create lib/user-type.ts
-  - [ ] getUserType(userId) function
-  - [ ] Returns 'admin' | 'driver' | 'unknown'
-- [ ] Update middleware.ts
-  - [ ] Protect /drivers/* routes (require driver session)
-  - [ ] Protect /admin/* routes (require admin session)
-  - [ ] Redirect drivers trying to access /admin
-  - [ ] Redirect admins trying to access /drivers
+- [x] Create lib/user-type.ts
+  - [x] getUserType(userId) function
+  - [x] Returns 'admin' | 'driver' | 'unknown'
+- [x] Update middleware.ts
+  - [x] Protect /drivers/* routes (require driver session)
+  - [x] Protect /admin/* routes (require admin session)
+  - [x] Redirect drivers trying to access /admin
+  - [x] Redirect admins trying to access /drivers
 
 **Testing & Commit:**
-- [ ] Run SQL migration in Supabase
-- [ ] Test build (npm run build)
-- [ ] Commit Phase 11A to Git
-- [ ] Push to GitHub
+- [x] Run SQL migration in Supabase
+- [x] Test build (npm run build)
+- [x] Commit Phase 11A to Git
+- [x] Push to GitHub
+
+### Phase 11A — Post-audit gaps (2026-06-10)
+- [x] activity_log: accurate `performed_by` on all Phase 11 logs (was defaulting to 'system')
+- [ ] Driver document/photo storage (driver-documents bucket + lib/storage.ts helpers + upload UI) — DEFERRED
+- [ ] /drivers/reset-password password recovery flow — DEFERRED
+- [ ] Wire up or drop dead fields: is_lead_driver, emergency_contact_relationship — DEFERRED
 
 ---
 

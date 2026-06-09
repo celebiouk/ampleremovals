@@ -158,6 +158,7 @@ export async function POST(req: NextRequest) {
     await supabase.from("activity_log").insert({
       action: `Driver account created: ${firstName} ${lastName}`,
       metadata: { driver_id: driver.id, email },
+      performed_by: "admin",
     });
 
     // TODO: Send welcome email to driver with temporary password

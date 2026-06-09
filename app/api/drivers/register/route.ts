@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
     await supabase.from("activity_log").insert({
       action: `New driver application: ${firstName} ${lastName} (${email})`,
       metadata: { email, status: "pending_approval" },
+      performed_by: "driver",
     });
 
     // Send emails

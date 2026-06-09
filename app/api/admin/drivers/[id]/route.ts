@@ -108,6 +108,7 @@ export async function PATCH(
     await supabase.from("activity_log").insert({
       action: `Driver updated: ${driver.first_name} ${driver.last_name}`,
       metadata: { driver_id: id },
+      performed_by: "admin",
     });
 
     // If driver was approved (status changed to active from inactive with 0% pay)

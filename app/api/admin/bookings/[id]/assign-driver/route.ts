@@ -90,6 +90,7 @@ export async function POST(
       booking_id: bookingId,
       action: `Driver assigned: ${driver.first_name} ${driver.last_name}`,
       metadata: { driver_id: driverId, assignment_id: assignment.id },
+      performed_by: "admin",
     });
 
     // TODO: Send assignment notification to driver

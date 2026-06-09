@@ -126,6 +126,7 @@ export async function POST(
       booking_id: bookingId,
       action: `Driver ${driver.preferred_name || driver.first_name} updated status: ${JOB_STATUS_LABELS[status as keyof typeof JOB_STATUS_LABELS]}`,
       metadata: { status, note, driver_id: driver.id },
+      performed_by: "driver",
     });
 
     // Send customer notifications

@@ -38,6 +38,7 @@ export async function POST(
       booking_id: earning.booking_id,
       action: `Earnings paid: £${earning.total_earnings.toFixed(2)} to ${earning.driver?.first_name} ${earning.driver?.last_name}`,
       metadata: { earning_id: id },
+      performed_by: "admin",
     });
 
     // Send payment confirmation email to driver

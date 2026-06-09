@@ -68,6 +68,7 @@ export async function POST(
       booking_id: bookingId,
       action: `Tip recorded: £${amount.toFixed(2)}`,
       metadata: { driver_id: driverId, tip_id: tip.id },
+      performed_by: "admin",
     });
 
     return NextResponse.json({
