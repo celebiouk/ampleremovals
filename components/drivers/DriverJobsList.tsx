@@ -3,8 +3,14 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Calendar, MapPin, ChevronRight, Loader2 } from "lucide-react";
+import { Calendar, MapPin, ChevronRight, Loader2, X } from "lucide-react";
 import Link from "next/link";
+
+/** Local YYYY-MM-DD for a date (avoids UTC shift from toISOString). */
+function toDateKey(d: Date): string {
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().split("T")[0];
+}
 
 export type JobsFilterTab = "all" | "upcoming" | "today" | "past";
 
@@ -28,6 +34,8 @@ export function DriverJobsList({
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<JobsFilterTab>(initialTab);
+  // When set, overrides the tab filter and shows jobs for this exact date.
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   useEffect(() => {
     loadJobs();
@@ -79,6 +87,11 @@ export function DriverJobsList({
     const moveDate = booking.move_date ? new Date(booking.move_date) : null;
     if (moveDate) moveDate.setHours(0, 0, 0, 0);
 
+    // A picked date takes precedence over the tab filter.
+    if (selectedDate) {
+      return moveDate && toDateKey(moveDate) === selectedDate;
+    }
+
     switch (activeTab) {
       case "today":
         return moveDate && moveDate.getTime() === today.getTime();
@@ -121,9 +134,12 @@ export function DriverJobsList({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedDate("");
+              }}
               className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab.id
+                activeTab === tab.id && !selectedDate
                   ? "border-b-2 border-brand-purple-600 text-brand-purple-600"
                   : "text-slate-600 hover:text-slate-900"
               }`}
@@ -134,9 +150,65 @@ export function DriverJobsList({
         </div>
       )}
 
+      {/* Date picker — jump to tomorrow, day after, or any specific date */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-slate-600">Jump to date:</span>
+        <button
+          onClick={() => {
+            const d = new Date();
+            d.setDate(d.getDate() + 1);
+            setSelectedDate(toDateKey(d));
+          }}
+          className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
+        >
+          Tomorrow
+        </button>
+        <button
+          onClick={() => {
+            const d = new Date();
+            d.setDate(d.getDate() + 2);
+            setSelectedDate(toDateKey(d));
+          }}
+          className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
+        >
+          In 2 days
+        </button>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-purple-500 focus:outline-none"
+        />
+        {selectedDate && (
+          <button
+            onClick={() => setSelectedDate("")}
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+          >
+            <X className="h-4 w-4" />
+            Clear
+          </button>
+        )}
+      </div>
+
+      {selectedDate && (
+        <p className="text-sm text-slate-600">
+          Showing jobs for{" "}
+          <span className="font-semibold text-slate-900">
+            {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-GB", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </span>
+        </p>
+      )}
+
       {filteredJobs.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-          <p className="text-slate-600">{emptyMessage}</p>
+          <p className="text-slate-600">
+            {selectedDate ? "No jobs scheduled for this date." : emptyMessage}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
