@@ -211,6 +211,8 @@ export async function POST(req: NextRequest) {
       const { data: settings } = await supabase.from("settings").select("google_review_link").eq("id", 1).single();
       const googleReviewLink = settings?.google_review_link || "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review";
 
+      const tipLink = `${process.env.NEXT_PUBLIC_SITE_URL}/tip/${bookingId}`;
+
       emailSubject = `✅ Move Complete! Thank You! - ${booking.reference}`;
       emailBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -225,6 +227,15 @@ export async function POST(req: NextRequest) {
             <p style="font-size: 16px; color: #1e293b; margin: 20px 0;">
               We hope everything went smoothly with your move. It was our pleasure to help you!
             </p>
+
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; padding: 24px; margin: 32px 0; border-radius: 8px; text-align: center;">
+              <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold; color: #78350f;">💝 Did your driver go above & beyond?</p>
+              <p style="margin: 0 0 20px 0; font-size: 14px; color: #92400e;">Show your appreciation with a tip!</p>
+              <a href="${tipLink}" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                💷 Tip Your Driver
+              </a>
+            </div>
+
             <div style="background: #f0fdf4; border: 2px solid #16a34a; padding: 24px; margin: 32px 0; border-radius: 8px; text-align: center;">
               <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: bold; color: #15803d;">⭐ Enjoyed our service?</p>
               <p style="margin: 0 0 20px 0; font-size: 14px; color: #166534;">We'd love if you could share your experience on Google!</p>
@@ -242,8 +253,8 @@ export async function POST(req: NextRequest) {
           </div>
         </div>
       `;
-      smsBody = `✅ Move complete! Thank you for choosing Ample Removals! We'd love a Google review: ${googleReviewLink} - ${booking.reference}`;
-      whatsappBody = `✅ *Move Complete!*\n\nHi ${customer.full_name},\n\nThank you for choosing Ample Removals! 🎉\n\nWe hope everything went smoothly. We'd really appreciate if you could leave us a Google review:\n\n⭐ ${googleReviewLink}\n\nYour feedback helps us improve!\n\nThank you,\nAmple Removals Team`;
+      smsBody = `✅ Move complete! Thank you for choosing Ample Removals! Tip your driver: ${tipLink} | Leave review: ${googleReviewLink} - ${booking.reference}`;
+      whatsappBody = `✅ *Move Complete!*\n\nHi ${customer.full_name},\n\nThank you for choosing Ample Removals! 🎉\n\n💝 *Tip Your Driver:*\n${tipLink}\n\n⭐ *Leave a Review:*\n${googleReviewLink}\n\nThank you!\nAmple Removals Team`;
     }
 
     // Send notifications
