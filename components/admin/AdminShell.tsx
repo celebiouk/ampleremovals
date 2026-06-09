@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
-  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield,
+  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ const NAV_GROUPS = [
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
+      { href: "/admin/drivers", label: "Drivers", icon: Truck },
     ],
   },
   {
