@@ -1,6 +1,7 @@
 -- ============================================================
 -- Weather Alerts
 -- Track when bad weather alerts have been sent
+-- Keeps customers informed about move day conditions
 -- ============================================================
 
 -- Add weather alert tracking to bookings table
