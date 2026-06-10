@@ -35,9 +35,9 @@ export default function PaymentsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="flex-row items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+      <View className="flex-row items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
         <Pressable onPress={() => router.back()} className="p-1"><ArrowLeft size={24} color="#7e22ce" /></Pressable>
-        <Text className="flex-1 text-xl font-bold text-slate-900 dark:text-white">Payments</Text>
+        <Text className="flex-1 font-display text-2xl text-slate-900">Payments</Text>
         <Pressable onPress={exportCSV} className="h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
           <Download size={18} color="#7e22ce" />
         </Pressable>

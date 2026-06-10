@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { Search } from "lucide-react-native";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Input, Skeleton, EmptyState, ErrorState } from "@/components/ui";
+import { LargeHeader } from "@/components/shared/LargeHeader";
 import { BookingCard } from "@/components/booking/BookingCard";
 import { useBookings, type BookingRow } from "@/hooks/useBookings";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
@@ -45,8 +46,8 @@ export default function BookingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="border-b border-slate-200 px-5 pb-3 pt-2 dark:border-slate-800">
-        <Text className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">Bookings</Text>
+      <LargeHeader title="Bookings" />
+      <View className="border-b border-slate-100 px-5 pb-3 dark:border-slate-800">
         <View className="relative">
           <View className="absolute left-3 top-3.5 z-10">
             <Search size={18} color="#94a3b8" />

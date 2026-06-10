@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { UserPlus, Link2, ChevronRight, Truck } from "lucide-react-native";
 import { Skeleton, ErrorState, EmptyState, Badge } from "@/components/ui";
+import { LargeHeader } from "@/components/shared/LargeHeader";
 import { useDrivers, isPending, type DriverRow } from "@/hooks/useDrivers";
 import { DRIVER_STATUS_LABELS, DRIVER_STATUS_COLOURS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
@@ -43,19 +44,21 @@ export default function DriversScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="border-b border-slate-200 px-5 pb-3 pt-2 dark:border-slate-800">
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">Drivers</Text>
+      <LargeHeader
+        title="Drivers"
+        right={
           <View className="flex-row gap-2">
-            <Pressable onPress={shareInvite} className="h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <Pressable onPress={shareInvite} className="h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
               <Link2 size={18} color="#7e22ce" />
             </Pressable>
-            <Pressable onPress={() => router.push("/driver/new")} className="h-10 flex-row items-center gap-1.5 rounded-xl bg-brand-green-600 px-3">
+            <Pressable onPress={() => router.push("/driver/new")} className="h-11 flex-row items-center gap-1.5 rounded-full bg-brand-green-600 px-4">
               <UserPlus size={16} color="#fff" />
-              <Text className="text-sm font-semibold text-white">Add</Text>
+              <Text className="text-sm font-bold text-white">Add</Text>
             </Pressable>
           </View>
-        </View>
+        }
+      />
+      <View className="border-b border-slate-100 px-5 pb-3 dark:border-slate-800">
         <View className="flex-row flex-wrap gap-2">
           {TABS.map((t) => {
             const active = tab === t.key;

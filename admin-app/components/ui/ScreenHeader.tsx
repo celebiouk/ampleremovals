@@ -33,7 +33,7 @@ export function ScreenHeader({ title, onBack, right }: ScreenHeaderProps) {
       >
         <ChevronLeft size={26} color={theme.primary} />
       </Pressable>
-      <Text style={[type.h3, { flex: 1, color: theme.text }]} numberOfLines={1}>{title}</Text>
+      <Text style={[type.h2, { flex: 1, color: theme.text }]} numberOfLines={1}>{title}</Text>
       {right ? <View>{right}</View> : null}
     </View>
   );

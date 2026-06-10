@@ -24,10 +24,10 @@ export default function InvoicesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="border-b border-slate-200 px-4 pb-3 pt-2 dark:border-slate-800">
+      <View className="border-b border-slate-100 px-4 pb-3 pt-2 dark:border-slate-800">
         <View className="mb-3 flex-row items-center gap-3">
           <Pressable onPress={() => router.back()} className="p-1"><ArrowLeft size={24} color="#7e22ce" /></Pressable>
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">Invoices</Text>
+          <Text className="font-display text-2xl text-slate-900">Invoices</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
           {FILTERS.map((f) => {

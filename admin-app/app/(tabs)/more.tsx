@@ -7,6 +7,7 @@ import {
   Bell, Shield, LogOut, ChevronRight, PoundSterling,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
+import { LargeHeader } from "@/components/shared/LargeHeader";
 import { useAuthStore } from "@/store/authStore";
 
 type Item = {
@@ -72,12 +73,7 @@ export default function MoreScreen() {
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
       <ScrollView contentContainerClassName="pb-10">
-        <View className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">More</Text>
-          <Text className="text-sm text-slate-500 dark:text-slate-400" numberOfLines={1}>
-            {session?.user?.email}
-          </Text>
-        </View>
+        <LargeHeader title="More" subtitle={session?.user?.email ?? undefined} />
 
         {GROUPS.map((group) => (
           <View key={group.title} className="mt-5">

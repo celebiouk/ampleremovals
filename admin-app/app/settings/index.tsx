@@ -59,9 +59,9 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="flex-row items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+      <View className="flex-row items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
         <Pressable onPress={() => router.back()} className="p-1"><ArrowLeft size={24} color="#7e22ce" /></Pressable>
-        <Text className="flex-1 text-xl font-bold text-slate-900 dark:text-white">Settings</Text>
+        <Text className="flex-1 font-display text-2xl text-slate-900">Settings</Text>
       </View>
 
       {isLoading || !form ? (

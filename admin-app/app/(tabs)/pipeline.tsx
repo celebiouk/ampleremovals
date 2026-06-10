@@ -9,6 +9,7 @@ import { Skeleton, ErrorState, ServiceBadge } from "@/components/ui";
 import { useBookings, type BookingRow } from "@/hooks/useBookings";
 import { apiFetch } from "@/lib/api";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
+import { LargeHeader } from "@/components/shared/LargeHeader";
 import { STATUS_LABELS, ALL_STATUSES, STATUS_ROW } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { BookingStatus } from "@/types";
@@ -66,10 +67,7 @@ export default function PipelineScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <View className="border-b border-slate-200 px-5 py-3 dark:border-slate-800">
-        <Text className="text-2xl font-bold text-slate-900 dark:text-white">Pipeline</Text>
-        <Text className="text-sm text-slate-500 dark:text-slate-400">Swipe columns · tap a card to open · move to change stage</Text>
-      </View>
+      <LargeHeader title="Pipeline" subtitle="Swipe columns · tap to open · move to change stage" />
 
       {isLoading ? (
         <View className="flex-row gap-3 p-5">
