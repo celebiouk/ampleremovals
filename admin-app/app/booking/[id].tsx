@@ -1,20 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  ScrollView, View, Text, Pressable, Modal, Alert, RefreshControl, Linking, Platform,
+  ScrollView, View, Text, Pressable, Modal, Alert, RefreshControl, Linking, Platform, TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   ArrowLeft, Phone, Mail, MapPin, Navigation, Calendar, ChevronDown, X, Pencil, Receipt,
+  MessageCirclePlus, BellPlus, CheckCircle2,
 } from "lucide-react-native";
 import { Card, Button, Input, StatusBadge, ServiceBadge, Skeleton, ErrorState } from "@/components/ui";
+import { MessageComposer } from "@/components/booking/MessageComposer";
+import { NotesSection } from "@/components/booking/NotesSection";
 import { useBookingDetail } from "@/hooks/useBookingDetail";
 import { apiFetch } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { subscribeToBookingActivity, subscribeToBookingNotes, unsubscribe } from "@/lib/realtime";
 import { formatCurrency, formatDate, formatDateTime, toDateKey } from "@/lib/utils";
-import { STATUS_LABELS, ALL_STATUSES } from "@/lib/constants";
+import { STATUS_LABELS, ALL_STATUSES, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { Address, BookingStatus } from "@/types";
 
 export default function BookingDetailScreen() {
@@ -26,6 +32,8 @@ export default function BookingDetailScreen() {
   const [statusModal, setStatusModal] = useState(false);
   const [addressModal, setAddressModal] = useState(false);
   const [showDate, setShowDate] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   function invalidateAll() {
@@ -33,6 +41,16 @@ export default function BookingDetailScreen() {
     qc.invalidateQueries({ queryKey: ["bookings"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   }
+
+  // Live: refetch when this booking's notes or activity change.
+  useEffect(() => {
+    if (!id) return;
+    const chans: RealtimeChannel[] = [
+      subscribeToBookingActivity(id, () => qc.invalidateQueries({ queryKey: ["booking", id] })),
+      subscribeToBookingNotes(id, () => qc.invalidateQueries({ queryKey: ["booking", id] })),
+    ];
+    return () => chans.forEach(unsubscribe);
+  }, [id, qc]);
 
   async function changeStatus(status: BookingStatus) {
     setStatusModal(false);
@@ -84,7 +102,27 @@ export default function BookingDetailScreen() {
     );
   }
 
-  const { booking, customer, origin, destination, invoices, statusHistory } = data;
+  const { booking, customer, origin, destination, invoices, statusHistory, notes, activity, reminders } = data;
+
+  const templateVars = {
+    name: customer?.full_name?.split(" ")[0] ?? "there",
+    service: SERVICE_LABELS_SHORT[booking.service_type] ?? booking.service_type,
+    ref: booking.reference,
+    date: booking.move_date ? formatDate(booking.move_date) : "TBC",
+    origin: origin ? [origin.line_1, origin.postcode].filter(Boolean).join(", ") : "",
+  };
+
+  async function completeReminder(reminderId: string) {
+    try {
+      await apiFetch(`/api/admin/call-back-reminders/${reminderId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "completed" }),
+      });
+      qc.invalidateQueries({ queryKey: ["booking", id] });
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to update reminder");
+    }
+  }
 
   return (
     <Shell onBack={() => router.back()} title={booking.reference}>
@@ -135,23 +173,16 @@ export default function BookingDetailScreen() {
           <Card>
             <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Customer</Text>
             <Text className="font-medium text-slate-900 dark:text-white">{customer.full_name}</Text>
-            <View className="mt-3 flex-row gap-2">
+            <View className="mt-3 flex-row flex-wrap gap-2">
               {customer.phone ? (
-                <Button
-                  label="Call"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => Linking.openURL(`tel:${customer.phone}`)}
-                />
+                <Button label="Call" variant="outline" size="sm" onPress={() => Linking.openURL(`tel:${customer.phone}`)} />
               ) : null}
               {customer.email ? (
-                <Button
-                  label="Email"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => Linking.openURL(`mailto:${customer.email}`)}
-                />
+                <Button label="Email" variant="outline" size="sm" onPress={() => Linking.openURL(`mailto:${customer.email}`)} />
               ) : null}
+            </View>
+            <View className="mt-2">
+              <Button label="Message customer" variant="secondary" size="sm" onPress={() => setMessageOpen(true)} />
             </View>
           </Card>
         ) : null}
@@ -193,6 +224,68 @@ export default function BookingDetailScreen() {
                 </Text>
               </View>
             ))
+          )}
+        </Card>
+
+        {/* Notes */}
+        <NotesSection
+          bookingId={id!}
+          notes={notes}
+          onChanged={() => qc.invalidateQueries({ queryKey: ["booking", id] })}
+        />
+
+        {/* Call-back reminders */}
+        <Card>
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-base font-semibold text-slate-900 dark:text-white">Call-back reminders</Text>
+            <Pressable onPress={() => setReminderOpen(true)} className="flex-row items-center gap-1">
+              <BellPlus size={16} color="#7e22ce" />
+              <Text className="text-sm font-medium text-brand-purple-700">Set</Text>
+            </Pressable>
+          </View>
+          {reminders.length === 0 ? (
+            <Text className="text-sm text-slate-500">No reminders.</Text>
+          ) : (
+            <View className="gap-2">
+              {reminders.map((r) => (
+                <View key={r.id} className="flex-row items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                  <View className="flex-1">
+                    <Text className="text-sm font-medium text-slate-900 dark:text-white">
+                      {formatDateTime(r.reminder_datetime)}
+                    </Text>
+                    {r.reason ? <Text className="text-xs text-slate-500">{r.reason}</Text> : null}
+                    <Text className="mt-0.5 text-xs capitalize text-slate-400">{r.status}</Text>
+                  </View>
+                  {r.status === "pending" ? (
+                    <Pressable onPress={() => completeReminder(r.id)} hitSlop={8}>
+                      <CheckCircle2 size={22} color="#16a34a" />
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
+        </Card>
+
+        {/* Activity timeline */}
+        <Card>
+          <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Activity</Text>
+          {activity.length === 0 ? (
+            <Text className="text-sm text-slate-500">No activity yet.</Text>
+          ) : (
+            <View className="gap-3">
+              {activity.map((a) => (
+                <View key={a.id} className="flex-row gap-3">
+                  <View className="mt-1.5 h-2 w-2 rounded-full bg-slate-400" />
+                  <View className="flex-1">
+                    <Text className="text-sm text-slate-800 dark:text-slate-200">{a.action}</Text>
+                    <Text className="text-xs text-slate-400">
+                      {a.performed_by ?? "system"} · {formatDateTime(a.created_at)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
         </Card>
 
@@ -273,7 +366,104 @@ export default function BookingDetailScreen() {
         onSaved={() => { setAddressModal(false); invalidateAll(); }}
         bookingId={id!}
       />
+
+      {/* Message composer */}
+      <MessageComposer
+        visible={messageOpen}
+        bookingId={id!}
+        vars={templateVars}
+        onClose={() => setMessageOpen(false)}
+        onSent={() => { setMessageOpen(false); invalidateAll(); Alert.alert("Sent", "Message sent to the customer."); }}
+      />
+
+      {/* Reminder modal */}
+      <ReminderModal
+        visible={reminderOpen}
+        bookingId={id!}
+        customerId={customer?.id ?? null}
+        onClose={() => setReminderOpen(false)}
+        onSaved={() => { setReminderOpen(false); invalidateAll(); }}
+      />
     </Shell>
+  );
+}
+
+function ReminderModal({
+  visible, bookingId, customerId, onClose, onSaved,
+}: {
+  visible: boolean;
+  bookingId: string;
+  customerId: string | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [when, setWhen] = useState(() => new Date(Date.now() + 24 * 3600 * 1000));
+  const [showPicker, setShowPicker] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setReason("");
+      setWhen(new Date(Date.now() + 24 * 3600 * 1000));
+    }
+  }, [visible]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await apiFetch("/api/admin/call-back-reminders", {
+        method: "POST",
+        body: JSON.stringify({
+          bookingId,
+          customerId,
+          reminderDatetime: when.toISOString(),
+          reason: reason.trim() || "Call back",
+          notes: null,
+        }),
+      });
+      onSaved();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to set reminder");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
+        <View className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+          <Text className="text-lg font-bold text-slate-900 dark:text-white">Set call-back</Text>
+          <Pressable onPress={onClose}><X size={24} color="#94a3b8" /></Pressable>
+        </View>
+        <ScrollView contentContainerClassName="p-4 gap-4">
+          <Input label="Reason" value={reason} onChangeText={setReason} placeholder="e.g. Discuss quote" />
+          <View>
+            <Text className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">When</Text>
+            <Pressable
+              onPress={() => setShowPicker(true)}
+              className="flex-row items-center justify-between rounded-xl border border-slate-300 px-4 py-3 dark:border-slate-700"
+            >
+              <Text className="text-slate-800 dark:text-slate-200">{formatDateTime(when.toISOString())}</Text>
+              <Calendar size={18} color="#94a3b8" />
+            </Pressable>
+          </View>
+          {showPicker ? (
+            <DateTimePicker
+              value={when}
+              mode="datetime"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(e, sel) => {
+                setShowPicker(false);
+                if (e.type === "set" && sel) setWhen(sel);
+              }}
+            />
+          ) : null}
+          <Button label="Set reminder" onPress={save} loading={saving} size="lg" />
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
