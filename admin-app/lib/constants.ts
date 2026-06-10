@@ -45,21 +45,24 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 };
 
 // Pill background + text classes (NativeWind).
+// Status badge pill colours — aligned with the row-accent scheme:
+// inquiry=orange, contacted=blue, in-progress=purple, money-in/done=green,
+// lost=red.
 export const STATUS_COLOURS: Record<BookingStatus, string> = {
-  inquiry: "bg-red-100 text-red-700",
-  called: "bg-red-100 text-red-700",
-  not_called: "bg-red-100 text-red-700",
-  answered: "bg-red-100 text-red-700",
-  not_answered: "bg-red-100 text-red-700",
-  processing: "bg-yellow-100 text-yellow-700",
-  pending: "bg-yellow-100 text-yellow-700",
-  deposit_invoice_sent: "bg-violet-100 text-violet-700",
+  inquiry: "bg-orange-100 text-orange-700",
+  called: "bg-blue-100 text-blue-700",
+  not_called: "bg-blue-100 text-blue-700",
+  answered: "bg-blue-100 text-blue-700",
+  not_answered: "bg-blue-100 text-blue-700",
+  processing: "bg-purple-100 text-purple-700",
+  pending: "bg-purple-100 text-purple-700",
+  deposit_invoice_sent: "bg-purple-100 text-purple-700",
   deposit_paid_job_confirmed: "bg-green-500 text-white",
   full_invoice_sent: "bg-purple-100 text-purple-700",
-  full_balance_paid: "bg-emerald-100 text-emerald-700",
+  full_balance_paid: "bg-green-100 text-green-700",
   job_completed: "bg-green-600 text-white",
   bad_lead: "bg-red-100 text-red-700",
-  not_a_good_fit: "bg-rose-100 text-rose-700",
+  not_a_good_fit: "bg-red-100 text-red-700",
 };
 
 /**

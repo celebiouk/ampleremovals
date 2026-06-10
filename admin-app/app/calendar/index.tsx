@@ -6,8 +6,8 @@ import { Calendar } from "react-native-calendars";
 import { ArrowLeft, MapPin, ChevronRight } from "lucide-react-native";
 import { Skeleton, ErrorState, EmptyState, StatusBadge, ServiceBadge } from "@/components/ui";
 import { useCalendar } from "@/hooks/useCalendar";
-import { toDateKey, cn } from "@/lib/utils";
-import { STATUS_ROW } from "@/lib/constants";
+import { toDateKey } from "@/lib/utils";
+import { statusColors, colors } from "@/lib/colors";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -79,7 +79,8 @@ export default function CalendarScreen() {
                   <Pressable
                     key={b.id}
                     onPress={() => router.push(`/booking/${b.id}`)}
-                    className={cn("flex-row items-center gap-3 rounded-2xl border border-slate-200 p-4", STATUS_ROW[b.status])}
+                    className="flex-row items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4"
+                    style={{ borderLeftWidth: 4, borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}
                   >
                     <View className="flex-1">
                       <View className="mb-1.5 flex-row flex-wrap gap-2">

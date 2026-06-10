@@ -49,10 +49,10 @@ export const colors = {
  */
 export const statusColors = {
   inquiry:                    { bg: "#ffedd5", text: "#9a3412", dot: "#f97316", accent: "#f97316" }, // orange
-  called:                     { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" }, // red
-  not_called:                 { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
-  answered:                   { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
-  not_answered:               { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
+  called:                     { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6", accent: "#2563eb" }, // blue (contacted)
+  not_called:                 { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6", accent: "#2563eb" },
+  answered:                   { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6", accent: "#2563eb" },
+  not_answered:               { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6", accent: "#2563eb" },
   processing:                 { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
   pending:                    { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
   deposit_invoice_sent:       { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple

@@ -10,8 +10,8 @@ import { useBookings, type BookingRow } from "@/hooks/useBookings";
 import { apiFetch } from "@/lib/api";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
 import { LargeHeader } from "@/components/shared/LargeHeader";
-import { STATUS_LABELS, ALL_STATUSES, STATUS_ROW } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { STATUS_LABELS, ALL_STATUSES } from "@/lib/constants";
+import { statusColors, colors } from "@/lib/colors";
 import type { BookingStatus } from "@/types";
 
 // Visualisation columns (bookings are bucketed; moving sets an exact status).
@@ -98,7 +98,11 @@ export default function PipelineScreen() {
                     <Text className="px-2 py-6 text-center text-xs text-slate-400">Empty</Text>
                   ) : (
                     items.map((b) => (
-                      <View key={b.id} className={cn("rounded-xl border border-slate-200 p-3", STATUS_ROW[b.status])}>
+                      <View
+                        key={b.id}
+                        className="rounded-xl border border-slate-100 bg-white p-3"
+                        style={{ borderLeftWidth: 4, borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}
+                      >
                         <Pressable onPress={() => router.push(`/booking/${b.id}`)}>
                           <View className="mb-1.5"><ServiceBadge service={b.service_type} /></View>
                           <Text className="text-base font-extrabold text-slate-900" numberOfLines={1}>
