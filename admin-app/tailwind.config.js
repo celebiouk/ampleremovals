@@ -9,13 +9,13 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // Loaded via expo-font in app/_layout.tsx. Names avoid colliding with
-        // Tailwind's font-weight utilities (font-semibold/bold/medium).
-        display: ["Syne_700Bold"],
-        "display-sb": ["Syne_600SemiBold"],
-        sans: ["DMSans_400Regular"],
-        body: ["DMSans_400Regular"],
-        "body-sb": ["DMSans_600SemiBold"],
+        // Matches the live website. Loaded via expo-font in app/_layout.tsx.
+        // Names avoid colliding with font-weight utilities.
+        display: ["BricolageGrotesque_700Bold"],
+        "display-sb": ["BricolageGrotesque_600SemiBold"],
+        sans: ["PlusJakartaSans_400Regular"],
+        body: ["PlusJakartaSans_400Regular"],
+        "body-sb": ["PlusJakartaSans_600SemiBold"],
       },
       colors: {
         // Brand — kept identical to the web platform.

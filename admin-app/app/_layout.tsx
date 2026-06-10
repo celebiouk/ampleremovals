@@ -8,10 +8,19 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
-import { useFonts, Syne_600SemiBold, Syne_700Bold } from "@expo-google-fonts/syne";
+import { colorScheme as nwColorScheme } from "nativewind";
+import { useFonts } from "expo-font";
 import {
-  DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
-} from "@expo-google-fonts/dm-sans";
+  BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold,
+} from "@expo-google-fonts/bricolage-grotesque";
+import {
+  PlusJakartaSans_400Regular, PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+
+// The website is light-only. Lock the app to light so it matches exactly,
+// regardless of the device's dark-mode setting.
+nwColorScheme.set("light");
 import { supabase, registerSupabaseAppStateRefresh } from "@/lib/supabase";
 import { assertEnv } from "@/lib/env";
 import { getUserType } from "@/lib/user-type";
@@ -79,8 +88,8 @@ function RootNavigator() {
 
   if (!initialised) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-950">
-        <ActivityIndicator color="#a855f7" />
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator color="#6b21a8" />
       </View>
     );
   }
@@ -113,8 +122,9 @@ export default function RootLayout() {
   const theme = useTheme();
   const { setSession, setUserType, setInitialised, setRecovering } = useAuthStore();
   const [fontsLoaded] = useFonts({
-    Syne_600SemiBold, Syne_700Bold,
-    DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
+    BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold,
+    PlusJakartaSans_400Regular, PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold,
   });
 
   useEffect(() => {

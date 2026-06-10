@@ -1,4 +1,3 @@
-import { useColorScheme } from "react-native";
 import { colors } from "@/lib/colors";
 
 export interface Theme {
@@ -53,6 +52,11 @@ const dark: Theme = {
   accent: colors.accent.DEFAULT,
 };
 
+// The website is light-only; the app matches it. `dark` is kept for reference
+// but the app is locked to light (see nwColorScheme.set("light") in _layout).
 export function useTheme(): Theme {
-  return useColorScheme() === "dark" ? dark : light;
+  return light;
 }
+
+// Avoids an "unused" warning while documenting the available dark token set.
+export const darkTheme = dark;

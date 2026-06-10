@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { TrendingUp, TrendingDown } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { colors } from "@/lib/colors";
-import { type } from "@/lib/typography";
+import { type, fonts } from "@/lib/typography";
 import { radius, shadows, spacing } from "@/lib/tokens";
 
 interface StatCardProps {
@@ -44,7 +44,7 @@ export function StatCard({ label, value, delta, icon, iconTint = colors.primary.
       {showDelta ? (
         <View style={{ marginTop: spacing.xs, flexDirection: "row", alignItems: "center", gap: 4 }}>
           {up ? <TrendingUp size={14} color={colors.accent.DEFAULT} /> : <TrendingDown size={14} color={colors.danger.DEFAULT} />}
-          <Text style={[type.bodySmall, { fontFamily: "DMSans_600SemiBold", color: up ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
+          <Text style={[type.bodySmall, { fontFamily: fonts.bodySemiBold, color: up ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
             {up ? "+" : ""}{delta}%
           </Text>
         </View>

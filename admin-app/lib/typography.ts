@@ -5,12 +5,13 @@ import { Platform, type TextStyle } from "react-native";
  * root layout (the @expo-google-fonts export names).
  */
 export const fonts = {
-  displayBold: "Syne_700Bold",
-  displaySemiBold: "Syne_600SemiBold",
-  bodyRegular: "DMSans_400Regular",
-  bodyMedium: "DMSans_500Medium",
-  bodySemiBold: "DMSans_600SemiBold",
-  bodyBold: "DMSans_700Bold",
+  // Matches the live website: Bricolage Grotesque (display) + Plus Jakarta Sans (body).
+  displayBold: "BricolageGrotesque_700Bold",
+  displaySemiBold: "BricolageGrotesque_600SemiBold",
+  bodyRegular: "PlusJakartaSans_400Regular",
+  bodyMedium: "PlusJakartaSans_500Medium",
+  bodySemiBold: "PlusJakartaSans_600SemiBold",
+  bodyBold: "PlusJakartaSans_700Bold",
   mono: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }) as string,
 } as const;
 
