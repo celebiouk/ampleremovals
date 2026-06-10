@@ -6,8 +6,17 @@ module.exports = function (api) {
       "nativewind/babel",
     ],
     plugins: [
-      // Reanimated 4 moved its worklets engine to react-native-worklets;
-      // this plugin (replaces the old react-native-reanimated/plugin) MUST be last.
+      // Resolve the "@/..." path alias at compile time — deterministic in both
+      // `expo start` and `expo export`, independent of Metro cache / tsconfig.
+      [
+        "module-resolver",
+        {
+          root: ["."],
+          alias: { "@": "." },
+          extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+        },
+      ],
+      // react-native-worklets/plugin (Reanimated 4) MUST be listed last.
       "react-native-worklets/plugin",
     ],
   };

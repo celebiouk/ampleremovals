@@ -11,11 +11,7 @@ const config = getDefaultConfig(__dirname);
 // the bundler fast and scoped to this project.
 config.watchFolders = [path.resolve(__dirname)];
 
-// Resolve the "@/..." path alias at the Metro level so it never depends on
-// tsconfig-paths reading or a stale Metro cache. "@" → the app root.
-config.resolver.alias = {
-  ...(config.resolver.alias ?? {}),
-  "@": path.resolve(__dirname),
-};
+// Note: the "@/..." path alias is resolved by babel-plugin-module-resolver
+// (see babel.config.js), which is deterministic across dev and production.
 
 module.exports = withNativeWind(config, { input: "./global.css" });
