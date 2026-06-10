@@ -27,8 +27,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Finance",
     items: [
-      { label: "Invoices", icon: Receipt, phase: "Phase 9" },
-      { label: "Payments", icon: CreditCard, phase: "Phase 9" },
+      { label: "Invoices", icon: Receipt, href: "/invoice" },
+      { label: "Payments", icon: CreditCard, href: "/payments" },
       { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
     ],
   },

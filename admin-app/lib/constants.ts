@@ -4,7 +4,27 @@ import type {
   DriverStatus,
   JobStatusUpdate,
   EarningsStatus,
+  InvoiceStatus,
 } from "@/types";
+
+// ── Invoice status ─────────────────────────────────────────────────────────
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft: "Draft",
+  sent: "Sent",
+  paid: "Paid",
+  overdue: "Overdue",
+  void: "Void",
+  cancelled: "Cancelled",
+};
+
+export const INVOICE_STATUS_COLOURS: Record<InvoiceStatus, string> = {
+  draft: "bg-slate-100 text-slate-600",
+  sent: "bg-blue-100 text-blue-700",
+  paid: "bg-green-100 text-green-700",
+  overdue: "bg-red-100 text-red-700",
+  void: "bg-slate-200 text-slate-500",
+  cancelled: "bg-slate-200 text-slate-500",
+};
 
 // ── Booking status labels ──────────────────────────────────────────────────
 export const STATUS_LABELS: Record<BookingStatus, string> = {
