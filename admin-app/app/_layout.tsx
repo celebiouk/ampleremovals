@@ -6,9 +6,11 @@ import { View, ActivityIndicator, useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import { supabase, registerSupabaseAppStateRefresh } from "@/lib/supabase";
 import { assertEnv } from "@/lib/env";
 import { getUserType } from "@/lib/user-type";
+import { registerForPushNotifications } from "@/lib/push";
 import { useAuthStore } from "@/store/authStore";
 
 const queryClient = new QueryClient({
@@ -52,7 +54,19 @@ function useAuthRedirect() {
 
 function RootNavigator() {
   useAuthRedirect();
-  const { initialised } = useAuthStore();
+  const router = useRouter();
+  const { initialised, userType } = useAuthStore();
+
+  // Register for push + handle notification taps once an admin is signed in.
+  useEffect(() => {
+    if (userType !== "admin") return;
+    registerForPushNotifications();
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { bookingId?: string };
+      if (data?.bookingId) router.push(`/booking/${data.bookingId}`);
+    });
+    return () => sub.remove();
+  }, [userType, router]);
 
   if (!initialised) {
     return (
@@ -78,6 +92,10 @@ function RootNavigator() {
       <Stack.Screen name="invoice/index" />
       <Stack.Screen name="invoice/[id]" />
       <Stack.Screen name="payments/index" />
+      <Stack.Screen name="automations/index" />
+      <Stack.Screen name="reports/index" />
+      <Stack.Screen name="settings/index" />
+      <Stack.Screen name="notifications/index" />
     </Stack>
   );
 }

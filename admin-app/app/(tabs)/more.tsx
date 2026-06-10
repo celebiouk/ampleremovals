@@ -35,15 +35,15 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Intelligence",
     items: [
-      { label: "Reports", icon: BarChart2, phase: "Phase 10" },
-      { label: "Automations", icon: Zap, phase: "Phase 10" },
+      { label: "Reports", icon: BarChart2, href: "/reports" },
+      { label: "Automations", icon: Zap, href: "/automations" },
     ],
   },
   {
     title: "System",
     items: [
-      { label: "Notifications", icon: Bell, phase: "Phase 10" },
-      { label: "Settings", icon: Settings, phase: "Phase 10" },
+      { label: "Notifications", icon: Bell, href: "/notifications" },
+      { label: "Settings", icon: Settings, href: "/settings" },
     ],
   },
 ];
