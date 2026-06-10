@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { resend, resendAdminEmails } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 
-const ADMIN_PHONE = "03335772070";
+// Admin ALERT recipient — intentionally the company mobile (0333 landline numbers cannot receive SMS/WhatsApp). Public/customer-facing number is 0333 577 2070.
+const ADMIN_PHONE = "07344683477";
 
 /**
  * POST /api/admin/alerts/new-booking
