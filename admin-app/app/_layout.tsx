@@ -114,6 +114,7 @@ function RootNavigator() {
       <Stack.Screen name="reports/index" />
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="notifications/index" />
+      <Stack.Screen name="profile/index" />
     </Stack>
   );
 }
