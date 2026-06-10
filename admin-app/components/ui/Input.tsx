@@ -5,13 +5,17 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   className?: string;
+  /** Override label colour (e.g. on always-dark screens like login). */
+  labelClassName?: string;
 }
 
-export function Input({ label, error, className, ...props }: InputProps) {
+export function Input({ label, error, className, labelClassName, ...props }: InputProps) {
   return (
     <View className="gap-1.5">
       {label ? (
-        <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</Text>
+        <Text className={cn("text-sm font-medium text-slate-700 dark:text-slate-300", labelClassName)}>
+          {label}
+        </Text>
       ) : null}
       <TextInput
         placeholderTextColor="#94a3b8"

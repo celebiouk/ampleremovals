@@ -140,7 +140,17 @@ export interface AdminUser {
   email: string;
   full_name?: string | null;
   role: AdminRole;
+  is_active?: boolean;
   created_at: string;
+}
+
+export interface AdminActivityLog {
+  id: string;
+  admin_email: string;
+  action: string;
+  resource_type?: string | null;
+  created_at: string;
+  admin_user?: { full_name?: string | null; email: string; role: AdminRole } | null;
 }
 
 export interface AppNotification {

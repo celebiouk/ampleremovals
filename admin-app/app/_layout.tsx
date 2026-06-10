@@ -1,11 +1,11 @@
 import "../global.css";
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { View, ActivityIndicator, useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useColorScheme } from "react-native";
 import { supabase, registerSupabaseAppStateRefresh } from "@/lib/supabase";
 import { assertEnv } from "@/lib/env";
 import { getUserType } from "@/lib/user-type";
@@ -17,15 +17,68 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Redirect based on auth state:
+ *  - not an admin  → push into the (auth) group (login)
+ *  - admin but on an auth screen → push into the (tabs) app
+ */
+function useAuthRedirect() {
+  const segments = useSegments();
+  const router = useRouter();
+  const { initialised, session, userType, recovering } = useAuthStore();
+
+  useEffect(() => {
+    if (!initialised) return;
+
+    // During a password-recovery deep link, force the update-password screen
+    // and don't bounce the (recovery) session into the app.
+    if (recovering) {
+      if (!(segments[0] === "(auth)" && segments[1] === "update-password")) {
+        router.replace("/(auth)/update-password");
+      }
+      return;
+    }
+
+    const inAuthGroup = segments[0] === "(auth)";
+    const isAdmin = !!session && userType === "admin";
+
+    if (!isAdmin && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    } else if (isAdmin && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [initialised, session, userType, recovering, segments, router]);
+}
+
+function RootNavigator() {
+  useAuthRedirect();
+  const { initialised } = useAuthStore();
+
+  if (!initialised) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-950">
+        <ActivityIndicator color="#a855f7" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="manage-admins" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   const scheme = useColorScheme();
-  const { setSession, setUserType, setInitialised } = useAuthStore();
+  const { setSession, setUserType, setInitialised, setRecovering } = useAuthStore();
 
   useEffect(() => {
     assertEnv();
     const stopRefresh = registerSupabaseAppStateRefresh();
 
-    // Hydrate the current session, then resolve admin vs driver.
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUserType(session ? await getUserType(session.user.id) : null);
@@ -34,7 +87,8 @@ export default function RootLayout() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
       setSession(session);
       setUserType(session ? await getUserType(session.user.id) : null);
     });
@@ -51,7 +105,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-          <Stack screenOptions={{ headerShown: false }} />
+          <RootNavigator />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
