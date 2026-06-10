@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, View, Text, Pressable, RefreshControl, useWindowDimensions } from "react-native";
+import { ScrollView, View, Text, RefreshControl, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  CalendarClock, PoundSterling, Percent, FileWarning, Truck, Search,
-} from "lucide-react-native";
+import { PoundSterling, Percent, FileWarning } from "lucide-react-native";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Card, Skeleton, ErrorState } from "@/components/ui";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { MiniBarChart } from "@/components/dashboard/MiniBarChart";
 import { PipelineBars } from "@/components/dashboard/PipelineBars";
 import { useDashboard } from "@/hooks/useDashboard";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
+import { colors } from "@/lib/colors";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 
@@ -40,117 +40,103 @@ export default function DashboardScreen() {
   const chartWidth = width - 40 - 32; // screen - page padding - card padding
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
       <ScrollView
-        contentContainerClassName="p-5 gap-4 pb-10"
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={colors.primary.DEFAULT} />}
       >
-        {/* Header */}
-        <View className="flex-row items-center gap-3">
-          <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand-purple-800">
-            <Truck size={22} color="#fff" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-xl font-bold text-slate-900 dark:text-white">Dashboard</Text>
-            <Text className="text-sm text-slate-500 dark:text-slate-400" numberOfLines={1}>
-              {session?.user?.email}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => setSearchOpen(true)}
-            className="h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-          >
-            <Search size={20} color="#7e22ce" />
-          </Pressable>
-        </View>
+        <DashboardHero
+          email={session?.user?.email}
+          monthRevenue={data?.monthRevenue ?? 0}
+          monthDelta={data ? pctDelta(data.monthRevenue, data.lastMonthRevenue) : null}
+          todayBookings={data?.todayBookings ?? 0}
+          weekJobs={data?.weekJobs ?? 0}
+          onSearch={() => setSearchOpen(true)}
+        />
 
         <GlobalSearch visible={searchOpen} onClose={() => setSearchOpen(false)} />
 
-        {isLoading ? (
-          <DashboardSkeleton />
-        ) : isError || !data ? (
-          <ErrorState message="Couldn't load dashboard data." onRetry={refetch} />
-        ) : (
-          <>
-            {/* KPI grid */}
-            <View className="flex-row gap-4">
+        <View className="gap-4 p-5">
+          {isLoading ? (
+            <DashboardSkeleton />
+          ) : isError || !data ? (
+            <ErrorState message="Couldn't load dashboard data." onRetry={refetch} />
+          ) : (
+            <>
+              {/* Overview */}
+              <Text className="font-display text-lg text-slate-900">Overview</Text>
+              <View className="flex-row gap-4">
+                <StatCard
+                  label="Outstanding"
+                  value={formatCurrency(data.outstanding)}
+                  countTo={data.outstanding}
+                  format={formatCurrency}
+                  gradient={["#fbbf24", "#f59e0b"]}
+                  icon={<FileWarning size={20} color="#fff" />}
+                />
+                <StatCard
+                  label="Conversion"
+                  value={`${data.conversionRate}%`}
+                  countTo={data.conversionRate}
+                  format={(n) => `${Math.round(n)}%`}
+                  gradient={[colors.primary.lighter, colors.primary.light]}
+                  icon={<Percent size={20} color="#fff" />}
+                />
+              </View>
               <StatCard
-                label="Today"
-                value={String(data.todayBookings)}
-                delta={pctDelta(data.todayBookings, data.yesterdayBookings)}
-                icon={<CalendarClock size={18} color="#7e22ce" />}
-              />
-              <StatCard
-                label="Jobs this week"
-                value={String(data.weekJobs)}
-                icon={<Truck size={18} color="#2563eb" />}
-              />
-            </View>
-            <View className="flex-row gap-4">
-              <StatCard
-                label="Revenue (mo)"
+                label="Revenue this month"
                 value={formatCurrency(data.monthRevenue)}
+                countTo={data.monthRevenue}
+                format={formatCurrency}
                 delta={pctDelta(data.monthRevenue, data.lastMonthRevenue)}
-                icon={<PoundSterling size={18} color="#16a34a" />}
+                gradient={["#34d399", "#16a34a"]}
+                icon={<PoundSterling size={20} color="#fff" />}
               />
-              <StatCard
-                label="Conversion"
-                value={`${data.conversionRate}%`}
-                icon={<Percent size={18} color="#7e22ce" />}
-              />
-            </View>
-            <StatCard
-              label="Outstanding invoices"
-              value={formatCurrency(data.outstanding)}
-              icon={<FileWarning size={18} color="#f59e0b" />}
-            />
 
-            {/* New bookings chart */}
-            <Card>
-              <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">
-                New bookings · last 7 days
-              </Text>
-              <MiniBarChart
-                data={data.sparkline.map((s) => ({ label: s.day, value: s.count }))}
-                width={chartWidth}
-              />
-            </Card>
-
-            {/* Pipeline */}
-            {data.pipeline.length > 0 && (
+              {/* New bookings chart */}
               <Card>
-                <Text className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
-                  Pipeline
+                <Text className="mb-3 font-display text-base text-slate-900">
+                  New bookings · last 7 days
                 </Text>
-                <PipelineBars data={data.pipeline} />
+                <MiniBarChart
+                  data={data.sparkline.map((s) => ({ label: s.day, value: s.count }))}
+                  width={chartWidth}
+                />
               </Card>
-            )}
 
-            {/* Recent activity */}
-            <Card>
-              <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">
-                Recent activity
-              </Text>
-              {data.activity.length === 0 ? (
-                <Text className="text-sm text-slate-500">No recent activity.</Text>
-              ) : (
-                <View className="gap-3">
-                  {data.activity.slice(0, 12).map((a) => (
-                    <View key={a.id} className="flex-row gap-3">
-                      <View className="mt-1.5 h-2 w-2 rounded-full bg-brand-purple-600" />
-                      <View className="flex-1">
-                        <Text className="text-sm text-slate-800 dark:text-slate-200">{a.action}</Text>
-                        <Text className="text-xs text-slate-400">
-                          {a.performed_by ?? "system"} · {formatDateTime(a.created_at)}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
+              {/* Pipeline */}
+              {data.pipeline.length > 0 && (
+                <Card>
+                  <Text className="mb-4 font-display text-base text-slate-900">Pipeline</Text>
+                  <PipelineBars data={data.pipeline} />
+                </Card>
               )}
-            </Card>
-          </>
-        )}
+
+              {/* Recent activity */}
+              <Card>
+                <Text className="mb-3 font-display text-base text-slate-900">Recent activity</Text>
+                {data.activity.length === 0 ? (
+                  <Text className="text-sm text-slate-500">No recent activity.</Text>
+                ) : (
+                  <View className="gap-3.5">
+                    {data.activity.slice(0, 12).map((a) => (
+                      <View key={a.id} className="flex-row gap-3">
+                        <View className="mt-1.5 h-2.5 w-2.5 rounded-full bg-brand-purple-600" />
+                        <View className="flex-1">
+                          <Text className="text-sm font-medium text-slate-800">{a.action}</Text>
+                          <Text className="text-xs text-slate-400">
+                            {a.performed_by ?? "system"} · {formatDateTime(a.created_at)}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </Card>
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
