@@ -173,17 +173,29 @@ export default function BookingDetailScreen() {
             <Text className="text-slate-700 dark:text-slate-200">Change status</Text>
             <ChevronDown size={18} color="#94a3b8" />
           </Pressable>
-          <View className="mt-3">
-            <Button
-              label="Reschedule date"
-              variant="outline"
-              size="sm"
+        </Card>
+
+        {/* Move date */}
+        <Card>
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-base font-semibold text-slate-900 dark:text-white">Move date</Text>
+            <Pressable
               onPress={() => {
                 setPendingDate(booking.move_date ? new Date(booking.move_date) : new Date());
                 setShowDate(true);
               }}
               disabled={busy}
-            />
+              className="flex-row items-center gap-1"
+            >
+              <Pencil size={14} color="#7e22ce" />
+              <Text className="text-sm font-medium text-brand-purple-700">Edit</Text>
+            </Pressable>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Calendar size={18} color="#7e22ce" />
+            <Text className="text-base font-medium text-slate-900 dark:text-white">
+              {booking.move_date ? formatDate(booking.move_date) : "Not set yet"}
+            </Text>
           </View>
         </Card>
 
