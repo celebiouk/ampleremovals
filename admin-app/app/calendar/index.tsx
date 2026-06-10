@@ -4,10 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Calendar } from "react-native-calendars";
 import { ArrowLeft, MapPin, ChevronRight } from "lucide-react-native";
-import { Skeleton, ErrorState, EmptyState, StatusBadge, ServiceBadge } from "@/components/ui";
+import { Skeleton, ErrorState, EmptyState, ServiceBadge } from "@/components/ui";
 import { useCalendar } from "@/hooks/useCalendar";
 import { toDateKey } from "@/lib/utils";
 import { statusColors, colors } from "@/lib/colors";
+import { STATUS_LABELS } from "@/lib/constants";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -79,13 +80,19 @@ export default function CalendarScreen() {
                   <Pressable
                     key={b.id}
                     onPress={() => router.push(`/booking/${b.id}`)}
-                    className="flex-row items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4"
-                    style={{ borderLeftWidth: 4, borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}
+                    className="flex-row items-center gap-3 rounded-2xl p-4"
+                    style={{
+                      backgroundColor: statusColors[b.status]?.bg ?? colors.primary.surfaceMid,
+                      borderLeftWidth: 5,
+                      borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT,
+                    }}
                   >
                     <View className="flex-1">
-                      <View className="mb-1.5 flex-row flex-wrap gap-2">
+                      <View className="mb-1.5 flex-row flex-wrap items-center gap-2">
                         <ServiceBadge service={b.service_type} />
-                        <StatusBadge status={b.status} />
+                        <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}>
+                          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }} numberOfLines={1}>{STATUS_LABELS[b.status]}</Text>
+                        </View>
                       </View>
                       <Text className="text-lg font-extrabold text-slate-900">{b.customer_name}</Text>
                       <View className="mt-1 flex-row items-center gap-1.5">

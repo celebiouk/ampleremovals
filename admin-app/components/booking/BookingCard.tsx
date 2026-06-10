@@ -35,8 +35,8 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
           gap: spacing.md,
           padding: spacing.base,
           borderRadius: radius.xl,
-          backgroundColor: colors.white,
-          borderLeftWidth: 4,
+          backgroundColor: status.bg, // whole row tinted by status (like the web)
+          borderLeftWidth: 5,
           borderLeftColor: status.accent,
           opacity: pressed ? 0.85 : 1,
         },
@@ -54,9 +54,9 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
           <Text style={{ flex: 1, fontFamily: fonts.displaySemiBold, fontSize: 16, color: colors.slate[900] }} numberOfLines={1}>
             {booking.customer_name}
           </Text>
-          {/* Status pill */}
-          <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full, backgroundColor: status.bg }}>
-            <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 11, color: status.text }} numberOfLines={1}>
+          {/* Status pill — solid accent so it stands out on the tinted row */}
+          <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full, backgroundColor: status.accent }}>
+            <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.white }} numberOfLines={1}>
               {STATUS_LABELS[booking.status]}
             </Text>
           </View>

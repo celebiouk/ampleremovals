@@ -100,8 +100,12 @@ export default function PipelineScreen() {
                     items.map((b) => (
                       <View
                         key={b.id}
-                        className="rounded-xl border border-slate-100 bg-white p-3"
-                        style={{ borderLeftWidth: 4, borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}
+                        className="rounded-xl p-3"
+                        style={{
+                          backgroundColor: statusColors[b.status]?.bg ?? colors.primary.surfaceMid,
+                          borderLeftWidth: 5,
+                          borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT,
+                        }}
                       >
                         <Pressable onPress={() => router.push(`/booking/${b.id}`)}>
                           <View className="mb-1.5"><ServiceBadge service={b.service_type} /></View>
