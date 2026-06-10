@@ -20,9 +20,9 @@ const VARIANT: Record<Variant, { container: string; text: string }> = {
 };
 
 const SIZE: Record<Size, { container: string; text: string }> = {
-  sm: { container: "px-3 py-2 rounded-lg", text: "text-sm" },
-  md: { container: "px-4 py-3 rounded-xl", text: "text-base" },
-  lg: { container: "px-6 py-4 rounded-xl", text: "text-lg" },
+  sm: { container: "px-4 py-2.5 rounded-xl", text: "text-sm" },
+  md: { container: "px-5 py-3.5 rounded-xl", text: "text-base" },
+  lg: { container: "px-6 py-4 rounded-2xl", text: "text-lg" },
 };
 
 export function Button({
@@ -50,7 +50,7 @@ export function Button({
       {...props}
     >
       {loading && <ActivityIndicator size="small" color={variant === "outline" || variant === "ghost" ? "#334155" : "#fff"} />}
-      <Text className={cn("font-semibold", v.text, s.text)}>{label}</Text>
+      <Text className={cn("font-bold", v.text, s.text)}>{label}</Text>
     </Pressable>
   );
 }

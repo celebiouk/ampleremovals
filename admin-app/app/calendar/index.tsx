@@ -6,7 +6,8 @@ import { Calendar } from "react-native-calendars";
 import { ArrowLeft, MapPin, ChevronRight } from "lucide-react-native";
 import { Skeleton, ErrorState, EmptyState, StatusBadge, ServiceBadge } from "@/components/ui";
 import { useCalendar } from "@/hooks/useCalendar";
-import { toDateKey } from "@/lib/utils";
+import { toDateKey, cn } from "@/lib/utils";
+import { STATUS_ROW } from "@/lib/constants";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -78,22 +79,22 @@ export default function CalendarScreen() {
                   <Pressable
                     key={b.id}
                     onPress={() => router.push(`/booking/${b.id}`)}
-                    className="flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                    className={cn("flex-row items-center gap-3 rounded-2xl border border-slate-200 p-4", STATUS_ROW[b.status])}
                   >
                     <View className="flex-1">
                       <View className="mb-1.5 flex-row flex-wrap gap-2">
                         <ServiceBadge service={b.service_type} />
                         <StatusBadge status={b.status} />
                       </View>
-                      <Text className="font-semibold text-slate-900 dark:text-white">{b.customer_name}</Text>
+                      <Text className="text-lg font-extrabold text-slate-900">{b.customer_name}</Text>
                       <View className="mt-1 flex-row items-center gap-1.5">
-                        <MapPin size={14} color="#94a3b8" />
-                        <Text className="text-sm text-slate-600 dark:text-slate-300">
+                        <MapPin size={16} color="#475569" />
+                        <Text className="text-base font-semibold text-slate-700">
                           {b.origin_postcode}{b.destination_postcode ? ` → ${b.destination_postcode}` : ""}
                         </Text>
                       </View>
                     </View>
-                    <ChevronRight size={18} color="#94a3b8" />
+                    <ChevronRight size={22} color="#64748b" />
                   </Pressable>
                 ))}
               </View>

@@ -22,7 +22,8 @@ export default function TabsLayout() {
           backgroundColor: dark ? "#0f172a" : "#ffffff",
           borderTopColor: dark ? "#1e293b" : "#e2e8f0",
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarIconStyle: { marginTop: 2 },
       }}
     >
       <Tabs.Screen

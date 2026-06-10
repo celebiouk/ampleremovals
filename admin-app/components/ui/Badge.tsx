@@ -15,7 +15,7 @@ interface BadgeProps {
 export function Badge({ label, colour = "bg-slate-100 text-slate-700", className }: BadgeProps) {
   return (
     <View className={cn("self-start rounded-full px-3 py-1", colour, className)}>
-      <Text className={cn("text-xs font-medium", colour)}>{label}</Text>
+      <Text className={cn("text-sm font-bold", colour)}>{label}</Text>
     </View>
   );
 }

@@ -9,7 +9,8 @@ import { Skeleton, ErrorState, ServiceBadge } from "@/components/ui";
 import { useBookings, type BookingRow } from "@/hooks/useBookings";
 import { apiFetch } from "@/lib/api";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
-import { STATUS_LABELS, ALL_STATUSES } from "@/lib/constants";
+import { STATUS_LABELS, ALL_STATUSES, STATUS_ROW } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { BookingStatus } from "@/types";
 
 // Visualisation columns (bookings are bucketed; moving sets an exact status).
@@ -99,23 +100,23 @@ export default function PipelineScreen() {
                     <Text className="px-2 py-6 text-center text-xs text-slate-400">Empty</Text>
                   ) : (
                     items.map((b) => (
-                      <View key={b.id} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-800">
+                      <View key={b.id} className={cn("rounded-xl border border-slate-200 p-3", STATUS_ROW[b.status])}>
                         <Pressable onPress={() => router.push(`/booking/${b.id}`)}>
                           <View className="mb-1.5"><ServiceBadge service={b.service_type} /></View>
-                          <Text className="font-semibold text-slate-900 dark:text-white" numberOfLines={1}>
+                          <Text className="text-base font-extrabold text-slate-900" numberOfLines={1}>
                             {b.customer_name}
                           </Text>
-                          <Text className="font-mono text-xs text-slate-400">{b.reference}</Text>
-                          <Text className="mt-1 text-xs text-slate-500" numberOfLines={1}>
+                          <Text className="font-mono text-xs font-bold text-slate-500">{b.reference}</Text>
+                          <Text className="mt-1 text-sm font-semibold text-slate-700" numberOfLines={1}>
                             {b.origin_postcode}{b.destination_postcode ? ` → ${b.destination_postcode}` : ""}
                           </Text>
                         </Pressable>
                         <Pressable
                           onPress={() => setMoveTarget(b)}
-                          className="mt-2 flex-row items-center justify-center gap-1 rounded-lg bg-slate-100 py-1.5 dark:bg-slate-700"
+                          className="mt-2 flex-row items-center justify-center gap-1 rounded-lg bg-white/70 py-2"
                         >
-                          <MoveRight size={14} color="#7e22ce" />
-                          <Text className="text-xs font-medium text-brand-purple-700 dark:text-brand-purple-500">Move</Text>
+                          <MoveRight size={16} color="#7e22ce" />
+                          <Text className="text-sm font-bold text-brand-purple-700">Move</Text>
                         </Pressable>
                       </View>
                     ))

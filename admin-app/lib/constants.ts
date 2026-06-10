@@ -62,6 +62,28 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
   not_a_good_fit: "bg-rose-100 text-rose-700",
 };
 
+/**
+ * Whole-card tint per booking status (mirrors the web's coloured rows).
+ * Light, balanced tints with a strong coloured left accent so status reads at
+ * a glance without hurting contrast. Used on booking cards across the app.
+ */
+export const STATUS_ROW: Record<BookingStatus, string> = {
+  inquiry:                    "bg-orange-100 border-l-4 border-l-orange-500",
+  called:                     "bg-rose-50 border-l-4 border-l-rose-400",
+  not_called:                 "bg-rose-50 border-l-4 border-l-rose-400",
+  answered:                   "bg-rose-50 border-l-4 border-l-rose-400",
+  not_answered:               "bg-rose-50 border-l-4 border-l-rose-400",
+  processing:                 "bg-amber-50 border-l-4 border-l-amber-400",
+  pending:                    "bg-amber-50 border-l-4 border-l-amber-400",
+  deposit_invoice_sent:       "bg-violet-50 border-l-4 border-l-violet-500",
+  deposit_paid_job_confirmed: "bg-green-100 border-l-4 border-l-green-600",
+  full_invoice_sent:          "bg-purple-50 border-l-4 border-l-purple-500",
+  full_balance_paid:          "bg-emerald-50 border-l-4 border-l-emerald-500",
+  job_completed:              "bg-green-50 border-l-4 border-l-green-600",
+  bad_lead:                   "bg-red-50 border-l-4 border-l-red-400",
+  not_a_good_fit:             "bg-rose-50 border-l-4 border-l-rose-400",
+};
+
 export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
   inquiry: "bg-orange-500",
   called: "bg-red-400",
