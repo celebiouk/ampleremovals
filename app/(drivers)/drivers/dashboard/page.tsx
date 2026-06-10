@@ -4,7 +4,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { CalendarCheck, Truck, PoundSterling, Gift, Calendar, MapPin, ChevronRight } from "lucide-react";
+import { CalendarCheck, Truck, PoundSterling, Gift, Calendar, MapPin, ChevronRight, X } from "lucide-react";
+
+/** Local YYYY-MM-DD for a date (avoids UTC shift from toISOString). */
+function toDateKey(d: Date): string {
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().split("T")[0];
+}
 
 export default function DriverDashboardPage() {
   const [stats, setStats] = useState({
@@ -13,7 +19,8 @@ export default function DriverDashboardPage() {
     earningsThisMonth: 0,
     tipsThisMonth: 0,
   });
-  const [upcomingJobs, setUpcomingJobs] = useState<any[]>([]);
+  const [allJobs, setAllJobs] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,20 +98,16 @@ export default function DriverDashboardPage() {
       )
       .eq("driver_id", driver.id);
 
-    const upcoming = (assignments || [])
-      .filter((a: any) => {
-        const md = a.booking?.move_date ? new Date(a.booking.move_date) : null;
-        if (md) md.setHours(0, 0, 0, 0);
-        return md && md.getTime() >= todayStart.getTime();
-      })
+    // Keep all dated assignments, sorted by date — render derives the view.
+    const dated = (assignments || [])
+      .filter((a: any) => a.booking?.move_date)
       .sort(
         (a: any, b: any) =>
           new Date(a.booking.move_date).getTime() -
           new Date(b.booking.move_date).getTime()
-      )
-      .slice(0, 5);
+      );
 
-    setUpcomingJobs(upcoming);
+    setAllJobs(dated);
     setLoading(false);
   }
 
@@ -134,6 +137,14 @@ export default function DriverDashboardPage() {
       color: "amber",
     },
   ];
+
+  // Default: next 5 upcoming (today onward). With a date picked: that day's jobs.
+  const todayKey = toDateKey(new Date());
+  const displayedJobs = selectedDate
+    ? allJobs.filter((a) => toDateKey(new Date(a.booking.move_date)) === selectedDate)
+    : allJobs
+        .filter((a) => toDateKey(new Date(a.booking.move_date)) >= todayKey)
+        .slice(0, 5);
 
   if (loading) {
     return (
@@ -183,8 +194,10 @@ export default function DriverDashboardPage() {
 
       {/* Upcoming Jobs Section */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Upcoming Jobs</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900">
+            {selectedDate ? "Jobs on selected date" : "Upcoming Jobs"}
+          </h2>
           <Link
             href="/drivers/jobs"
             className="text-sm font-medium text-brand-purple-600 hover:text-brand-purple-700"
@@ -193,11 +206,54 @@ export default function DriverDashboardPage() {
           </Link>
         </div>
 
-        {upcomingJobs.length === 0 ? (
-          <p className="text-slate-600">No upcoming jobs scheduled. Check back soon!</p>
+        {/* Compact date filter */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              const d = new Date();
+              d.setDate(d.getDate() + 1);
+              setSelectedDate(toDateKey(d));
+            }}
+            className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
+          >
+            Tomorrow
+          </button>
+          <button
+            onClick={() => {
+              const d = new Date();
+              d.setDate(d.getDate() + 2);
+              setSelectedDate(toDateKey(d));
+            }}
+            className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
+          >
+            In 2 days
+          </button>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-purple-500 focus:outline-none"
+          />
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate("")}
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </button>
+          )}
+        </div>
+
+        {displayedJobs.length === 0 ? (
+          <p className="text-slate-600">
+            {selectedDate
+              ? "No jobs scheduled for this date."
+              : "No upcoming jobs scheduled. Check back soon!"}
+          </p>
         ) : (
           <div className="space-y-3">
-            {upcomingJobs.map((assignment) => {
+            {displayedJobs.map((assignment) => {
               const booking = assignment.booking;
               const isToday =
                 booking.move_date &&
