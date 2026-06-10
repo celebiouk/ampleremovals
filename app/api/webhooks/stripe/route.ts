@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
+import { calculateDriverEarnings } from "@/lib/driver-earnings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,91 +94,11 @@ export async function POST(request: NextRequest) {
         }
 
         // ── PHASE 11D: Calculate Driver Earnings ──────────────────
-        // When full invoice is paid, calculate earnings for assigned drivers
+        // When a full invoice is paid, compute what each assigned driver is
+        // owed. Shared with the manual mark-paid path so it fires no matter
+        // how the customer paid. (Driver payout stays manual.)
         if (inv.type === "full") {
-          try {
-            // Get all assigned drivers for this booking
-            const { data: assignments } = await supabase
-              .from("booking_driver_assignments")
-              .select("id, driver_id, pay_percentage_override, drivers(default_pay_percentage)")
-              .eq("booking_id", inv.booking_id);
-
-            if (assignments && assignments.length > 0) {
-              for (const assignment of assignments) {
-                // An earnings row may already exist as a £0 placeholder created
-                // when the driver was assigned. We must UPDATE it (not skip) so
-                // the real figures get filled in. Only skip if it was already
-                // calculated (booking_total > 0) — that's the true idempotency guard.
-                const { data: existingEarnings } = await supabase
-                  .from("driver_earnings")
-                  .select("id, booking_total, tip_amount")
-                  .eq("assignment_id", assignment.id)
-                  .maybeSingle();
-
-                if (existingEarnings && Number(existingEarnings.booking_total) > 0) {
-                  continue; // Already calculated on a previous webhook delivery
-                }
-
-                // Calculate earnings
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const payPercentage = assignment.pay_percentage_override || (assignment.drivers as any)?.default_pay_percentage || 0;
-                const grossEarnings = (inv.total * payPercentage) / 100;
-
-                // Prefer the tip total already accumulated on the placeholder;
-                // otherwise sum the driver's tips for this booking.
-                let tipAmount = existingEarnings ? Number(existingEarnings.tip_amount) || 0 : 0;
-                if (!existingEarnings) {
-                  const { data: tips } = await supabase
-                    .from("driver_tips")
-                    .select("amount")
-                    .eq("driver_id", assignment.driver_id)
-                    .eq("booking_id", inv.booking_id);
-                  tipAmount = tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
-                }
-
-                const totalEarnings = grossEarnings + tipAmount;
-
-                if (existingEarnings) {
-                  // Fill in the placeholder created at assignment time
-                  await supabase
-                    .from("driver_earnings")
-                    .update({
-                      booking_total: inv.total,
-                      pay_percentage: payPercentage,
-                      gross_earnings: grossEarnings,
-                      tip_amount: tipAmount,
-                      total_earnings: totalEarnings,
-                      updated_at: new Date().toISOString(),
-                    })
-                    .eq("id", existingEarnings.id);
-                } else {
-                  // No placeholder (e.g. legacy assignment) — insert fresh
-                  await supabase.from("driver_earnings").insert({
-                    driver_id: assignment.driver_id,
-                    booking_id: inv.booking_id,
-                    assignment_id: assignment.id,
-                    booking_total: inv.total,
-                    pay_percentage: payPercentage,
-                    gross_earnings: grossEarnings,
-                    tip_amount: tipAmount,
-                    total_earnings: totalEarnings,
-                    status: "pending", // Requires admin approval
-                  });
-                }
-
-                // Log activity
-                await supabase.from("activity_log").insert({
-                  booking_id: inv.booking_id,
-                  action: `Driver earnings calculated: £${totalEarnings.toFixed(2)} (${payPercentage}%)`,
-                  metadata: { driver_id: assignment.driver_id, earnings: totalEarnings },
-                  performed_by: "system",
-                });
-              }
-            }
-          } catch (earningsError) {
-            console.error("Driver earnings calculation error:", earningsError);
-            // Don't fail the webhook if earnings fail
-          }
+          await calculateDriverEarnings(inv.booking_id, inv.total);
         }
         break;
       }

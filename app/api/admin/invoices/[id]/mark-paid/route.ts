@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
+import { calculateDriverEarnings } from "@/lib/driver-earnings";
 
 const schema = z.object({
   paymentMethod: z.enum(["cash", "bank_transfer", "card"]),
@@ -86,6 +87,12 @@ export async function PATCH(
         const { data: confirmedRule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
         if (confirmedRule) await supabase.from("automation_logs").insert({ rule_id: confirmedRule.id, booking_id: invoice.booking_id, triggered_at: now, status: "pending" });
       } catch { /* non-critical */ }
+    }
+
+    // Full balance paid (incl. manual bank transfer / cash) → compute driver
+    // earnings. Payout itself stays manual (admin marks earnings as paid).
+    if (invoice.type === "full") {
+      await calculateDriverEarnings(invoice.booking_id, invoice.total);
     }
 
     return NextResponse.json({ success: true });
