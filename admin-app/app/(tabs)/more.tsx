@@ -29,7 +29,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     items: [
       { label: "Invoices", icon: Receipt, phase: "Phase 9" },
       { label: "Payments", icon: CreditCard, phase: "Phase 9" },
-      { label: "Driver Earnings", icon: PoundSterling, phase: "Phase 8" },
+      { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
     ],
   },
   {

@@ -71,6 +71,10 @@ function RootNavigator() {
       <Stack.Screen name="calendar/index" />
       <Stack.Screen name="customer/index" />
       <Stack.Screen name="customer/[id]" />
+      <Stack.Screen name="driver/new" />
+      <Stack.Screen name="driver/[id]" />
+      <Stack.Screen name="driver/[id]/edit" />
+      <Stack.Screen name="earnings/index" />
     </Stack>
   );
 }
