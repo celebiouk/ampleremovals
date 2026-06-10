@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef } from "react";
-import { ScrollView, View, Text, RefreshControl, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, View, Text, Pressable, RefreshControl, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  CalendarClock, PoundSterling, Percent, FileWarning, Truck,
+  CalendarClock, PoundSterling, Percent, FileWarning, Truck, Search,
 } from "lucide-react-native";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Card, Skeleton, ErrorState } from "@/components/ui";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { MiniBarChart } from "@/components/dashboard/MiniBarChart";
 import { PipelineBars } from "@/components/dashboard/PipelineBars";
@@ -24,6 +25,7 @@ export default function DashboardScreen() {
   const { session } = useAuthStore();
   const { data, isLoading, isError, refetch, isRefetching } = useDashboard();
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Live updates: refetch when bookings change.
   useEffect(() => {
@@ -54,7 +56,15 @@ export default function DashboardScreen() {
               {session?.user?.email}
             </Text>
           </View>
+          <Pressable
+            onPress={() => setSearchOpen(true)}
+            className="h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          >
+            <Search size={20} color="#7e22ce" />
+          </Pressable>
         </View>
+
+        <GlobalSearch visible={searchOpen} onClose={() => setSearchOpen(false)} />
 
         {isLoading ? (
           <DashboardSkeleton />
