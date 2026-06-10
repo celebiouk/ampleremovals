@@ -37,6 +37,7 @@ export default function BookingDetailScreen() {
   const [statusModal, setStatusModal] = useState(false);
   const [addressModal, setAddressModal] = useState(false);
   const [showDate, setShowDate] = useState(false);
+  const [pendingDate, setPendingDate] = useState<Date>(new Date());
   const [messageOpen, setMessageOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -177,7 +178,10 @@ export default function BookingDetailScreen() {
               label="Reschedule date"
               variant="outline"
               size="sm"
-              onPress={() => setShowDate(true)}
+              onPress={() => {
+                setPendingDate(booking.move_date ? new Date(booking.move_date) : new Date());
+                setShowDate(true);
+              }}
               disabled={busy}
             />
           </View>
@@ -365,18 +369,41 @@ export default function BookingDetailScreen() {
         </Pressable>
       </Modal>
 
-      {/* Date picker */}
-      {showDate ? (
+      {/* Date picker — Android shows a native dialog directly */}
+      {showDate && Platform.OS === "android" ? (
         <DateTimePicker
-          value={booking.move_date ? new Date(booking.move_date) : new Date()}
+          value={pendingDate}
           mode="date"
-          display={Platform.OS === "ios" ? "inline" : "default"}
+          display="default"
           onChange={(event, selected) => {
             setShowDate(false);
             if (event.type === "set" && selected) reschedule(selected);
           }}
         />
       ) : null}
+
+      {/* Date picker — iOS needs the inline calendar inside a visible modal */}
+      <Modal visible={showDate && Platform.OS === "ios"} transparent animationType="fade" onRequestClose={() => setShowDate(false)}>
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setShowDate(false)}>
+          <Pressable className="rounded-t-3xl bg-white p-5" onPress={(e) => e.stopPropagation()}>
+            <Text className="mb-2 font-display text-xl text-slate-900">Reschedule date</Text>
+            <DateTimePicker
+              value={pendingDate}
+              mode="date"
+              display="inline"
+              onChange={(_e, selected) => { if (selected) setPendingDate(selected); }}
+            />
+            <View className="mt-2 flex-row gap-3">
+              <View className="flex-1">
+                <Button label="Cancel" variant="outline" onPress={() => setShowDate(false)} disabled={busy} />
+              </View>
+              <View className="flex-1">
+                <Button label="Confirm date" onPress={() => { setShowDate(false); reschedule(pendingDate); }} loading={busy} />
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Address edit modal */}
       <AddressEditModal
