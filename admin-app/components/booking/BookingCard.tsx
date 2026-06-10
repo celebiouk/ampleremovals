@@ -28,7 +28,8 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${booking.customer_name}, ${STATUS_LABELS[booking.status]}`}
-      style={({ pressed }) => [
+      android_ripple={{ color: status.accent }}
+      style={[
         {
           flexDirection: "row",
           alignItems: "center",
@@ -38,7 +39,6 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
           backgroundColor: status.bg, // whole row tinted by status (like the web)
           borderLeftWidth: 5,
           borderLeftColor: status.accent,
-          opacity: pressed ? 0.85 : 1,
         },
         shadows.sm,
       ]}
