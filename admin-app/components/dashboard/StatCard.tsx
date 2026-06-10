@@ -1,41 +1,54 @@
 import { View, Text } from "react-native";
 import { TrendingUp, TrendingDown } from "lucide-react-native";
-import { Card } from "@/components/ui";
+import { useTheme } from "@/hooks/useTheme";
+import { colors } from "@/lib/colors";
+import { type } from "@/lib/typography";
+import { radius, shadows, spacing } from "@/lib/tokens";
 
 interface StatCardProps {
   label: string;
   value: string;
-  /** Optional % delta vs a previous period. */
   delta?: number | null;
   icon?: React.ReactNode;
+  /** Tint for the icon block background. */
+  iconTint?: string;
 }
 
-export function StatCard({ label, value, delta, icon }: StatCardProps) {
+export function StatCard({ label, value, delta, icon, iconTint = colors.primary.surfaceMid }: StatCardProps) {
+  const theme = useTheme();
   const showDelta = typeof delta === "number" && Number.isFinite(delta);
   const up = (delta ?? 0) >= 0;
 
   return (
-    <Card className="flex-1 p-4">
-      <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {label}
-        </Text>
-        {icon}
-      </View>
-      <Text className="text-2xl font-bold text-slate-900 dark:text-white">{value}</Text>
+    <View
+      style={[
+        {
+          flex: 1, padding: spacing.lg, borderRadius: radius.xl,
+          backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder,
+        },
+        shadows.sm,
+      ]}
+    >
+      {icon ? (
+        <View
+          style={{
+            width: 44, height: 44, borderRadius: radius.md, marginBottom: spacing.md,
+            alignItems: "center", justifyContent: "center", backgroundColor: iconTint,
+          }}
+        >
+          {icon}
+        </View>
+      ) : null}
+      <Text style={[type.h1, { fontSize: 26, lineHeight: 30, color: theme.text }]}>{value}</Text>
+      <Text style={[type.bodySmall, { marginTop: 2, color: theme.textSecondary }]}>{label}</Text>
       {showDelta ? (
-        <View className="mt-1 flex-row items-center gap-1">
-          {up ? (
-            <TrendingUp size={14} color="#16a34a" />
-          ) : (
-            <TrendingDown size={14} color="#dc2626" />
-          )}
-          <Text className={`text-xs font-medium ${up ? "text-green-600" : "text-red-600"}`}>
-            {up ? "+" : ""}
-            {delta}%
+        <View style={{ marginTop: spacing.xs, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          {up ? <TrendingUp size={14} color={colors.accent.DEFAULT} /> : <TrendingDown size={14} color={colors.danger.DEFAULT} />}
+          <Text style={[type.bodySmall, { fontFamily: "DMSans_600SemiBold", color: up ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
+            {up ? "+" : ""}{delta}%
           </Text>
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }

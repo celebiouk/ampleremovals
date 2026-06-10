@@ -2,16 +2,25 @@ import "../global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View, ActivityIndicator, useColorScheme } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts, Syne_600SemiBold, Syne_700Bold } from "@expo-google-fonts/syne";
+import {
+  DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
 import { supabase, registerSupabaseAppStateRefresh } from "@/lib/supabase";
 import { assertEnv } from "@/lib/env";
 import { getUserType } from "@/lib/user-type";
 import { registerForPushNotifications } from "@/lib/push";
 import { useAuthStore } from "@/store/authStore";
+import { useTheme } from "@/hooks/useTheme";
+import { ToastHost } from "@/components/ui/Toast";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,8 +110,16 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const scheme = useColorScheme();
+  const theme = useTheme();
   const { setSession, setUserType, setInitialised, setRecovering } = useAuthStore();
+  const [fontsLoaded] = useFonts({
+    Syne_600SemiBold, Syne_700Bold,
+    DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
 
   useEffect(() => {
     assertEnv();
@@ -129,12 +146,15 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (!fontsLoaded) return null; // splash stays up until fonts are ready
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+          <StatusBar style={theme.isDark ? "light" : "dark"} />
           <RootNavigator />
+          <ToastHost />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

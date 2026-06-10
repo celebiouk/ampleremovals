@@ -1,3 +1,38 @@
+## MOBILE APP — DESIGN SYSTEM REBUILD (Phase 1, world-class pass)
+
+**Started:** 2026-06-10 · Fonts: Syne (display) + DM Sans (body) — per brief.
+
+### Plan
+- [ ] Install: expo-linear-gradient, expo-haptics, expo-image, @gorhom/bottom-sheet,
+      netinfo, @expo-google-fonts/syne + dm-sans  ✅ done
+- [ ] lib/colors.ts — full token set (primary/accent/slate/dark/status) + dark variants
+- [ ] lib/typography.ts — Syne/DM Sans text styles (display→mono)
+- [ ] lib/tokens.ts — spacing, radius, shadow scales + component tokens
+- [ ] hooks/useTheme.ts — light/dark token set via useColorScheme
+- [ ] Load fonts in app/_layout.tsx (SplashScreen until ready)
+- [ ] Core components (rebuilt to spec):
+      Button, Input, Card, Badge, Avatar, ScreenHeader, BottomSheet,
+      Skeleton (shimmer), EmptyState, Toast (top), StatCard (count-up)
+- [ ] Tab bar redesign — sliding purple pill active indicator, 83px, haptics
+- [ ] Login screen — animated purple gradient, floating glass card, Syne headline
+- [ ] Verify (export + dev bundle), commit, update lessons.md
+- [ ] STOP after Phase 1; await "Next Phase"
+
+### Review
+Done: Syne + DM Sans loaded (splash gate); lib/colors, typography, tokens,
+useTheme, useReducedMotion. Rebuilt Button (spring+haptics+glow), Card (shadow,
+pressable), Badge (sizes+dot), Avatar (gradient initials+ring), ScreenHeader,
+Skeleton (shimmer), EmptyState (halo), Toast (top, slide-in) + ToastHost,
+StatCard (icon block). Custom TabBar with sliding purple pill + haptics. Login
+redesigned (animated purple gradient, floating card, Syne headline). Verified
+export + dev bundle (HTTP 200, 0 resolve errors). Backward-compatible component
+APIs so the 10 existing phases keep working.
+Watch: existing screens still use NativeWind className + system font for raw
+<Text>; migrating their typography to the new scale is later-phase work.
+Deferred: BottomSheet wrapper (no screen uses @gorhom yet; RN Modal in place).
+
+---
+
 ## PHASE 11 — Driver Portal, Accounts, Earnings & Assignment System
 
 **Started:** 2026-06-09  

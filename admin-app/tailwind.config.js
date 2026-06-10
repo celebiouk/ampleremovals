@@ -8,6 +8,15 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      fontFamily: {
+        // Loaded via expo-font in app/_layout.tsx. Names avoid colliding with
+        // Tailwind's font-weight utilities (font-semibold/bold/medium).
+        display: ["Syne_700Bold"],
+        "display-sb": ["Syne_600SemiBold"],
+        sans: ["DMSans_400Regular"],
+        body: ["DMSans_400Regular"],
+        "body-sb": ["DMSans_600SemiBold"],
+      },
       colors: {
         // Brand — kept identical to the web platform.
         brand: {

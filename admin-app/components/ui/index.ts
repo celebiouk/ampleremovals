@@ -7,3 +7,6 @@ export { Input } from "./Input";
 export { Skeleton } from "./Skeleton";
 export { EmptyState } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
+export { Avatar } from "./Avatar";
+export { ScreenHeader } from "./ScreenHeader";
+export { toast, ToastHost } from "./Toast";

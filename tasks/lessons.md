@@ -1,5 +1,26 @@
 # Lessons Log
 
+## Lesson 8 — NativeWind fontFamily keys must not shadow font-weight utilities
+**What happened:** Added `fontFamily: { medium, semibold, bold }` to the mobile
+tailwind config to wire DM Sans. Those names collide with Tailwind's built-in
+font-WEIGHT utilities (`font-semibold`, `font-bold`, `font-medium`) that existing
+screens already use, producing ambiguous `font-*` classes (family + weight on the
+same class) — risky on Android variant selection.
+**Root cause:** Tailwind generates the same `.font-x` class for a fontFamily key
+and a fontWeight value; identical key names merge unpredictably.
+**Rule going forward:** Name custom fontFamily keys distinctly (`font-display`,
+`font-display-sb`, `font-body`, `font-body-sb`) — never `medium/semibold/bold`.
+Drive component typography from `lib/typography.ts` StyleSheet objects, not
+className weight utilities, so fonts are explicit.
+
+## Lesson 9 — Verify the mobile bundle on the dev server, not just `expo export`
+**What happened:** A `@/` path alias resolved under `expo export` but failed under
+`expo start` (different resolver path), so export-only checks gave false confidence.
+**Rule going forward:** For the Expo app, verify BOTH `expo export` AND a dev-server
+bundle fetch (`/node_modules/expo-router/entry.bundle?platform=ios&dev=true`),
+asserting HTTP 200 + `Unable to resolve module` count = 0. "SyntaxError"/"Unexpected
+token" string counts are false positives (library text) when the bundle is multi-MB.
+
 ## Lesson 1 — Match the CLI to the pinned framework version
 **What happened:** `create-next-app@latest` produced Next 16 + Tailwind v4 + the new
 base-ui shadcn, which is incompatible with this project's Next 14 / Tailwind v3 spec.
