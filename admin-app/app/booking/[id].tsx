@@ -10,11 +10,16 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   ArrowLeft, Phone, Mail, MapPin, Navigation, Calendar, ChevronDown, X, Pencil, Receipt,
-  MessageCirclePlus, BellPlus, CheckCircle2,
+  MessageCirclePlus, BellPlus, CheckCircle2, FileText, MessageSquare,
 } from "lucide-react-native";
 import { Card, Button, Input, StatusBadge, ServiceBadge, Skeleton, ErrorState } from "@/components/ui";
 import { MessageComposer } from "@/components/booking/MessageComposer";
 import { NotesSection } from "@/components/booking/NotesSection";
+import { DriverStatusBar } from "@/components/booking/DriverStatusBar";
+import { AssignedDriversSection } from "@/components/booking/AssignedDriversSection";
+import { QuoteSheet } from "@/components/booking/QuoteSheet";
+import { GenerateInvoiceSheet } from "@/components/booking/GenerateInvoiceSheet";
+import { colors } from "@/lib/colors";
 import { useBookingDetail } from "@/hooks/useBookingDetail";
 import { apiFetch } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -34,12 +39,15 @@ export default function BookingDetailScreen() {
   const [showDate, setShowDate] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   function invalidateAll() {
     qc.invalidateQueries({ queryKey: ["booking", id] });
     qc.invalidateQueries({ queryKey: ["bookings"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
+    qc.invalidateQueries({ queryKey: ["invoices"] });
   }
 
   // Live: refetch when this booking's notes or activity change.
@@ -145,6 +153,13 @@ export default function BookingDetailScreen() {
           ) : null}
         </View>
 
+        {/* Quick actions */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
+          <QuickAction icon={<FileText size={16} color={colors.primary.DEFAULT} />} label="Create Quote" onPress={() => setQuoteOpen(true)} />
+          <QuickAction icon={<Receipt size={16} color={colors.primary.DEFAULT} />} label="Generate Invoice" onPress={() => setInvoiceOpen(true)} />
+          <QuickAction icon={<MessageSquare size={16} color={colors.primary.DEFAULT} />} label="Message" onPress={() => setMessageOpen(true)} />
+        </ScrollView>
+
         {/* Status */}
         <Card>
           <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Status</Text>
@@ -186,6 +201,12 @@ export default function BookingDetailScreen() {
             </View>
           </Card>
         ) : null}
+
+        {/* Assigned drivers */}
+        <AssignedDriversSection bookingId={id!} />
+
+        {/* Driver status push */}
+        <DriverStatusBar bookingId={id!} />
 
         {/* Addresses */}
         <Card>
@@ -384,7 +405,35 @@ export default function BookingDetailScreen() {
         onClose={() => setReminderOpen(false)}
         onSaved={() => { setReminderOpen(false); invalidateAll(); }}
       />
+
+      <QuoteSheet
+        visible={quoteOpen}
+        bookingId={id!}
+        onClose={() => setQuoteOpen(false)}
+        onDone={() => { setQuoteOpen(false); invalidateAll(); }}
+      />
+
+      <GenerateInvoiceSheet
+        visible={invoiceOpen}
+        bookingId={id!}
+        onClose={() => setInvoiceOpen(false)}
+        onDone={() => { setInvoiceOpen(false); invalidateAll(); }}
+      />
     </Shell>
+  );
+}
+
+function QuickAction({ icon, label, onPress }: { icon: React.ReactNode; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="flex-row items-center gap-2 rounded-full border border-brand-purple-200 bg-brand-purple-50 px-4 py-2.5"
+    >
+      {icon}
+      <Text className="font-semibold text-sm text-brand-purple-800">{label}</Text>
+    </Pressable>
   );
 }
 
