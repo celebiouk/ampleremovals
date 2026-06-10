@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
 
 /**
  * POST /api/admin/bookings/[id]/assign-driver
@@ -10,6 +11,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const { id: bookingId } = params;
     const { driverId, payPercentageOverride, isLeadDriver } = await req.json();
 

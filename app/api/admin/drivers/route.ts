@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
 
 /**
  * GET /api/admin/drivers
@@ -7,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/server";
  */
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const supabase = createAdminClient();
 
     // Fetch all drivers
@@ -83,6 +87,9 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const {
       firstName,

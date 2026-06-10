@@ -69,6 +69,24 @@ Phase 11 = Complete driver management system with:
 - [x] Commit Phase 11A to Git
 - [x] Push to GitHub
 
+### Phase 11C — Post-audit gaps (2026-06-10)
+- [x] CRITICAL (security): all Phase 11 admin API routes were UNAUTHENTICATED
+      (used service role with no session check; middleware doesn't guard /api/*).
+      Anyone could list driver PII, create drivers, approve/pay earnings, assign
+      drivers, record tips. Added lib/admin-auth.ts requireAdmin() guard to:
+      drivers (GET/POST), drivers/[id] (GET/PATCH), drivers/[id]/documents (GET/POST),
+      earnings (GET), earnings/[id]/approve, earnings/[id]/pay,
+      bookings/[id]/assign-driver, bookings/[id]/drivers (GET/DELETE),
+      bookings/[id]/tips. Also secured legacy admin/driver-status (was an open
+      email/SMS/WhatsApp spam vector).
+- [x] CRITICAL (correctness): driver earnings never calculated. assign-driver
+      inserts a £0 driver_earnings placeholder; the Stripe webhook did
+      `if (existingEarnings) continue`, so it skipped the real calculation on
+      payment and drivers stayed at £0. Webhook now UPDATEs the placeholder and
+      only skips when booking_total > 0 (true idempotency); preserves tips.
+- [ ] DEFERRED (incomplete, not broken): create-driver form omits address /
+      hire_date / driver_notes; admin can't upload docs at create time (only after).
+
 ### Phase 11B — Post-audit gaps (2026-06-10)
 - [x] CRITICAL: RLS hardening — drivers could read ALL customers/bookings/
       invoices/other drivers' earnings via the over-broad `TO authenticated

@@ -104,42 +104,66 @@ export async function POST(request: NextRequest) {
 
             if (assignments && assignments.length > 0) {
               for (const assignment of assignments) {
-                // Check if earnings already exist (idempotency)
+                // An earnings row may already exist as a £0 placeholder created
+                // when the driver was assigned. We must UPDATE it (not skip) so
+                // the real figures get filled in. Only skip if it was already
+                // calculated (booking_total > 0) — that's the true idempotency guard.
                 const { data: existingEarnings } = await supabase
                   .from("driver_earnings")
-                  .select("id")
+                  .select("id, booking_total, tip_amount")
                   .eq("assignment_id", assignment.id)
-                  .single();
+                  .maybeSingle();
 
-                if (existingEarnings) continue; // Already calculated
+                if (existingEarnings && Number(existingEarnings.booking_total) > 0) {
+                  continue; // Already calculated on a previous webhook delivery
+                }
 
                 // Calculate earnings
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const payPercentage = assignment.pay_percentage_override || (assignment.drivers as any)?.default_pay_percentage || 0;
                 const grossEarnings = (inv.total * payPercentage) / 100;
 
-                // Get existing tips for this driver on this booking
-                const { data: tips } = await supabase
-                  .from("driver_tips")
-                  .select("amount")
-                  .eq("driver_id", assignment.driver_id)
-                  .eq("booking_id", inv.booking_id);
+                // Prefer the tip total already accumulated on the placeholder;
+                // otherwise sum the driver's tips for this booking.
+                let tipAmount = existingEarnings ? Number(existingEarnings.tip_amount) || 0 : 0;
+                if (!existingEarnings) {
+                  const { data: tips } = await supabase
+                    .from("driver_tips")
+                    .select("amount")
+                    .eq("driver_id", assignment.driver_id)
+                    .eq("booking_id", inv.booking_id);
+                  tipAmount = tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
+                }
 
-                const tipAmount = tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
                 const totalEarnings = grossEarnings + tipAmount;
 
-                // Insert earnings record
-                await supabase.from("driver_earnings").insert({
-                  driver_id: assignment.driver_id,
-                  booking_id: inv.booking_id,
-                  assignment_id: assignment.id,
-                  booking_total: inv.total,
-                  pay_percentage: payPercentage,
-                  gross_earnings: grossEarnings,
-                  tip_amount: tipAmount,
-                  total_earnings: totalEarnings,
-                  status: "pending", // Requires admin approval
-                });
+                if (existingEarnings) {
+                  // Fill in the placeholder created at assignment time
+                  await supabase
+                    .from("driver_earnings")
+                    .update({
+                      booking_total: inv.total,
+                      pay_percentage: payPercentage,
+                      gross_earnings: grossEarnings,
+                      tip_amount: tipAmount,
+                      total_earnings: totalEarnings,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("id", existingEarnings.id);
+                } else {
+                  // No placeholder (e.g. legacy assignment) — insert fresh
+                  await supabase.from("driver_earnings").insert({
+                    driver_id: assignment.driver_id,
+                    booking_id: inv.booking_id,
+                    assignment_id: assignment.id,
+                    booking_total: inv.total,
+                    pay_percentage: payPercentage,
+                    gross_earnings: grossEarnings,
+                    tip_amount: tipAmount,
+                    total_earnings: totalEarnings,
+                    status: "pending", // Requires admin approval
+                  });
+                }
 
                 // Log activity
                 await supabase.from("activity_log").insert({

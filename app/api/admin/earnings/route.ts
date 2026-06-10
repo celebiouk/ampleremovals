@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
 
 /**
  * GET /api/admin/earnings
@@ -7,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/server";
  */
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const supabase = createAdminClient();
 
     const { data: earnings, error } = await supabase

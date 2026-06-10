@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import {
   uploadDriverDocument,
   getDriverDocumentSignedURL,
@@ -25,6 +26,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const { id: driverId } = params;
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -97,6 +101,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
     const { id: driverId } = params;
     const supabase = createAdminClient();
 
