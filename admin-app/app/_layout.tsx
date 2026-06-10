@@ -67,6 +67,7 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="manage-admins" />
+      <Stack.Screen name="booking/[id]" />
     </Stack>
   );
 }
