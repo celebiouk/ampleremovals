@@ -21,7 +21,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: "Operations",
     items: [
       { label: "Customers", icon: Users, phase: "Phase 7" },
-      { label: "Calendar", icon: CalendarDays, phase: "Phase 6" },
+      { label: "Calendar", icon: CalendarDays, href: "/calendar" },
     ],
   },
   {
