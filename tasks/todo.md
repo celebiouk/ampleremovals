@@ -69,6 +69,18 @@ Phase 11 = Complete driver management system with:
 - [x] Commit Phase 11A to Git
 - [x] Push to GitHub
 
+### Phase 11D — Post-audit gaps (2026-06-10)
+- [x] Driver assignment notification — assign-driver had `TODO: notify driver`;
+      drivers were never told about a new job (had to check the portal).
+      Now sends Email + SMS + WhatsApp (best-effort) with date, service, route,
+      reference + portal link.
+- [x] Verified customer status notifications already fire all 3 channels
+      (Email + SMS + WhatsApp) — no gap.
+- [x] Earnings calculation: now fires on Stripe AND manual mark-paid, excludes
+      VAT (net base). (See earnings commits.)
+- [ ] DEFERRED: day-before job reminder to drivers (customer day-before reminder
+      exists; driver variant not wired into the cron).
+
 ### Phase 11C — Post-audit gaps (2026-06-10)
 - [x] CRITICAL (security): all Phase 11 admin API routes were UNAUTHENTICATED
       (used service role with no session check; middleware doesn't guard /api/*).
