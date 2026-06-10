@@ -42,22 +42,25 @@ EXPO_PUBLIC_SITE_URL=https://www.ampleremovals.com   # deployed Next.js API base
   full access; drivers are scoped to their own data).
 - **Admin-only:** on login the app runs `getUserType`; drivers are rejected.
 
-## Push notifications (remaining launch work)
+## Push notifications
 
-The client groundwork is in place: `lib/push.ts` sets the foreground handler
-and `registerForPushNotifications()` requests permission + fetches the Expo
-push token; the root layout registers on admin login and deep-links to a
-booking when a notification is tapped (`data.bookingId`).
+The backend AND client are now built end-to-end:
+- `admin_push_tokens` table — `supabase/migrations/add_admin_push_tokens.sql`
+- `POST /api/admin/push-token` stores each device's Expo token (called on login)
+- `lib/push-dispatch.ts` `sendAdminPush()` fans out to Expo's push API and
+  prunes dead tokens. Wired into: **new booking**, **invoice paid** (manual +
+  Stripe), and **driver status update**.
+- Client: `lib/push.ts` requests permission, fetches the token, stores it, and
+  the root layout deep-links to the booking when a notification is tapped.
 
-To go live with remote push:
+**Only two account/credential steps remain (cannot be scripted):**
 1. `cd admin-app && npx eas init` — creates the EAS project + `projectId`
-   (token retrieval no-ops until this exists).
-2. Add a `admin_push_tokens` table (admin_user_id, expo_token) and an endpoint
-   to store the token from `registerForPushNotifications()`.
-3. Add a server helper that POSTs to `https://exp.host/--/api/v2/push/send`
-   whenever a `notifications` row is created (new booking, invoice paid,
-   driver status, booking status change).
-4. APNs key (iOS) + FCM key (Android) via `eas credentials`.
+   (token retrieval no-ops until this exists). Then set it in
+   `app.json > extra.eas.projectId`.
+2. APNs key (iOS) + FCM key (Android) via `eas credentials`.
+
+Then run the SQL migration (`add_admin_push_tokens.sql`) in Supabase and push
+delivery is live.
 
 ## Launch (EAS)
 

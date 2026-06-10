@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resend, resendAdminEmails } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { sendAdminPush } from "@/lib/push-dispatch";
 
 // Admin ALERT recipient — intentionally the company mobile (0333 landline numbers cannot receive SMS/WhatsApp). Public/customer-facing number is 0333 577 2070.
 const ADMIN_PHONE = "07344683477";
@@ -107,6 +108,12 @@ export async function POST(req: NextRequest) {
     } catch (whatsappErr) {
       console.error("New booking WhatsApp failed:", whatsappErr);
     }
+
+    // Push to the mobile admin app(s)
+    await sendAdminPush({
+      title: "🔔 New booking",
+      body: `${customerName} — ${serviceDisplay} (${bookingReference})`,
+    });
 
     return NextResponse.json({
       success: true,

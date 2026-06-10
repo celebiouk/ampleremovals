@@ -1,5 +1,20 @@
 # Lessons Log
 
+## Lesson 10 — Mobile bearer auth must be honoured by the shared server client
+**What happened:** The mobile admin app authenticates to `/api/admin/**` with an
+`Authorization: Bearer <supabase access_token>`, but the web `createClient()`
+(and ~19 routes' inline `auth.getUser()`) only read the **cookie** session. So
+every mobile admin ACTION (status change, assign-driver, driver-status, quote,
+invoice generate/send/mark-paid/void, manage-admins…) would 401 against the live
+backend — a latent, app-wide break that bundling never catches.
+**Root cause:** Two auth patterns coexisted (`requireAdmin` vs inline cookie
+auth); neither looked at the Authorization header.
+**Rule going forward:** Make the shared `createClient()` bearer-aware — if an
+`Authorization: Bearer` header is present, inject it as the global header so
+`auth.getUser()` validates that JWT and PostgREST runs as that user. One change
+fixes every route. Verify mobile action routes against the real backend, not
+just that the bundle builds.
+
 ## Lesson 8 — NativeWind fontFamily keys must not shadow font-weight utilities
 **What happened:** Added `fontFamily: { medium, semibold, bold }` to the mobile
 tailwind config to wire DM Sans. Those names collide with Tailwind's built-in

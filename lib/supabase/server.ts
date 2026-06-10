@@ -1,17 +1,33 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 /**
  * Supabase client for Server Components, Route Handlers and Server Actions.
- * Uses the anon key and reads/writes the auth session from cookies.
+ *
+ * Web clients carry the auth session in cookies. The mobile admin app instead
+ * sends an `Authorization: Bearer <access_token>` header. We support both: when
+ * a bearer token is present it is injected as the global Authorization header,
+ * so `auth.getUser()` validates that token and PostgREST requests run as that
+ * user. Server Components (no auth header) fall back to cookies as before.
  */
 export async function createClient() {
   const cookieStore = await cookies();
+
+  let bearer: string | null = null;
+  try {
+    const authHeader = (await headers()).get("authorization");
+    if (authHeader?.startsWith("Bearer ")) bearer = authHeader.slice(7);
+  } catch {
+    // headers() unavailable in some contexts — ignore and use cookies.
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      ...(bearer
+        ? { global: { headers: { Authorization: `Bearer ${bearer}` } } }
+        : {}),
       cookies: {
         getAll() {
           return cookieStore.getAll();

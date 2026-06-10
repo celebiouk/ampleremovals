@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/user-type";
 
@@ -17,9 +18,15 @@ export async function requireAdmin(): Promise<
   | { ok: false; response: NextResponse }
 > {
   const supabase = await createClient();
+
+  // Web uses cookie sessions; the mobile admin app sends a Bearer token.
+  // Support both: if an Authorization header is present, validate that JWT.
+  const authHeader = (await headers()).get("authorization");
+  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = bearer ? await supabase.auth.getUser(bearer) : await supabase.auth.getUser();
 
   if (!user) {
     return {

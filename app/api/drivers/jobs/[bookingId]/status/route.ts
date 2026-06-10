@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { JOB_STATUS_LABELS } from "@/lib/constants";
+import { sendAdminPush } from "@/lib/push-dispatch";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -131,6 +132,13 @@ export async function POST(
 
     // Send customer notifications
     await sendCustomerNotifications(booking, status, note);
+
+    // Notify the admin app that a driver updated the job status
+    await sendAdminPush({
+      title: "🚚 Driver update",
+      body: `${driver.preferred_name || driver.first_name}: ${JOB_STATUS_LABELS[status as keyof typeof JOB_STATUS_LABELS]} (${booking.reference})`,
+      data: { bookingId },
+    });
 
     return NextResponse.json({
       success: true,

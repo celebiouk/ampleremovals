@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { apiFetch } from "./api";
 
 /**
  * Foreground notification behaviour — show the banner even when the app is open.
@@ -52,6 +53,15 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   try {
     const token = await Notifications.getExpoPushTokenAsync({ projectId });
+    // Store server-side so the backend can target this device.
+    try {
+      await apiFetch("/api/admin/push-token", {
+        method: "POST",
+        body: JSON.stringify({ token: token.data, platform: Platform.OS }),
+      });
+    } catch {
+      // Non-fatal — token can be re-sent on next launch.
+    }
     return token.data;
   } catch {
     return null;

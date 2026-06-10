@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { calculateDriverEarnings } from "@/lib/driver-earnings";
+import { sendAdminPush } from "@/lib/push-dispatch";
 
 const schema = z.object({
   paymentMethod: z.enum(["cash", "bank_transfer", "card"]),
@@ -80,6 +81,12 @@ export async function PATCH(
         booking_id: invoice.booking_id,
       });
     } catch { /* non-critical */ }
+
+    await sendAdminPush({
+      title: "💷 Invoice paid",
+      body: `${invoice.invoice_number} — £${invoice.total} marked paid`,
+      data: { bookingId: invoice.booking_id },
+    });
 
     // Trigger automation if deposit paid
     if (invoice.type === "deposit") {

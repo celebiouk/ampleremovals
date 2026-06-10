@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { calculateDriverEarnings } from "@/lib/driver-earnings";
+import { sendAdminPush } from "@/lib/push-dispatch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +84,12 @@ export async function POST(request: NextRequest) {
           title: "Invoice Paid via Stripe",
           description: `${customerRow?.full_name ?? "Customer"} paid invoice ${inv.invoice_number} — £${amountPaid.toFixed(2)}`,
           booking_id: inv.booking_id,
+        });
+
+        await sendAdminPush({
+          title: "💳 Payment received",
+          body: `${customerRow?.full_name ?? "Customer"} paid ${inv.invoice_number} — £${amountPaid.toFixed(2)}`,
+          data: { bookingId: inv.booking_id },
         });
 
         // Trigger job confirmed automation
