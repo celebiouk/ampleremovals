@@ -39,6 +39,11 @@ export default function DashboardScreen() {
   const onRefresh = useCallback(() => refetch(), [refetch]);
   const chartWidth = width - 40 - 32; // screen - page padding - card padding
 
+  // First name for the greeting — from the admin's profile metadata, falling
+  // back to the email prefix if no name is set.
+  const fullName = (session?.user?.user_metadata?.full_name as string | undefined)?.trim();
+  const firstName = fullName ? fullName.split(/\s+/)[0] : session?.user?.email?.split("@")[0];
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
       <ScrollView
@@ -47,7 +52,7 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={colors.primary.DEFAULT} />}
       >
         <DashboardHero
-          email={session?.user?.email}
+          name={firstName}
           monthRevenue={data?.monthRevenue ?? 0}
           monthDelta={data ? pctDelta(data.monthRevenue, data.lastMonthRevenue) : null}
           todayBookings={data?.todayBookings ?? 0}

@@ -18,9 +18,9 @@ function greeting(): string {
 const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
 export function DashboardHero({
-  email, monthRevenue, monthDelta, todayBookings, weekJobs, onSearch,
+  name, monthRevenue, monthDelta, todayBookings, weekJobs, onSearch,
 }: {
-  email?: string | null;
+  name?: string | null;
   monthRevenue: number;
   monthDelta: number | null;
   todayBookings: number;
@@ -54,8 +54,8 @@ export function DashboardHero({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{greeting()} 👋</Text>
-          <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white }} numberOfLines={1}>
-            {email ?? "Admin"}
+          <Text style={{ fontFamily: fonts.displaySemiBold, fontSize: 18, color: colors.white }} numberOfLines={1}>
+            {name ?? "Admin"}
           </Text>
         </View>
         <Pressable
