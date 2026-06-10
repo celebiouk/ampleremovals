@@ -40,22 +40,28 @@ export const colors = {
   },
 } as const;
 
-/** Per-status colours: bg tint, text, dot, and a strong row accent. */
+/**
+ * Per-status colours: bg tint, text, dot, and a strong row accent (the left
+ * line on each booking card). The accent mirrors the web's coloured rows for
+ * the distinctive statuses (inquiry=orange, contacted=red, confirmed/paid/
+ * completed=green) and uses brand purple for the in-between stages the web
+ * leaves plain — so no row ever looks neutral/grey.
+ */
 export const statusColors = {
-  inquiry:                    { bg: "#ffedd5", text: "#9a3412", dot: "#f97316", accent: "#f97316" },
-  called:                     { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#fb7185" },
-  not_called:                 { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#fb7185" },
-  answered:                   { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#fb7185" },
-  not_answered:               { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#fb7185" },
-  processing:                 { bg: "#fef9c3", text: "#854d0e", dot: "#ca8a04", accent: "#eab308" },
-  pending:                    { bg: "#fef9c3", text: "#854d0e", dot: "#ca8a04", accent: "#eab308" },
-  deposit_invoice_sent:       { bg: "#f5f3ff", text: "#5b21b6", dot: "#8b5cf6", accent: "#8b5cf6" },
-  deposit_paid_job_confirmed: { bg: "#dcfce7", text: "#065f46", dot: "#16a34a", accent: "#16a34a" },
-  full_invoice_sent:          { bg: "#faf5ff", text: "#6b21a8", dot: "#a855f7", accent: "#a855f7" },
-  full_balance_paid:          { bg: "#d1fae5", text: "#065f46", dot: "#059669", accent: "#059669" },
-  job_completed:              { bg: "#dcfce7", text: "#166534", dot: "#16a34a", accent: "#15803d" },
-  bad_lead:                   { bg: "#fee2e2", text: "#991b1b", dot: "#dc2626", accent: "#dc2626" },
-  not_a_good_fit:             { bg: "#fee2e2", text: "#991b1b", dot: "#ef4444", accent: "#ef4444" },
+  inquiry:                    { bg: "#ffedd5", text: "#9a3412", dot: "#f97316", accent: "#f97316" }, // orange
+  called:                     { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" }, // red
+  not_called:                 { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
+  answered:                   { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
+  not_answered:               { bg: "#fff1f2", text: "#9f1239", dot: "#fb7185", accent: "#ef4444" },
+  processing:                 { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
+  pending:                    { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
+  deposit_invoice_sent:       { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
+  deposit_paid_job_confirmed: { bg: "#dcfce7", text: "#065f46", dot: "#16a34a", accent: "#16a34a" }, // green
+  full_invoice_sent:          { bg: "#f3e8ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
+  full_balance_paid:          { bg: "#d1fae5", text: "#065f46", dot: "#059669", accent: "#16a34a" }, // green (paid)
+  job_completed:              { bg: "#dcfce7", text: "#166534", dot: "#16a34a", accent: "#16a34a" }, // green
+  bad_lead:                   { bg: "#fee2e2", text: "#991b1b", dot: "#dc2626", accent: "#dc2626" }, // red
+  not_a_good_fit:             { bg: "#fee2e2", text: "#991b1b", dot: "#ef4444", accent: "#dc2626" }, // red
 } as const;
 
 /** Per-service accent colours (badges). */

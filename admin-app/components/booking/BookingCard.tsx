@@ -21,7 +21,7 @@ const SERVICE_ICON: Record<ServiceType, typeof Truck> = {
 export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress: () => void }) {
   const Icon = SERVICE_ICON[booking.service_type] ?? Truck;
   const serviceColor = serviceColors[booking.service_type] ?? colors.primary.DEFAULT;
-  const status = statusColors[booking.status] ?? { bg: colors.slate[100], text: colors.slate[600], accent: colors.slate[300] };
+  const status = statusColors[booking.status] ?? { bg: colors.primary.surfaceMid, text: colors.primary.DEFAULT, accent: colors.primary.DEFAULT };
 
   return (
     <Pressable
