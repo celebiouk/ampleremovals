@@ -90,9 +90,10 @@ export async function PATCH(
     }
 
     // Full balance paid (incl. manual bank transfer / cash) → compute driver
-    // earnings. Payout itself stays manual (admin marks earnings as paid).
+    // earnings on the net (ex-VAT) value. Payout itself stays manual
+    // (admin marks earnings as paid).
     if (invoice.type === "full") {
-      await calculateDriverEarnings(invoice.booking_id, invoice.total);
+      await calculateDriverEarnings(invoice.booking_id, invoice.total, invoice.vat_amount ?? 0);
     }
 
     return NextResponse.json({ success: true });

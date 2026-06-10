@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         if (!invoiceId) break;
 
         // Idempotency check
-        const { data: inv } = await supabase.from("invoices").select("id, paid_at, type, booking_id, customer_id, total, invoice_number").eq("id", invoiceId).single();
+        const { data: inv } = await supabase.from("invoices").select("id, paid_at, type, booking_id, customer_id, total, vat_amount, invoice_number").eq("id", invoiceId).single();
         if (!inv || inv.paid_at) break; // already processed
 
         const now = new Date().toISOString();
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         // owed. Shared with the manual mark-paid path so it fires no matter
         // how the customer paid. (Driver payout stays manual.)
         if (inv.type === "full") {
-          await calculateDriverEarnings(inv.booking_id, inv.total);
+          await calculateDriverEarnings(inv.booking_id, inv.total, inv.vat_amount ?? 0);
         }
         break;
       }
