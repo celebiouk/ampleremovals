@@ -4,6 +4,9 @@ module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
+    // constants.ts holds status/service colour class strings — must be scanned
+    // or those bg-/text- classes are never generated.
+    "./lib/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {

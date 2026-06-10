@@ -1,51 +1,87 @@
 import { View, Text, Pressable } from "react-native";
-import { MapPin, ChevronRight, Calendar } from "lucide-react-native";
-import { StatusBadge, ServiceBadge } from "@/components/ui";
-import { formatDate, cn } from "@/lib/utils";
-import { STATUS_ROW } from "@/lib/constants";
+import {
+  MapPin, ChevronRight, Calendar, Truck, Package, Boxes, Sparkles, Home,
+} from "lucide-react-native";
+import { serviceColors, statusColors, colors } from "@/lib/colors";
+import { type, fonts } from "@/lib/typography";
+import { radius, shadows, spacing } from "@/lib/tokens";
+import { SERVICE_LABELS_SHORT, STATUS_LABELS } from "@/lib/constants";
+import { formatDate } from "@/lib/utils";
 import type { BookingRow } from "@/hooks/useBookings";
+import type { ServiceType } from "@/types";
+
+const SERVICE_ICON: Record<ServiceType, typeof Truck> = {
+  removals: Truck,
+  man_and_van: Package,
+  house_clearance: Boxes,
+  house_cleaning: Sparkles,
+  end_of_tenancy: Home,
+};
 
 export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress: () => void }) {
+  const Icon = SERVICE_ICON[booking.service_type] ?? Truck;
+  const serviceColor = serviceColors[booking.service_type] ?? colors.primary.DEFAULT;
+  const status = statusColors[booking.status] ?? { bg: colors.slate[100], text: colors.slate[600], accent: colors.slate[300] };
+
   return (
     <Pressable
       onPress={onPress}
-      className={cn(
-        "rounded-2xl border border-slate-200 p-4 active:opacity-80",
-        STATUS_ROW[booking.status]
-      )}
+      accessibilityRole="button"
+      accessibilityLabel={`${booking.customer_name}, ${STATUS_LABELS[booking.status]}`}
+      style={({ pressed }) => [
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+          padding: spacing.base,
+          borderRadius: radius.xl,
+          backgroundColor: colors.white,
+          borderLeftWidth: 4,
+          borderLeftColor: status.accent,
+          opacity: pressed ? 0.85 : 1,
+        },
+        shadows.sm,
+      ]}
     >
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1">
-          <View className="mb-2 flex-row flex-wrap items-center gap-2">
-            <ServiceBadge service={booking.service_type} />
-            <StatusBadge status={booking.status} />
-          </View>
+      {/* Service tile */}
+      <View style={{ width: 48, height: 48, borderRadius: radius.md, backgroundColor: serviceColor, alignItems: "center", justifyContent: "center" }}>
+        <Icon size={24} color={colors.white} />
+      </View>
 
-          <Text className="text-lg font-extrabold text-slate-900">
+      {/* Body */}
+      <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <Text style={{ flex: 1, fontFamily: fonts.displaySemiBold, fontSize: 16, color: colors.slate[900] }} numberOfLines={1}>
             {booking.customer_name}
           </Text>
-
-          <View className="mt-1 flex-row items-center gap-1.5">
-            <MapPin size={16} color="#475569" />
-            <Text className="text-base font-semibold text-slate-700">
-              {booking.origin_postcode}
-              {booking.destination_postcode ? ` → ${booking.destination_postcode}` : ""}
+          {/* Status pill */}
+          <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full, backgroundColor: status.bg }}>
+            <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 11, color: status.text }} numberOfLines={1}>
+              {STATUS_LABELS[booking.status]}
             </Text>
-          </View>
-
-          <View className="mt-2 flex-row items-center gap-3">
-            <Text className="font-mono text-sm font-bold text-slate-500">{booking.reference}</Text>
-            {booking.move_date ? (
-              <View className="flex-row items-center gap-1">
-                <Calendar size={14} color="#64748b" />
-                <Text className="text-sm font-semibold text-slate-500">{formatDate(booking.move_date)}</Text>
-              </View>
-            ) : null}
           </View>
         </View>
 
-        <ChevronRight size={22} color="#64748b" />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <MapPin size={14} color={colors.slate[400]} />
+          <Text style={[type.bodySmall, { fontFamily: fonts.bodyMedium, color: colors.slate[600] }]} numberOfLines={1}>
+            {booking.origin_postcode}{booking.destination_postcode ? `  →  ${booking.destination_postcode}` : ""}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+          <Text style={{ fontFamily: fonts.mono, fontSize: 12, color: serviceColor }}>{SERVICE_LABELS_SHORT[booking.service_type]}</Text>
+          <Text style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.slate[400] }}>{booking.reference}</Text>
+          {booking.move_date ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Calendar size={12} color={colors.slate[400]} />
+              <Text style={[type.bodySmall, { color: colors.slate[400] }]}>{formatDate(booking.move_date)}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
+
+      <ChevronRight size={20} color={colors.slate[300]} />
     </Pressable>
   );
 }
