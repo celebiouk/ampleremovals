@@ -67,13 +67,13 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <a
-            href="tel:+447344683477"
+            href="tel:+443335772070"
             className="hidden items-center gap-2 text-sm font-bold text-brand-purple-900 xl:flex"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-purple-50 text-brand-purple-800">
               <Phone className="h-4 w-4" />
             </span>
-            07344 683477
+            0333 577 2070
           </a>
 
           <Link

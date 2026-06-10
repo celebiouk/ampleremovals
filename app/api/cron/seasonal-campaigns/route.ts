@@ -119,13 +119,13 @@ export async function GET(req: Request) {
                 </div>
 
                 <div style="text-align: center; margin: 32px 0;">
-                  <a href="tel:07344683477" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
+                  <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
                     📞 Book Now & Save ${campaign.discount_percentage}%
                   </a>
                 </div>
 
                 <p style="font-size: 14px; color: #64748b; text-align: center; margin-top: 24px;">
-                  Call <a href="tel:07344683477" style="color: #6b21a8; font-weight: bold;">07344 683477</a><br>
+                  Call <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold;">0333 577 2070</a><br>
                   and mention: <strong>${campaign.name.toUpperCase()}</strong>
                 </p>
 
@@ -159,7 +159,7 @@ export async function GET(req: Request) {
           try {
             await sendSMS(
               customer.phone,
-              `🎊 ${campaign.name}! Get ${campaign.discount_percentage}% OFF all services. Call 07344683477 & mention: ${campaign.name.toUpperCase()}. Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}. - Ample Removals`
+              `🎊 ${campaign.name}! Get ${campaign.discount_percentage}% OFF all services. Call 03335772070 & mention: ${campaign.name.toUpperCase()}. Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}. - Ample Removals`
             );
           } catch (smsErr) {
             console.error(`❌ SMS failed:`, smsErr);
@@ -169,7 +169,7 @@ export async function GET(req: Request) {
           try {
             await sendWhatsApp(
               customer.phone,
-              `🎊 *${campaign.name}*\n\nHi ${customer.full_name}!\n\n*${campaign.discount_percentage}% OFF* all our services!\n\n📦 House Removals\n📦 Man and Van\n📦 House Clearance\n📦 Cleaning Services\n\nCall *07344 683477*\nMention: *${campaign.name.toUpperCase()}*\n\n⏰ Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}\n\nAmple Removals`
+              `🎊 *${campaign.name}*\n\nHi ${customer.full_name}!\n\n*${campaign.discount_percentage}% OFF* all our services!\n\n📦 House Removals\n📦 Man and Van\n📦 House Clearance\n📦 Cleaning Services\n\nCall *0333 577 2070*\nMention: *${campaign.name.toUpperCase()}*\n\n⏰ Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}\n\nAmple Removals`
             );
           } catch (whatsappErr) {
             console.error(`❌ WhatsApp failed:`, whatsappErr);

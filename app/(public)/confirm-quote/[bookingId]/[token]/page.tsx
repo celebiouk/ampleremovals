@@ -219,7 +219,7 @@ export default function ConfirmQuotePage() {
                 Back to Home
               </Button>
               <Button
-                onClick={() => window.location.href = "tel:07344683477"}
+                onClick={() => window.location.href = "tel:03335772070"}
                 className="w-full bg-brand-green-600 hover:bg-brand-green-500 text-white"
               >
                 <Phone className="mr-2 h-4 w-4" />
@@ -273,11 +273,11 @@ export default function ConfirmQuotePage() {
               <p className="text-sm font-semibold mb-2">Need help?</p>
               <div className="space-y-2">
                 <a
-                  href="tel:07344683477"
+                  href="tel:03335772070"
                   className="flex items-center justify-center gap-2 text-sm text-brand-purple-800 hover:underline"
                 >
                   <Phone className="h-4 w-4" />
-                  Call us: 07344683477
+                  Call us: 03335772070
                 </a>
                 <a
                   href="mailto:bookings@ampleremovals.com"

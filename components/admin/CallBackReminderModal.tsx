@@ -114,7 +114,7 @@ export function CallBackReminderModal({
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
               <p className="font-semibold mb-1">Reminder defaults to 10 AM - 1 PM</p>
-              <p className="text-blue-800 mb-2">You&apos;ll receive notifications via Email, SMS & WhatsApp to 07344683477</p>
+              <p className="text-blue-800 mb-2">You&apos;ll receive notifications via Email, SMS & WhatsApp to 03335772070</p>
             </div>
           </div>
         </div>

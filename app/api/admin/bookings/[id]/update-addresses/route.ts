@@ -121,7 +121,7 @@ export async function POST(
             <p style="margin: 0; color: #1e3a8a;">${destinationFormatted}</p>
           </div>
           <p style="font-size: 14px; color: #64748b;">
-            If you have any questions, please contact us on 07344 683477.
+            If you have any questions, please contact us on 0333 577 2070.
           </p>
           <p style="font-size: 14px; color: #64748b; margin-top: 24px;">
             Booking Reference: ${booking.reference}
@@ -155,7 +155,7 @@ export async function POST(
       try {
         await sendWhatsApp(
           customer.phone,
-          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
+          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`
         );
       } catch (whatsappErr) {
         console.error("WhatsApp failed:", whatsappErr);

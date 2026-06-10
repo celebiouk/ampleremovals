@@ -18,7 +18,7 @@ export async function GET() {
       type: "deposit",
       companyName: "Ample Removals",
       companyAddress: "123 Test Street\nReading\nRG1 1AA",
-      companyPhone: "07344683477",
+      companyPhone: "03335772070",
       companyEmail: "hello@ampleremovals.com",
       customerName: "Test Customer",
       customerEmail: "test@example.com",

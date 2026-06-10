@@ -261,7 +261,7 @@ async function sendWeatherAlert(
           <p style="margin: 0 0 12px 0; font-size: 16px; color: #1e40af; font-weight: bold;">Need to Reschedule?</p>
           <p style="margin: 0; color: #1e3a8a; font-size: 14px;">
             If you'd prefer to reschedule due to the weather, call us ASAP:<br>
-            <a href="tel:07344683477" style="color: #1e40af; font-weight: bold; font-size: 16px;">07344 683477</a>
+            <a href="tel:03335772070" style="color: #1e40af; font-weight: bold; font-size: 16px;">0333 577 2070</a>
           </p>
           <p style="margin: 12px 0 0 0; color: #64748b; font-size: 12px;">
             (We understand weather concerns and will accommodate where possible)
@@ -293,7 +293,7 @@ async function sendWeatherAlert(
   }
 
   // SMS
-  const smsBody = `🌧️ WEATHER ALERT (${moveDate}): ${weather.type} expected tomorrow. Don't worry - we're prepared! We'll protect your items. Need to reschedule? Call 07344683477. ${booking.reference}`;
+  const smsBody = `🌧️ WEATHER ALERT (${moveDate}): ${weather.type} expected tomorrow. Don't worry - we're prepared! We'll protect your items. Need to reschedule? Call 03335772070. ${booking.reference}`;
 
   try {
     await sendSMS(customer.phone, smsBody);
@@ -303,7 +303,7 @@ async function sendWeatherAlert(
   }
 
   // WhatsApp
-  const whatsappBody = `🌧️ *Weather Alert*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}\n\n*Weather Expected:*\n${weather.type}\n\n*Don't Worry!*\n✅ We're experienced in all weather\n✅ Items will be protected\n✅ Move goes ahead as planned\n\n*Your Prep:*\n• Have towels ready\n• Clear pathways\n• Keep boxes away from doors\n\n*Need to reschedule?*\nCall: *07344 683477*\n\nBooking: ${booking.reference}`;
+  const whatsappBody = `🌧️ *Weather Alert*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}\n\n*Weather Expected:*\n${weather.type}\n\n*Don't Worry!*\n✅ We're experienced in all weather\n✅ Items will be protected\n✅ Move goes ahead as planned\n\n*Your Prep:*\n• Have towels ready\n• Clear pathways\n• Keep boxes away from doors\n\n*Need to reschedule?*\nCall: *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
   try {
     await sendWhatsApp(customer.phone, whatsappBody);

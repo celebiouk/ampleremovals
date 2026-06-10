@@ -123,8 +123,8 @@ export async function GET(req: Request) {
               </div>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="tel:07344683477" style="display: inline-block; background: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                  Need Help? Call: 07344 683477
+                <a href="tel:03335772070" style="display: inline-block; background: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  Need Help? Call: 0333 577 2070
                 </a>
               </div>
 

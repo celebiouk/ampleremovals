@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Fetch settings
     const { data: settings } = await supabase.from("settings").select("*").eq("id", 1).single();
     const companyName = settings?.company_name ?? "Ample Removals";
-    const companyPhone = settings?.company_phone ?? "07344 683477";
+    const companyPhone = settings?.company_phone ?? "0333 577 2070";
     const companyEmail = settings?.company_email ?? "";
     const companyAddress = settings?.company_address ?? "";
 

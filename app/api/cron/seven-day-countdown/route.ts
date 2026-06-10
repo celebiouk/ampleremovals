@@ -139,8 +139,8 @@ export async function GET(req: Request) {
               </div>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="tel:07344683477" style="display: inline-block; background: #6b21a8; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                  Questions? Call Us: 07344 683477
+                <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  Questions? Call Us: 0333 577 2070
                 </a>
               </div>
 
@@ -179,7 +179,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `📅 *Your Move is 1 Week Away!*\n\n${moveDate}\n\n*This Week's Tasks:*\n📦 Pack non-essentials\n🛒 Order packing materials\n🧹 Declutter & donate\n📁 Organize documents\n\nMore reminders coming as we get closer!\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `📅 *Your Move is 1 Week Away!*\n\n${moveDate}\n\n*This Week's Tasks:*\n📦 Pack non-essentials\n🛒 Order packing materials\n🧹 Declutter & donate\n📁 Organize documents\n\nMore reminders coming as we get closer!\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody);

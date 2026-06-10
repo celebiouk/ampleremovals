@@ -69,7 +69,7 @@ CREATE POLICY "Admins full access to automation_logs"
 CREATE TABLE IF NOT EXISTS settings (
   id INTEGER PRIMARY KEY DEFAULT 1,
   company_name TEXT DEFAULT 'Ample Removals',
-  company_phone TEXT DEFAULT '07344 683477',
+  company_phone TEXT DEFAULT '0333 577 2070',
   company_email TEXT DEFAULT 'bookings@ampleremovals.com',
   company_address TEXT DEFAULT '',
   google_review_link TEXT DEFAULT '',

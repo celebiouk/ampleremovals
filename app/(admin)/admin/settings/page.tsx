@@ -14,7 +14,7 @@ interface Settings {
 }
 
 const defaultSettings: Settings = {
-  company_name: "Ample Removals", company_phone: "07344 683477",
+  company_name: "Ample Removals", company_phone: "0333 577 2070",
   company_email: "", company_address: "", google_review_link: "",
   notify_new_booking: true, notify_invoice_paid: true,
   notify_invoice_overdue: true, overdue_days: 7, notify_move_date_tomorrow: true,

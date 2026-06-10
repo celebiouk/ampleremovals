@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   const { data: companySettings } = await supabase.from("settings").select("*").eq("id", 1).single();
   const companyName = companySettings?.company_name ?? "Ample Removals";
   const companyAddress = companySettings?.company_address ?? "";
-  const companyPhone = companySettings?.company_phone ?? "07344 683477";
+  const companyPhone = companySettings?.company_phone ?? "0333 577 2070";
   const companyEmail = companySettings?.company_email ?? "hello@ampleremovals.com";
 
   // Regenerate PDF with "sent" status

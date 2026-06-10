@@ -135,7 +135,7 @@ export async function GET(req: Request) {
                 <p style="margin: 0 0 12px 0; font-weight: bold; color: #1e293b;">📞 Need Help?</p>
                 <p style="margin: 0; color: #64748b; font-size: 14px;">
                   If you have any questions or need to make changes, call us on:<br>
-                  <a href="tel:07344683477" style="color: #6b21a8; font-weight: bold; font-size: 16px;">07344 683477</a>
+                  <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold; font-size: 16px;">0333 577 2070</a>
                 </p>
               </div>
 
@@ -168,7 +168,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `📦 Your move is in 3 DAYS (${moveDate})!\n\nStart packing non-essentials, notify utilities, arrange parking permits.\n\nNeed help? Call 07344683477\n\nRef: ${booking.reference}`;
+        const smsBody = `📦 Your move is in 3 DAYS (${moveDate})!\n\nStart packing non-essentials, notify utilities, arrange parking permits.\n\nNeed help? Call 03335772070\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -178,7 +178,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\nNeed help? Call *07344 683477*\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\nNeed help? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody);

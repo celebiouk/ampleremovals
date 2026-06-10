@@ -229,7 +229,7 @@ export default function ConfirmAddressPage() {
           <div className="mt-6 rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="mb-4 text-xl font-bold text-slate-900">Update Addresses</h3>
             <p className="mb-4 text-sm text-slate-600">
-              Please call us to update your addresses: <a href="tel:07344683477" className="font-bold text-brand-purple-700 hover:underline">07344 683477</a>
+              Please call us to update your addresses: <a href="tel:03335772070" className="font-bold text-brand-purple-700 hover:underline">0333 577 2070</a>
             </p>
             <button
               onClick={() => setShowChangeForm(false)}

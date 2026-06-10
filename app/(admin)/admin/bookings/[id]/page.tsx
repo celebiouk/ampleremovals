@@ -207,7 +207,7 @@ export default function BookingDetailPage() {
           .replace(/\{\{name\}\}/g, data?.customer.full_name.split(" ")[0] ?? "")
           .replace(/\{\{service\}\}/g, data?.booking.service_type ?? "")
           .replace(/\{\{ref\}\}/g, data?.booking.reference ?? "")
-          .replace(/\{\{company_phone\}\}/g, "07344 683477")
+          .replace(/\{\{company_phone\}\}/g, "0333 577 2070")
           .replace(/\{\{company_name\}\}/g, "Ample Removals")
       : undefined;
     const res = await fetch("/api/admin/send-email", {
@@ -675,7 +675,7 @@ export default function BookingDetailPage() {
                       <button key={t.id} onClick={() => {
                         setSelectedTemplate(t);
                         setEmailSubject(t.subject.replace(/\{\{service\}\}/g, booking.service_type).replace(/\{\{ref\}\}/g, booking.reference));
-                        setEmailBody(t.body.replace(/\{\{name\}\}/g, customer.full_name).replace(/\{\{service\}\}/g, booking.service_type).replace(/\{\{ref\}\}/g, booking.reference).replace(/\{\{company_phone\}\}/g, "07344 683477").replace(/\{\{company_name\}\}/g, "Ample Removals"));
+                        setEmailBody(t.body.replace(/\{\{name\}\}/g, customer.full_name).replace(/\{\{service\}\}/g, booking.service_type).replace(/\{\{ref\}\}/g, booking.reference).replace(/\{\{company_phone\}\}/g, "0333 577 2070").replace(/\{\{company_name\}\}/g, "Ample Removals"));
                       }}
                         className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${selectedTemplate?.id === t.id ? "border-brand-purple-400 bg-brand-purple-50 text-brand-purple-800" : "border-slate-100 bg-slate-50 text-slate-600 hover:border-brand-purple-200 hover:bg-white"}`}>
                         <span className="font-medium">{t.label}</span>
@@ -694,7 +694,7 @@ export default function BookingDetailPage() {
                         .replace(/\{\{name\}\}/g, data.customer.full_name.split(" ")[0])
                         .replace(/\{\{service\}\}/g, data.booking.service_type)
                         .replace(/\{\{ref\}\}/g, data.booking.reference)
-                        .replace(/\{\{company_phone\}\}/g, "07344 683477")
+                        .replace(/\{\{company_phone\}\}/g, "0333 577 2070")
                         .replace(/\{\{company_name\}\}/g, "Ample Removals")
                         .slice(0, 100)}…&rdquo;
                     </p>

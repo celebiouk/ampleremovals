@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendAdminEmails } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 
-const ADMIN_PHONE = "07344683477";
+const ADMIN_PHONE = "03335772070";
 
 /**
  * POST /api/address-confirm/update

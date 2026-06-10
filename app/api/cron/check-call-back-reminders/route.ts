@@ -4,7 +4,7 @@ import { resend, resendAdminEmails } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatDate } from "@/lib/utils";
 
-const ADMIN_PHONE = "07344683477";
+const ADMIN_PHONE = "03335772070";
 
 /**
  * GET /api/cron/check-call-back-reminders

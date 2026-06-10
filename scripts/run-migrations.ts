@@ -67,7 +67,7 @@ const MIGRATIONS = [
     name: "settings table",
     sql: `CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY DEFAULT 1,
-      company_name TEXT DEFAULT 'Ample Removals', company_phone TEXT DEFAULT '07344 683477',
+      company_name TEXT DEFAULT 'Ample Removals', company_phone TEXT DEFAULT '0333 577 2070',
       company_email TEXT DEFAULT 'bookings@ampleremovals.com', company_address TEXT DEFAULT '',
       google_review_link TEXT DEFAULT '', notify_new_booking BOOLEAN DEFAULT TRUE,
       notify_invoice_paid BOOLEAN DEFAULT TRUE, notify_invoice_overdue BOOLEAN DEFAULT TRUE,

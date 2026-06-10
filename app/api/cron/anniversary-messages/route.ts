@@ -138,13 +138,13 @@ export async function GET(req: Request) {
               ` : ""}
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="tel:07344683477" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
+                <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
                   📞 Call to Book Your Discount
                 </a>
               </div>
 
               <p style="font-size: 14px; color: #64748b; text-align: center; margin-top: 24px;">
-                Or call us on <a href="tel:07344683477" style="color: #6b21a8; font-weight: bold;">07344 683477</a><br>
+                Or call us on <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold;">0333 577 2070</a><br>
                 and mention: <strong>1-YEAR ANNIVERSARY</strong>
               </p>
 
@@ -179,7 +179,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `🎂 Happy 1-year move anniversary, ${customer.full_name}! 🎉 Enjoy 15% OFF your next move or service. Valid 30 days. Call 07344683477 & mention: 1-YEAR ANNIVERSARY - Ample Removals`;
+        const smsBody = `🎂 Happy 1-year move anniversary, ${customer.full_name}! 🎉 Enjoy 15% OFF your next move or service. Valid 30 days. Call 03335772070 & mention: 1-YEAR ANNIVERSARY - Ample Removals`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -189,7 +189,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `🎂 *Happy 1-Year Move Anniversary!*\n\nHi ${customer.full_name}!\n\nIt's been *one year* since we helped you move to ${destinationArea}! 🏡\n\n🎁 *Anniversary Special:*\n*15% OFF* your next move or service\n\nValid for 30 days!\n\nCall *07344 683477* and mention:\n*1-YEAR ANNIVERSARY*\n\n${referralLink ? `💝 *Refer a Friend:*\nYour code: *${customer.referral_code}*\nBoth get £20!\n\n` : ""}Cheers to more great years ahead! 🥂\n\nAmple Removals Team`;
+        const whatsappBody = `🎂 *Happy 1-Year Move Anniversary!*\n\nHi ${customer.full_name}!\n\nIt's been *one year* since we helped you move to ${destinationArea}! 🏡\n\n🎁 *Anniversary Special:*\n*15% OFF* your next move or service\n\nValid for 30 days!\n\nCall *0333 577 2070* and mention:\n*1-YEAR ANNIVERSARY*\n\n${referralLink ? `💝 *Refer a Friend:*\nYour code: *${customer.referral_code}*\nBoth get £20!\n\n` : ""}Cheers to more great years ahead! 🥂\n\nAmple Removals Team`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody);

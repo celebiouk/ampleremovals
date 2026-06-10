@@ -116,8 +116,8 @@ export function BookingWizard<T extends FieldValues>({
           {/* Help line */}
           <p className="mt-5 px-1 text-center text-sm text-slate-400">
             Need a hand? Call us on{" "}
-            <Link href="tel:+447344683477" className="font-semibold text-brand-purple-700">
-              07344 683477
+            <Link href="tel:+443335772070" className="font-semibold text-brand-purple-700">
+              0333 577 2070
             </Link>
           </p>
         </div>

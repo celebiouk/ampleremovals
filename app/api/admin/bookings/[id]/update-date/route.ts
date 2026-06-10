@@ -109,7 +109,7 @@ export async function POST(
             </table>
           </div>
           <p style="font-size: 14px; color: #64748b;">
-            If you have any questions, please contact us on 07344 683477.
+            If you have any questions, please contact us on 0333 577 2070.
           </p>
           <p style="font-size: 14px; color: #64748b; margin-top: 24px;">
             Booking Reference: ${booking.reference}
@@ -133,7 +133,7 @@ export async function POST(
     try {
       await sendSMS(
         customer.phone,
-        `📅 Move date updated!\n\nNew date: ${newDateFormatted}${moveTime ? ` at ${moveTime}` : ""}\n\nQuestions? Call 07344683477\n\nRef: ${booking.reference}`
+        `📅 Move date updated!\n\nNew date: ${newDateFormatted}${moveTime ? ` at ${moveTime}` : ""}\n\nQuestions? Call 03335772070\n\nRef: ${booking.reference}`
       );
     } catch (smsErr) {
       console.error("SMS failed:", smsErr);
@@ -143,7 +143,7 @@ export async function POST(
       try {
         await sendWhatsApp(
           customer.phone,
-          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *07344 683477*\n\nBooking: ${booking.reference}`
+          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`
         );
       } catch (whatsappErr) {
         console.error("WhatsApp failed:", whatsappErr);

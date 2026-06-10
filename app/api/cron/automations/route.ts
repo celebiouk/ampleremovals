@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch company settings for template variables
     const { data: settings } = await supabase.from("settings").select("*").eq("id", 1).single();
-    const companyPhone = settings?.company_phone ?? "07344 683477";
+    const companyPhone = settings?.company_phone ?? "0333 577 2070";
     const googleReviewLink = settings?.google_review_link ?? "[Google Review Link]";
 
     for (const rule of rules) {

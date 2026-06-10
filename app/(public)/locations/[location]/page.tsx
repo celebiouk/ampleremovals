@@ -129,10 +129,10 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="tel:07344683477">
+              <a href="tel:03335772070">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-brand-purple-800 backdrop-blur-sm">
                   <Phone className="mr-2 h-5 w-5" />
-                  Call: 07344683477
+                  Call: 03335772070
                 </Button>
               </a>
             </div>
@@ -271,7 +271,7 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
                 </p>
                 <p className="text-slate-700 leading-relaxed">
                   Looking for <strong>affordable removals in {location.name}</strong>? Get your free, no-obligation quote today.
-                  Call us on <strong>07344683477</strong> or book online in minutes. We&apos;re available 7 days a week to make your move stress-free.
+                  Call us on <strong>03335772070</strong> or book online in minutes. We&apos;re available 7 days a week to make your move stress-free.
                 </p>
               </div>
             </div>
@@ -296,10 +296,10 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <a href="tel:07344683477">
+            <a href="tel:03335772070">
               <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-brand-purple-900 backdrop-blur-sm">
                 <Phone className="mr-2 h-5 w-5" />
-                07344683477
+                03335772070
               </Button>
             </a>
             <a href="mailto:hello@ampleremovals.com">

@@ -187,7 +187,7 @@ async function send2HourFollowup(booking: any, supabase: any) {
         </div>
         <div style="text-align: center; margin: 32px 0;">
           <a href="${confirmUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 12px;">Accept Quote</a><br>
-          <a href="tel:07344683477" style="display: inline-block; background: #6b21a8; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">Call Us: 07344 683477</a>
+          <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">Call Us: 0333 577 2070</a>
         </div>
         <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
       </div>
@@ -196,8 +196,8 @@ async function send2HourFollowup(booking: any, supabase: any) {
 
   try {
     await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `Hi ${customer.full_name}, questions about your £${booking.quote_total} quote? Call us: 07344683477 or accept: ${confirmUrl} - ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `Hi ${customer.full_name}!\n\nHave questions about your *${formatCurrency(booking.quote_total)}* quote?\n\nWe're here to help! Call *07344 683477*\n\nOr accept your quote: ${confirmUrl}\n\nBooking: ${booking.reference}`);
+    await sendSMS(customer.phone, `Hi ${customer.full_name}, questions about your £${booking.quote_total} quote? Call us: 03335772070 or accept: ${confirmUrl} - ${booking.reference}`);
+    await sendWhatsApp(customer.phone, `Hi ${customer.full_name}!\n\nHave questions about your *${formatCurrency(booking.quote_total)}* quote?\n\nWe're here to help! Call *0333 577 2070*\n\nOr accept your quote: ${confirmUrl}\n\nBooking: ${booking.reference}`);
 
     await supabase.from("bookings").update({ quote_followup_2hr_sent_at: new Date().toISOString() }).eq("id", booking.id);
     await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (2 hours)", performed_by: "system" });
@@ -329,7 +329,7 @@ async function send7DayFollowup(booking: any, supabase: any) {
         </div>
         <div style="text-align: center; margin: 32px 0;">
           <a href="${confirmUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 12px;">Accept Quote</a><br>
-          <a href="tel:07344683477" style="color: #6b21a8; font-weight: bold;">Or call us: 07344 683477</a>
+          <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold;">Or call us: 0333 577 2070</a>
         </div>
         <p style="font-size: 13px; color: #94a3b8; text-align: center; margin-top: 32px;">This is our final reminder. We won't email about this quote again.</p>
         <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
@@ -339,8 +339,8 @@ async function send7DayFollowup(booking: any, supabase: any) {
 
   try {
     await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `Hi ${customer.full_name}, final reminder about your £${booking.quote_total} quote. We'd love to help! ${confirmUrl} or call 07344683477. ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `Hi ${customer.full_name},\n\nFinal reminder about your *${formatCurrency(booking.quote_total)}* quote.\n\nWe'd love to help with your move! Professional, reliable service.\n\nAccept: ${confirmUrl}\nCall: *07344 683477*\n\n${booking.reference}\n\n(This is our last reminder)`);
+    await sendSMS(customer.phone, `Hi ${customer.full_name}, final reminder about your £${booking.quote_total} quote. We'd love to help! ${confirmUrl} or call 03335772070. ${booking.reference}`);
+    await sendWhatsApp(customer.phone, `Hi ${customer.full_name},\n\nFinal reminder about your *${formatCurrency(booking.quote_total)}* quote.\n\nWe'd love to help with your move! Professional, reliable service.\n\nAccept: ${confirmUrl}\nCall: *0333 577 2070*\n\n${booking.reference}\n\n(This is our last reminder)`);
 
     await supabase.from("bookings").update({ quote_followup_7day_sent_at: new Date().toISOString() }).eq("id", booking.id);
     await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (7 days - final)", performed_by: "system" });

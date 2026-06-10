@@ -133,7 +133,7 @@ function customerEmailHtml(params: {
         <!-- Footer -->
         <tr><td style="background:#6b21a8;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
           <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#ffffff;">Ample Removals</p>
-          <p style="margin:0 0 4px;font-size:13px;color:#d8b4fe;">Tel: 07344 683477</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#d8b4fe;">Tel: 0333 577 2070</p>
           <p style="margin:12px 0 0;font-size:12px;color:#c4b5fd;line-height:1.5;">
             You are receiving this email because you submitted a booking request on our website.
           </p>

@@ -121,7 +121,7 @@ export async function GET(req: Request) {
                 <strong style="color: #6b21a8;">Daniel</strong><br>
                 Ample Removals<br>
                 <a href="mailto:daniel@ampleremovals.com" style="color: #6b21a8;">daniel@ampleremovals.com</a><br>
-                <a href="tel:07344683477" style="color: #6b21a8;">07344 683477</a>
+                <a href="tel:03335772070" style="color: #6b21a8;">0333 577 2070</a>
               </p>
 
               <p style="font-size: 12px; color: #94a3b8; margin-top: 24px;">

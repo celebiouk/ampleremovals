@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const { data: settings } = await supabase.from("settings").select("company_name, company_phone").eq("id", 1).single();
     const companyName = settings?.company_name ?? "Ample Removals";
-    const companyPhone = settings?.company_phone ?? "07344 683477";
+    const companyPhone = settings?.company_phone ?? "0333 577 2070";
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
       <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">

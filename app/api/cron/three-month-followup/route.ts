@@ -115,13 +115,13 @@ export async function GET(req: Request) {
               </div>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="tel:07344683477" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
+                <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(107, 33, 168, 0.3);">
                   📞 Call to Book Your Discount
                 </a>
               </div>
 
               <p style="font-size: 14px; color: #64748b; text-align: center; margin-top: 24px;">
-                Or call us on <a href="tel:07344683477" style="color: #6b21a8; font-weight: bold;">07344 683477</a><br>
+                Or call us on <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold;">0333 577 2070</a><br>
                 and mention your booking reference: <strong>${booking.reference}</strong>
               </p>
 
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
                 Best regards,<br>
                 <strong style="color: #6b21a8;">The Ample Removals Team</strong><br>
                 <a href="mailto:hello@ampleremovals.com" style="color: #6b21a8;">hello@ampleremovals.com</a><br>
-                <a href="tel:07344683477" style="color: #6b21a8;">07344 683477</a>
+                <a href="tel:03335772070" style="color: #6b21a8;">0333 577 2070</a>
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `🎁 Hi ${customer.full_name}! It's been 3 months since your move. As our regular customer, enjoy 20% OFF your next move! Valid 30 days. Call 07344683477 & quote: ${booking.reference} - Ample Removals`;
+        const smsBody = `🎁 Hi ${customer.full_name}! It's been 3 months since your move. As our regular customer, enjoy 20% OFF your next move! Valid 30 days. Call 03335772070 & quote: ${booking.reference} - Ample Removals`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -168,7 +168,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `🎁 *20% OFF for You!*\n\nHi ${customer.full_name}!\n\nIt's been 3 months since we helped you move, and we wanted to thank you with an exclusive offer:\n\n*20% OFF* your next move or furniture delivery! 🚚\n\n✅ Valid for 30 days\n✅ For our valued regular customers\n\nCall us on *07344 683477* and mention:\n*${booking.reference}*\n\nWe look forward to helping you again!\n\nAmple Removals Team`;
+        const whatsappBody = `🎁 *20% OFF for You!*\n\nHi ${customer.full_name}!\n\nIt's been 3 months since we helped you move, and we wanted to thank you with an exclusive offer:\n\n*20% OFF* your next move or furniture delivery! 🚚\n\n✅ Valid for 30 days\n✅ For our valued regular customers\n\nCall us on *0333 577 2070* and mention:\n*${booking.reference}*\n\nWe look forward to helping you again!\n\nAmple Removals Team`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody);

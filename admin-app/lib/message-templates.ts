@@ -13,7 +13,7 @@ export interface MessageTemplate {
 
 export const COMPANY = {
   name: "Ample Removals",
-  phone: "07344 683477",
+  phone: "0333 577 2070",
 };
 
 export const MESSAGE_TEMPLATES: MessageTemplate[] = [
