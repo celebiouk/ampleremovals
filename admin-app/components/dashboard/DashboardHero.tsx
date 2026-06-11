@@ -1,7 +1,8 @@
 import { View, Text, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Truck, Search, CalendarClock, Package } from "lucide-react-native";
+import { Search, CalendarClock, Package } from "lucide-react-native";
+import { Logo } from "@/components/shared/Logo";
 import { useCountUp } from "@/hooks/useCountUp";
 import { colors } from "@/lib/colors";
 import { type, fonts } from "@/lib/typography";
@@ -49,8 +50,8 @@ export function DashboardHero({
 
       {/* Top row */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
-        <View style={{ width: 46, height: 46, borderRadius: radius.lg, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" }}>
-          <Truck size={24} color={colors.white} />
+        <View style={{ width: 46, height: 46, borderRadius: radius.lg, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <Logo size={38} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{greeting()} 👋</Text>

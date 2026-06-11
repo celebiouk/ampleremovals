@@ -7,7 +7,9 @@
     "scheme": "ampleadmin",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "icon": "./assets/logo.png",
     "splash": {
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#6b21a8"
     },
@@ -16,11 +18,16 @@
       "bundleIdentifier": "com.ampleremovals.admin"
     },
     "android": {
-      "package": "com.ampleremovals.admin"
+      "package": "com.ampleremovals.admin",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/logo.png"
     },
     "plugins": [
       "expo-router",

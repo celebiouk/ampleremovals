@@ -51,9 +51,9 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 export const STATUS_COLOURS: Record<BookingStatus, string> = {
   inquiry: "bg-orange-100 text-orange-700",
   called: "bg-blue-100 text-blue-700",
-  not_called: "bg-blue-100 text-blue-700",
+  not_called: "bg-orange-100 text-orange-700",
   answered: "bg-blue-100 text-blue-700",
-  not_answered: "bg-blue-100 text-blue-700",
+  not_answered: "bg-orange-100 text-orange-700",
   processing: "bg-purple-100 text-purple-700",
   pending: "bg-purple-100 text-purple-700",
   deposit_invoice_sent: "bg-purple-100 text-purple-700",

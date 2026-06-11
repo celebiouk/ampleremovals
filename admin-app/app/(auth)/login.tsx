@@ -6,8 +6,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing, FadeInDown,
 } from "react-native-reanimated";
-import { Truck, Mail, Lock } from "lucide-react-native";
+import { Mail, Lock } from "lucide-react-native";
 import { Button, Input } from "@/components/ui";
+import { Logo } from "@/components/shared/Logo";
 import { toast } from "@/components/ui/Toast";
 import { signInAdmin } from "@/lib/auth";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -72,9 +73,7 @@ export default function LoginScreen() {
             >
               {/* Logo mark */}
               <View style={{ alignItems: "center" }}>
-                <View style={{ width: 56, height: 56, borderRadius: radius.lg, backgroundColor: colors.primary.DEFAULT, alignItems: "center", justifyContent: "center" }}>
-                  <Truck size={30} color={colors.white} />
-                </View>
+                <Logo size={76} />
                 <View style={{ marginTop: spacing.base, borderRadius: radius.full, backgroundColor: colors.primary.surfaceMid, paddingHorizontal: spacing.md, paddingVertical: 5 }}>
                   <Text style={[type.label, { color: colors.primary.DEFAULT }]}>Admin Portal</Text>
                 </View>
