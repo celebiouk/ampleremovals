@@ -10,7 +10,13 @@ import { PipelineBars } from "@/components/dashboard/PipelineBars";
 import { useReports } from "@/hooks/useReports";
 import { formatCurrency } from "@/lib/utils";
 
-const RANGES = [{ label: "7d", days: 7 }, { label: "30d", days: 30 }, { label: "90d", days: 90 }];
+const RANGES = [
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "90d", days: 90 },
+  { label: "180d", days: 180 },
+  { label: "360d", days: 360 },
+];
 const COLS = ["#6b21a8", "#2563eb", "#16a34a", "#f59e0b", "#ec4899"];
 
 export default function ReportsScreen() {
@@ -27,12 +33,16 @@ export default function ReportsScreen() {
           <Pressable onPress={() => router.back()} className="p-1"><ArrowLeft size={24} color="#7e22ce" /></Pressable>
           <Text className="flex-1 font-display text-2xl text-slate-900">Reports</Text>
         </View>
-        <View className="flex-row gap-2">
+        <View className="flex-row gap-1.5">
           {RANGES.map((r) => {
             const active = days === r.days;
             return (
-              <Pressable key={r.days} onPress={() => setDays(r.days)} className={`rounded-full px-4 py-1.5 ${active ? "bg-brand-purple-800" : "bg-slate-100 dark:bg-slate-800"}`}>
-                <Text className={`text-sm font-medium ${active ? "text-white" : "text-slate-600 dark:text-slate-300"}`}>Last {r.label}</Text>
+              <Pressable
+                key={r.days}
+                onPress={() => setDays(r.days)}
+                className={`flex-1 items-center rounded-full px-1 py-1.5 ${active ? "bg-brand-purple-800" : "bg-slate-100 dark:bg-slate-800"}`}
+              >
+                <Text className={`text-xs font-semibold ${active ? "text-white" : "text-slate-600 dark:text-slate-300"}`}>{r.label}</Text>
               </Pressable>
             );
           })}

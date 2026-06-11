@@ -38,6 +38,22 @@ export default function BookingDetailScreen() {
   const [addressModal, setAddressModal] = useState(false);
   const [showDate, setShowDate] = useState(false);
   const [pendingDate, setPendingDate] = useState<Date>(new Date());
+  const [androidStep, setAndroidStep] = useState<"date" | "time">("date");
+
+  function openDatePicker() {
+    setPendingDate(booking?.move_date ? new Date(booking.move_date) : new Date());
+    setAndroidStep("date");
+    setShowDate(true);
+  }
+
+  // Android: after date+time are chosen, ask whether to also notify the customer.
+  function askNotify(finalDate: Date) {
+    Alert.alert("Update move date", "Notify the customer of the new date & time?", [
+      { text: "Cancel", style: "cancel", onPress: () => setShowDate(false) },
+      { text: "Save only", onPress: () => reschedule(finalDate, false) },
+      { text: "Save & notify", onPress: () => reschedule(finalDate, true) },
+    ]);
+  }
   const [messageOpen, setMessageOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -77,13 +93,16 @@ export default function BookingDetailScreen() {
     }
   }
 
-  async function reschedule(date: Date) {
+  async function reschedule(date: Date, notify: boolean) {
     setBusy(true);
     try {
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
       await apiFetch(`/api/admin/bookings/${id}/update-date`, {
         method: "POST",
-        body: JSON.stringify({ moveDate: toDateKey(date), notify: true }),
+        body: JSON.stringify({ moveDate: toDateKey(date), moveTime: `${hh}:${mm}`, notify }),
       });
+      setShowDate(false);
       invalidateAll();
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Failed to reschedule");
@@ -180,10 +199,7 @@ export default function BookingDetailScreen() {
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-base font-semibold text-slate-900 dark:text-white">Move date</Text>
             <Pressable
-              onPress={() => {
-                setPendingDate(booking.move_date ? new Date(booking.move_date) : new Date());
-                setShowDate(true);
-              }}
+              onPress={openDatePicker}
               disabled={busy}
               className="flex-row items-center gap-1"
             >
@@ -381,38 +397,59 @@ export default function BookingDetailScreen() {
         </Pressable>
       </Modal>
 
-      {/* Date picker — Android shows a native dialog directly */}
-      {showDate && Platform.OS === "android" ? (
+      {/* Date picker — Android: native date dialog, then time dialog, then notify choice */}
+      {showDate && Platform.OS === "android" && androidStep === "date" ? (
         <DateTimePicker
           value={pendingDate}
           mode="date"
           display="default"
           onChange={(event, selected) => {
-            setShowDate(false);
-            if (event.type === "set" && selected) reschedule(selected);
+            if (event.type !== "set" || !selected) { setShowDate(false); return; }
+            const d = new Date(pendingDate);
+            d.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+            setPendingDate(d);
+            setAndroidStep("time");
+          }}
+        />
+      ) : null}
+      {showDate && Platform.OS === "android" && androidStep === "time" ? (
+        <DateTimePicker
+          value={pendingDate}
+          mode="time"
+          display="default"
+          onChange={(event, selected) => {
+            if (event.type !== "set" || !selected) { setShowDate(false); return; }
+            const d = new Date(pendingDate);
+            d.setHours(selected.getHours(), selected.getMinutes());
+            setPendingDate(d);
+            askNotify(d);
           }}
         />
       ) : null}
 
-      {/* Date picker — iOS needs the inline calendar inside a visible modal */}
+      {/* Date picker — iOS: date + time in a visible modal with Save / Save & notify */}
       <Modal visible={showDate && Platform.OS === "ios"} transparent animationType="fade" onRequestClose={() => setShowDate(false)}>
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setShowDate(false)}>
           <Pressable className="rounded-t-3xl bg-white p-5" onPress={(e) => e.stopPropagation()}>
-            <Text className="mb-2 font-display text-xl text-slate-900">Reschedule date</Text>
+            <Text className="mb-1 font-display text-xl text-slate-900">Reschedule move</Text>
+            <Text className="mb-2 text-sm text-slate-500">Pick the new date and time.</Text>
             <DateTimePicker
               value={pendingDate}
-              mode="date"
+              mode="datetime"
               display="inline"
               onChange={(_e, selected) => { if (selected) setPendingDate(selected); }}
             />
             <View className="mt-2 flex-row gap-3">
               <View className="flex-1">
-                <Button label="Cancel" variant="outline" onPress={() => setShowDate(false)} disabled={busy} />
+                <Button label="Save only" variant="outline" onPress={() => reschedule(pendingDate, false)} loading={busy} />
               </View>
               <View className="flex-1">
-                <Button label="Confirm date" onPress={() => { setShowDate(false); reschedule(pendingDate); }} loading={busy} />
+                <Button label="Save & notify" onPress={() => reschedule(pendingDate, true)} loading={busy} />
               </View>
             </View>
+            <Pressable onPress={() => setShowDate(false)} className="mt-3 items-center py-1">
+              <Text className="text-sm font-medium text-slate-500">Cancel</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -624,12 +661,12 @@ function AddressEditModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  async function save() {
+  async function save(notify: boolean) {
     setSaving(true);
     try {
       await apiFetch(`/api/admin/bookings/${bookingId}/update-addresses`, {
         method: "POST",
-        body: JSON.stringify({ origin: o, destination: d, notify: false }),
+        body: JSON.stringify({ origin: o, destination: d, notify }),
       });
       onSaved();
     } catch (e) {
@@ -659,7 +696,10 @@ function AddressEditModal({
           <Input label="City" value={d.city} onChangeText={(v) => setD({ ...d, city: v })} />
           <Input label="Postcode" value={d.postcode} onChangeText={(v) => setD({ ...d, postcode: v })} autoCapitalize="characters" />
 
-          <Button label="Save addresses" onPress={save} loading={saving} size="lg" />
+          <View className="mt-2 gap-2">
+            <Button label="Save & notify customer" onPress={() => save(true)} loading={saving} size="lg" />
+            <Button label="Save only" variant="outline" onPress={() => save(false)} loading={saving} />
+          </View>
         </ScrollView>
       </SafeAreaView>
     </Modal>
