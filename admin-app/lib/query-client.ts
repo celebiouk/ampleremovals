@@ -1,7 +1,7 @@
 import { QueryClient, onlineManager } from "@tanstack/react-query";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
+import { encryptedStorage } from "./secure-storage";
 
 /**
  * Offline-first data layer.
@@ -34,15 +34,16 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Serialises the cache to AsyncStorage (throttled so writes aren't excessive).
+// Serialises the cache to AES-encrypted local storage (throttled so writes
+// aren't excessive). The data is unreadable at rest on the device.
 export const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
+  storage: encryptedStorage,
   key: "AMPLE_ADMIN_QUERY_CACHE",
   throttleTime: 1000,
 });
 
 /** Bump this to invalidate ALL persisted caches after a breaking data change. */
-export const PERSIST_BUSTER = "v1";
+export const PERSIST_BUSTER = "v2-enc";
 
 /** How long a restored cache is allowed to be before it's discarded entirely. */
 export const PERSIST_MAX_AGE = WEEK;
