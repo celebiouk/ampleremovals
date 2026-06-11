@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   Users, Receipt, CreditCard, CalendarDays, BarChart2, Zap, Settings,
-  Bell, Shield, LogOut, ChevronRight, PoundSterling, User,
+  Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -27,8 +27,10 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Operations",
     items: [
+      { label: "Cleaners", icon: Sparkles, href: "/cleaners" },
       { label: "Customers", icon: Users, href: "/customer" },
       { label: "Calendar", icon: CalendarDays, href: "/calendar" },
+      { label: "Pipeline", icon: Columns3, href: "/pipeline" },
     ],
   },
   {

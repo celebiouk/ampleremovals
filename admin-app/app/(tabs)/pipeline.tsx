@@ -5,11 +5,10 @@ import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { X, MoveRight } from "lucide-react-native";
-import { Skeleton, ErrorState, ServiceBadge } from "@/components/ui";
+import { Skeleton, ErrorState, ServiceBadge, ScreenHeader } from "@/components/ui";
 import { useBookings, type BookingRow } from "@/hooks/useBookings";
 import { apiFetch } from "@/lib/api";
 import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
-import { LargeHeader } from "@/components/shared/LargeHeader";
 import { STATUS_LABELS, ALL_STATUSES } from "@/lib/constants";
 import { statusColors, colors } from "@/lib/colors";
 import type { BookingStatus } from "@/types";
@@ -67,7 +66,7 @@ export default function PipelineScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
-      <LargeHeader title="Pipeline" subtitle="Swipe columns · tap to open · move to change stage" />
+      <ScreenHeader title="Pipeline" />
 
       {isLoading ? (
         <View className="flex-row gap-3 p-5">

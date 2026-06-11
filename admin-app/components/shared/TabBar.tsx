@@ -4,20 +4,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { LayoutGrid, ClipboardList, Columns3, Truck, Menu } from "lucide-react-native";
+import { LayoutGrid, ClipboardList, Sparkles, Truck, Menu } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { colors } from "@/lib/colors";
 import { fonts } from "@/lib/typography";
 
+// Fixed tab order. Any route not listed here (e.g. pipeline) is reachable but
+// not shown as a tab button.
+const ORDER = ["index", "bookings", "cleaners", "drivers", "more"];
+
 const ICONS: Record<string, typeof LayoutGrid> = {
   index: LayoutGrid,
   bookings: ClipboardList,
-  pipeline: Columns3,
+  cleaners: Sparkles,
   drivers: Truck,
   more: Menu,
 };
 const LABELS: Record<string, string> = {
-  index: "Dashboard", bookings: "Bookings", pipeline: "Pipeline", drivers: "Drivers", more: "More",
+  index: "Dashboard", bookings: "Bookings", cleaners: "Cleaners", drivers: "Drivers", more: "More",
 };
 
 /**
@@ -31,11 +35,18 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const { width } = useWindowDimensions();
   const [barW, setBarW] = useState(width);
 
-  const routes = state.routes;
-  const tabW = barW / routes.length;
+  const activeName = state.routes[state.index]?.name;
+  const tabs = ORDER
+    .map((name) => state.routes.find((r) => r.name === name))
+    .filter((r): r is NonNullable<typeof r> => !!r);
+  const activeIndex = tabs.findIndex((t) => t.name === activeName);
+  const tabW = barW / Math.max(tabs.length, 1);
   const accentW = 26;
-  const accentX = useSharedValue(state.index * tabW + (tabW - accentW) / 2);
-  const accentStyle = useAnimatedStyle(() => ({ transform: [{ translateX: accentX.value }] }));
+  const accentX = useSharedValue((activeIndex >= 0 ? activeIndex : 0) * tabW + (tabW - accentW) / 2);
+  const accentStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: accentX.value }],
+    opacity: activeIndex >= 0 ? 1 : 0,
+  }));
 
   return (
     <View
@@ -58,8 +69,8 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
         ]}
       />
 
-      {routes.map((route, i) => {
-        const focused = state.index === i;
+      {tabs.map((route, i) => {
+        const focused = route.name === activeName;
         const Icon = ICONS[route.name] ?? Menu;
         const color = focused ? colors.primary.DEFAULT : colors.slate[400];
 
