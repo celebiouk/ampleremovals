@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import { colorScheme as nwColorScheme } from "nativewind";
@@ -28,14 +28,11 @@ import { registerForPushNotifications } from "@/lib/push";
 import { useAuthStore } from "@/store/authStore";
 import { useTheme } from "@/hooks/useTheme";
 import { ToastHost } from "@/components/ui/Toast";
+import {
+  queryClient, asyncStoragePersister, PERSIST_BUSTER, PERSIST_MAX_AGE,
+} from "@/lib/query-client";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
-  },
-});
 
 /**
  * Redirect based on auth state:
@@ -161,13 +158,24 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: asyncStoragePersister,
+          maxAge: PERSIST_MAX_AGE,
+          buster: PERSIST_BUSTER,
+          // Only persist successfully-loaded data (never errors/loading states).
+          dehydrateOptions: {
+            shouldDehydrateQuery: (q) => q.state.status === "success",
+          },
+        }}
+      >
         <SafeAreaProvider>
           <StatusBar style={theme.isDark ? "light" : "dark"} />
           <RootNavigator />
           <ToastHost />
         </SafeAreaProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }
