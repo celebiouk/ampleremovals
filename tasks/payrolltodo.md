@@ -311,14 +311,15 @@ Commit: `18475cd` (2026-06-13)
 - Premium UI: cards, shadows, currency formatting, status pills
 - Responsive grid layout
 
-### Phase 2 — Mobile Admin Payroll (todo)
-- Entry point: More → Finance → Payroll
-- `app/payroll/index.tsx` — pay-runs list (cards, FAB)
-- `app/payroll/[id].tsx` — run detail (totals hero, FlatList, Pay all, Export)
-- `app/payslip/[id].tsx` — payslip detail (jobs, adjustments, mark paid, PDF)
-- Hooks: `usePayRuns`, `usePayRunDetail`, `usePayslip` (TanStack Query)
-- Routes registered in `app/_layout.tsx`
-- Skeleton-first, pull-to-refresh, empty/error states, toasts, haptics
+### Phase 2 ✅ COMPLETE
+Commit: `47f8d87` (2026-06-13)
+- Pay runs list: cards, sort tabs, FAB → new, pull-to-refresh
+- Run detail: totals grid (4 cards), payslips FlatList, Export CSV, Pay all
+- Payslip detail: earnings breakdown, adjustments list, Mark paid, View PDF
+- Hooks: `usePayRuns`, `usePayRunDetail`, `usePayslip` (TanStack Query + offline cache)
+- Entry point in More menu (Finance → Payroll)
+- Skeleton-first, pull-to-refresh, empty/error states, confirmations
+- API: GET /api/admin/payslips/[id] for detail fetching
 
 ### Phase 3 — Worker Payslips (later)
 - Driver portal: payslips view
