@@ -7,6 +7,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Calendar, ChevronLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Button, ScreenHeader, Input } from "@/components/ui";
+import { DatePicker } from "@/components/DatePicker";
 import { apiFetch } from "@/lib/api";
 import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
@@ -123,7 +124,7 @@ export default function NewPayRunScreen() {
           </View>
         </Animated.View>
 
-        {/* Manual date entry */}
+        {/* Date picker */}
         <Animated.View entering={FadeInDown.delay(200).springify()} style={{ marginBottom: spacing.lg }}>
           <Text style={[type.bodySemiBold, { color: colors.slate[900], marginBottom: spacing.base }]}>
             Or select manually
@@ -133,89 +134,16 @@ export default function NewPayRunScreen() {
               <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm, fontWeight: "600" }]}>
                 Period start
               </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                }}
-                style={{
-                  paddingHorizontal: spacing.base,
-                  paddingVertical: spacing.base,
-                  borderRadius: radius.md,
-                  backgroundColor: colors.slate[50],
-                  borderWidth: 1,
-                  borderColor: colors.slate[200],
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                }}
-              >
-                <Calendar size={18} color={colors.primary.DEFAULT} />
-                <Text style={[type.body, { color: periodStart ? colors.slate[900] : colors.slate[400], flex: 1 }]}>
-                  {periodStart ? formatDateDisplay(periodStart) : "Select date"}
-                </Text>
-              </Pressable>
-              <Input
-                placeholder="YYYY-MM-DD"
-                value={periodStart}
-                onChangeText={setPeriodStart}
-                style={{ marginTop: spacing.sm, display: "none" }}
-              />
+              <DatePicker value={periodStart} onChange={setPeriodStart} />
             </View>
 
             <View>
               <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm, fontWeight: "600" }]}>
                 Period end
               </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                }}
-                style={{
-                  paddingHorizontal: spacing.base,
-                  paddingVertical: spacing.base,
-                  borderRadius: radius.md,
-                  backgroundColor: colors.slate[50],
-                  borderWidth: 1,
-                  borderColor: colors.slate[200],
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                }}
-              >
-                <Calendar size={18} color={colors.primary.DEFAULT} />
-                <Text style={[type.body, { color: periodEnd ? colors.slate[900] : colors.slate[400], flex: 1 }]}>
-                  {periodEnd ? formatDateDisplay(periodEnd) : "Select date"}
-                </Text>
-              </Pressable>
-              <Input
-                placeholder="YYYY-MM-DD"
-                value={periodEnd}
-                onChangeText={setPeriodEnd}
-                style={{ marginTop: spacing.sm, display: "none" }}
-              />
+              <DatePicker value={periodEnd} onChange={setPeriodEnd} minDate={periodStart} />
             </View>
           </Card>
-
-          {/* Date input fallback (for now, users can type dates directly) */}
-          <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
-            <View>
-              <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm, fontWeight: "600" }]}>
-                Or type dates (YYYY-MM-DD)
-              </Text>
-              <Input
-                placeholder="Start date"
-                value={periodStart}
-                onChangeText={setPeriodStart}
-                keyboardType="default"
-              />
-            </View>
-            <Input
-              placeholder="End date"
-              value={periodEnd}
-              onChangeText={setPeriodEnd}
-              keyboardType="default"
-            />
-          </View>
         </Animated.View>
 
         {/* Preview */}
