@@ -19,13 +19,11 @@ export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
   const supabase = createClient();
 
   const load = useCallback(async () => {
     try {
-      setIsError(false);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
