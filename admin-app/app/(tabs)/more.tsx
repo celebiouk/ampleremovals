@@ -40,6 +40,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Payments", icon: CreditCard, href: "/payments" },
       { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
       { label: "Payroll", icon: PoundSterling, href: "/payroll" },
+      { label: "My Payslips", icon: PoundSterling, href: "/payslips" },
     ],
   },
   {
