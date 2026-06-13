@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, FlatList, RefreshControl, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search } from "lucide-react-native";
+import { Search, Trash2 } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Input, Skeleton, EmptyState, ErrorState } from "@/components/ui";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -12,8 +13,8 @@ import { subscribeToBookings, unsubscribe } from "@/lib/realtime";
 import { STATUS_LABELS } from "@/lib/constants";
 import type { BookingStatus } from "@/types";
 
-const FILTERS: { label: string; value: BookingStatus | "" }[] = [
-  { label: "All", value: "" },
+const STATUS_FILTERS: { label: string; value: BookingStatus | "" }[] = [
+  { label: "All Status", value: "" },
   { label: "Inquiry", value: "inquiry" },
   { label: "Pending", value: "pending" },
   { label: STATUS_LABELS.deposit_invoice_sent, value: "deposit_invoice_sent" },
@@ -22,11 +23,23 @@ const FILTERS: { label: string; value: BookingStatus | "" }[] = [
   { label: "Completed", value: "job_completed" },
 ];
 
+const SERVICE_FILTERS: { label: string; value: string }[] = [
+  { label: "All Services", value: "" },
+  { label: "Removals", value: "removals" },
+  { label: "Man & Van", value: "man_and_van" },
+  { label: "House Clearance", value: "house_clearance" },
+  { label: "Cleaning", value: "house_cleaning" },
+  { label: "End of Tenancy", value: "end_of_tenancy_cleaning" },
+];
+
 export default function BookingsScreen() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<BookingStatus | "">("");
-  const { data, isLoading, isError, refetch, isRefetching } = useBookings({ search, status });
+  const [service, setService] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { data, isLoading, isError, refetch, isRefetching } = useBookings({ search, status, service });
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
@@ -37,11 +50,56 @@ export default function BookingsScreen() {
     };
   }, [refetch]);
 
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelected(newSelected);
+    Haptics.selectionAsync().catch(() => {});
+  };
+
+  const deleteBooking = async (id: string) => {
+    setDeleting(id);
+    try {
+      const response = await fetch(`/api/admin/bookings/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete");
+      refetch();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to delete booking");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const renderItem = useCallback(
-    ({ item }: { item: BookingRow }) => (
-      <BookingCard booking={item} onPress={() => router.push(`/booking/${item.id}`)} />
-    ),
-    [router]
+    ({ item }: { item: BookingRow }) => {
+      const isSelected = selected.has(item.id);
+      return (
+        <Pressable
+          onLongPress={() => toggleSelect(item.id)}
+          onPress={() => !selected.size && router.push(`/booking/${item.id}`)}
+        >
+          <View className={`relative ${isSelected ? "bg-slate-100 dark:bg-slate-800" : ""}`}>
+            {isSelected && (
+              <Pressable
+                onPress={() => deleteBooking(item.id)}
+                disabled={deleting === item.id}
+                className="absolute right-4 top-4 z-10 p-2"
+              >
+                <Trash2 size={18} color="#ef4444" />
+              </Pressable>
+            )}
+            <BookingCard booking={item} onPress={() => !selected.size && router.push(`/booking/${item.id}`)} />
+          </View>
+        </Pressable>
+      );
+    },
+    [selected, router, deleting]
   );
 
   return (
@@ -60,20 +118,56 @@ export default function BookingsScreen() {
             className="pl-10"
           />
         </View>
+        <Text className="mt-3 text-xs font-semibold text-slate-600 px-0.5">Status</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="mt-3"
+          className="mt-1.5"
           contentContainerClassName="gap-2 pr-4"
         >
-          {FILTERS.map((f) => {
+          {STATUS_FILTERS.map((f) => {
             const active = status === f.value;
             return (
               <Pressable
                 key={f.label}
-                onPress={() => setStatus(f.value)}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  setStatus(f.value as BookingStatus | "");
+                }}
                 className={`rounded-full px-3.5 py-1.5 ${
                   active ? "bg-brand-purple-800" : "bg-slate-100 dark:bg-slate-800"
+                }`}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    active ? "text-white" : "text-slate-600 dark:text-slate-300"
+                  }`}
+                >
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <Text className="mt-3 text-xs font-semibold text-slate-600 px-0.5">Service</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mt-1.5"
+          contentContainerClassName="gap-2 pr-4"
+        >
+          {SERVICE_FILTERS.map((f) => {
+            const active = service === f.value;
+            return (
+              <Pressable
+                key={f.label}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  setService(f.value);
+                }}
+                className={`rounded-full px-3.5 py-1.5 ${
+                  active ? "bg-green-600" : "bg-slate-100 dark:bg-slate-800"
                 }`}
               >
                 <Text
