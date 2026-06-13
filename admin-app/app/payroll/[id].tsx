@@ -236,7 +236,7 @@ export default function PayRunDetailScreen() {
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                       <View style={{ flex: 1 }}>
                         <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
-                          {ps.worker_type === "driver" ? "Driver" : "Cleaner"}
+                          {ps.worker_name ?? (ps.worker_type === "driver" ? "Driver" : "Cleaner")}
                         </Text>
                         <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.xs }]}>
                           Gross: {formatCurrency(ps.gross_earnings)}

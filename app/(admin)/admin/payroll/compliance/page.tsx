@@ -16,6 +16,7 @@ interface ComplianceStats {
   };
   high_earners: Array<{
     worker_id: string;
+    worker_name?: string;
     total_gross: number;
     estimated_tax: number;
   }>;
@@ -150,7 +151,7 @@ export default function CompliancePage() {
                 key={worker.worker_id}
                 className="flex items-center justify-between p-3 bg-white rounded"
               >
-                <span className="font-medium text-slate-900">{worker.worker_id}</span>
+                <span className="font-medium text-slate-900">{worker.worker_name ?? worker.worker_id}</span>
                 <div className="text-right">
                   <p className="font-semibold text-slate-900">
                     {formatCurrency(worker.total_gross)}
@@ -185,7 +186,7 @@ export default function CompliancePage() {
               {workers.map((worker) => (
                 <tr key={worker.worker_id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-900">
-                    {worker.worker_id}
+                    {worker.worker_name ?? worker.worker_id}
                   </td>
                   <td className="px-4 py-3 text-right text-slate-700">
                     {formatCurrency(worker.total_gross)}

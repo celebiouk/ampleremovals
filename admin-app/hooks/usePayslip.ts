@@ -12,6 +12,7 @@ export interface PayslipDetail {
   id: string;
   worker_id: string;
   worker_type: string;
+  worker_name?: string;
   gross_earnings: number;
   tips_total: number;
   adjustments_total: number;

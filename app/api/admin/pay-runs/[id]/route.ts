@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { attachWorkerNames } from "@/lib/payroll-workers";
 
 export async function GET(
   _req: Request,
@@ -64,7 +65,11 @@ export async function GET(
       paid: payslips.filter((p) => p.status === "paid").length,
     };
 
-    return NextResponse.json({ success: true, data: { run, totals } });
+    // Resolve worker display names (driver/cleaner) for each payslip.
+    const payslipsWithNames = await attachWorkerNames(supabase, payslips);
+    const runWithNames = { ...run, payslips: payslipsWithNames };
+
+    return NextResponse.json({ success: true, data: { run: runWithNames, totals } });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { attachWorkerNames } from "@/lib/payroll-workers";
 
 export async function GET(req: Request) {
   const auth = await requireAdmin();
@@ -76,8 +77,11 @@ export async function GET(req: Request) {
       }
     });
 
-    // Calculate aggregates
-    const complianceWorkers = Object.values(workerComplianceMap);
+    // Calculate aggregates (with resolved worker display names)
+    const complianceWorkers = await attachWorkerNames(
+      supabase,
+      Object.values(workerComplianceMap)
+    );
     const totalGross = complianceWorkers.reduce((sum, w) => sum + w.total_gross, 0);
     const totalTax = complianceWorkers.reduce((sum, w) => sum + w.estimated_tax, 0);
     const totalNI = complianceWorkers.reduce((sum, w) => sum + w.estimated_ni, 0);
@@ -97,6 +101,7 @@ export async function GET(req: Request) {
         .filter((w) => w.total_gross > HIGH_EARNER_THRESHOLD)
         .map((w) => ({
           worker_id: w.worker_id,
+          worker_name: w.worker_name,
           total_gross: w.total_gross,
           estimated_tax: w.estimated_tax,
         })),

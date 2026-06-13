@@ -135,10 +135,13 @@ export default function PayslipDetailScreen() {
         contentContainerStyle={{ padding: spacing.base }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
       >
-        {/* Worker type */}
+        {/* Worker */}
         <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.lg }}>
-          <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm }]}>
-            {payslip.worker_type === "driver" ? "Driver" : "Cleaner"}
+          {payslip.worker_name ? (
+            <Text style={[type.h3, { color: colors.slate[900] }]}>{payslip.worker_name}</Text>
+          ) : null}
+          <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.xs, textTransform: "capitalize" }]}>
+            {payslip.worker_type}
           </Text>
         </Animated.View>
 

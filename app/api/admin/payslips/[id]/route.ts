@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { attachWorkerNames } from "@/lib/payroll-workers";
 
 export async function GET(
   _req: Request,
@@ -39,7 +40,9 @@ export async function GET(
       throw new Error(`Failed to fetch payslip: ${error?.message}`);
     }
 
-    return NextResponse.json({ success: true, payslip });
+    const [payslipWithName] = await attachWorkerNames(supabase, [payslip]);
+
+    return NextResponse.json({ success: true, payslip: payslipWithName });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

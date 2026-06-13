@@ -16,6 +16,7 @@ interface PayslipDetail {
   id: string;
   worker_id: string;
   worker_type: string;
+  worker_name?: string;
   gross_earnings: number;
   tips_total: number;
   adjustments_total: number;
@@ -179,11 +180,11 @@ export function PayslipDetailDrawer({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Payslip</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              {payslip?.worker_name ?? "Payslip"}
+            </h2>
             {payslip && (
-              <p className="text-sm capitalize text-slate-500">
-                {payslip.worker_type} · {payslip.worker_id.slice(0, 8)}
-              </p>
+              <p className="text-sm capitalize text-slate-500">{payslip.worker_type}</p>
             )}
           </div>
           <div className="flex items-center gap-3">

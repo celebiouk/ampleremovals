@@ -12,6 +12,7 @@ interface Payslip {
   id: string;
   worker_id: string;
   worker_type: string;
+  worker_name?: string;
   gross_earnings: number;
   tips_total: number;
   adjustments_total: number;
@@ -274,7 +275,8 @@ export default function PayRunDetailPage() {
                     className="cursor-pointer hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-6 py-4 text-sm text-slate-900 font-medium">
-                      {payslip.worker_type === "driver" ? "Driver" : "Cleaner"} {payslip.worker_id.slice(0, 8)}
+                      {payslip.worker_name ??
+                        `${payslip.worker_type === "driver" ? "Driver" : "Cleaner"} ${payslip.worker_id.slice(0, 8)}`}
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-slate-900">
                       {formatCurrency(payslip.gross_earnings)}

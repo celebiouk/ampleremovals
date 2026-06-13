@@ -191,7 +191,7 @@ export default function ComplianceScreen() {
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm }}>
                     <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
-                      {item.worker_id.slice(0, 8)}...
+                      {item.worker_name ?? `${item.worker_id.slice(0, 8)}...`}
                     </Text>
                     <Badge
                       label={item.compliance_status}
