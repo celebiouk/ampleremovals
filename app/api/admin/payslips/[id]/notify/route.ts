@@ -8,12 +8,6 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import twilio from "twilio";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
@@ -22,6 +16,11 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
     const supabase = createAdminClient();
 
     // Fetch payslip + worker details
