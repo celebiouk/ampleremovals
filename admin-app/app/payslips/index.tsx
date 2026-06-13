@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Calendar, DollarSign, Settings, TrendingUp, History } from "lucide-react-native";
+import { Calendar, DollarSign, Settings, TrendingUp, History, Calculator } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayslips } from "@/hooks/usePayslips";
@@ -136,6 +136,27 @@ export default function PayslipsScreen() {
               </Text>
             </Pressable>
           </View>
+
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/payslips/tax-summary");
+            }}
+            style={{
+              paddingHorizontal: spacing.base,
+              paddingVertical: spacing.base,
+              borderRadius: 12,
+              backgroundColor: colors.slate[100],
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.sm,
+            }}
+          >
+            <Calculator size={18} color={colors.primary.DEFAULT} />
+            <Text style={[type.body, { color: colors.primary.DEFAULT, fontWeight: "600", flex: 1 }]}>
+              Tax Summary (YTD)
+            </Text>
+          </Pressable>
         </Animated.View>
 
         {/* Payslips list */}

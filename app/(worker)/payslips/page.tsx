@@ -147,18 +147,24 @@ export default function PayslipsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <Link
             href="/payslips/earnings-summary"
             className="block bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 text-purple-700 font-medium hover:from-purple-100 hover:to-purple-200 transition border border-purple-200"
           >
-            📊 Earnings Summary
+            📊 Earnings
           </Link>
           <Link
             href="/payslips/payment-history"
             className="block bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 text-green-700 font-medium hover:from-green-100 hover:to-green-200 transition border border-green-200"
           >
-            ✓ Payment History
+            ✓ History
+          </Link>
+          <Link
+            href="/payslips/tax-summary"
+            className="block bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 text-blue-700 font-medium hover:from-blue-100 hover:to-blue-200 transition border border-blue-200"
+          >
+            💷 Tax Summary
           </Link>
         </div>
 
