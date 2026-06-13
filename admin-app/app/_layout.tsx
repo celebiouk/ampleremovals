@@ -111,6 +111,7 @@ function RootNavigator() {
       <Stack.Screen name="payroll/analytics" />
       <Stack.Screen name="payroll/workers/[id]" />
       <Stack.Screen name="payroll/compliance" />
+      <Stack.Screen name="payroll/year-end" />
       <Stack.Screen name="payslip/[id]" />
       <Stack.Screen name="payslip/[id]/adjustments" />
       <Stack.Screen name="payslip/[id]/bank-details" />

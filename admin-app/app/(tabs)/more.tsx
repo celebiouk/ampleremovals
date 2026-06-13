@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   Users, Receipt, CreditCard, CalendarDays, BarChart2, Zap, Settings,
-  Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3,
+  Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3, TrendingUp,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -41,6 +41,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
       { label: "Cleaner Earnings", icon: PoundSterling, href: "/cleaner-earnings" },
       { label: "Payroll", icon: PoundSterling, href: "/payroll" },
+      { label: "Year-End", icon: TrendingUp, href: "/payroll/year-end" },
       { label: "Compliance", icon: Shield, href: "/payroll/compliance" },
       { label: "My Payslips", icon: PoundSterling, href: "/payslips" },
     ],
