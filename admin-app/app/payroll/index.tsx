@@ -4,9 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
-import { Plus } from "lucide-react-native";
+import { Plus, Search } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { Card, Badge, Skeleton, ErrorState, EmptyState, Button } from "@/components/ui";
+import { Card, Badge, Skeleton, ErrorState, EmptyState, Button, Input } from "@/components/ui";
 import { usePayRuns } from "@/hooks/usePayRuns";
 import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
@@ -19,16 +19,23 @@ export default function PayrollScreen() {
   const qc = useQueryClient();
   const { data, isLoading, isError, refetch, isRefetching } = usePayRuns();
   const [sortBy, setSortBy] = useState<SortBy>("date");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const runs = data?.data ?? [];
 
   const sorted = useMemo(() => {
-    const copy = [...runs];
+    const q = search.trim().toLowerCase();
+    const copy = runs.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (q && !r.reference.toLowerCase().includes(q)) return false;
+      return true;
+    });
     if (sortBy === "date") copy.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     else if (sortBy === "status") copy.sort((a, b) => a.status.localeCompare(b.status));
     else if (sortBy === "workers") copy.sort((a, b) => (b.payslips?.length ?? 0) - (a.payslips?.length ?? 0));
     return copy;
-  }, [runs, sortBy]);
+  }, [runs, sortBy, search, statusFilter]);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["payRuns"] });
@@ -83,6 +90,59 @@ export default function PayrollScreen() {
           />
         </Animated.View>
 
+        {/* Search */}
+        <View style={{ marginBottom: spacing.md, position: "relative" }}>
+          <View style={{ position: "absolute", left: 12, top: 14, zIndex: 1 }}>
+            <Search size={18} color={colors.slate[400]} />
+          </View>
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search reference"
+            autoCapitalize="characters"
+            style={{ paddingLeft: 40 }}
+          />
+        </View>
+
+        {/* Status filter */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: spacing.md }}
+          contentContainerStyle={{ gap: spacing.sm }}
+        >
+          {(["all", "draft", "finalised", "paid", "cancelled"] as const).map((s) => (
+            <Pressable
+              key={s}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                setStatusFilter(s);
+              }}
+              style={{
+                paddingHorizontal: spacing.base,
+                paddingVertical: spacing.sm,
+                borderRadius: radius.full,
+                backgroundColor: statusFilter === s ? colors.accent.DEFAULT : colors.white,
+                borderWidth: 1,
+                borderColor: statusFilter === s ? colors.accent.DEFAULT : colors.slate[200],
+              }}
+            >
+              <Text
+                style={[
+                  type.bodySmall,
+                  {
+                    color: statusFilter === s ? colors.white : colors.slate[700],
+                    fontWeight: "600",
+                    textTransform: "capitalize",
+                  },
+                ]}
+              >
+                {s === "all" ? "All" : s}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
         {/* Sort tabs */}
         <View style={{ marginBottom: spacing.lg, flexDirection: "row", gap: spacing.md }}>
           {(["date", "status", "workers"] as const).map((s) => (
@@ -119,7 +179,14 @@ export default function PayrollScreen() {
 
         {/* Runs list */}
         {sorted.length === 0 ? (
-          <EmptyState message="No pay runs yet. Create one to get started." />
+          <EmptyState
+            title={runs.length === 0 ? "No pay runs" : "No matches"}
+            message={
+              runs.length === 0
+                ? "No pay runs yet. Create one to get started."
+                : "No pay runs match your search or filter."
+            }
+          />
         ) : (
           <FlatList
             scrollEnabled={false}

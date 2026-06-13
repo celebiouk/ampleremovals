@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Download, CheckCheck, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, CheckCheck, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -52,6 +52,8 @@ export default function PayRunDetailPage() {
   const [exporting, setExporting] = useState(false);
   const [finalising, setFinalising] = useState(false);
   const [openPayslipId, setOpenPayslipId] = useState<string | null>(null);
+  const [payslipSearch, setPayslipSearch] = useState("");
+  const [payslipStatus, setPayslipStatus] = useState<"all" | "pending" | "paid">("all");
 
   useEffect(() => {
     loadRunDetail();
@@ -169,6 +171,16 @@ export default function PayRunDetailPage() {
     );
   }
 
+  const psQuery = payslipSearch.trim().toLowerCase();
+  const visiblePayslips = run.payslips.filter((p) => {
+    if (payslipStatus !== "all" && p.status !== payslipStatus) return false;
+    if (psQuery) {
+      const name = (p.worker_name ?? p.worker_id).toLowerCase();
+      if (!name.includes(psQuery)) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-7xl">
@@ -253,6 +265,36 @@ export default function PayRunDetailPage() {
           </div>
         </div>
 
+        {/* Payslip filter bar */}
+        {run.payslips.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[200px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                value={payslipSearch}
+                onChange={(e) => setPayslipSearch(e.target.value)}
+                placeholder="Search worker"
+                className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900"
+              />
+            </div>
+            <div className="flex gap-2">
+              {(["all", "pending", "paid"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setPayslipStatus(s)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
+                    payslipStatus === s
+                      ? "bg-purple-600 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Payslips Table */}
         <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -268,7 +310,7 @@ export default function PayRunDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {run.payslips.map((payslip) => (
+                {visiblePayslips.map((payslip) => (
                   <tr
                     key={payslip.id}
                     onClick={() => setOpenPayslipId(payslip.id)}

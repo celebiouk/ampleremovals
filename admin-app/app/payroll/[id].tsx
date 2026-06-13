@@ -6,9 +6,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { Download, CheckCheck, Lock } from "lucide-react-native";
+import { Download, CheckCheck, Lock, Search } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard } from "@/components/ui";
+import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard, Input } from "@/components/ui";
 import { usePayRunDetail } from "@/hooks/usePayRunDetail";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -27,9 +27,23 @@ export default function PayRunDetailScreen() {
   const [paying, setPaying] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [finalising, setFinalising] = useState(false);
+  const [psSearch, setPsSearch] = useState("");
+  const [psStatus, setPsStatus] = useState<"all" | "pending" | "paid">("all");
 
   const run = data?.data?.run;
   const totals = data?.data?.totals;
+
+  const visiblePayslips = useMemo(() => {
+    const q = psSearch.trim().toLowerCase();
+    return (run?.payslips ?? []).filter((p) => {
+      if (psStatus !== "all" && p.status !== psStatus) return false;
+      if (q) {
+        const name = (p.worker_name ?? p.worker_id).toLowerCase();
+        if (!name.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [run?.payslips, psSearch, psStatus]);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["payRunDetail", runId] });
@@ -219,9 +233,54 @@ export default function PayRunDetailScreen() {
           <Text style={[type.h3, { color: colors.slate[900], marginBottom: spacing.base }]}>
             {run.payslips?.length ?? 0} Payslip{(run.payslips?.length ?? 0) !== 1 ? "s" : ""}
           </Text>
+
+          {(run.payslips?.length ?? 0) > 0 && (
+            <>
+              <View style={{ marginBottom: spacing.md, position: "relative" }}>
+                <View style={{ position: "absolute", left: 12, top: 14, zIndex: 1 }}>
+                  <Search size={18} color={colors.slate[400]} />
+                </View>
+                <Input
+                  value={psSearch}
+                  onChangeText={setPsSearch}
+                  placeholder="Search worker"
+                  style={{ paddingLeft: 40 }}
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.base }}>
+                {(["all", "pending", "paid"] as const).map((s) => (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      setPsStatus(s);
+                    }}
+                    style={{
+                      paddingHorizontal: spacing.base,
+                      paddingVertical: spacing.sm,
+                      borderRadius: 999,
+                      backgroundColor: psStatus === s ? colors.primary.DEFAULT : colors.white,
+                      borderWidth: 1,
+                      borderColor: psStatus === s ? colors.primary.DEFAULT : colors.slate[200],
+                    }}
+                  >
+                    <Text
+                      style={[
+                        type.bodySmall,
+                        { color: psStatus === s ? colors.white : colors.slate[700], fontWeight: "600", textTransform: "capitalize" },
+                      ]}
+                    >
+                      {s}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
+
           <FlatList
             scrollEnabled={false}
-            data={run.payslips}
+            data={visiblePayslips}
             keyExtractor={(item) => item.id}
             ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
             renderItem={({ item: ps }) => (
