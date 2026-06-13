@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { Download, CheckCheck, Lock, Search } from "lucide-react-native";
+import { Download, CheckCheck, Lock, Search, Archive } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard, Input } from "@/components/ui";
 import { usePayRunDetail } from "@/hooks/usePayRunDetail";
@@ -118,6 +118,25 @@ export default function PayRunDetailScreen() {
     }
   }
 
+  async function toggleArchive() {
+    if (!run) return;
+    const archiving = !run.archived_at;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    try {
+      await apiFetch(`/api/admin/pay-runs/${runId}/archive`, {
+        method: "PATCH",
+        body: JSON.stringify({ archived: archiving }),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (archiving) router.back();
+      else refresh();
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      const { Alert: NativeAlert } = require("react-native");
+      NativeAlert.alert("Error", e instanceof Error ? e.message : "Failed to update");
+    }
+  }
+
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
@@ -225,6 +244,13 @@ export default function PayRunDetailScreen() {
             disabled={totals.pending === 0}
             icon={<CheckCheck size={18} color={colors.white} />}
             onPress={payAll}
+          />
+          <Button
+            label={run.archived_at ? "Restore pay run" : "Archive pay run"}
+            variant="outline"
+            size="md"
+            icon={<Archive size={18} color={colors.primary.DEFAULT} />}
+            onPress={toggleArchive}
           />
         </View>
 

@@ -8,6 +8,7 @@ export interface PayRun {
   period_end: string;
   status: "draft" | "finalised" | "paid" | "cancelled";
   created_at: string;
+  archived_at?: string | null;
   payslips?: Array<{ count?: number }>;
 }
 

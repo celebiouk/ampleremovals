@@ -16,6 +16,7 @@ interface PayRun {
   period_end: string;
   status: "draft" | "finalised" | "paid" | "cancelled";
   created_at: string;
+  archived_at?: string | null;
   payslips: Array<{ count?: number }>;
 }
 
@@ -33,14 +34,19 @@ export default function PayrollPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [view, setView] = useState<"active" | "archived">("active");
 
   useEffect(() => {
     loadRuns();
   }, []);
 
+  const archivedCount = useMemo(() => runs.filter((r) => r.archived_at).length, [runs]);
+
   const filteredRuns = useMemo(() => {
     const q = search.trim().toLowerCase();
     return runs.filter((run) => {
+      const isArchived = !!run.archived_at;
+      if (view === "active" ? isArchived : !isArchived) return false;
       if (statusFilter !== "all" && run.status !== statusFilter) return false;
       if (q && !run.reference.toLowerCase().includes(q)) return false;
       // Date-range overlaps the run's period.
@@ -48,7 +54,7 @@ export default function PayrollPage() {
       if (toDate && run.period_start > toDate) return false;
       return true;
     });
-  }, [runs, search, statusFilter, fromDate, toDate]);
+  }, [runs, search, statusFilter, fromDate, toDate, view]);
 
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || fromDate !== "" || toDate !== "";
@@ -183,6 +189,26 @@ export default function PayrollPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Active / Archived toggle */}
+        {(runs.length > 0 || archivedCount > 0) && (
+          <div className="mb-4 flex gap-2">
+            {(["active", "archived"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium capitalize ${
+                  view === v
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {v}
+                {v === "archived" && archivedCount > 0 ? ` (${archivedCount})` : ""}
+              </button>
+            ))}
           </div>
         )}
 

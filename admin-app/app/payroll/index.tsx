@@ -21,12 +21,16 @@ export default function PayrollScreen() {
   const [sortBy, setSortBy] = useState<SortBy>("date");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [view, setView] = useState<"active" | "archived">("active");
 
   const runs = data?.data ?? [];
+  const archivedCount = useMemo(() => runs.filter((r) => r.archived_at).length, [runs]);
 
   const sorted = useMemo(() => {
     const q = search.trim().toLowerCase();
     const copy = runs.filter((r) => {
+      const isArchived = !!r.archived_at;
+      if (view === "active" ? isArchived : !isArchived) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (q && !r.reference.toLowerCase().includes(q)) return false;
       return true;
@@ -35,7 +39,7 @@ export default function PayrollScreen() {
     else if (sortBy === "status") copy.sort((a, b) => a.status.localeCompare(b.status));
     else if (sortBy === "workers") copy.sort((a, b) => (b.payslips?.length ?? 0) - (a.payslips?.length ?? 0));
     return copy;
-  }, [runs, sortBy, search, statusFilter]);
+  }, [runs, sortBy, search, statusFilter, view]);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["payRuns"] });
@@ -89,6 +93,37 @@ export default function PayrollScreen() {
             onPress={() => router.push("/payroll-new")}
           />
         </Animated.View>
+
+        {/* Active / Archived */}
+        <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md }}>
+          {(["active", "archived"] as const).map((v) => (
+            <Pressable
+              key={v}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                setView(v);
+              }}
+              style={{
+                paddingHorizontal: spacing.base,
+                paddingVertical: spacing.sm,
+                borderRadius: radius.md,
+                backgroundColor: view === v ? colors.slate[900] : colors.white,
+                borderWidth: 1,
+                borderColor: view === v ? colors.slate[900] : colors.slate[200],
+              }}
+            >
+              <Text
+                style={[
+                  type.bodySmall,
+                  { color: view === v ? colors.white : colors.slate[700], fontWeight: "600", textTransform: "capitalize" },
+                ]}
+              >
+                {v}
+                {v === "archived" && archivedCount > 0 ? ` (${archivedCount})` : ""}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Search */}
         <View style={{ marginBottom: spacing.md, position: "relative" }}>

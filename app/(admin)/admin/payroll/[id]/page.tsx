@@ -28,6 +28,7 @@ interface PayRun {
   period_start: string;
   period_end: string;
   status: string;
+  archived_at?: string | null;
   payslips: Payslip[];
 }
 
@@ -130,6 +131,28 @@ export default function PayRunDetailPage() {
     }
   }
 
+  async function toggleArchive() {
+    if (!run) return;
+    const archiving = !run.archived_at;
+    try {
+      const response = await fetch(`/api/admin/pay-runs/${runId}/archive`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: archiving }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(archiving ? "Pay run archived" : "Pay run restored");
+        if (archiving) router.push("/admin/payroll");
+        else loadRunDetail();
+      } else {
+        toast.error(data.error || "Failed to update");
+      }
+    } catch {
+      toast.error("Failed to update");
+    }
+  }
+
   async function finaliseRun() {
     if (!window.confirm("Finalise this pay run? It will be locked and cannot be edited.")) return;
 
@@ -204,6 +227,9 @@ export default function PayRunDetailPage() {
             </div>
 
             <div className="flex gap-2">
+              <Button onClick={toggleArchive} variant="outline" className="gap-2">
+                {run.archived_at ? "Restore" : "Archive"}
+              </Button>
               {run.status === "draft" && (
                 <Button
                   onClick={finaliseRun}

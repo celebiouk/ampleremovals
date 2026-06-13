@@ -21,6 +21,7 @@ export interface PayRun {
   period_start: string;
   period_end: string;
   status: string;
+  archived_at?: string | null;
   payslips: Payslip[];
 }
 

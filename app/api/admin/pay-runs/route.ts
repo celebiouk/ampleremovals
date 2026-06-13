@@ -20,20 +20,22 @@ export async function GET() {
 
   try {
     const supabase = createAdminClient();
-    const { data: runs, error } = await supabase
+
+    const baseCols = "id, reference, period_start, period_end, status, created_at";
+
+    // Try to include archived_at; gracefully fall back if the column hasn't
+    // been migrated yet so the list never breaks.
+    let { data: runs, error } = await supabase
       .from("pay_runs")
-      .select(
-        `
-        id,
-        reference,
-        period_start,
-        period_end,
-        status,
-        created_at,
-        payslips(count)
-      `
-      )
+      .select(`${baseCols}, archived_at, payslips(count)`)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      ({ data: runs, error } = await supabase
+        .from("pay_runs")
+        .select(`${baseCols}, payslips(count)`)
+        .order("created_at", { ascending: false }));
+    }
 
     if (error) {
       throw new Error(`Failed to fetch pay runs: ${error.message}`);

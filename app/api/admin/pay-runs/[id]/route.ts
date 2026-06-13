@@ -16,35 +16,27 @@ export async function GET(
 
   try {
     const supabase = createAdminClient();
-    const { data: run, error } = await supabase
+
+    const payslipsSelect = `payslips(
+      id, worker_id, worker_type, gross_earnings, tips_total,
+      adjustments_total, net_pay, status, paid_at, payment_method
+    )`;
+    const baseRunCols = `id, reference, period_start, period_end, status, notes, created_at, finalised_at, paid_at`;
+
+    // Try with archived_at; gracefully fall back if the column isn't migrated yet.
+    let { data: run, error } = await supabase
       .from("pay_runs")
-      .select(
-        `
-        id,
-        reference,
-        period_start,
-        period_end,
-        status,
-        notes,
-        created_at,
-        finalised_at,
-        paid_at,
-        payslips(
-          id,
-          worker_id,
-          worker_type,
-          gross_earnings,
-          tips_total,
-          adjustments_total,
-          net_pay,
-          status,
-          paid_at,
-          payment_method
-        )
-      `
-      )
+      .select(`${baseRunCols}, archived_at, ${payslipsSelect}`)
       .eq("id", params.id)
       .single();
+
+    if (error) {
+      ({ data: run, error } = await supabase
+        .from("pay_runs")
+        .select(`${baseRunCols}, ${payslipsSelect}`)
+        .eq("id", params.id)
+        .single());
+    }
 
     if (error) {
       throw new Error(`Failed to fetch pay run: ${error.message}`);
