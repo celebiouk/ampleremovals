@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, Loader2, Calendar, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -140,13 +141,21 @@ export default function PayrollPage() {
             <h1 className="text-3xl font-bold text-slate-900">Payroll</h1>
             <p className="mt-1 text-slate-600">Manage pay runs and worker payslips</p>
           </div>
-          <Button
-            onClick={() => setShowNewRun(!showNewRun)}
-            className="gap-2 bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="h-4 w-4" />
-            New pay run
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/payroll/reconciliation"
+              className="text-sm font-medium text-slate-600 hover:text-purple-700"
+            >
+              Reconciliation
+            </Link>
+            <Button
+              onClick={() => setShowNewRun(!showNewRun)}
+              className="gap-2 bg-purple-600 hover:bg-purple-700"
+            >
+              <Plus className="h-4 w-4" />
+              New pay run
+            </Button>
+          </div>
         </div>
 
         {/* New Run Form */}
