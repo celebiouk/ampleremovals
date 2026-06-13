@@ -101,14 +101,14 @@ BT
 (PAYMENT SUMMARY) Tj
 0 -25 Td
 /F1 12 Tf
-(Gross Earnings: £${(payslip.gross_earnings / 100).toFixed(2)}) Tj
+(Gross Earnings: £${payslip.gross_earnings.toFixed(2)}) Tj
 0 -20 Td
-(Tips: £${(payslip.tips_total / 100).toFixed(2)}) Tj
+(Tips: £${payslip.tips_total.toFixed(2)}) Tj
 0 -20 Td
-(Adjustments: £${(payslip.adjustments_total / 100).toFixed(2)}) Tj
+(Adjustments: £${payslip.adjustments_total.toFixed(2)}) Tj
 0 -30 Td
 /F1 16 Tf
-(NET PAY: £${(payslip.net_pay / 100).toFixed(2)}) Tj
+(NET PAY: £${payslip.net_pay.toFixed(2)}) Tj
 ET
 endstream
 endobj

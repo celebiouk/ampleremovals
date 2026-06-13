@@ -85,7 +85,17 @@ export default function WorkerReportPage() {
         ← Back to payroll
       </Link>
 
-      <h1 className="text-3xl font-bold text-slate-900">Worker Earnings Report</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-900">Worker Earnings Report</h1>
+        <button
+          onClick={() =>
+            window.open(`/api/admin/payroll/workers/${workerId}/p45`, "_blank", "noopener,noreferrer")
+          }
+          className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+        >
+          Download year-end PDF
+        </button>
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -4,8 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { Card, ScreenHeader, Skeleton, StatCard } from "@/components/ui";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import { Download } from "lucide-react-native";
+import { Card, ScreenHeader, Skeleton, StatCard, Button } from "@/components/ui";
 import { apiFetch } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { ENV } from "@/lib/env";
 import { formatCurrency } from "@/lib/utils";
 import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
@@ -39,6 +44,34 @@ export default function WorkerReportScreen() {
   const { id: workerId } = useLocalSearchParams();
   const [report, setReport] = useState<WorkerReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+
+  async function downloadP45() {
+    setDownloading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const uri = FileSystem.cacheDirectory + `year-end-${workerId}.pdf`;
+      const result = await FileSystem.downloadAsync(
+        `${ENV.SITE_URL}/api/admin/payroll/workers/${workerId}/p45`,
+        uri,
+        { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} }
+      );
+      if (result.status !== 200) throw new Error("Download failed");
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(result.uri, { mimeType: "application/pdf" });
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      const { Alert } = require("react-native");
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -87,6 +120,18 @@ export default function WorkerReportScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
       <ScreenHeader title="Worker Earnings" onBack={() => router.back()} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
+        {/* Year-end PDF */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Button
+            label="Download year-end PDF"
+            variant="outline"
+            size="md"
+            loading={downloading}
+            icon={<Download size={18} color={colors.primary.DEFAULT} />}
+            onPress={downloadP45}
+          />
+        </View>
+
         {/* Summary */}
         <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.lg, gap: spacing.md }}>
           <View style={{ flexDirection: "row", gap: spacing.md }}>
