@@ -69,12 +69,17 @@ export async function PATCH(req: Request) {
         message: `Queued notifications for ${payslip_ids.length} payslips`,
       });
     } else if (action === "add_adjustment") {
-      // Add same adjustment to multiple payslips
-      const { amount, type, description } = data;
+      // Add the same adjustment to multiple payslips.
+      // `amount` is in POUNDS (signed: + adds, − subtracts) — matching the
+      // single-adjustment route and the payslips.net_pay arithmetic.
+      const { amount, type } = data;
+      // Accept `label` (canonical column) but stay back-compatible with the
+      // old `description` key the clients used to send.
+      const label = data.label ?? data.description;
 
-      if (!amount || !type || !description) {
+      if (amount == null || !type || !label) {
         return NextResponse.json(
-          { success: false, error: "amount, type, description required" },
+          { success: false, error: "amount, type, label required" },
           { status: 400 }
         );
       }
@@ -82,8 +87,8 @@ export async function PATCH(req: Request) {
       const adjustments = payslip_ids.map((payslip_id: string) => ({
         payslip_id,
         type,
+        label,
         amount,
-        description,
       }));
 
       const { error } = await supabase
@@ -94,10 +99,33 @@ export async function PATCH(req: Request) {
         throw new Error(`Failed to add adjustments: ${error.message}`);
       }
 
+      // Recompute adjustments_total + net_pay for every affected payslip so the
+      // adjustment actually changes what the worker is owed (parity with the
+      // single-adjustment route, which recomputes).
+      for (const payslip_id of payslip_ids) {
+        const { data: ps } = await supabase
+          .from("payslips")
+          .select("gross_earnings, tips_total, payroll_adjustments(amount)")
+          .eq("id", payslip_id)
+          .single();
+        if (!ps) continue;
+        const adjustmentsTotal = (ps.payroll_adjustments || []).reduce(
+          (sum: number, a: { amount: number }) => sum + a.amount,
+          0
+        );
+        await supabase
+          .from("payslips")
+          .update({
+            adjustments_total: adjustmentsTotal,
+            net_pay: ps.gross_earnings + ps.tips_total + adjustmentsTotal,
+          })
+          .eq("id", payslip_id);
+      }
+
       await supabase.from("activity_log").insert({
         booking_id: null,
         action: `Added ${type} adjustment (${formatCurrency(amount)}) to ${payslip_ids.length} payslips`,
-        metadata: { payslip_ids, adjustment: data },
+        metadata: { payslip_ids, adjustment: { type, label, amount } },
         performed_by: "admin",
       });
 
@@ -120,5 +148,5 @@ export async function PATCH(req: Request) {
 }
 
 function formatCurrency(amount: number): string {
-  return `£${(amount / 100).toFixed(2)}`;
+  return `£${amount.toFixed(2)}`;
 }

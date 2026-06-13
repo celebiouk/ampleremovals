@@ -87,8 +87,10 @@ export default function BulkActionsPage() {
         }
         body.data = {
           type: adjustmentData.type,
-          amount: parseInt(adjustmentData.amount) * 100, // Convert to pence
-          description: adjustmentData.description,
+          // Amount is in POUNDS (signed: negative for deductions), matching the
+          // single-adjustment flow and payslips.net_pay arithmetic.
+          amount: parseFloat(adjustmentData.amount),
+          label: adjustmentData.description,
         };
       }
 

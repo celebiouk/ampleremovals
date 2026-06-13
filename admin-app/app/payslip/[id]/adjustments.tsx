@@ -140,7 +140,7 @@ export default function AdjustmentsScreen() {
           />
           {amount && (
             <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.sm }]}>
-              Total: {formatCurrency(parseFloat(amount) * 100)}
+              Total: {formatCurrency(parseFloat(amount))}
             </Text>
           )}
         </Animated.View>
@@ -155,7 +155,7 @@ export default function AdjustmentsScreen() {
                   <Badge label={type} variant="default" style={{ marginTop: spacing.xs }} />
                 </View>
                 <Text style={[type.h3, { color: parseFloat(amount) >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
-                  {parseFloat(amount) >= 0 ? "+" : ""}{formatCurrency(parseFloat(amount) * 100)}
+                  {parseFloat(amount) >= 0 ? "+" : ""}{formatCurrency(parseFloat(amount))}
                 </Text>
               </View>
             </Card>

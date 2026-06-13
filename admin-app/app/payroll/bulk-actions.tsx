@@ -100,9 +100,11 @@ export default function BulkActionsScreen() {
           return;
         }
         body.data = {
+          // Amount is in POUNDS (signed: negative for deductions), matching the
+          // single-adjustment flow and payslips.net_pay arithmetic.
           type: adjustmentData.type,
-          amount: parseInt(adjustmentData.amount) * 100,
-          description: adjustmentData.description,
+          amount: parseFloat(adjustmentData.amount),
+          label: adjustmentData.description,
         };
       }
 
