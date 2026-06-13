@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { Download, CheckCheck } from "lucide-react-native";
+import { Download, CheckCheck, Lock } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayRunDetail } from "@/hooks/usePayRunDetail";
@@ -26,12 +26,38 @@ export default function PayRunDetailScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = usePayRunDetail(runId);
   const [paying, setPaying] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [finalising, setFinalising] = useState(false);
 
   const run = data?.data?.run;
   const totals = data?.data?.totals;
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["payRunDetail", runId] });
+  }
+
+  async function finaliseRun() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const yes = await new Promise<boolean>((resolve) => {
+      const { Alert: NativeAlert } = require("react-native");
+      NativeAlert.alert("Finalise pay run?", "Lock this run and prevent further changes.", [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Confirm", style: "default", onPress: () => resolve(true) },
+      ]);
+    });
+    if (!yes) return;
+
+    setFinalising(true);
+    try {
+      await apiFetch(`/api/admin/pay-runs/${runId}/finalise`, {
+        method: "PATCH",
+      });
+      refresh();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    } finally {
+      setFinalising(false);
+    }
   }
 
   async function payAll() {
@@ -159,6 +185,16 @@ export default function PayRunDetailScreen() {
 
         {/* Actions */}
         <View style={{ marginBottom: spacing.lg, gap: spacing.md }}>
+          {run.status === "draft" && (
+            <Button
+              label="Finalise Pay Run"
+              variant="outline"
+              size="md"
+              loading={finalising}
+              icon={<Lock size={18} color={colors.primary.DEFAULT} />}
+              onPress={finaliseRun}
+            />
+          )}
           <Button
             label="Export CSV"
             variant="outline"
