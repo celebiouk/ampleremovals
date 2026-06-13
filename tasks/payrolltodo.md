@@ -313,7 +313,7 @@ Commit: `18475cd` (2026-06-13)
 - Premium UI: cards, shadows, currency formatting, status pills
 - Responsive grid layout
 
-### Phase 2 ✅ COMPLETE — FEATURE PARITY + PREMIUM DESIGN
+### Phase 2 ✅ COMPLETE — FEATURE PARITY + PREMIUM DESIGN + ENHANCEMENTS
 **Final commit:** `d4912c9` (2026-06-13, adjustments added)
 **Previous commits:** `47f8d87` (basic), `eb4923e` (premium design), `5d76ac0` (new run screen)
 
@@ -334,6 +334,16 @@ Commit: `18475cd` (2026-06-13)
 - Query client invalidation on all mutations
 
 **Entry point:** More → Finance → Payroll (added to more.tsx menu)
+
+**Phase 2 Enhancements (in progress):**
+✅ 1. Native date picker — calendar modal with month navigation, auto-format sort code
+✅ 2. Worker bank details — save encrypted sort code/account for bank-ready exports
+⏳ 3. Earnings breakdown — detail view showing jobs that comprise a payslip
+⏳ 4. Payslip PDF viewing — render actual PDF instead of placeholder
+⏳ 5. Error handling polish — retry buttons, better confirmations, recovery flows
+⏳ 6. CSV import — bulk upload bank details from CSV
+⏳ 7. Historical archive — soft-delete/archive old pay runs
+⏳ 8. Bulk actions — select multiple payslips for batch operations
 
 Design tokens + implementation:
 - Colors: brand purple (#6b21a8) + green (#16a34a) from colors.ts
