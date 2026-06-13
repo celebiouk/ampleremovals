@@ -292,8 +292,17 @@ states · ✓ toast on every action · ✓ haptic on pay/confirm · ✓ 44pt tar
 
 ---
 
-## 14. Ready to build
-With decisions locked in, **Phase 0 (schema + backend)** is unblocked.
+## 14. Phase 0 ✅ COMPLETE
+Commit: `857e9b6` (2026-06-13)
 
-> Next: start Phase 0 (migrations + endpoints) → Phase 1 (web payroll) →
-> Phase 2 (mobile) → Phase 3 (worker payslips).
+**What was built:**
+- Database schema: 5 tables (pay_runs, payslips, payslip_earnings, payroll_adjustments, worker_bank_details) with full RLS
+- Payroll lib (`lib/payroll.ts`): `generatePayRun()`, `markPayslipPaid()`, `markPayRunPaid()`
+- 10 API endpoints: create/list/detail runs, finalise, pay (single + bulk), adjustments, export CSV, PDF placeholder
+- All auth-checked (requireAdmin), error-logged, transactional, idempotent
+- Build: ✓ `npm run build` clean
+
+**Next:** Phase 1 (web payroll UI)
+- Nav + runs list + run detail + payslip detail (drawer/modal)
+- Adjustments UI, mark-paid, CSV export, PDF render
+- Reuse existing design system + tokens
