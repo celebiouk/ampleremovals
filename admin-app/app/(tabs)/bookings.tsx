@@ -76,6 +76,26 @@ export default function BookingsScreen() {
     }
   };
 
+  const bulkUpdateStatus = async (newStatus: BookingStatus) => {
+    if (selected.size === 0) return;
+    try {
+      const response = await fetch("/api/admin/bookings/bulk/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: Array.from(selected),
+          status: newStatus,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setSelected(new Set());
+      refetch();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to update bookings");
+    }
+  };
+
   const renderItem = useCallback(
     ({ item }: { item: BookingRow }) => {
       const isSelected = selected.has(item.id);
@@ -202,6 +222,33 @@ export default function BookingsScreen() {
             <EmptyState title="No bookings" message="Nothing matches your search or filter." />
           }
         />
+      )}
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <View className="border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <View className="flex-row items-center justify-between gap-3 mb-3">
+            <Text className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {selected.size} selected
+            </Text>
+            <Pressable onPress={() => setSelected(new Set())} className="px-3 py-1">
+              <Text className="text-sm text-slate-500">Clear</Text>
+            </Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+            {STATUS_FILTERS.filter(s => s.value).map((s) => (
+              <Pressable
+                key={s.value}
+                onPress={() => bulkUpdateStatus(s.value as BookingStatus)}
+                className="px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800"
+              >
+                <Text className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {s.label}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );
