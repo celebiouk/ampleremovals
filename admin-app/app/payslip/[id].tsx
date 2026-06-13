@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Linking from "expo-linking";
-import { Download, CheckCheck } from "lucide-react-native";
+import { Download, CheckCheck, Plus, Trash2 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayslip } from "@/hooks/usePayslip";
@@ -25,9 +25,35 @@ export default function PayslipDetailScreen() {
   const [paying, setPaying] = useState(false);
 
   const payslip = data?.payslip;
+  const [deletingAdj, setDeletingAdj] = useState<string | null>(null);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["payslip", payslipId] });
+  }
+
+  async function deleteAdjustment(adjId: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const yes = await new Promise<boolean>((resolve) => {
+      const { Alert } = require("react-native");
+      Alert.alert("Delete adjustment?", "This action cannot be undone.", [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Delete", style: "destructive", onPress: () => resolve(true) },
+      ]);
+    });
+    if (!yes) return;
+
+    setDeletingAdj(adjId);
+    try {
+      await apiFetch(`/api/admin/payslips/${payslipId}/adjustments/${adjId}`, {
+        method: "DELETE",
+      });
+      refresh();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    } finally {
+      setDeletingAdj(null);
+    }
   }
 
   async function markPaid() {
@@ -164,6 +190,16 @@ export default function PayslipDetailScreen() {
             icon={<Download size={18} color={colors.primary.DEFAULT} />}
             onPress={viewPDF}
           />
+          <Button
+            label="Add adjustment"
+            variant="secondary"
+            size="md"
+            icon={<Plus size={18} color={colors.white} />}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push(`/payslip/${payslipId}/adjustments`);
+            }}
+          />
           {payslip.status === "pending" && (
             <Button
               label="Mark as Paid"
@@ -190,7 +226,7 @@ export default function PayslipDetailScreen() {
               renderItem={({ item: adj }) => (
                 <Animated.View entering={FadeInDown.springify()}>
                   <Card style={{ padding: spacing.base, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <View>
+                    <View style={{ flex: 1 }}>
                       <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
                         {adj.label}
                       </Text>
@@ -198,16 +234,28 @@ export default function PayslipDetailScreen() {
                         {adj.type}
                       </Text>
                     </View>
-                    <Text
-                      style={[
-                        type.h3,
-                        {
-                          color: adj.amount >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT,
-                        },
-                      ]}
-                    >
-                      {adj.amount >= 0 ? "+" : ""}{formatCurrency(adj.amount)}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+                      <Text
+                        style={[
+                          type.h3,
+                          {
+                            color: adj.amount >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT,
+                          },
+                        ]}
+                      >
+                        {adj.amount >= 0 ? "+" : ""}{formatCurrency(adj.amount)}
+                      </Text>
+                      <Pressable
+                        onPress={() => deleteAdjustment(adj.id)}
+                        disabled={deletingAdj === adj.id}
+                        style={{
+                          padding: spacing.sm,
+                          opacity: deletingAdj === adj.id ? 0.5 : 1,
+                        }}
+                      >
+                        <Trash2 size={18} color={colors.danger.DEFAULT} />
+                      </Pressable>
+                    </View>
                   </Card>
                 </Animated.View>
               )}
