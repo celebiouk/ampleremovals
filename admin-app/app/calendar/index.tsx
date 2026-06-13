@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Calendar } from "react-native-calendars";
 import { ArrowLeft, MapPin, ChevronRight } from "lucide-react-native";
 import { Skeleton, ErrorState, EmptyState, ServiceBadge } from "@/components/ui";
-import { useCalendar } from "@/hooks/useCalendar";
+import { useCalendar, type CalendarBooking } from "@/hooks/useCalendar";
 import { toDateKey } from "@/lib/utils";
 import { statusColors, colors } from "@/lib/colors";
 import { STATUS_LABELS } from "@/lib/constants";
@@ -35,6 +35,17 @@ export default function CalendarScreen() {
   }, [byDate, selected]);
 
   const dayJobs = byDate[selected] ?? [];
+
+  // Next 10 upcoming jobs (today onward) — parity with the web calendar sidebar.
+  const todayKey = toDateKey(new Date());
+  const upcoming = useMemo(
+    () =>
+      (data ?? [])
+        .filter((b) => b.move_date >= todayKey)
+        .sort((a, b) => a.move_date.localeCompare(b.move_date))
+        .slice(0, 10),
+    [data, todayKey]
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
@@ -77,39 +88,75 @@ export default function CalendarScreen() {
             ) : (
               <View className="gap-3">
                 {dayJobs.map((b) => (
-                  <Pressable
-                    key={b.id}
-                    onPress={() => router.push(`/booking/${b.id}`)}
-                    className="flex-row items-center gap-3 rounded-2xl p-4"
-                    style={{
-                      backgroundColor: statusColors[b.status]?.bg ?? colors.primary.surfaceMid,
-                      borderLeftWidth: 5,
-                      borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT,
-                    }}
-                  >
-                    <View className="flex-1">
-                      <View className="mb-1.5 flex-row flex-wrap items-center gap-2">
-                        <ServiceBadge service={b.service_type} />
-                        <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}>
-                          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }} numberOfLines={1}>{STATUS_LABELS[b.status]}</Text>
-                        </View>
-                      </View>
-                      <Text className="text-lg font-extrabold text-slate-900">{b.customer_name}</Text>
-                      <View className="mt-1 flex-row items-center gap-1.5">
-                        <MapPin size={16} color="#475569" />
-                        <Text className="text-base font-semibold text-slate-700">
-                          {b.origin_postcode}{b.destination_postcode ? ` → ${b.destination_postcode}` : ""}
-                        </Text>
-                      </View>
-                    </View>
-                    <ChevronRight size={22} color="#64748b" />
-                  </Pressable>
+                  <JobCard key={b.id} b={b} onPress={() => router.push(`/booking/${b.id}`)} />
                 ))}
               </View>
             )}
+
+            {upcoming.length > 0 ? (
+              <View className="mt-8">
+                <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">
+                  Upcoming jobs
+                </Text>
+                <View className="gap-3">
+                  {upcoming.map((b) => (
+                    <JobCard
+                      key={`up-${b.id}`}
+                      b={b}
+                      showDate
+                      onPress={() => router.push(`/booking/${b.id}`)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+function JobCard({
+  b,
+  onPress,
+  showDate,
+}: {
+  b: CalendarBooking;
+  onPress: () => void;
+  showDate?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-3 rounded-2xl p-4"
+      style={{
+        backgroundColor: statusColors[b.status]?.bg ?? colors.primary.surfaceMid,
+        borderLeftWidth: 5,
+        borderLeftColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT,
+      }}
+    >
+      <View className="flex-1">
+        <View className="mb-1.5 flex-row flex-wrap items-center gap-2">
+          <ServiceBadge service={b.service_type} />
+          <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: statusColors[b.status]?.accent ?? colors.primary.DEFAULT }}>
+            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }} numberOfLines={1}>{STATUS_LABELS[b.status]}</Text>
+          </View>
+          {showDate ? (
+            <Text className="text-xs font-semibold text-slate-500">
+              {new Date(b.move_date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </Text>
+          ) : null}
+        </View>
+        <Text className="text-lg font-extrabold text-slate-900">{b.customer_name}</Text>
+        <View className="mt-1 flex-row items-center gap-1.5">
+          <MapPin size={16} color="#475569" />
+          <Text className="text-base font-semibold text-slate-700">
+            {b.origin_postcode}{b.destination_postcode ? ` → ${b.destination_postcode}` : ""}
+          </Text>
+        </View>
+      </View>
+      <ChevronRight size={22} color="#64748b" />
+    </Pressable>
   );
 }
