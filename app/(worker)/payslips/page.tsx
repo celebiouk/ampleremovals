@@ -147,6 +147,13 @@ export default function PayslipsPage() {
           </div>
         </div>
 
+        <Link
+          href="/payslips/earnings-summary"
+          className="block mb-8 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 text-purple-700 font-medium hover:from-purple-100 hover:to-purple-200 transition border border-purple-200"
+        >
+          📊 View Earnings Summary &amp; History
+        </Link>
+
         {/* Payslips List */}
         {payslips.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
