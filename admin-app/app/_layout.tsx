@@ -104,6 +104,7 @@ function RootNavigator() {
       <Stack.Screen name="driver/[id]" />
       <Stack.Screen name="driver/[id]/edit" />
       <Stack.Screen name="earnings/index" />
+      <Stack.Screen name="cleaner-earnings/index" />
       <Stack.Screen name="payroll/index" />
       <Stack.Screen name="payroll/[id]" />
       <Stack.Screen name="payroll-new" />
