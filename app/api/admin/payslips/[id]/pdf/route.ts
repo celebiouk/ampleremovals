@@ -71,17 +71,64 @@ export async function GET(
       );
     }
 
-    // TODO: Build PayslipPDF React component and render with @react-pdf/renderer
-    // For Phase 0, return a simple JSON response indicating PDF is ready
-    // This will be implemented in Phase 1 when we have the UI design locked
+    // Generate simple text-based PDF with payslip details
+    const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>
+endobj
+4 0 obj
+<< /Length 750 >>
+stream
+BT
+/F1 24 Tf
+50 750 Td
+(PAYSLIP) Tj
+0 -40 Td
+/F1 12 Tf
+(Reference: ${(payslip.pay_runs as any)?.reference || 'N/A'}) Tj
+0 -20 Td
+(Worker: ${worker.first_name} ${worker.last_name}) Tj
+0 -20 Td
+(Status: ${payslip.status}) Tj
+0 -40 Td
+/F1 14 Tf
+(PAYMENT SUMMARY) Tj
+0 -25 Td
+/F1 12 Tf
+(Gross Earnings: £${(payslip.gross_earnings / 100).toFixed(2)}) Tj
+0 -20 Td
+(Tips: £${(payslip.tips_total / 100).toFixed(2)}) Tj
+0 -20 Td
+(Adjustments: £${(payslip.adjustments_total / 100).toFixed(2)}) Tj
+0 -30 Td
+/F1 16 Tf
+(NET PAY: £${(payslip.net_pay / 100).toFixed(2)}) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000280 00000 n
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+1090
+%%EOF`;
 
-    return NextResponse.json({
-      success: true,
-      message: "PDF endpoint ready for Phase 1 implementation",
-      data: {
-        payslipId: payslip.id,
-        workerName: `${worker.first_name} ${worker.last_name}`,
-        netPay: payslip.net_pay,
+    return new Response(pdfContent, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="payslip-${payslip.id}.pdf"`,
       },
     });
   } catch (e) {
