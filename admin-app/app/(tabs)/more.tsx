@@ -41,6 +41,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
       { label: "Cleaner Earnings", icon: PoundSterling, href: "/cleaner-earnings" },
       { label: "Payroll", icon: PoundSterling, href: "/payroll" },
+      { label: "Compliance", icon: Shield, href: "/payroll/compliance" },
       { label: "My Payslips", icon: PoundSterling, href: "/payslips" },
     ],
   },
