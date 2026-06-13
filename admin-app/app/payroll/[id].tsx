@@ -1,22 +1,21 @@
 import { useMemo, useState } from "react";
-import { ScrollView, View, Text, Pressable, Alert, RefreshControl, FlatList } from "react-native";
+import { ScrollView, View, Text, Pressable, RefreshControl, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { ArrowLeft, Download, CheckCheck, Loader2 } from "lucide-react-native";
-import { Card, Badge, Skeleton, ErrorState } from "@/components/ui";
+import { Download, CheckCheck } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayRunDetail } from "@/hooks/usePayRunDetail";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-
-const STATUS_COLORS = {
-  draft: "bg-slate-100 text-slate-700",
-  finalised: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-};
+import { colors } from "@/lib/colors";
+import { type } from "@/lib/typography";
+import { spacing } from "@/lib/tokens";
+import Alert from "@react-native-menu/menu";
 
 export default function PayRunDetailScreen() {
   const router = useRouter();
@@ -36,28 +35,30 @@ export default function PayRunDetailScreen() {
   }
 
   async function payAll() {
-    Alert.alert("Pay all payslips?", "Mark all payslips in this run as paid.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Pay",
-        style: "default",
-        onPress: async () => {
-          setPaying(true);
-          try {
-            await apiFetch(`/api/admin/pay-runs/${runId}/pay-all`, {
-              method: "PATCH",
-              body: JSON.stringify({ paymentMethod: "bank_transfer" }),
-            });
-            refresh();
-            Alert.alert("Success", "Payslips marked as paid");
-          } catch (e) {
-            Alert.alert("Error", e instanceof Error ? e.message : "Failed to pay");
-          } finally {
-            setPaying(false);
-          }
-        },
-      },
-    ]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const yes = await new Promise<boolean>((resolve) => {
+      // Use Alert from the native Alert API
+      const { Alert: NativeAlert } = require("react-native");
+      NativeAlert.alert("Pay all payslips?", "Mark all payslips in this run as paid.", [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Confirm", style: "default", onPress: () => resolve(true) },
+      ]);
+    });
+    if (!yes) return;
+
+    setPaying(true);
+    try {
+      await apiFetch(`/api/admin/pay-runs/${runId}/pay-all`, {
+        method: "PATCH",
+        body: JSON.stringify({ paymentMethod: "bank_transfer" }),
+      });
+      refresh();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    } finally {
+      setPaying(false);
+    }
   }
 
   async function exportCSV() {
@@ -67,10 +68,11 @@ export default function PayRunDetailScreen() {
       const csv = await response.text();
       const uri = FileSystem.cacheDirectory + `payroll-${run?.reference}.csv`;
       await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "text/csv" });
-      else Alert.alert("Exported", "CSV ready to share");
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: "text/csv" });
+      }
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Export failed");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     } finally {
       setExporting(false);
     }
@@ -78,10 +80,10 @@ export default function PayRunDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <ScrollView className="flex-1 px-4 py-6">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="mb-4 h-20 rounded-lg" />
+            <Skeleton key={i} style={{ marginBottom: spacing.base, height: 100, borderRadius: 16 }} />
           ))}
         </ScrollView>
       </SafeAreaView>
@@ -90,10 +92,12 @@ export default function PayRunDetailScreen() {
 
   if (isError || !run || !totals) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+        <ScreenHeader title="Pay run" />
         <ScrollView
-          className="flex-1 px-4 py-6"
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: spacing.base }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
         >
           <ErrorState message="Failed to load pay run" onRetry={refresh} />
         </ScrollView>
@@ -102,120 +106,119 @@ export default function PayRunDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+      <ScreenHeader title={run.reference} onBack={() => router.back()} />
       <ScrollView
-        className="flex-1 px-4 py-6"
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing.base }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
       >
-        {/* Header */}
-        <View className="mb-6">
-          <Pressable onPress={() => router.back()} className="mb-4 flex-row items-center gap-2">
-            <ArrowLeft size={20} color="#9ca3af" />
-            <Text className="text-sm font-medium text-slate-600">Back</Text>
-          </Pressable>
+        {/* Period info */}
+        <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.lg }}>
+          <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm }]}>
+            {new Date(run.period_start).toLocaleDateString("en-GB")} –{" "}
+            {new Date(run.period_end).toLocaleDateString("en-GB")}
+          </Text>
+        </Animated.View>
 
-          <View>
-            <Text className="text-2xl font-bold text-slate-900">{run.reference}</Text>
-            <Text className="mt-1 text-sm text-slate-600">
-              {new Date(run.period_start).toLocaleDateString("en-GB")} –{" "}
-              {new Date(run.period_end).toLocaleDateString("en-GB")}
-            </Text>
+        {/* Totals grid (2x2) */}
+        <View style={{ marginBottom: spacing.lg, gap: spacing.md }}>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <StatCard
+              icon="Banknote"
+              label="Gross"
+              value={formatCurrency(totals.gross)}
+              variant="primary"
+              style={{ flex: 1 }}
+            />
+            <StatCard
+              icon="Gift"
+              label="Tips"
+              value={formatCurrency(totals.tips)}
+              variant="accent"
+              style={{ flex: 1 }}
+            />
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <StatCard
+              icon="Settings"
+              label="Adjustments"
+              value={formatCurrency(totals.adjustments)}
+              variant="primary"
+              style={{ flex: 1 }}
+            />
+            <StatCard
+              icon="Wallet"
+              label="Net"
+              value={formatCurrency(totals.net)}
+              variant="accent"
+              style={{ flex: 1 }}
+            />
           </View>
         </View>
 
-        {/* Totals grid */}
-        <View className="mb-6 grid grid-cols-2 gap-3">
-          <Card className="p-3">
-            <Text className="text-xs font-medium text-slate-600">Gross</Text>
-            <Text className="mt-1 text-lg font-bold text-slate-900">
-              {formatCurrency(totals.gross)}
-            </Text>
-          </Card>
-          <Card className="p-3">
-            <Text className="text-xs font-medium text-slate-600">Tips</Text>
-            <Text className="mt-1 text-lg font-bold text-slate-900">
-              {formatCurrency(totals.tips)}
-            </Text>
-          </Card>
-          <Card className="p-3">
-            <Text className="text-xs font-medium text-slate-600">Adjustments</Text>
-            <Text className="mt-1 text-lg font-bold text-slate-900">
-              {formatCurrency(totals.adjustments)}
-            </Text>
-          </Card>
-          <Card className="p-3">
-            <Text className="text-xs font-medium text-slate-600">Net</Text>
-            <Text className="mt-1 text-lg font-bold text-purple-600">
-              {formatCurrency(totals.net)}
-            </Text>
-          </Card>
-        </View>
-
         {/* Actions */}
-        <View className="mb-6 gap-2">
-          <Pressable
+        <View style={{ marginBottom: spacing.lg, gap: spacing.md }}>
+          <Button
+            label="Export CSV"
+            variant="outline"
+            size="md"
+            loading={exporting}
+            icon={<Download size={18} color={colors.primary.DEFAULT} />}
             onPress={exportCSV}
-            disabled={exporting}
-            className="flex-row items-center justify-center gap-2 rounded-lg bg-white px-4 py-3"
-          >
-            <Download size={18} color="#7c3aed" />
-            <Text className="font-medium text-purple-600">
-              {exporting ? "Exporting..." : "Export CSV"}
-            </Text>
-          </Pressable>
-          <Pressable
+          />
+          <Button
+            label={`Pay all (${totals.pending})`}
+            variant="accent"
+            size="md"
+            loading={paying}
+            disabled={totals.pending === 0}
+            icon={<CheckCheck size={18} color={colors.white} />}
             onPress={payAll}
-            disabled={paying || totals.pending === 0}
-            className={`flex-row items-center justify-center gap-2 rounded-lg px-4 py-3 ${
-              paying || totals.pending === 0 ? "bg-slate-200" : "bg-green-600"
-            }`}
-          >
-            <CheckCheck size={18} color={paying || totals.pending === 0 ? "#999" : "white"} />
-            <Text className={`font-medium ${
-              paying || totals.pending === 0 ? "text-slate-500" : "text-white"
-            }`}>
-              {paying ? "Processing..." : `Pay all (${totals.pending})`}
-            </Text>
-          </Pressable>
+          />
         </View>
 
         {/* Payslips list */}
-        <View className="mb-6">
-          <Text className="mb-3 text-lg font-bold text-slate-900">Payslips</Text>
+        <View>
+          <Text style={[type.h3, { color: colors.slate[900], marginBottom: spacing.base }]}>
+            {run.payslips?.length ?? 0} Payslip{(run.payslips?.length ?? 0) !== 1 ? "s" : ""}
+          </Text>
           <FlatList
             scrollEnabled={false}
             data={run.payslips}
             keyExtractor={(item) => item.id}
-            ItemSeparatorComponent={() => <View className="h-2" />}
+            ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
             renderItem={({ item: ps }) => (
-              <Pressable
-                onPress={() => router.push(`/payslip/${ps.id}`)}
-                className="active:opacity-70"
-              >
-                <Card className="p-4">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-1">
-                      <Text className="font-medium text-slate-900">
-                        {ps.worker_type === "driver" ? "Driver" : "Cleaner"}
-                      </Text>
-                      <Text className="text-xs text-slate-600">
-                        Gross: {formatCurrency(ps.gross_earnings)}
-                      </Text>
+              <Animated.View entering={FadeInDown.springify()}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    router.push(`/payslip/${ps.id}`);
+                  }}
+                >
+                  <Card style={{ padding: spacing.base }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
+                          {ps.worker_type === "driver" ? "Driver" : "Cleaner"}
+                        </Text>
+                        <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.xs }]}>
+                          Gross: {formatCurrency(ps.gross_earnings)}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text style={[type.h3, { color: colors.primary.DEFAULT, marginBottom: spacing.xs }]}>
+                          {formatCurrency(ps.net_pay)}
+                        </Text>
+                        <Badge
+                          label={ps.status}
+                          variant={ps.status === "paid" ? "success" : "warning"}
+                        />
+                      </View>
                     </View>
-                    <View className="items-end">
-                      <Text className="font-bold text-purple-600">
-                        {formatCurrency(ps.net_pay)}
-                      </Text>
-                      <Badge
-                        label={ps.status}
-                        className={ps.status === "paid"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-amber-100 text-amber-700"}
-                      />
-                    </View>
-                  </View>
-                </Card>
-              </Pressable>
+                  </Card>
+                </Pressable>
+              </Animated.View>
             )}
           />
         </View>

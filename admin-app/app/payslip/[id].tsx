@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { ScrollView, View, Text, Pressable, Alert, RefreshControl, FlatList } from "react-native";
+import { ScrollView, View, Text, Pressable, RefreshControl, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Linking from "expo-linking";
-import { ArrowLeft, Download, CheckCheck } from "lucide-react-native";
-import { Card, Badge, Skeleton, ErrorState } from "@/components/ui";
+import { Download, CheckCheck } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayslip } from "@/hooks/usePayslip";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { colors } from "@/lib/colors";
+import { type } from "@/lib/typography";
+import { spacing } from "@/lib/tokens";
 
 export default function PayslipDetailScreen() {
   const router = useRouter();
@@ -26,45 +31,47 @@ export default function PayslipDetailScreen() {
   }
 
   async function markPaid() {
-    Alert.alert("Mark as paid?", "This will update the linked earnings.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Mark paid",
-        style: "default",
-        onPress: async () => {
-          setPaying(true);
-          try {
-            await apiFetch(`/api/admin/payslips/${payslipId}/pay`, {
-              method: "PATCH",
-              body: JSON.stringify({ paymentMethod: "bank_transfer" }),
-            });
-            refresh();
-            Alert.alert("Success", "Payslip marked as paid");
-          } catch (e) {
-            Alert.alert("Error", e instanceof Error ? e.message : "Failed to mark paid");
-          } finally {
-            setPaying(false);
-          }
-        },
-      },
-    ]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const yes = await new Promise<boolean>((resolve) => {
+      const { Alert } = require("react-native");
+      Alert.alert("Mark as paid?", "This will update the linked earnings.", [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Confirm", style: "default", onPress: () => resolve(true) },
+      ]);
+    });
+    if (!yes) return;
+
+    setPaying(true);
+    try {
+      await apiFetch(`/api/admin/payslips/${payslipId}/pay`, {
+        method: "PATCH",
+        body: JSON.stringify({ paymentMethod: "bank_transfer" }),
+      });
+      refresh();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    } finally {
+      setPaying(false);
+    }
   }
 
   async function viewPDF() {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       const url = `/api/admin/payslips/${payslipId}/pdf`;
       await Linking.openURL(url);
     } catch (e) {
-      Alert.alert("Error", "Could not open PDF");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     }
   }
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <ScrollView className="flex-1 px-4 py-6">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="mb-4 h-20 rounded-lg" />
+            <Skeleton key={i} style={{ marginBottom: spacing.base, height: 100, borderRadius: 16 }} />
           ))}
         </ScrollView>
       </SafeAreaView>
@@ -73,10 +80,12 @@ export default function PayslipDetailScreen() {
 
   if (isError || !payslip) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+        <ScreenHeader title="Payslip" />
         <ScrollView
-          className="flex-1 px-4 py-6"
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: spacing.base }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
         >
           <ErrorState message="Failed to load payslip" onRetry={refresh} />
         </ScrollView>
@@ -85,58 +94,61 @@ export default function PayslipDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+      <ScreenHeader
+        title="Payslip"
+        right={
+          <Badge
+            label={payslip.status}
+            variant={payslip.status === "paid" ? "success" : "warning"}
+          />
+        }
+      />
       <ScrollView
-        className="flex-1 px-4 py-6"
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing.base }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
       >
-        {/* Header */}
-        <View className="mb-6">
-          <Pressable onPress={() => router.back()} className="mb-4 flex-row items-center gap-2">
-            <ArrowLeft size={20} color="#9ca3af" />
-            <Text className="text-sm font-medium text-slate-600">Back</Text>
-          </Pressable>
+        {/* Worker type */}
+        <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.lg }}>
+          <Text style={[type.bodySmall, { color: colors.slate[600], marginBottom: spacing.sm }]}>
+            {payslip.worker_type === "driver" ? "Driver" : "Cleaner"}
+          </Text>
+        </Animated.View>
 
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-2xl font-bold text-slate-900">Payslip</Text>
-              <Text className="mt-1 text-sm text-slate-600">
-                {payslip.worker_type === "driver" ? "Driver" : "Cleaner"}
-              </Text>
-            </View>
-            <Badge
-              label={payslip.status}
-              className={payslip.status === "paid"
-                ? "bg-green-100 text-green-700"
-                : "bg-amber-100 text-amber-700"}
-            />
-          </View>
-        </View>
-
-        {/* Totals */}
-        <Card className="mb-6 p-4">
-          <View className="gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-slate-600">Gross Earnings</Text>
-              <Text className="font-semibold text-slate-900">
+        {/* Totals breakdown */}
+        <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
+          <View style={{ gap: spacing.base }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={[type.body, { color: colors.slate[600] }]}>Gross Earnings</Text>
+              <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>
                 {formatCurrency(payslip.gross_earnings)}
               </Text>
             </View>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-slate-600">Tips</Text>
-              <Text className="font-semibold text-slate-900">
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={[type.body, { color: colors.slate[600] }]}>Tips</Text>
+              <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>
                 {formatCurrency(payslip.tips_total)}
               </Text>
             </View>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-slate-600">Adjustments</Text>
-              <Text className="font-semibold text-slate-900">
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={[type.body, { color: colors.slate[600] }]}>Adjustments</Text>
+              <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>
                 {formatCurrency(payslip.adjustments_total)}
               </Text>
             </View>
-            <View className="border-t border-slate-200 pt-3 flex-row items-center justify-between">
-              <Text className="font-semibold text-slate-900">Net Pay</Text>
-              <Text className="text-lg font-bold text-purple-600">
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.slate[200],
+                paddingTopWidth: spacing.base,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text style={[type.h3, { color: colors.slate[900] }]}>Net Pay</Text>
+              <Text style={[type.display, { color: colors.primary.DEFAULT, fontSize: 28 }]}>
                 {formatCurrency(payslip.net_pay)}
               </Text>
             </View>
@@ -144,49 +156,60 @@ export default function PayslipDetailScreen() {
         </Card>
 
         {/* Actions */}
-        <View className="mb-6 gap-2">
-          <Pressable
+        <View style={{ marginBottom: spacing.lg, gap: spacing.md }}>
+          <Button
+            label="View PDF"
+            variant="outline"
+            size="md"
+            icon={<Download size={18} color={colors.primary.DEFAULT} />}
             onPress={viewPDF}
-            className="flex-row items-center justify-center gap-2 rounded-lg bg-white px-4 py-3"
-          >
-            <Download size={18} color="#7c3aed" />
-            <Text className="font-medium text-purple-600">View PDF</Text>
-          </Pressable>
+          />
           {payslip.status === "pending" && (
-            <Pressable
+            <Button
+              label="Mark as Paid"
+              variant="accent"
+              size="md"
+              loading={paying}
+              icon={<CheckCheck size={18} color={colors.white} />}
               onPress={markPaid}
-              disabled={paying}
-              className={`flex-row items-center justify-center gap-2 rounded-lg px-4 py-3 ${
-                paying ? "bg-slate-200" : "bg-green-600"
-              }`}
-            >
-              <CheckCheck size={18} color={paying ? "#999" : "white"} />
-              <Text className={`font-medium ${paying ? "text-slate-500" : "text-white"}`}>
-                {paying ? "Processing..." : "Mark as Paid"}
-              </Text>
-            </Pressable>
+            />
           )}
         </View>
 
         {/* Adjustments */}
         {payslip.payroll_adjustments && payslip.payroll_adjustments.length > 0 && (
-          <View className="mb-6">
-            <Text className="mb-3 text-lg font-bold text-slate-900">Adjustments</Text>
+          <View>
+            <Text style={[type.h3, { color: colors.slate[900], marginBottom: spacing.base }]}>
+              Adjustments
+            </Text>
             <FlatList
               scrollEnabled={false}
               data={payslip.payroll_adjustments}
               keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => <View className="h-2" />}
+              ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
               renderItem={({ item: adj }) => (
-                <Card className="flex-row items-center justify-between p-4">
-                  <View>
-                    <Text className="font-medium text-slate-900">{adj.label}</Text>
-                    <Text className="text-xs text-slate-600 capitalize">{adj.type}</Text>
-                  </View>
-                  <Text className={`font-semibold ${adj.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {adj.amount >= 0 ? "+" : ""}{formatCurrency(adj.amount)}
-                  </Text>
-                </Card>
+                <Animated.View entering={FadeInDown.springify()}>
+                  <Card style={{ padding: spacing.base, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View>
+                      <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
+                        {adj.label}
+                      </Text>
+                      <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.xs, textTransform: "capitalize" }]}>
+                        {adj.type}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        type.h3,
+                        {
+                          color: adj.amount >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT,
+                        },
+                      ]}
+                    >
+                      {adj.amount >= 0 ? "+" : ""}{formatCurrency(adj.amount)}
+                    </Text>
+                  </Card>
+                </Animated.View>
               )}
             />
           </View>

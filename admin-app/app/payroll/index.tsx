@@ -1,21 +1,18 @@
 import { useState, useMemo } from "react";
-import { ScrollView, View, Text, Pressable, Alert, RefreshControl } from "react-native";
+import { ScrollView, View, Text, Pressable, RefreshControl, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, ArrowRight } from "lucide-react-native";
-import { Card, Badge, Skeleton, ErrorState, EmptyState } from "@/components/ui";
+import Animated, { FadeInDown, Layout } from "react-native-reanimated";
+import { Plus } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { Card, Badge, Skeleton, ErrorState, EmptyState, Button } from "@/components/ui";
 import { usePayRuns } from "@/hooks/usePayRuns";
-import { formatCurrency } from "@/lib/utils";
+import { colors } from "@/lib/colors";
+import { type } from "@/lib/typography";
+import { spacing, radius } from "@/lib/tokens";
 
 type SortBy = "date" | "status" | "workers";
-
-const STATUS_COLORS = {
-  draft: "bg-slate-100 text-slate-700",
-  finalised: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-};
 
 export default function PayrollScreen() {
   const router = useRouter();
@@ -39,10 +36,10 @@ export default function PayrollScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <ScrollView className="flex-1 px-4 py-6">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="mb-4 h-32 rounded-lg" />
+            <Skeleton key={i} style={{ marginBottom: spacing.base, height: 120, borderRadius: radius.lg }} />
           ))}
         </ScrollView>
       </SafeAreaView>
@@ -51,10 +48,11 @@ export default function PayrollScreen() {
 
   if (isError) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
         <ScrollView
-          className="flex-1 px-4 py-6"
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: spacing.base }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
         >
           <ErrorState message="Failed to load pay runs" onRetry={refresh} />
         </ScrollView>
@@ -63,38 +61,56 @@ export default function PayrollScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
       <ScrollView
-        className="flex-1 px-4 py-6"
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing.base }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor={colors.primary.DEFAULT} />}
       >
         {/* Header */}
-        <View className="mb-6 flex-row items-center justify-between">
-          <View>
-            <Text className="text-2xl font-bold text-slate-900">Payroll</Text>
-            <Text className="mt-1 text-sm text-slate-600">Pay runs and payslips</Text>
+        <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.xl }}>
+          <View style={{ marginBottom: spacing.lg }}>
+            <Text style={[type.h2, { color: colors.slate[900], marginBottom: spacing.sm }]}>Payroll</Text>
+            <Text style={[type.body, { color: colors.slate[600] }]}>Manage pay runs and worker payslips</Text>
           </View>
-          <Pressable
+
+          <Button
+            label="New pay run"
+            variant="primary"
+            size="md"
+            icon={<Plus size={20} color={colors.white} strokeWidth={2.5} />}
             onPress={() => router.push("/payroll-new")}
-            className="rounded-full bg-purple-600 p-3"
-          >
-            <Plus size={24} color="white" />
-          </Pressable>
-        </View>
+          />
+        </Animated.View>
 
         {/* Sort tabs */}
-        <View className="mb-4 flex-row gap-2">
+        <View style={{ marginBottom: spacing.lg, flexDirection: "row", gap: spacing.md }}>
           {(["date", "status", "workers"] as const).map((s) => (
             <Pressable
               key={s}
-              onPress={() => setSortBy(s)}
-              className={`rounded-full px-3 py-1.5 ${
-                sortBy === s ? "bg-purple-600" : "bg-white"
-              }`}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                setSortBy(s);
+              }}
+              style={{
+                paddingHorizontal: spacing.base,
+                paddingVertical: spacing.sm,
+                borderRadius: radius.full,
+                backgroundColor: sortBy === s ? colors.primary.DEFAULT : colors.white,
+                borderWidth: 1,
+                borderColor: sortBy === s ? colors.primary.DEFAULT : colors.slate[200],
+              }}
             >
-              <Text className={`text-xs font-medium capitalize ${
-                sortBy === s ? "text-white" : "text-slate-700"
-              }`}>
+              <Text
+                style={[
+                  type.body,
+                  {
+                    color: sortBy === s ? colors.white : colors.slate[700],
+                    fontWeight: "600",
+                    textTransform: "capitalize",
+                  },
+                ]}
+              >
                 {s}
               </Text>
             </Pressable>
@@ -105,39 +121,54 @@ export default function PayrollScreen() {
         {sorted.length === 0 ? (
           <EmptyState message="No pay runs yet. Create one to get started." />
         ) : (
-          <View className="gap-3">
-            {sorted.map((run) => (
-              <Pressable
-                key={run.id}
-                onPress={() => router.push(`/payroll/${run.id}`)}
-                className="active:opacity-70"
-              >
-                <Card className="p-4">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-1">
-                      <View className="mb-1 flex-row items-center gap-2">
-                        <Text className="font-semibold text-slate-900">{run.reference}</Text>
-                        <Badge
-                          label={run.status}
-                          className={STATUS_COLORS[run.status as keyof typeof STATUS_COLORS]}
-                        />
+          <FlatList
+            scrollEnabled={false}
+            data={sorted}
+            keyExtractor={(item) => item.id}
+            ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+            renderItem={({ item: run }) => (
+              <Animated.View entering={FadeInDown.springify()} layout={Layout.springify()}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    router.push(`/payroll/${run.id}`);
+                  }}
+                >
+                  <Card style={{ padding: spacing.base }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ marginBottom: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                          <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{run.reference}</Text>
+                          <Badge
+                            label={run.status.replace(/_/g, " ")}
+                            variant={
+                              run.status === "draft"
+                                ? "default"
+                                : run.status === "paid"
+                                  ? "success"
+                                  : "default"
+                            }
+                          />
+                        </View>
+                        <Text style={[type.bodySmall, { color: colors.slate[600] }]}>
+                          {new Date(run.period_start).toLocaleDateString("en-GB")} –{" "}
+                          {new Date(run.period_end).toLocaleDateString("en-GB")}
+                        </Text>
                       </View>
-                      <Text className="text-xs text-slate-600">
-                        {new Date(run.period_start).toLocaleDateString("en-GB")} –{" "}
-                        {new Date(run.period_end).toLocaleDateString("en-GB")}
-                      </Text>
+                      <View style={{ alignItems: "flex-end", justifyContent: "center", minWidth: 60 }}>
+                        <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
+                          {run.payslips?.length ?? 0}
+                        </Text>
+                        <Text style={[type.bodySmall, { color: colors.slate[600] }]}>
+                          {(run.payslips?.length ?? 0) === 1 ? "worker" : "workers"}
+                        </Text>
+                      </View>
                     </View>
-                    <View className="items-end">
-                      <Text className="font-medium text-slate-900">
-                        {run.payslips?.length ?? 0} workers
-                      </Text>
-                      <ArrowRight size={16} color="#9ca3af" />
-                    </View>
-                  </View>
-                </Card>
-              </Pressable>
-            ))}
-          </View>
+                  </Card>
+                </Pressable>
+              </Animated.View>
+            )}
+          />
         )}
       </ScrollView>
     </SafeAreaView>
