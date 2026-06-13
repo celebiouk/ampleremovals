@@ -100,9 +100,11 @@ function RootNavigator() {
       <Stack.Screen name="calendar/index" />
       <Stack.Screen name="customer/index" />
       <Stack.Screen name="customer/[id]" />
+      <Stack.Screen name="driver/index" />
       <Stack.Screen name="driver/new" />
       <Stack.Screen name="driver/[id]" />
       <Stack.Screen name="driver/[id]/edit" />
+      <Stack.Screen name="cleaners/index" />
       <Stack.Screen name="earnings/index" />
       <Stack.Screen name="cleaner-earnings/index" />
       <Stack.Screen name="payroll/index" />
@@ -131,6 +133,7 @@ function RootNavigator() {
       <Stack.Screen name="invoice/index" />
       <Stack.Screen name="invoice/[id]" />
       <Stack.Screen name="payments/index" />
+      <Stack.Screen name="pipeline/index" />
       <Stack.Screen name="automations/index" />
       <Stack.Screen name="reports/index" />
       <Stack.Screen name="settings/index" />

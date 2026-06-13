@@ -33,6 +33,77 @@ Deferred: BottomSheet wrapper (no screen uses @gorhom yet; RN Modal in place).
 
 ---
 
+---
+
+## B2 COMPREHENSIVE AUDIT — 100% Web + Mobile Feature Parity
+
+**Started:** 2026-06-10  
+**Status:** IN PROGRESS (Phase 1-2 audit)  
+**Scope:** Audit all 60+ features across web admin + mobile admin; fix every gap
+
+### CRITICAL FINDINGS (2026-06-13)
+
+**Mobile MISSING (5 core sections):**
+- ❌ Customers (list + detail) — web has full CRUD
+- ❌ Drivers (list + detail) — web has full driver management  
+- ❌ Cleaners (list view exists, detail missing)
+- ❌ Invoices (list + detail) — web has full invoice management
+- ❌ Pipeline (kanban board) — web has drag-drop status board
+
+**Web MISSING (1 section):**
+- ❌ Notifications (mobile has, web doesn't) — send email/SMS/WhatsApp
+
+**Phase 1 (Bookings) Status:** ✅ COMPLETE
+- Mobile bookings list: multi-select + bulk status update + delete ✅
+- Mobile bookings detail: quotes, invoices, notes, reschedule ✅
+- Bulk API endpoint created: PATCH /api/admin/bookings/bulk/status ✅
+
+### PRIORITY ORDER (Impact + Effort)
+
+1. **PHASE 2 — Booking Detail Pages** (existing → compare field-by-field)
+   - Web (1206 lines): notes, activity log, driver mgmt, email/SMS, status
+   - Mobile (707 lines): notes, quotes, invoices, reschedule
+   - Gap: verify all web functions exist on mobile
+
+2. **PHASE 3 — Customer Management** (high impact, ~100 lines per page)
+   - Create mobile/customer/index.tsx (list)
+   - Create mobile/customer/[id].tsx (detail)
+   - Ensure parity with web customer CRUD
+
+3. **PHASE 4 — Invoices** (high impact, ~150 lines)
+   - Create mobile/invoice/index.tsx (list)
+   - Create mobile/invoice/[id].tsx (detail + PDF + Stripe)
+   - Ensure parity with web invoice management
+
+4. **PHASE 5 — Drivers** (high impact, ~200 lines across 3 pages)
+   - Create mobile/driver/index.tsx (list)
+   - Verify mobile/driver/[id].tsx (detail) exists
+   - Verify mobile/driver/[id]/edit.tsx (edit) exists
+   - Ensure parity with web driver CRUD
+
+5. **PHASE 6 — Pipeline** (medium impact, ~100 lines)
+   - Create mobile/pipeline/index.tsx (kanban board)
+   - Ensure drag-drop works (test thoroughly)
+
+6. **PHASE 7 — Other sections** (verify existing)
+   - Cleaners detail page (if needed)
+   - Web Notifications page (if needed)
+   - Calendar, Earnings, Settings, Reports parity check
+
+### PLAN
+
+- [ ] Phase 2: Audit booking detail — compare web vs mobile, identify gaps
+- [ ] Phase 3: Implement customer management (list + detail)
+- [ ] Phase 4: Implement invoices (list + detail + PDF + Stripe)
+- [ ] Phase 5: Implement drivers (list + detail + edit)
+- [ ] Phase 6: Implement pipeline (kanban drag-drop)
+- [ ] Phase 7: Final parity checks + web Notifications page
+- [ ] Comprehensive test of all new screens
+- [ ] Commit after each phase
+- [ ] **TOTAL ESTIMATED WORK: 6-10 hours**
+
+---
+
 ## PHASE 11 — Driver Portal, Accounts, Earnings & Assignment System
 
 **Started:** 2026-06-09  
