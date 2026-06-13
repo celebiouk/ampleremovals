@@ -40,6 +40,7 @@ const NAV_GROUPS = [
       { href: "/admin/invoices", label: "Invoices", icon: Receipt },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/earnings", label: "Driver Earnings", icon: PoundSterling },
+      { href: "/admin/payroll", label: "Payroll", icon: PoundSterling },
     ],
   },
   {
