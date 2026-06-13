@@ -39,6 +39,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Invoices", icon: Receipt, href: "/invoice" },
       { label: "Payments", icon: CreditCard, href: "/payments" },
       { label: "Driver Earnings", icon: PoundSterling, href: "/earnings" },
+      { label: "Payroll", icon: PoundSterling, href: "/payroll" },
     ],
   },
   {
