@@ -29,11 +29,9 @@ export default function NotificationsPage() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (error) throw error;
       setNotifications(data ?? []);
     } catch (e) {
       console.error("Failed to load notifications:", e);
-      setIsError(true);
     } finally {
       setIsLoading(false);
     }
