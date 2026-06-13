@@ -292,17 +292,41 @@ states · ✓ toast on every action · ✓ haptic on pay/confirm · ✓ 44pt tar
 
 ---
 
-## 14. Phase 0 ✅ COMPLETE
+## 14. Phases Complete
+
+### Phase 0 ✅ COMPLETE
 Commit: `857e9b6` (2026-06-13)
+- Database: 5 tables with full RLS
+- Payroll lib: `generatePayRun()`, `markPayslipPaid()`, `markPayRunPaid()`
+- 10 API endpoints (create/list/detail, finalise, pay single/bulk, adjustments, export, PDF)
+- All auth-checked, transactional, idempotent
 
-**What was built:**
-- Database schema: 5 tables (pay_runs, payslips, payslip_earnings, payroll_adjustments, worker_bank_details) with full RLS
-- Payroll lib (`lib/payroll.ts`): `generatePayRun()`, `markPayslipPaid()`, `markPayRunPaid()`
-- 10 API endpoints: create/list/detail runs, finalise, pay (single + bulk), adjustments, export CSV, PDF placeholder
-- All auth-checked (requireAdmin), error-logged, transactional, idempotent
-- Build: ✓ `npm run build` clean
+### Phase 1 ✅ COMPLETE
+Commit: `18475cd` (2026-06-13)
+- Pay runs list page (/admin/payroll)
+- Run detail page (/admin/payroll/[id]) with totals + payslips table
+- Create run form (date picker)
+- Actions: Finalise, Export CSV, Pay all
+- Nav item added to AdminShell under FINANCE
+- Premium UI: cards, shadows, currency formatting, status pills
+- Responsive grid layout
 
-**Next:** Phase 1 (web payroll UI)
-- Nav + runs list + run detail + payslip detail (drawer/modal)
-- Adjustments UI, mark-paid, CSV export, PDF render
-- Reuse existing design system + tokens
+### Phase 2 — Mobile Admin Payroll (todo)
+- Entry point: More → Finance → Payroll
+- `app/payroll/index.tsx` — pay-runs list (cards, FAB)
+- `app/payroll/[id].tsx` — run detail (totals hero, FlatList, Pay all, Export)
+- `app/payslip/[id].tsx` — payslip detail (jobs, adjustments, mark paid, PDF)
+- Hooks: `usePayRuns`, `usePayRunDetail`, `usePayslip` (TanStack Query)
+- Routes registered in `app/_layout.tsx`
+- Skeleton-first, pull-to-refresh, empty/error states, toasts, haptics
+
+### Phase 3 — Worker Payslips (later)
+- Driver portal: payslips view
+- Read-only: period, net, paid/pending
+- PDF download
+- Email notification when paid (via background job)
+
+### Phase 4 — Polish (later)
+- Reports: payroll cost vs revenue
+- Payslip email on finalise
+- Cleaner earnings integration
