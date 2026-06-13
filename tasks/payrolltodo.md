@@ -311,15 +311,50 @@ Commit: `18475cd` (2026-06-13)
 - Premium UI: cards, shadows, currency formatting, status pills
 - Responsive grid layout
 
-### Phase 2 ✅ COMPLETE
-Commit: `47f8d87` (2026-06-13)
-- Pay runs list: cards, sort tabs, FAB → new, pull-to-refresh
-- Run detail: totals grid (4 cards), payslips FlatList, Export CSV, Pay all
-- Payslip detail: earnings breakdown, adjustments list, Mark paid, View PDF
+### Phase 2 ✅ COMPLETE — PREMIUM DESIGN
+Commit: `eb4923e` (2026-06-13, final: premium design applied)
+**Base commit:** `47f8d87`
+
+Features:
+- Pay runs list: animated cards, sort tabs (date/status/workers), primary button
+- Run detail: 2x2 StatCard grid (gross/tips/adjustments/net), payslips FlatList, Export CSV, Pay all
+- Payslip detail: breakdown card, PDF viewer, pay action, adjustments list
 - Hooks: `usePayRuns`, `usePayRunDetail`, `usePayslip` (TanStack Query + offline cache)
-- Entry point in More menu (Finance → Payroll)
-- Skeleton-first, pull-to-refresh, empty/error states, confirmations
-- API: GET /api/admin/payslips/[id] for detail fetching
+- Entry point: More → Finance → Payroll (added to more.tsx menu)
+
+Design tokens + implementation:
+- Colors: brand purple (#6b21a8) + green (#16a34a) from colors.ts
+- Typography: Bricolage Grotesque (H1/H2/H3) + Plus Jakarta Sans (body) from typography.ts
+- Spacing: 4/8/12/16/20/24/32/40/48/64px scale from tokens.ts
+- Shadows: sm/md/lg/xl cross-platform (iOS + Android elevation)
+- All animations via Reanimated (FadeInDown.springify, Layout)
+- Haptics on every action (impact, selection, notifications)
+
+Premium UX:
+- Skeleton-first loading (shimmer animation)
+- Pull-to-refresh (purple tint color)
+- Confirmation alerts before destructive ops
+- Status badges (draft/finalised/paid/cancelled)
+- Empty state with icon + CTA
+- Error state with retry
+- Touch targets 44pt minimum (WCAG AA)
+- Colour contrast WCAG AA+
+- No hardcoded hex values (all via tokens)
+- Accessible labels, roles, states
+
+Mobile patterns (Expo + React Native):
+- SafeAreaView + ScrollView with RefreshControl
+- FlatList with ItemSeparatorComponent
+- Animated.View for enter animations
+- Pressable with haptic feedback
+- StatCard for KPI display
+- Button variants (primary/outline/accent)
+- ScreenHeader for consistent nav
+
+API endpoints:
+- GET /api/admin/payslips/[id] — payslip detail
+
+Ready for Phase 3 (worker payslips).
 
 ### Phase 3 — Worker Payslips (later)
 - Driver portal: payslips view
