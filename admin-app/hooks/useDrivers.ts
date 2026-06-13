@@ -23,8 +23,8 @@ export function isPending(d: { status: string; default_pay_percentage: number })
 export function useDrivers() {
   return useQuery({
     queryKey: ["drivers"],
-    queryFn: () =>
-      apiFetch<{ success: boolean; drivers: DriverRow[]; stats: DriverStats }>("/api/admin/drivers"),
+    queryFn: async (): Promise<{ success: boolean; drivers: DriverRow[]; stats: DriverStats }> =>
+      (await apiFetch("/api/admin/drivers")).json(),
   });
 }
 
@@ -36,7 +36,8 @@ export interface DriverDetail extends Driver {
 export function useDriverDetail(driverId: string) {
   return useQuery({
     queryKey: ["driver", driverId],
-    queryFn: () => apiFetch<{ success: boolean; driver: DriverDetail }>(`/api/admin/drivers/${driverId}`),
+    queryFn: async (): Promise<{ success: boolean; driver: DriverDetail }> =>
+      (await apiFetch(`/api/admin/drivers/${driverId}`)).json(),
     enabled: !!driverId,
   });
 }
@@ -50,8 +51,8 @@ export interface DriverDocuments {
 export function useDriverDocuments(driverId: string) {
   return useQuery({
     queryKey: ["driver-docs", driverId],
-    queryFn: () =>
-      apiFetch<{ success: boolean; documents: DriverDocuments }>(`/api/admin/drivers/${driverId}/documents`),
+    queryFn: async (): Promise<{ success: boolean; documents: DriverDocuments }> =>
+      (await apiFetch(`/api/admin/drivers/${driverId}/documents`)).json(),
     enabled: !!driverId,
   });
 }

@@ -52,8 +52,9 @@ export default function InvoiceDetailScreen() {
   async function viewPdf() {
     setBusy("pdf");
     try {
-      const res = await apiFetch<{ success: boolean; url: string }>(`/api/admin/invoices/${id}/pdf`);
-      if (res.url) await Linking.openURL(res.url);
+      const res = await apiFetch(`/api/admin/invoices/${id}/pdf`);
+      const data = (await res.json()) as { success: boolean; url: string };
+      if (data.url) await Linking.openURL(data.url);
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "PDF not available");
     } finally { setBusy(null); }

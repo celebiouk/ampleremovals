@@ -8,10 +8,10 @@ import { supabase } from "./supabase";
  * token so the server-side `requireAdmin` guard accepts the request. All
  * privileged work stays on the server — the device never holds the service key.
  */
-export async function apiFetch<T = unknown>(
+export async function apiFetch(
   path: string,
   options: RequestInit = {}
-): Promise<T> {
+): Promise<Response> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -28,18 +28,19 @@ export async function apiFetch<T = unknown>(
 
   const res = await fetch(`${ENV.SITE_URL}${path}`, { ...options, headers });
 
-  let json: unknown = null;
-  try {
-    json = await res.json();
-  } catch {
-    /* some routes (e.g. PDF) don't return JSON */
-  }
-
+  // Throw on error so callers' try/catch works; read the error body from a
+  // clone so the caller can still consume res.json()/res.text()/res.arrayBuffer().
   if (!res.ok) {
-    const message =
-      (json as { error?: string } | null)?.error ?? `Request failed (${res.status})`;
+    let message = `Request failed (${res.status})`;
+    try {
+      const j = (await res.clone().json()) as { error?: string } | null;
+      message = j?.error ?? message;
+    } catch {
+      /* non-JSON error body */
+    }
     throw new Error(message);
   }
 
-  return json as T;
+  // Returns the raw Response — callers call `.json()` / `.text()` / `.arrayBuffer()`.
+  return res;
 }

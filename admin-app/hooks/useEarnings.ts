@@ -20,6 +20,7 @@ export interface EarningRow {
 export function useEarnings() {
   return useQuery({
     queryKey: ["earnings"],
-    queryFn: () => apiFetch<{ success: boolean; earnings: EarningRow[] }>("/api/admin/earnings"),
+    queryFn: async (): Promise<{ success: boolean; earnings: EarningRow[] }> =>
+      (await apiFetch("/api/admin/earnings")).json(),
   });
 }

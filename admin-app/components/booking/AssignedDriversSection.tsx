@@ -19,8 +19,9 @@ export function AssignedDriversSection({ bookingId }: { bookingId: string }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await apiFetch<{ success: boolean; assignments: any[] }>(`/api/admin/bookings/${bookingId}/drivers`);
-      setAssignments(res.assignments ?? []);
+      const res = await apiFetch(`/api/admin/bookings/${bookingId}/drivers`);
+      const data = (await res.json()) as { success: boolean; assignments: any[] };
+      setAssignments(data.assignments ?? []);
     } catch { /* shown elsewhere */ }
   }, [bookingId]);
 

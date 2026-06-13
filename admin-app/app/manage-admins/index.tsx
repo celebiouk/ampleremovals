@@ -20,10 +20,12 @@ export default function ManageAdminsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [u, a] = await Promise.all([
-        apiFetch<{ success: boolean; users: AdminUser[] }>("/api/admin/users"),
-        apiFetch<{ success: boolean; logs: AdminActivityLog[] }>("/api/admin/activity?limit=25"),
+      const [uRes, aRes] = await Promise.all([
+        apiFetch("/api/admin/users"),
+        apiFetch("/api/admin/activity?limit=25"),
       ]);
+      const u = (await uRes.json()) as { success: boolean; users: AdminUser[] };
+      const a = (await aRes.json()) as { success: boolean; logs: AdminActivityLog[] };
       setUsers(u.users ?? []);
       setLogs(a.logs ?? []);
     } catch (e) {

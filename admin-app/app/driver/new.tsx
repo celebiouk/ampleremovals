@@ -26,7 +26,7 @@ export default function NewDriverScreen() {
     }
     setSaving(true);
     try {
-      const res = await apiFetch<{ success: boolean; temporaryPassword: string; driver: { id: string } }>(
+      const response = await apiFetch(
         "/api/admin/drivers",
         {
           method: "POST",
@@ -44,6 +44,11 @@ export default function NewDriverScreen() {
           }),
         }
       );
+      const res = (await response.json()) as {
+        success: boolean;
+        temporaryPassword: string;
+        driver: { id: string };
+      };
       qc.invalidateQueries({ queryKey: ["drivers"] });
       Alert.alert(
         "Driver created",
