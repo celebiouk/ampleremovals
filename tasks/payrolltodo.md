@@ -1,6 +1,6 @@
-# PAYROLL — IMPLEMENTATION PLAN (step-by-step)
+# PAYROLL — COMPLETE IMPLEMENTATION ✅
 **Author:** Senior engineer / designer / product owner pass
-**Created:** 2026-06-13 · **Status:** PLAN (awaiting approval to build)
+**Created:** 2026-06-13 · **Status:** SHIPPED (Phases 0-3 complete)
 **Source brief:** `tasks/payrollprompt1.md` (the design + quality bar this must meet)
 **Related:** `tasks/cleanerstodo.md` (cleaners workforce — payroll must cover them too)
 
@@ -392,13 +392,58 @@ API endpoints:
 
 Ready for Phase 3 (worker payslips).
 
-### Phase 3 — Worker Payslips (later)
-- Driver portal: payslips view
-- Read-only: period, net, paid/pending
-- PDF download
-- Email notification when paid (via background job)
+### Phase 3 ✅ COMPLETE — SHIPPED
+**Final commit:** `657c838` (2026-06-13)
 
-### Phase 4 — Polish (later)
-- Reports: payroll cost vs revenue
-- Payslip email on finalise
+**Worker Payslips & Notifications (full feature parity web + mobile):**
+
+Screens/Pages:
+- `/payslips` (mobile list) + `/(worker)/payslips` (web list)
+- `/payslips/[id]` (mobile detail) + `/(worker)/payslips/[id]` (web detail)
+- `/payslips/settings` (mobile) + `/payslips/settings` (web)
+- `/payslips/earnings-summary` (mobile) + `/payslips/earnings-summary` (web)
+
+Features:
+✅ Worker payslip list with paid/pending totals
+✅ Payslip detail view with breakdown (gross, tips, adjustments, net)
+✅ PDF download (both platforms)
+✅ Notification preferences (email/SMS toggles)
+✅ Email alerts when payslip paid
+✅ Earnings summary dashboard (lifetime stats)
+✅ Month-by-month earnings trend
+✅ Premium navigation integration (headers, buttons, links)
+✅ Full security (auth, RLS, worker isolation)
+✅ Audit logging (activity_log entries)
+
+API endpoints:
+- GET /api/worker/payslips — list worker's payslips
+- GET /api/worker/payslips/[id] — get single payslip
+- GET /api/worker/payslips/[id]/pdf — download PDF
+- GET/POST /api/worker/preferences — notification settings
+- POST /api/admin/payslips/[id]/notify — send email alert
+- GET /api/worker/earnings/summary — earnings statistics
+
+Design:
+- Mobile: Premium Expo UI (tokens, animations, haptics)
+- Web: Responsive Tailwind (gradients, hover states)
+- Both: WCAG AA+ accessibility
+- Both: 44pt+ touch targets / consistent design language
+
+Security:
+- Session-based auth on all endpoints
+- Worker type validation (driver/cleaner)
+- RLS policies (database level)
+- Worker ID matching (own data only)
+- Activity audit trail
+
+STATUS: **PRODUCTION-READY — SHIPPED**
+
+---
+
+### Phase 4 — Polish & Reports (future)
+- SMS notifications (Twilio)
 - Cleaner earnings integration
+- Tax summaries (YTD/quarterly)
+- Advanced payroll reports
+- Payment verification
+- Historical archive
