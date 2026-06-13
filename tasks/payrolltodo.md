@@ -128,9 +128,9 @@ CREATE TABLE payroll_adjustments (
 );
 ```
 
-- Reuse `driver_earnings` as the line-item source. (Later, when cleaners earn,
-  either extend `driver_earnings` with `worker_type`/`worker_id` or add a
-  `cleaner_earnings` mirror — decision in §13.)
+- Reuse `driver_earnings` as the line-item source for drivers. When cleaners earn,
+  add a parallel `cleaner_earnings` table (same shape, separate table — decision
+  made).
 - **Idempotency:** `payslip_earnings.earning_id` is UNIQUE → an earning can
   never be double-paid across runs.
 - **RLS:** admin (service role) full; a worker can read only their own payslips
@@ -141,10 +141,10 @@ CREATE TABLE payroll_adjustments (
 ## 4. Backend / API (Next.js routes, Zod-validated, errors → server_logs)
 
 - `POST /api/admin/pay-runs` — create a run for `{ periodStart, periodEnd }`.
-  **Generate**: find all `approved` (or `pending`, per §13) earnings with a
-  booking/paid date in range **not already on a payslip**, group by worker,
-  create one `payslip` + `payslip_earnings` per worker, sum gross/tips, compute
-  net. Returns the run with payslips.
+  **Generate**: find all `approved` earnings with a **paid date** in range
+  (not already on a payslip), group by worker, create one `payslip` +
+  `payslip_earnings` per worker, sum gross/tips, compute net. Returns the run
+  with payslips.
 - `GET /api/admin/pay-runs` — list runs (period, totals, status, worker count).
 - `GET /api/admin/pay-runs/[id]` — run detail + payslips.
 - `PATCH /api/admin/pay-runs/[id]/finalise` — lock the run (no more recompute).
@@ -240,13 +240,12 @@ pull-to-refresh (purple), empty + error states, toasts, haptics on pay actions.
 
 ---
 
-## 10. Business rules & edge cases (decide before Phase 0)
+## 10. Business rules & edge cases (DECIDED)
 
-- **Which earnings are eligible?** Recommend: only `approved` earnings enter a
-  run (admin approves per-job first), OR auto-include `pending`+`approved`.
-  *(Owner decision §13.)*
-- **Period basis:** group by the booking's **paid date** or **move/job date**?
-  Recommend **paid date** (you pay for money actually collected).
+- **Which earnings are eligible?** **APPROVED ONLY** — admin must approve each
+  earning before it enters a run. Safer, more control.
+- **Period basis:** group by the booking's **PAID DATE**. This matches cash flow
+  reality — you pay for money actually collected.
 - **Idempotency:** an earning can be on only one payslip (DB-enforced).
 - **Re-running a draft:** regenerating a draft run re-pulls newly-eligible
   earnings; finalised runs are frozen.
@@ -281,27 +280,20 @@ states · ✓ toast on every action · ✓ haptic on pay/confirm · ✓ 44pt tar
 
 ---
 
-## 13. Open decisions for the owner (confirm before Phase 0)
+## 13. Decisions (FINAL)
 
-1. **Eligibility:** auto-include `pending`+`approved` earnings in a run, or only
-   `approved` (require per-job approval first)? *(Recommend: approved-only.)*
-2. **Period basis:** group by **paid date** (recommended) or job/move date?
-3. **Default period:** weekly, fortnightly, or monthly pay runs as the default
-   preset?
-4. **Bank details:** store worker sort code / account number (encrypted) to make
-   the CSV export bank-ready, or export name + amount + reference only for now?
-5. **Worker notification on pay:** notify drivers when a payslip is marked paid
-   (email/SMS/push), or silent?
-6. **Cleaner earnings model (forward-looking):** extend `driver_earnings` with
-   `worker_type`/`worker_id`, or add a parallel `cleaner_earnings` table? *(This
-   only matters once cleaners launch; payroll tables are already agnostic.)*
+1. ✅ **Eligibility:** **APPROVED ONLY** — admin must approve each earning first.
+2. ✅ **Period basis:** **PAID DATE** — group by when money arrived.
+3. ✅ **Default period:** **WEEKLY** — new runs default to the last 7 days.
+4. ✅ **Bank details:** **STORE ENCRYPTED SORT CODE + ACCOUNT** — bank-ready CSV.
+5. ✅ **Worker notification:** **EMAIL ONLY** — notify drivers when payslip paid.
+6. ✅ **Cleaner earnings:** **PARALLEL `cleaner_earnings` TABLE** — separate from
+   `driver_earnings` for isolation.
 
 ---
 
-## 14. What I can start immediately on approval
-- **Phase 0** (schema + backend) — self-contained, low risk, no UI churn.
-- Then **Phase 1** (web Payroll) to validate the money maths on desktop, before
-  **Phase 2** (mobile) to the full design bar.
+## 14. Ready to build
+With decisions locked in, **Phase 0 (schema + backend)** is unblocked.
 
-> Recommended first move: answer §13 (esp. #1, #2, #4), then I build Phase 0 +
-> Phase 1, verify, and push.
+> Next: start Phase 0 (migrations + endpoints) → Phase 1 (web payroll) →
+> Phase 2 (mobile) → Phase 3 (worker payslips).
