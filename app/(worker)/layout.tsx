@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
-import { LogOut } from 'lucide-react';
+import { SignOutButton } from './SignOutButton';
 
 export const metadata = {
   title: 'My Payslips - Ample Removals',
@@ -23,16 +23,7 @@ export default function WorkerLayout({ children }: { children: ReactNode }) {
             >
               My Payslips
             </Link>
-            <button
-              onClick={() => {
-                // Sign out logic would go here
-                window.location.href = '/api/auth/logout';
-              }}
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium transition"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
+            <SignOutButton />
           </nav>
         </div>
       </header>
