@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Download, CheckCheck, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
+import { PayslipDetailDrawer } from "@/components/admin/payroll/PayslipDetailDrawer";
 
 interface Payslip {
   id: string;
@@ -48,6 +50,7 @@ export default function PayRunDetailPage() {
   const [payingAll, setPayingAll] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [finalising, setFinalising] = useState(false);
+  const [openPayslipId, setOpenPayslipId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRunDetail();
@@ -165,8 +168,6 @@ export default function PayRunDetailPage() {
     );
   }
 
-  const formatCurrency = (amount: number) => `£${(amount / 100).toFixed(2)}`;
-
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-7xl">
@@ -267,7 +268,11 @@ export default function PayRunDetailPage() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {run.payslips.map((payslip) => (
-                  <tr key={payslip.id} className="hover:bg-slate-50 transition-colors">
+                  <tr
+                    key={payslip.id}
+                    onClick={() => setOpenPayslipId(payslip.id)}
+                    className="cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
                     <td className="px-6 py-4 text-sm text-slate-900 font-medium">
                       {payslip.worker_type === "driver" ? "Driver" : "Cleaner"} {payslip.worker_id.slice(0, 8)}
                     </td>
@@ -298,7 +303,18 @@ export default function PayRunDetailPage() {
             </table>
           </div>
         </div>
+
+        <p className="mt-3 text-center text-xs text-slate-400">
+          Tap a worker row to manage their payslip — adjustments, mark paid, or download PDF.
+        </p>
       </div>
+
+      <PayslipDetailDrawer
+        payslipId={openPayslipId}
+        locked={run.status === "paid" || run.status === "cancelled"}
+        onClose={() => setOpenPayslipId(null)}
+        onChanged={loadRunDetail}
+      />
     </div>
   );
 }
