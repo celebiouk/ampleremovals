@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Calendar, DollarSign } from "lucide-react-native";
+import { Calendar, DollarSign, Settings } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, ScreenHeader, StatCard } from "@/components/ui";
 import { usePayslips } from "@/hooks/usePayslips";
@@ -55,7 +55,20 @@ export default function PayslipsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.slate[50] }}>
-      <ScreenHeader title="My Payslips" />
+      <ScreenHeader
+        title="My Payslips"
+        right={
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.push("/payslips/settings");
+            }}
+            style={{ padding: spacing.sm }}
+          >
+            <Settings size={24} color={colors.primary.DEFAULT} />
+          </Pressable>
+        }
+      />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: spacing.base }}

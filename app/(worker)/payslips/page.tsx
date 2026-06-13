@@ -121,7 +121,15 @@ export default function PayslipsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">My Payslips</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">My Payslips</h1>
+          <Link
+            href="/payslips/settings"
+            className="text-purple-600 hover:text-purple-700 font-medium text-sm border border-purple-200 rounded-lg px-4 py-2 transition"
+          >
+            Settings
+          </Link>
+        </div>
 
         {/* Totals */}
         <div className="grid grid-cols-2 gap-4 mb-8">
