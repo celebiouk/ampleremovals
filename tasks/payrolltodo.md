@@ -10,6 +10,8 @@
 
 ---
 
+WHAT EVER YOU BUILD FOR MAIN APP ALSO DO TO THE MOBILE APP (ADMIN-APP)
+
 ## 0. TL;DR
 
 We already calculate, per booking, what each driver earns (`driver_earnings`:
@@ -311,16 +313,27 @@ Commit: `18475cd` (2026-06-13)
 - Premium UI: cards, shadows, currency formatting, status pills
 - Responsive grid layout
 
-### Phase 2 ✅ COMPLETE — PREMIUM DESIGN
-Commit: `eb4923e` (2026-06-13, final: premium design applied)
-**Base commit:** `47f8d87`
+### Phase 2 ✅ COMPLETE — FEATURE PARITY + PREMIUM DESIGN
+**Final commit:** `d4912c9` (2026-06-13, adjustments added)
+**Previous commits:** `47f8d87` (basic), `eb4923e` (premium design), `5d76ac0` (new run screen)
 
-Features:
-- Pay runs list: animated cards, sort tabs (date/status/workers), primary button
-- Run detail: 2x2 StatCard grid (gross/tips/adjustments/net), payslips FlatList, Export CSV, Pay all
-- Payslip detail: breakdown card, PDF viewer, pay action, adjustments list
+**Screens (all mobile routes):**
+- `/payroll` — pay runs list (animated cards, sort tabs, FAB → new)
+- `/payroll-new` — create pay run (quick presets + manual date entry)
+- `/payroll/[id]` — run detail (2×2 StatCard totals, payslips FlatList, Export CSV, Pay all)
+- `/payslip/[id]` — payslip detail (breakdown card, PDF, mark paid, adjustments list)
+- `/payslip/[id]/adjustments` — adjustment editor (add/delete bonus/deduction/advance/expense)
+
+**Feature parity with web Phase 1:**
+✅ Pay runs list | ✅ Create new run | ✅ Run detail with payslips | ✅ Payslip detail
+✅ Adjustments (add/delete) | ✅ Export CSV | ✅ PDF viewer | ✅ Mark paid
+
+**Data layer:**
 - Hooks: `usePayRuns`, `usePayRunDetail`, `usePayslip` (TanStack Query + offline cache)
-- Entry point: More → Finance → Payroll (added to more.tsx menu)
+- API endpoints: POST/DELETE adjustments, GET payslip detail
+- Query client invalidation on all mutations
+
+**Entry point:** More → Finance → Payroll (added to more.tsx menu)
 
 Design tokens + implementation:
 - Colors: brand purple (#6b21a8) + green (#16a34a) from colors.ts
