@@ -1,0 +1,172 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/authStore";
+import type { Job, ClockStatus, DriverNotification } from "@/lib/types";
+
+type Scope = "today" | "upcoming" | "week";
+
+/** Jobs list for a scope, via the server route (service-role, traffic-safe). */
+export function useJobs(scope: Scope) {
+  return useQuery({
+    queryKey: ["jobs", scope],
+    queryFn: async (): Promise<Job[]> => {
+      const res = await apiFetch(`/api/drivers/jobs?scope=${scope}`);
+      const json = (await res.json()) as { jobs: Job[] };
+      return json.jobs ?? [];
+    },
+  });
+}
+
+/** A single job with full detail. Read via Supabase directly (RLS lets a driver
+ *  read their assigned bookings — same boundary the web portal relies on). */
+export function useJob(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: ["job", bookingId],
+    enabled: !!bookingId,
+    queryFn: async (): Promise<Job> => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          "*, customer:customers(*), origin:addresses!origin_address_id(*), destination:addresses!destination_address_id(*)"
+        )
+        .eq("id", bookingId)
+        .single();
+      if (error) throw new Error(error.message);
+      return data as Job;
+    },
+  });
+}
+
+export interface JobExtras {
+  coDrivers: { name: string; isLead: boolean }[];
+  earning: {
+    total_earnings: number; gross_earnings: number; tip_amount: number;
+    pay_percentage: number; status: string;
+  } | null;
+}
+
+export function useJobExtras(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: ["job-extras", bookingId],
+    enabled: !!bookingId,
+    queryFn: async (): Promise<JobExtras> => {
+      const res = await apiFetch(`/api/drivers/jobs/${bookingId}/extras`);
+      const json = (await res.json()) as { coDrivers?: JobExtras["coDrivers"]; earning?: JobExtras["earning"] };
+      return { coDrivers: json.coDrivers ?? [], earning: json.earning ?? null };
+    },
+  });
+}
+
+export function useClock() {
+  return useQuery({
+    queryKey: ["clock"],
+    queryFn: async (): Promise<ClockStatus> => {
+      const res = await apiFetch(`/api/drivers/time`);
+      const json = (await res.json()) as {
+        entries: { entry_type: string; at: string }[];
+        status: { clockedIn: boolean; onBreak: boolean };
+      };
+      const entries = json.entries ?? [];
+      const lastClockIn = [...entries].reverse().find((e) => e.entry_type === "clock_in");
+      return {
+        clocked_in: json.status?.clockedIn ?? false,
+        on_break: json.status?.onBreak ?? false,
+        last_clock_in: lastClockIn?.at ?? null,
+        entries_today: entries,
+      };
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+export function useClockAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (action: "clock_in" | "clock_out" | "break_start" | "break_end") => {
+      const res = await apiFetch(`/api/drivers/time`, { method: "POST", body: JSON.stringify({ entry_type: action }) });
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clock"] }),
+  });
+}
+
+export function useDriverNotifications() {
+  return useQuery({
+    queryKey: ["driver-notifications"],
+    queryFn: async (): Promise<DriverNotification[]> => {
+      const res = await apiFetch(`/api/drivers/notifications`);
+      const json = (await res.json()) as { notifications: DriverNotification[] };
+      return json.notifications ?? [];
+    },
+  });
+}
+
+export interface DriverProfile {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  preferred_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  profile_photo_url?: string | null;
+  vehicle_registration?: string | null;
+  vehicle_make_model?: string | null;
+  license_number?: string | null;
+  license_expiry?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relationship?: string | null;
+  created_at?: string | null;
+}
+
+export function useDriverProfile() {
+  const driverId = useAuthStore((s) => s.driverId);
+  return useQuery({
+    queryKey: ["driver-profile", driverId],
+    enabled: !!driverId,
+    queryFn: async (): Promise<DriverProfile> => {
+      const { data, error } = await supabase.from("drivers").select("*").eq("id", driverId).single();
+      if (error) throw new Error(error.message);
+      return data as DriverProfile;
+    },
+  });
+}
+
+export interface DriverStats {
+  jobsThisWeek: number;
+  jobsThisMonth: number;
+  earningsThisMonth: number;
+  tipsThisMonth: number;
+}
+
+export function useDriverStats() {
+  const driverId = useAuthStore((s) => s.driverId);
+  return useQuery({
+    queryKey: ["driver-stats", driverId],
+    enabled: !!driverId,
+    queryFn: async (): Promise<DriverStats> => {
+      const now = new Date();
+      const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [{ count: monthJobs }, { data: weekAssign }, { data: earnings }] = await Promise.all([
+        supabase.from("booking_driver_assignments").select("*", { count: "exact", head: true }).eq("driver_id", driverId),
+        supabase.from("booking_driver_assignments")
+          .select("id, booking:bookings(move_date)").eq("driver_id", driverId),
+        supabase.from("driver_earnings").select("total_earnings, tip_amount").eq("driver_id", driverId).gte("created_at", startOfMonth.toISOString()),
+      ]);
+
+      const weekKey = startOfWeek.getTime();
+      const jobsThisWeek = (weekAssign ?? []).filter((a) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const md = (a as any).booking?.move_date;
+        return md && new Date(md).getTime() >= weekKey;
+      }).length;
+
+      const earningsThisMonth = (earnings ?? []).reduce((s, e) => s + (e.total_earnings || 0), 0);
+      const tipsThisMonth = (earnings ?? []).reduce((s, e) => s + (e.tip_amount || 0), 0);
+      return { jobsThisWeek, jobsThisMonth: monthJobs ?? 0, earningsThisMonth, tipsThisMonth };
+    },
+  });
+}

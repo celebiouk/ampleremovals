@@ -81,7 +81,16 @@ CREATE TABLE IF NOT EXISTS driver_time_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_driver_time_entries_driver ON driver_time_entries (driver_id, at);
 
+-- ── 5. Driver push tokens (Expo push) ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS driver_push_tokens (
+  expo_token TEXT PRIMARY KEY,
+  driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_driver_push_tokens_driver ON driver_push_tokens (driver_id);
+
 -- ── RLS: new tables are written/read server-side (service role) ──────────────
 ALTER TABLE journey_eta_log     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE driver_locations    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE driver_time_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE driver_push_tokens  ENABLE ROW LEVEL SECURITY;

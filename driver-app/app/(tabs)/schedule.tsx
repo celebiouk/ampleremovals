@@ -1,14 +1,63 @@
+import { useCallback, useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { CalendarDays } from "lucide-react-native";
+import { Screen, EmptyState, ErrorState } from "@/components/ui";
+import { JobCard, JobCardSkeletonRow } from "@/components/JobCard";
+import { useJobs } from "@/hooks/queries";
+import { colors, spacing, type } from "@/lib/theme";
+import { toDateKey, formatDayLabel, isToday } from "@/lib/format";
+import type { Job } from "@/lib/types";
 
-// Placeholder — Step 4 replaces this with the weekly schedule.
 export default function ScheduleScreen() {
+  const router = useRouter();
+  const jobs = useJobs("week");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await jobs.refetch();
+    setRefreshing(false);
+  }, [jobs]);
+
+  // Group jobs by day, sorted ascending.
+  const grouped = useMemo(() => {
+    const map = new Map<string, Job[]>();
+    for (const j of jobs.data ?? []) {
+      if (!j.move_date) continue;
+      const key = toDateKey(new Date(j.move_date));
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(j);
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [jobs.data]);
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
-      <View className="px-5 pt-2">
-        <Text className="text-2xl font-bold text-slate-900">Schedule</Text>
-        <Text className="mt-1 text-slate-500">Your weekly jobs will appear here.</Text>
-      </View>
-    </SafeAreaView>
+    <Screen title="Schedule" subtitle="The next 7 days" onRefresh={onRefresh} refreshing={refreshing}>
+      {jobs.isLoading ? (
+        <>
+          <JobCardSkeletonRow />
+          <JobCardSkeletonRow />
+          <JobCardSkeletonRow />
+        </>
+      ) : jobs.isError ? (
+        <ErrorState message={(jobs.error as Error)?.message} onRetry={() => jobs.refetch()} />
+      ) : grouped.length === 0 ? (
+        <EmptyState title="Nothing scheduled" message="You have no jobs in the next 7 days." icon={<CalendarDays size={52} color={colors.primary.lighter} />} />
+      ) : (
+        grouped.map(([day, dayJobs]) => (
+          <View key={day} style={{ marginBottom: spacing.lg }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm }}>
+              <Text style={[type.label, { color: isToday(day) ? colors.primary.DEFAULT : colors.slate[500] }]}>
+                {isToday(day) ? "Today" : formatDayLabel(day)}
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.slate[200] }} />
+              <Text style={[type.bodySmall, { color: colors.slate[400] }]}>{dayJobs.length} job{dayJobs.length === 1 ? "" : "s"}</Text>
+            </View>
+            {dayJobs.map((job) => <JobCard key={job.id} job={job} onPress={() => router.push(`/job/${job.id}`)} />)}
+          </View>
+        ))
+      )}
+    </Screen>
   );
 }
