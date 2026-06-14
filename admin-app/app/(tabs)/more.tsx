@@ -60,6 +60,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
     ],
   },
   {
+    title: "Payroll (PAYE)",
+    items: [
+      { label: "Pay Runs", icon: PoundSterling, href: "/paye" },
+      { label: "Employees", icon: Users, href: "/paye/employees" },
+    ],
+  },
+  {
     title: "Intelligence",
     items: [
       { label: "Reports", icon: BarChart2, href: "/reports" },

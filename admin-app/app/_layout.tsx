@@ -141,6 +141,9 @@ function RootNavigator() {
       <Stack.Screen name="bookkeeping/income" />
       <Stack.Screen name="bookkeeping/director-loan" />
       <Stack.Screen name="bookkeeping/year-end" />
+      <Stack.Screen name="paye/index" />
+      <Stack.Screen name="paye/[id]" />
+      <Stack.Screen name="paye/employees" />
     </Stack>
   );
 }
