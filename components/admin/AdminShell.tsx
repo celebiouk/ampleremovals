@@ -54,6 +54,13 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "PAYROLL (PAYE)",
+    items: [
+      { href: "/admin/paye", label: "Pay Runs", icon: PoundSterling },
+      { href: "/admin/paye/employees", label: "Employees", icon: Users },
+    ],
+  },
+  {
     label: "INTELLIGENCE",
     items: [
       { href: "/admin/reports", label: "Reports", icon: BarChart2 },
