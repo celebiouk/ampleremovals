@@ -18,6 +18,8 @@ COMMENT ON COLUMN bookings.quote_followup_stage IS 'Quote reminder ladder step r
 COMMENT ON COLUMN bookings.quote_last_followup_at IS 'Timestamp the next reminder gap is measured from (the last reminder, or quote_sent_at for step 1).';
 
 -- Fast lookup for the cron: bookings actively in the quote-sent reminder window.
-CREATE INDEX IF NOT EXISTS idx_bookings_quote_followup
+-- NB: distinct name from add_quote_followup.sql's idx_bookings_quote_followup —
+-- reusing that name with IF NOT EXISTS would silently skip this index.
+CREATE INDEX IF NOT EXISTS idx_bookings_quote_ladder
   ON bookings (status, quote_followup_stage, quote_last_followup_at)
   WHERE status = 'quote_sent';
