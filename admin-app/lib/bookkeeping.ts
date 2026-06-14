@@ -37,6 +37,7 @@ export const INCOME_CATEGORIES = [
   "Grant",
   "Scrap/recycling",
   "Referral commission",
+  "AnyVan work",
   "Other",
 ] as const;
 
