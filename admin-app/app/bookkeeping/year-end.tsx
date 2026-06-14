@@ -82,14 +82,14 @@ export default function YearEndScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const uri = FileSystem.cacheDirectory + `year-end-pack-${year}.csv`;
+      const uri = FileSystem.cacheDirectory + `year-end-pack-${year}.pdf`;
       const result = await FileSystem.downloadAsync(
-        `${ENV.SITE_URL}/api/admin/bookkeeping/year-end/export?year=${year}`,
+        `${ENV.SITE_URL}/api/admin/bookkeeping/year-end/export?year=${year}&format=pdf`,
         uri,
         { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} }
       );
       if (result.status !== 200) throw new Error("Download failed");
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(result.uri, { mimeType: "text/csv" });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(result.uri, { mimeType: "application/pdf" });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -156,7 +156,7 @@ export default function YearEndScreen() {
             </Card>
           )}
 
-          <Button label={downloading ? "Preparing…" : "Download pack (CSV)"} loading={downloading} icon={<Download size={18} color={colors.white} />} onPress={sharePack} />
+          <Button label={downloading ? "Preparing…" : "Share pack (PDF)"} loading={downloading} icon={<Download size={18} color={colors.white} />} onPress={sharePack} />
 
           <Card style={{ padding: spacing.base, flexDirection: "row", gap: spacing.sm }}>
             <Info size={18} color={colors.slate[400]} />

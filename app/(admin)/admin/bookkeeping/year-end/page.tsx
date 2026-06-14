@@ -93,8 +93,11 @@ export default function YearEndPage() {
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
               {[now, now - 1, now - 2].map((y) => <option key={y} value={y}>Year to {y}</option>)}
             </select>
-            <a href={`/api/admin/bookkeeping/year-end/export?year=${year}`} className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">
-              <Download className="h-4 w-4" /> Download pack (CSV)
+            <a href={`/api/admin/bookkeeping/year-end/export?year=${year}&format=pdf`} className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">
+              <Download className="h-4 w-4" /> Pack (PDF)
+            </a>
+            <a href={`/api/admin/bookkeeping/year-end/export?year=${year}&format=csv`} className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <Download className="h-4 w-4" /> CSV
             </a>
           </div>
         </div>

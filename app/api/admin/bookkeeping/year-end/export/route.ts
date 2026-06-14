@@ -6,7 +6,8 @@
 
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
-import { financialYearRange } from "@/lib/bookkeeping";
+import { financialYearRange, estimateCorporationTax } from "@/lib/bookkeeping";
+import { generateYearEndPackPDF } from "@/lib/pdf/generate-year-end-pack-pdf";
 
 function esc(v: unknown): string {
   const s = v == null ? "" : String(v);
@@ -21,6 +22,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const endYear = parseInt(url.searchParams.get("year") || String(new Date().getFullYear()), 10);
+    const format = url.searchParams.get("format") === "pdf" ? "pdf" : "csv";
 
     const supabase = createAdminClient();
     const { data: settings } = await supabase
@@ -43,7 +45,54 @@ export async function GET(req: Request) {
     const wages = (payslips ?? []).reduce((s, p) => s + Number(p.net_pay), 0);
     const opex = (expenses ?? []).filter((e) => !e.is_capital).reduce((s, e) => s + Number(e.amount), 0);
     const capital = (expenses ?? []).filter((e) => e.is_capital);
+    const capitalTotal = capital.reduce((s, e) => s + Number(e.amount), 0);
     const otherInc = (income ?? []).reduce((s, i) => s + Number(i.amount), 0);
+    const profit = revenue + otherInc - wages - opex;
+
+    // ── PDF pack ───────────────────────────────────────────────────────────
+    if (format === "pdf") {
+      const pdf = await generateYearEndPackPDF({
+        companyName: settings?.company_name ?? "Company",
+        companyNumber: settings?.company_number ?? "",
+        utr: settings?.company_utr ?? "",
+        periodStart: start,
+        periodEnd: end,
+        vatRegistered: false,
+        generatedAt: new Date().toLocaleDateString("en-GB"),
+        summary: {
+          revenue, otherIncome: otherInc, wages, expenses: opex, profit,
+          corporationTax: estimateCorporationTax(profit), capitalTotal,
+        },
+        expenses: (expenses ?? []).map((e) => ({
+          date: e.expense_date,
+          category: e.category === "Other" ? (e.category_other ?? "Other") : e.category,
+          supplier: e.supplier ?? "",
+          amount: Number(e.amount),
+          capital: !!e.is_capital,
+        })),
+        income: (income ?? []).map((i) => ({
+          date: i.income_date,
+          category: i.category === "Other" ? (i.category_other ?? "Other") : i.category,
+          amount: Number(i.amount),
+        })),
+        capital: capital.map((c) => ({
+          date: c.expense_date,
+          item: c.category === "Other" ? (c.category_other ?? "Other") : c.category,
+          amount: Number(c.amount),
+        })),
+        loan: (loan ?? []).map((l) => ({
+          date: l.entry_date,
+          direction: l.direction === "director_to_company" ? "Put in" : "Took out",
+          amount: Number(l.amount),
+        })),
+      });
+      return new Response(new Uint8Array(pdf), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="year-end-pack-${label}.pdf"`,
+        },
+      });
+    }
 
     const lines: string[] = [];
     lines.push(row("Year-End Pack", settings?.company_name ?? "Company"));
