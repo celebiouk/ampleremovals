@@ -19,6 +19,7 @@ type TrackData = {
   completed: boolean;
   eta: string | null;
   driverName: string;
+  vehicle: string | null;
   destination: { line_1: string; city: string; postcode: string; lat: number; lng: number } | null;
   location: { lat: number; lng: number; heading: number | null; recorded_at: string } | null;
   error?: string;
@@ -81,7 +82,10 @@ export default function TrackPage() {
                 {data.completed ? "All done 🎉" : data.arrived ? `${data.driverName} has arrived` : etaLabel(data.eta)}
               </h1>
               {!data.completed && !data.arrived && (
-                <p className="mt-2 text-white/70">{data.driverName} is driving to your {data.leg === "delivery" ? "delivery address" : "address"}.</p>
+                <p className="mt-2 text-white/70">
+                  {data.driverName} is driving to your {data.leg === "delivery" ? "delivery address" : "address"}
+                  {data.vehicle ? ` in a ${data.vehicle}` : ""}.
+                </p>
               )}
               <p className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-medium">Ref {data.reference}</p>
             </div>

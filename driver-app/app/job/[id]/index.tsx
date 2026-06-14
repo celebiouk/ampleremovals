@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, Linking, Share, Pressable, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -6,6 +6,7 @@ import {
   Package, CheckCircle2, Share2, Phone, Play, Flag,
 } from "lucide-react-native";
 import { Screen, Card, Button, Badge, toast, ErrorState, Skeleton } from "@/components/ui";
+import { ArrivedModal } from "@/components/ArrivedModal";
 import { useJob, useJobExtras } from "@/hooks/queries";
 import { colors, radius, spacing, shadows, type } from "@/lib/theme";
 import { customerShortName, serviceLabel, formatDate, formatCurrency } from "@/lib/format";
@@ -30,12 +31,25 @@ export default function JobDetailScreen() {
   const job = useJob(id);
   const extras = useJobExtras(id);
   const [busy, setBusy] = useState(false);
+  const [arrivedDismissed, setArrivedDismissed] = useState(false);
 
   // Poll while a journey is live so arrival + ETA refresh without manual pull.
   const phase = job.data ? journeyPhase(job.data) : null;
   const active = phase === "enroute_pickup" || phase === "enroute_delivery";
 
   const refetch = useCallback(() => job.refetch(), [job]);
+
+  // Auto-refresh every 20s while en route, so background arrival + ETA surface here.
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => job.refetch(), 20_000);
+    return () => clearInterval(t);
+  }, [active, job]);
+
+  // Reset the arrived takeover whenever we leave an "at stop" phase.
+  useEffect(() => {
+    if (phase !== "at_pickup" && phase !== "at_delivery") setArrivedDismissed(false);
+  }, [phase]);
 
   if (job.isLoading) {
     return (
@@ -187,6 +201,18 @@ export default function JobDetailScreen() {
           <Text style={[type.bodySmall, { color: colors.slate[400] }]}>Live tracking on · refreshing automatically</Text>
         </View>
       ) : null}
+
+      {/* Full-screen arrival takeover (Call 4) — GPS detected the driver is at the stop. */}
+      <ArrivedModal
+        visible={(phase === "at_pickup" || phase === "at_delivery") && !arrivedDismissed}
+        leg={phase === "at_delivery" ? "delivery" : "pickup"}
+        customerName={customerShortName(j.customer?.full_name)}
+        onConfirm={() => {
+          setArrivedDismissed(true);
+          router.push(`/job/${j.id}/${phase === "at_delivery" ? "delivery" : "pickup"}`);
+        }}
+        onDismiss={() => setArrivedDismissed(true)}
+      />
     </Screen>
   );
 }

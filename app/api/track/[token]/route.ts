@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     // Resolve which driver is on this job, then their latest position.
     const { data: assignment } = await supabase
       .from("booking_driver_assignments")
-      .select("driver:drivers(id, first_name, preferred_name)")
+      .select("driver:drivers(id, first_name, preferred_name, vehicle_make_model)")
       .eq("booking_id", booking.id)
       .limit(1)
       .maybeSingle();
@@ -64,6 +64,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       completed: !!b.completed_at,
       eta,
       driverName: driver?.preferred_name || driver?.first_name || "Your driver",
+      vehicle: driver?.vehicle_make_model ?? null,
       destination: destination
         ? { line_1: destination.line_1, city: destination.city, postcode: destination.postcode, lat: destination.lat, lng: destination.lng }
         : null,
