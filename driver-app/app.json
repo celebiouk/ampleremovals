@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "Ample Driver",
+    "slug": "ample-driver-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "ampledriver",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#6b21a8"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ampleremovals.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Ample Driver uses your location to give customers a live ETA and to detect arrival at the job.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Ample Driver tracks your location during a job so customers get live ETAs even when the app is in the background.",
+        "NSCameraUsageDescription": "Ample Driver uses the camera to photograph items at pickup and delivery.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "package": "com.ampleremovals.driver",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Ample Driver tracks your location during a job so customers get live ETAs even when the app is in the background.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-camera",
+        { "cameraPermission": "Ample Driver uses the camera to photograph items at pickup and delivery." }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}
