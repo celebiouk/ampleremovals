@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { recordArrived } from "@/lib/driver-eta";
+import { autoSendFullBalanceInvoice } from "@/lib/auto-full-invoice";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -21,6 +22,16 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
       return NextResponse.json({ success: false, error: "Not your job" }, { status: 403 });
     }
     await recordArrived(supabase, params.bookingId, leg, auth.driver, Number(lat) || 0, Number(lng) || 0);
+
+    // On PICKUP arrival, auto-generate + send the final balance invoice
+    // (quote total − deposit paid, VAT mirroring the quote). Best-effort: a
+    // failure here must never block the driver's arrival confirmation.
+    if (leg === "pickup") {
+      autoSendFullBalanceInvoice(params.bookingId).catch((e) =>
+        console.error("auto full-balance invoice on pickup failed:", e),
+      );
+    }
+
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 });
