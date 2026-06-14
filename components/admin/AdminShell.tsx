@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
+  Calculator, TrendingDown, TrendingUp, Landmark,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,15 @@ const NAV_GROUPS = [
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/earnings", label: "Driver Earnings", icon: PoundSterling },
       { href: "/admin/payroll", label: "Payroll", icon: PoundSterling },
+    ],
+  },
+  {
+    label: "BOOKKEEPING",
+    items: [
+      { href: "/admin/bookkeeping/year-end", label: "Year-End Tax", icon: Calculator },
+      { href: "/admin/bookkeeping/expenses", label: "Expenses", icon: TrendingDown },
+      { href: "/admin/bookkeeping/income", label: "Other Income", icon: TrendingUp },
+      { href: "/admin/bookkeeping/director-loan", label: "Director's Loan", icon: Landmark },
     ],
   },
   {

@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import {
   Users, Receipt, CreditCard, CalendarDays, BarChart2, Zap, Settings,
   Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3, TrendingUp,
+  TrendingDown, Landmark, Calculator,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -47,6 +48,15 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Compliance", icon: Shield, href: "/payroll/compliance" },
       { label: "Reconciliation", icon: Shield, href: "/payroll/reconciliation" },
       { label: "My Payslips", icon: PoundSterling, href: "/payslips" },
+    ],
+  },
+  {
+    title: "Bookkeeping",
+    items: [
+      { label: "Year-End Tax", icon: Calculator, href: "/bookkeeping/year-end" },
+      { label: "Expenses", icon: TrendingDown, href: "/bookkeeping/expenses" },
+      { label: "Other Income", icon: TrendingUp, href: "/bookkeeping/income" },
+      { label: "Director's Loan", icon: Landmark, href: "/bookkeeping/director-loan" },
     ],
   },
   {

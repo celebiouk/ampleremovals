@@ -137,6 +137,8 @@ function RootNavigator() {
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="notifications/index" />
       <Stack.Screen name="profile/index" />
+      <Stack.Screen name="bookkeeping/expenses" />
+      <Stack.Screen name="bookkeeping/income" />
     </Stack>
   );
 }
