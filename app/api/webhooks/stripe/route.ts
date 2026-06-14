@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         // When a full invoice is paid, compute what each assigned driver is
         // owed. Shared with the manual mark-paid path so it fires no matter
         // how the customer paid. (Driver payout stays manual.)
-        if (inv.type === "full") {
+        if (inv.type === "full_balance") {
           await calculateDriverEarnings(inv.booking_id, inv.total, inv.vat_amount ?? 0);
         }
         break;
