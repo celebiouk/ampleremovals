@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("*, bookings!inner(id, reference, service_type, customer_id, customers!inner(full_name, email, phone))")
+    .select("*, bookings!inner(id, reference, service_type, status, customer_id, customers!inner(full_name, email, phone))")
     .eq("id", invoiceId)
     .single();
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Invoice not found or cancelled" }, { status: 400 });
   }
 
-  const booking = invoice.bookings as { id: string; reference: string; service_type: string; customer_id: string; customers: { full_name: string; email: string; phone: string } };
+  const booking = invoice.bookings as { id: string; reference: string; service_type: string; status: string; customer_id: string; customers: { full_name: string; email: string; phone: string } };
   const customer = booking.customers;
 
   // Fetch full booking details for PDF regeneration
@@ -187,6 +187,23 @@ export async function POST(request: NextRequest) {
 
   // Update invoice status
   await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", invoiceId);
+
+  // Advance the booking status when the invoice is actually sent:
+  // deposit invoice → "Deposit Invoice Sent", full balance → "Full Invoice Sent".
+  // (Confirmation only sets "Quote Confirmed"; sending the invoice is what moves
+  // the pipeline on.) Don't regress a booking that's already further along.
+  const nextStatus = invoice.type === "deposit" ? "deposit_invoice_sent"
+    : invoice.type === "full_balance" ? "full_invoice_sent" : null;
+  if (nextStatus && booking.status !== nextStatus) {
+    await supabase.from("bookings").update({ status: nextStatus }).eq("id", booking.id);
+    await supabase.from("status_history").insert({
+      booking_id: booking.id,
+      previous_status: booking.status ?? null,
+      new_status: nextStatus,
+      changed_by: "admin",
+      reason: `${invoice.type === "deposit" ? "Deposit" : "Full balance"} invoice ${invoice.invoice_number} sent`,
+    });
+  }
 
   // Log activity
   await supabase.from("activity_log").insert({

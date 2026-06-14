@@ -73,10 +73,13 @@ export async function POST(req: NextRequest) {
       console.warn("Could not record confirmation (table may not exist):", insertError);
     }
 
-    // Update booking status to deposit_invoice_sent
+    // Customer accepted → move to "Quote Confirmed" and stamp the confirmation
+    // time. Setting quote_confirmed_at + leaving status != 'quote_sent' both stop
+    // the reminder ladder. The deposit invoice (sent next by the admin) is what
+    // advances the booking to 'deposit_invoice_sent'.
     const { error: updateError } = await supabase
       .from("bookings")
-      .update({ status: "deposit_invoice_sent" })
+      .update({ status: "quote_confirmed", quote_confirmed_at: new Date().toISOString() })
       .eq("id", bookingId);
 
     if (updateError) {
@@ -90,8 +93,8 @@ export async function POST(req: NextRequest) {
     // Add to status history
     await supabase.from("status_history").insert({
       booking_id: bookingId,
-      previous_status: "pending", // Assuming quotes are sent during pending
-      new_status: "deposit_invoice_sent",
+      previous_status: "quote_sent",
+      new_status: "quote_confirmed",
       changed_by: "system",
       reason: "Customer confirmed quote via email",
     });

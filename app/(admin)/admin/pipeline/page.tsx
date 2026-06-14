@@ -27,6 +27,7 @@ const COLUMNS: { id: string; label: string; statuses: BookingStatus[]; dropStatu
   { id: "inquiry", label: "New Inquiries", statuses: ["inquiry"], dropStatus: "inquiry", colour: "bg-slate-100" },
   { id: "contacted", label: "Contacted", statuses: ["called", "not_called", "answered", "not_answered"], dropStatus: "called", colour: "bg-blue-50" },
   { id: "in_progress", label: "In Progress", statuses: ["processing", "pending"], dropStatus: "processing", colour: "bg-indigo-50" },
+  { id: "quote", label: "Quote", statuses: ["quote_sent", "quote_confirmed"], dropStatus: "quote_sent", colour: "bg-sky-50" },
   { id: "invoice_sent", label: "Invoice Sent", statuses: ["deposit_invoice_sent", "full_invoice_sent"], dropStatus: "deposit_invoice_sent", colour: "bg-violet-50" },
   { id: "confirmed", label: "Confirmed", statuses: ["deposit_paid_job_confirmed", "full_balance_paid"], dropStatus: "deposit_paid_job_confirmed", colour: "bg-green-50" },
   { id: "completed", label: "Completed", statuses: ["job_completed"], dropStatus: "job_completed", colour: "bg-emerald-50" },

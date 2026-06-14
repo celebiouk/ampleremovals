@@ -55,6 +55,8 @@ export const statusColors = {
   not_answered:               { bg: "#fed7aa", text: "#9a3412", dot: "#f97316", accent: "#f97316" }, // orange (not answered = inquiry)
   processing:                 { bg: "#e9d5ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
   pending:                    { bg: "#e9d5ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
+  quote_sent:                 { bg: "#e0f2fe", text: "#0369a1", dot: "#0ea5e9", accent: "#0284c7" }, // sky (awaiting confirmation)
+  quote_confirmed:            { bg: "#ccfbf1", text: "#0f766e", dot: "#14b8a6", accent: "#0d9488" }, // teal (customer confirmed)
   deposit_invoice_sent:       { bg: "#e9d5ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple
   deposit_paid_job_confirmed: { bg: "#bbf7d0", text: "#065f46", dot: "#16a34a", accent: "#16a34a" }, // green
   full_invoice_sent:          { bg: "#e9d5ff", text: "#6b21a8", dot: "#9333ea", accent: "#7e22ce" }, // purple

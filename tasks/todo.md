@@ -1,3 +1,29 @@
+## Task: Quote-sent status + escalating reminder ladder (web + mobile)
+
+### Plan
+- [x] Add `quote_sent` ("Quote Sent to Customer") + `quote_confirmed` ("Quote Confirmed") statuses (web + mobile: types, labels, colours, pipelines, filters)
+- [x] Migration: `quote_followup_stage` + `quote_last_followup_at` on bookings (+ index)
+- [x] Quote send route → set status `quote_sent`, reset ladder, write status_history
+- [x] Quote confirm route → status `quote_confirmed`, set `quote_confirmed_at` (was missing)
+- [x] Deposit/full invoice send → advance booking to `deposit_invoice_sent` / `full_invoice_sent`
+- [x] Rewrite quote-followup cron: cumulative 7-step ladder (2h → +24h → +2d → +3d → +4d → +5d → +7d)
+- [x] vercel.json: quote-followup now hourly
+- [x] Web build clean; admin-app edits type-check (pre-existing unrelated tsc errors remain)
+
+### Review
+Sending a quote (web or mobile, same API) moves the booking to **Quote Sent to Customer** and
+starts a 7-step reminder ladder. Each reminder is spaced from the previous one (not the send):
+2h, then +24h, +2d, +3d, +4d, +5d, +7d, with escalating email/SMS/WhatsApp copy. The ladder
+runs only while `status = 'quote_sent'`, so it stops the instant the customer confirms
+(→ **Quote Confirmed**, `quote_confirmed_at` stamped) or the admin moves the lead elsewhere.
+Sending the **deposit invoice** then advances to **Deposit Invoice Sent**. Closed the latent
+bug where the email confirm route never set `quote_confirmed_at`.
+
+**Watch out:** run `supabase/migrations/add_quote_followup_v2.sql` before deploy. The admin-app
+has pre-existing unrelated TS errors (paye/payroll/cleaner-earnings/driver) — not from here.
+
+---
+
 ## MOBILE APP — DESIGN SYSTEM REBUILD (Phase 1, world-class pass)
 
 **Started:** 2026-06-10 · Fonts: Syne (display) + DM Sans (body) — per brief.

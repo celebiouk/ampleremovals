@@ -10,6 +10,8 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_answered:               "Called - Not Answered",
   processing:                 "Pending", // Processing removed, show as Pending
   pending:                    "Pending",
+  quote_sent:                 "Quote Sent to Customer",
+  quote_confirmed:            "Quote Confirmed",
   deposit_invoice_sent:       "Deposit Invoice Sent",
   deposit_paid_job_confirmed: "Job Confirmed",
   full_invoice_sent:          "Full Invoice Sent",
@@ -29,6 +31,8 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
   not_answered:               "bg-red-100 text-red-700", // Light red - not answered
   processing:                 "bg-yellow-100 text-yellow-700", // Same as pending
   pending:                    "bg-yellow-100 text-yellow-700",
+  quote_sent:                 "bg-sky-100 text-sky-700",
+  quote_confirmed:            "bg-teal-100 text-teal-700",
   deposit_invoice_sent:       "bg-violet-100 text-violet-700",
   deposit_paid_job_confirmed: "bg-green-500 text-white", // Green - job confirmed
   full_invoice_sent:          "bg-purple-100 text-purple-700",
@@ -46,6 +50,8 @@ export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
   not_answered:               "bg-red-400", // Light red
   processing:                 "bg-yellow-500",
   pending:                    "bg-yellow-500",
+  quote_sent:                 "bg-sky-500",
+  quote_confirmed:            "bg-teal-500",
   deposit_invoice_sent:       "bg-violet-500",
   deposit_paid_job_confirmed: "bg-green-600", // Green for confirmed
   full_invoice_sent:          "bg-purple-500",
@@ -87,13 +93,13 @@ export const SERVICE_COLOURS: Record<ServiceType, string> = {
 
 export const IN_PROGRESS_STATUSES: BookingStatus[] = [
   "called", "not_called", "answered", "not_answered",
-  "processing", "pending", "deposit_invoice_sent",
+  "processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
 ];
 
 export const ALL_STATUSES: BookingStatus[] = [
   "inquiry", "called", "not_called", "answered", "not_answered",
-  "processing", "pending", "deposit_invoice_sent",
+  "processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
 ];

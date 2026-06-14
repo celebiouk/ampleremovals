@@ -5,346 +5,150 @@ import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatCurrency } from "@/lib/utils";
 
 /**
- * GET /api/cron/quote-followup
- * Runs hourly - sends follow-ups for unconfirmed quotes
- * Sequence: 2 hours, 24 hours, 3 days, 7 days after quote sent
+ * GET /api/cron/quote-followup — runs hourly.
+ *
+ * Chases unconfirmed quotes with a 7-step reminder ladder. Each step is spaced
+ * from the PREVIOUS reminder (cumulative gaps), not from the original send:
+ *
+ *   step 1: 2 hours after the quote was sent
+ *   step 2: 24 hours after step 1
+ *   step 3: 2 days  after step 2
+ *   step 4: 3 days  after step 3
+ *   step 5: 4 days  after step 4
+ *   step 6: 5 days  after step 5
+ *   step 7: 7 days  after step 6   (final)
+ *
+ * A booking is in the ladder only while `status = 'quote_sent'`. The moment the
+ * customer confirms (status → 'quote_confirmed', quote_confirmed_at set) or the
+ * admin moves the lead anywhere else, reminders stop automatically.
+ *
+ * `quote_followup_stage` (0–7) tracks progress; `quote_last_followup_at` is the
+ * timestamp the next gap is measured from (the quote send for step 1, then each
+ * reminder). At most one step advances per run.
  */
+
+// Gap (in hours) from the previous reminder to each step.
+const GAP_HOURS: Record<number, number> = {
+  1: 2,
+  2: 24,
+  3: 2 * 24,
+  4: 3 * 24,
+  5: 4 * 24,
+  6: 5 * 24,
+  7: 7 * 24,
+};
+const FINAL_STAGE = 7;
+
 export async function GET(req: Request) {
   try {
-    // Verify cron secret
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const supabase = createAdminClient();
-    const now = new Date();
+    const now = Date.now();
 
-    // Calculate time windows
-    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    console.log(`📧 Checking for quotes needing follow-up`);
-
-    // Find quotes needing 2-hour follow-up
-    const { data: twoHourQuotes } = await supabase
+    // Every booking still awaiting quote confirmation that hasn't finished the ladder.
+    const { data: candidates } = await supabase
       .from("bookings")
       .select(`
-        id,
-        reference,
-        service_type,
-        quote_sent_at,
-        quote_total,
-        quote_confirmation_token,
+        id, reference, service_type, quote_total, quote_confirmation_token,
+        quote_sent_at, quote_followup_stage, quote_last_followup_at,
         customer:customers!inner(full_name, email, phone)
       `)
-      .not("quote_sent_at", "is", null)
+      .eq("status", "quote_sent")
       .is("quote_confirmed_at", null)
-      .is("quote_followup_2hr_sent_at", null)
-      .lte("quote_sent_at", twoHoursAgo.toISOString());
+      .lt("quote_followup_stage", FINAL_STAGE);
 
-    // Find quotes needing 24-hour follow-up
-    const { data: twentyFourHourQuotes } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        reference,
-        service_type,
-        quote_sent_at,
-        quote_total,
-        quote_confirmation_token,
-        customer:customers!inner(full_name, email, phone)
-      `)
-      .not("quote_sent_at", "is", null)
-      .is("quote_confirmed_at", null)
-      .is("quote_followup_24hr_sent_at", null)
-      .lte("quote_sent_at", twentyFourHoursAgo.toISOString());
+    let sent = 0;
+    const breakdown: Record<number, number> = {};
 
-    // Find quotes needing 3-day follow-up
-    const { data: threeDayQuotes } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        reference,
-        service_type,
-        quote_sent_at,
-        quote_total,
-        quote_confirmation_token,
-        customer:customers!inner(full_name, email, phone)
-      `)
-      .not("quote_sent_at", "is", null)
-      .is("quote_confirmed_at", null)
-      .is("quote_followup_3day_sent_at", null)
-      .lte("quote_sent_at", threeDaysAgo.toISOString());
+    for (const booking of candidates ?? []) {
+      const stage = booking.quote_followup_stage ?? 0;
+      const nextStage = stage + 1;
+      if (nextStage > FINAL_STAGE) continue;
 
-    // Find quotes needing 7-day follow-up
-    const { data: sevenDayQuotes } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        reference,
-        service_type,
-        quote_sent_at,
-        quote_total,
-        quote_confirmation_token,
-        customer:customers!inner(full_name, email, phone)
-      `)
-      .not("quote_sent_at", "is", null)
-      .is("quote_confirmed_at", null)
-      .is("quote_followup_7day_sent_at", null)
-      .lte("quote_sent_at", sevenDaysAgo.toISOString());
+      const anchor = new Date(booking.quote_last_followup_at ?? booking.quote_sent_at ?? 0).getTime();
+      const dueAt = anchor + GAP_HOURS[nextStage] * 60 * 60 * 1000;
+      if (now < dueAt) continue; // not yet time for this step
 
-    let totalSent = 0;
-
-    // Send 2-hour follow-ups
-    if (twoHourQuotes && twoHourQuotes.length > 0) {
-      console.log(`Sending 2-hour follow-ups to ${twoHourQuotes.length} customers`);
-      await Promise.allSettled(
-        twoHourQuotes.map((booking) => send2HourFollowup(booking, supabase))
-      );
-      totalSent += twoHourQuotes.length;
+      const ok = await sendReminder(booking, nextStage, supabase);
+      if (ok) {
+        await supabase
+          .from("bookings")
+          .update({ quote_followup_stage: nextStage, quote_last_followup_at: new Date().toISOString() })
+          .eq("id", booking.id);
+        sent++;
+        breakdown[nextStage] = (breakdown[nextStage] ?? 0) + 1;
+      }
     }
 
-    // Send 24-hour follow-ups
-    if (twentyFourHourQuotes && twentyFourHourQuotes.length > 0) {
-      console.log(`Sending 24-hour follow-ups to ${twentyFourHourQuotes.length} customers`);
-      await Promise.allSettled(
-        twentyFourHourQuotes.map((booking) => send24HourFollowup(booking, supabase))
-      );
-      totalSent += twentyFourHourQuotes.length;
-    }
-
-    // Send 3-day follow-ups
-    if (threeDayQuotes && threeDayQuotes.length > 0) {
-      console.log(`Sending 3-day follow-ups to ${threeDayQuotes.length} customers`);
-      await Promise.allSettled(
-        threeDayQuotes.map((booking) => send3DayFollowup(booking, supabase))
-      );
-      totalSent += threeDayQuotes.length;
-    }
-
-    // Send 7-day follow-ups
-    if (sevenDayQuotes && sevenDayQuotes.length > 0) {
-      console.log(`Sending 7-day follow-ups to ${sevenDayQuotes.length} customers`);
-      await Promise.allSettled(
-        sevenDayQuotes.map((booking) => send7DayFollowup(booking, supabase))
-      );
-      totalSent += sevenDayQuotes.length;
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Sent ${totalSent} follow-ups`,
-      breakdown: {
-        twoHour: twoHourQuotes?.length || 0,
-        twentyFourHour: twentyFourHourQuotes?.length || 0,
-        threeDay: threeDayQuotes?.length || 0,
-        sevenDay: sevenDayQuotes?.length || 0,
-      },
-    });
+    return NextResponse.json({ success: true, message: `Sent ${sent} quote reminders`, breakdown });
   } catch (error) {
     console.error("Quote follow-up cron error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }
 
-// 2-hour follow-up: "Have questions?"
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function send2HourFollowup(booking: any, supabase: any) {
-  const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
-  const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${booking.id}/${booking.quote_confirmation_token}`;
+/** Copy per ladder step — escalating warmth → urgency → final. */
+const STEP_COPY: Record<number, { tag: string; heading: string; line: string; banner: string }> = {
+  1: { tag: "2-hour check-in", heading: "Any questions about your quote?", line: "We sent your quote a little earlier — happy to help with anything before you decide.", banner: "#6b21a8" },
+  2: { tag: "Day 1", heading: "Here's what's included", line: "Your price covers a professional, fully-insured team, all fuel and mileage, and careful loading & unloading — no hidden fees.", banner: "#2563eb" },
+  3: { tag: "Still thinking it over?", heading: "We're holding your quote", line: "No rush — but your quote is ready whenever you are. Lock in your date with one tap.", banner: "#0d9488" },
+  4: { tag: "A quick nudge", heading: "Ready to book your move?", line: "Dates fill up fast. Confirm now to secure the slot that works for you.", banner: "#7e22ce" },
+  5: { tag: "We'd love to help", heading: "Your move, sorted", line: "If you're still comparing, we're confident on price and service. We'd be glad to take care of it for you.", banner: "#6b21a8" },
+  6: { tag: "Expiring soon", heading: "Your quote is about to expire", line: "This is one of the last reminders before your quote closes. Confirm now to keep your price.", banner: "#ea580c" },
+  7: { tag: "Final reminder", heading: "Last chance to confirm", line: "We haven't heard back, so this is our final reminder. If the timing's not right, no problem — we're here whenever you need us.", banner: "#dc2626" },
+};
 
-  const emailSubject = `Questions about your quote? We're here to help! - ${booking.reference}`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendReminder(booking: any, stage: number, supabase: any): Promise<boolean> {
+  const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
+  if (!customer) return false;
+
+  const copy = STEP_COPY[stage];
+  const total = formatCurrency(Number(booking.quote_total ?? 0));
+  const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${booking.id}/${booking.quote_confirmation_token}`;
+  const finalNote = stage === FINAL_STAGE ? `<p style="font-size:13px;color:#94a3b8;text-align:center;margin-top:24px;">This is our final reminder about this quote.</p>` : "";
+
+  const emailSubject = `${copy.heading} — ${booking.reference}`;
   const emailBody = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">Have Questions About Your Quote?</h1>
+      <div style="background:${copy.banner};padding:24px;border-radius:12px 12px 0 0;">
+        <p style="color:#e9d5ff;margin:0 0 4px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;">${copy.tag}</p>
+        <h1 style="color:#fff;margin:0;font-size:24px;">${copy.heading}</h1>
       </div>
-      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          We sent you a quote for <strong>${formatCurrency(booking.quote_total)}</strong> earlier today.
-        </p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          Do you have any questions? We're here to help!
-        </p>
-        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 24px 0;">
-          <p style="margin: 0 0 12px 0; font-weight: bold; color: #1e293b;">💬 Common Questions:</p>
-          <ul style="margin: 0; padding-left: 20px; color: #64748b; line-height: 1.8;">
-            <li>What's included in the price?</li>
-            <li>When can you schedule our move?</li>
-            <li>Do you provide packing materials?</li>
-            <li>What's your cancellation policy?</li>
-          </ul>
+      <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;">
+        <p style="font-size:16px;color:#1e293b;">Hi ${customer.full_name},</p>
+        <p style="font-size:16px;color:#1e293b;line-height:1.6;margin:16px 0;">${copy.line}</p>
+        <div style="background:#f5f3ff;border-left:4px solid #6b21a8;padding:14px 16px;margin:20px 0;border-radius:4px;">
+          <strong>Your quote:</strong> ${total} &nbsp;·&nbsp; Ref: ${booking.reference}
         </div>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${confirmUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 12px;">Accept Quote</a><br>
-          <a href="tel:03335772070" style="display: inline-block; background: #6b21a8; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">Call Us: 0333 577 2070</a>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${confirmUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">Confirm my quote</a>
+          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">or call us on 0333 577 2070</p>
         </div>
-        <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
+        ${finalNote}
       </div>
-    </div>
-  `;
+    </div>`;
+
+  const smsBody = `Ample Removals: ${copy.heading} Your quote ${total} (ref ${booking.reference}). Confirm: ${confirmUrl} or call 0333 577 2070`;
+  const whatsappBody = `Hi ${customer.full_name}! ${copy.line}\n\n💷 Quote: *${total}*\n📋 Ref: ${booking.reference}\n\nConfirm here: ${confirmUrl}\nOr call us: *0333 577 2070*`;
 
   try {
-    await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `Hi ${customer.full_name}, questions about your £${booking.quote_total} quote? Call us: 03335772070 or accept: ${confirmUrl} - ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `Hi ${customer.full_name}!\n\nHave questions about your *${formatCurrency(booking.quote_total)}* quote?\n\nWe're here to help! Call *0333 577 2070*\n\nOr accept your quote: ${confirmUrl}\n\nBooking: ${booking.reference}`);
+    if (customer.email) await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
+    if (customer.phone) await sendSMS(customer.phone, smsBody);
+    if (customer.phone) await sendWhatsApp(customer.phone, whatsappBody);
 
-    await supabase.from("bookings").update({ quote_followup_2hr_sent_at: new Date().toISOString() }).eq("id", booking.id);
-    await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (2 hours)", performed_by: "system" });
+    await supabase.from("activity_log").insert({
+      booking_id: booking.id,
+      action: `Quote reminder ${stage}/${FINAL_STAGE} sent`,
+      metadata: { stage, total: booking.quote_total },
+      performed_by: "system",
+    });
+    return true;
   } catch (err) {
-    console.error("2hr follow-up failed:", err);
-  }
-}
-
-// 24-hour follow-up: "What's included"
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function send24HourFollowup(booking: any, supabase: any) {
-  const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
-  const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${booking.id}/${booking.quote_confirmation_token}`;
-
-  const emailSubject = `Here's what's included in your ${formatCurrency(booking.quote_total)} quote - ${booking.reference}`;
-  const emailBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: #2563eb; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">What's Included in Your Quote</h1>
-      </div>
-      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          Still thinking about your move? Here's everything included in your <strong>${formatCurrency(booking.quote_total)}</strong> quote:
-        </p>
-        <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 24px 0;">
-          <p style="margin: 0 0 16px 0; font-weight: bold; color: #1e40af;">✅ Included in Your Price:</p>
-          <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; line-height: 1.9;">
-            <li>Professional, experienced team</li>
-            <li>Fully insured service</li>
-            <li>All fuel & mileage costs</li>
-            <li>Loading & unloading</li>
-            <li>Careful handling of your belongings</li>
-            <li>No hidden fees</li>
-          </ul>
-        </div>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${confirmUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px;">Accept Quote Now</a>
-        </div>
-        <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
-      </div>
-    </div>
-  `;
-
-  try {
-    await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `Your £${booking.quote_total} quote includes: professional team, insurance, fuel, loading/unloading. No hidden fees! Accept: ${confirmUrl} - ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `Hi ${customer.full_name}!\n\nYour *${formatCurrency(booking.quote_total)}* quote includes:\n✅ Professional team\n✅ Fully insured\n✅ All fuel costs\n✅ Loading & unloading\n✅ No hidden fees\n\nAccept now: ${confirmUrl}\n\n${booking.reference}`);
-
-    await supabase.from("bookings").update({ quote_followup_24hr_sent_at: new Date().toISOString() }).eq("id", booking.id);
-    await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (24 hours)", performed_by: "system" });
-  } catch (err) {
-    console.error("24hr follow-up failed:", err);
-  }
-}
-
-// 3-day follow-up: "Quote expires soon - 10% off"
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function send3DayFollowup(booking: any, supabase: any) {
-  const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
-  const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${booking.id}/${booking.quote_confirmation_token}`;
-  const discountedPrice = booking.quote_total * 0.9;
-
-  const emailSubject = `⏰ Your quote expires soon - Book today & save 10%! - ${booking.reference}`;
-  const emailBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 28px 24px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 26px;">⏰ Quote Expires Soon!</h1>
-        <p style="color: #fef3c7; margin: 8px 0 0 0; font-size: 16px;">Book today & save 10%</p>
-      </div>
-      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          Your quote expires soon, but we don't want you to miss out!
-        </p>
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 3px solid #f59e0b; padding: 24px; margin: 32px 0; border-radius: 12px; text-align: center;">
-          <p style="margin: 0 0 8px 0; font-size: 16px; color: #78350f;">🎉 Special Offer - Today Only!</p>
-          <p style="margin: 0; font-size: 42px; font-weight: bold; color: #6b21a8;">10% OFF</p>
-          <p style="margin: 12px 0 0 0; font-size: 18px; color: #92400e;">
-            <span style="text-decoration: line-through;">${formatCurrency(booking.quote_total)}</span>
-            → <strong>${formatCurrency(discountedPrice)}</strong>
-          </p>
-        </div>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${confirmUrl}" style="display: inline-block; background: #ef4444; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">Book Now & Save 10%</a>
-          <p style="margin: 12px 0 0 0; font-size: 12px; color: #94a3b8;">Offer valid for 24 hours only</p>
-        </div>
-        <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
-      </div>
-    </div>
-  `;
-
-  try {
-    await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `🎉 10% OFF TODAY! Your quote: £${discountedPrice} (was £${booking.quote_total}). Book now: ${confirmUrl} - Valid 24hrs only! ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `⏰ *Quote Expires Soon!*\n\nHi ${customer.full_name},\n\n🎉 *Book today & SAVE 10%*\n\n~~${formatCurrency(booking.quote_total)}~~ → *${formatCurrency(discountedPrice)}*\n\nBook now: ${confirmUrl}\n\n⚠️ Valid for 24 hours only!\n\n${booking.reference}`);
-
-    await supabase.from("bookings").update({ quote_followup_3day_sent_at: new Date().toISOString() }).eq("id", booking.id);
-    await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (3 days - 10% off)", performed_by: "system" });
-  } catch (err) {
-    console.error("3day follow-up failed:", err);
-  }
-}
-
-// 7-day follow-up: "Final reminder"
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function send7DayFollowup(booking: any, supabase: any) {
-  const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
-  const confirmUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${booking.id}/${booking.quote_confirmation_token}`;
-
-  const emailSubject = `Final reminder - We'd love to help with your move - ${booking.reference}`;
-  const emailBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">We'd Love to Help You Move</h1>
-      </div>
-      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          We haven't heard back about your quote for <strong>${formatCurrency(booking.quote_total)}</strong>.
-        </p>
-        <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-          If you've chosen another company, we completely understand. But if you're still looking for a reliable, professional removal service, we're here for you.
-        </p>
-        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 24px 0;">
-          <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.8;">
-            "We've been helping families and businesses move for years, and we'd be honored to help you too. Professional, reliable, and no hidden fees."
-          </p>
-        </div>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${confirmUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 12px;">Accept Quote</a><br>
-          <a href="tel:03335772070" style="color: #6b21a8; font-weight: bold;">Or call us: 0333 577 2070</a>
-        </div>
-        <p style="font-size: 13px; color: #94a3b8; text-align: center; margin-top: 32px;">This is our final reminder. We won't email about this quote again.</p>
-        <p style="font-size: 14px; color: #64748b; text-align: center;">Booking: ${booking.reference}</p>
-      </div>
-    </div>
-  `;
-
-  try {
-    await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
-    await sendSMS(customer.phone, `Hi ${customer.full_name}, final reminder about your £${booking.quote_total} quote. We'd love to help! ${confirmUrl} or call 03335772070. ${booking.reference}`);
-    await sendWhatsApp(customer.phone, `Hi ${customer.full_name},\n\nFinal reminder about your *${formatCurrency(booking.quote_total)}* quote.\n\nWe'd love to help with your move! Professional, reliable service.\n\nAccept: ${confirmUrl}\nCall: *0333 577 2070*\n\n${booking.reference}\n\n(This is our last reminder)`);
-
-    await supabase.from("bookings").update({ quote_followup_7day_sent_at: new Date().toISOString() }).eq("id", booking.id);
-    await supabase.from("activity_log").insert({ booking_id: booking.id, action: "Quote follow-up sent (7 days - final)", performed_by: "system" });
-  } catch (err) {
-    console.error("7day follow-up failed:", err);
+    console.error(`Quote reminder stage ${stage} failed for ${booking.reference}:`, err);
+    return false;
   }
 }

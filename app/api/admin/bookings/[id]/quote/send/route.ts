@@ -32,6 +32,7 @@ export async function POST(
         id,
         reference,
         service_type,
+        status,
         quote_line_items,
         quote_subtotal,
         quote_vat_rate,
@@ -107,14 +108,30 @@ export async function POST(
     await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
     const pdfUrl = await getQuoteSignedURL(bookingId, booking.reference);
 
-    // Update booking with PDF URL and sent timestamp
+    // Update booking with PDF URL + sent timestamp, move it into the
+    // "Quote Sent to Customer" status, and (re)start the reminder ladder from
+    // step 0. Clearing quote_confirmed_at means a re-send re-opens the chase.
+    const sentAt = new Date().toISOString();
     await supabase
       .from("bookings")
       .update({
         quote_pdf_url: pdfUrl,
-        quote_sent_at: new Date().toISOString(),
+        quote_sent_at: sentAt,
+        status: "quote_sent",
+        quote_confirmed_at: null,
+        quote_followup_stage: 0,
+        quote_last_followup_at: sentAt, // step-1 gap (2h) is measured from here
       })
       .eq("id", bookingId);
+
+    // Record the status transition (reminders run only while status = quote_sent).
+    await supabase.from("status_history").insert({
+      booking_id: bookingId,
+      previous_status: booking.status ?? null,
+      new_status: "quote_sent",
+      changed_by: "admin",
+      reason: "Quote sent to customer",
+    });
 
     // Generate confirmation token (if feature is enabled)
     const confirmToken = generateQuoteConfirmToken(bookingId);

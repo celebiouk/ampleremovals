@@ -17,7 +17,7 @@ import type { BookingStatus } from "@/types";
 const COLUMNS: { key: string; label: string; statuses: BookingStatus[] }[] = [
   { key: "new", label: "New", statuses: ["inquiry"] },
   { key: "contacted", label: "Contacted", statuses: ["called", "not_called", "answered", "not_answered"] },
-  { key: "quoting", label: "Quoting", statuses: ["processing", "pending", "deposit_invoice_sent"] },
+  { key: "quoting", label: "Quoting", statuses: ["processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent"] },
   { key: "confirmed", label: "Confirmed", statuses: ["deposit_paid_job_confirmed"] },
   { key: "invoiced", label: "Invoiced", statuses: ["full_invoice_sent", "full_balance_paid"] },
   { key: "completed", label: "Completed", statuses: ["job_completed"] },

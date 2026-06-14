@@ -14,7 +14,7 @@ import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constan
 import type { BookingStatus, ServiceType } from "@/types";
 
 const PAGE_SIZE = 20;
-const IN_PROGRESS: BookingStatus[] = ["called","not_called","answered","not_answered","processing","pending","deposit_invoice_sent","deposit_paid_job_confirmed","full_invoice_sent","full_balance_paid"];
+const IN_PROGRESS: BookingStatus[] = ["called","not_called","answered","not_answered","processing","pending","quote_sent","quote_confirmed","deposit_invoice_sent","deposit_paid_job_confirmed","full_invoice_sent","full_balance_paid"];
 
 function relativeTime(d: string) {
   const diff = Date.now() - new Date(d).getTime();
