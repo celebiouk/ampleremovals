@@ -11,6 +11,10 @@ interface Settings {
   notify_new_booking: boolean; notify_invoice_paid: boolean;
   notify_invoice_overdue: boolean; overdue_days: number;
   notify_move_date_tomorrow: boolean;
+  // Tax & filing
+  company_number: string; company_utr: string; financial_year_end: string;
+  confirmation_statement_due: string; incorporation_date: string;
+  vat_registered: boolean; vat_number: string;
 }
 
 const defaultSettings: Settings = {
@@ -18,6 +22,9 @@ const defaultSettings: Settings = {
   company_email: "", company_address: "", google_review_link: "",
   notify_new_booking: true, notify_invoice_paid: true,
   notify_invoice_overdue: true, overdue_days: 7, notify_move_date_tomorrow: true,
+  company_number: "", company_utr: "", financial_year_end: "03-31",
+  confirmation_statement_due: "", incorporation_date: "",
+  vat_registered: false, vat_number: "",
 };
 
 const TABS = [
@@ -58,7 +65,17 @@ export default function SettingsPage() {
     const load = async () => {
       const supabase = createClient();
       const { data } = await supabase.from("settings").select("*").eq("id", 1).single();
-      if (data) setSettings({ ...defaultSettings, ...data });
+      if (data) setSettings({
+        ...defaultSettings,
+        ...data,
+        // Coerce nullable columns to strings for the inputs.
+        company_number: data.company_number ?? "",
+        company_utr: data.company_utr ?? "",
+        financial_year_end: data.financial_year_end ?? "03-31",
+        confirmation_statement_due: data.confirmation_statement_due ?? "",
+        incorporation_date: data.incorporation_date ?? "",
+        vat_number: data.vat_number ?? "",
+      });
     };
     load();
   }, []);
@@ -66,7 +83,12 @@ export default function SettingsPage() {
   const save = async () => {
     setIsSaving(true);
     const supabase = createClient();
-    const { error } = await supabase.from("settings").upsert({ id: 1, ...settings, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from("settings").upsert({
+      id: 1, ...settings, updated_at: new Date().toISOString(),
+      // Empty date strings → null (a DATE column rejects "").
+      confirmation_statement_due: settings.confirmation_statement_due || null,
+      incorporation_date: settings.incorporation_date || null,
+    });
     if (!error) toast.success("Settings saved");
     else toast.error("Failed to save settings");
     setIsSaving(false);
@@ -120,6 +142,31 @@ export default function SettingsPage() {
                 className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-purple-400" />
             </div>
             <InputField label="Google Review Link" value={settings.google_review_link} onChange={set("google_review_link")} placeholder="https://g.page/..." />
+
+            <div className="border-t border-slate-200 pt-4">
+              <h3 className="font-semibold text-slate-900">Tax &amp; Filing</h3>
+              <p className="mb-3 text-xs text-slate-500">Used by the Year-End Tax pack and the corporation-tax &amp; confirmation-statement reminders.</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <InputField label="Company number" value={settings.company_number} onChange={set("company_number")} placeholder="12345678" />
+                <InputField label="Company UTR" value={settings.company_utr} onChange={set("company_utr")} placeholder="10-digit UTR" />
+                <InputField label="Financial year-end (MM-DD)" value={settings.financial_year_end} onChange={set("financial_year_end")} placeholder="03-31" />
+                <InputField label="Incorporation date" type="date" value={settings.incorporation_date} onChange={set("incorporation_date")} />
+                <InputField label="Confirmation statement due" type="date" value={settings.confirmation_statement_due} onChange={set("confirmation_statement_due")} />
+              </div>
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 p-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">VAT registered</p>
+                  <p className="text-xs text-slate-500">Turn on once you register — bookkeeping then captures VAT and uses ex-VAT figures.</p>
+                </div>
+                <Toggle checked={settings.vat_registered} onChange={set("vat_registered") as (v: boolean) => void} />
+              </div>
+              {settings.vat_registered && (
+                <div className="mt-3">
+                  <InputField label="VAT number" value={settings.vat_number} onChange={set("vat_number")} placeholder="GB123456789" />
+                </div>
+              )}
+            </div>
+
             <button onClick={save} disabled={isSaving}
               className="flex items-center gap-2 rounded-xl bg-brand-purple-800 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Changes
