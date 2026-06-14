@@ -139,6 +139,7 @@ function RootNavigator() {
       <Stack.Screen name="profile/index" />
       <Stack.Screen name="bookkeeping/expenses" />
       <Stack.Screen name="bookkeeping/income" />
+      <Stack.Screen name="bookkeeping/director-loan" />
     </Stack>
   );
 }
