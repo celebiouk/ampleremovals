@@ -163,7 +163,9 @@ export default function EmployeesPage() {
                     <td className="px-4 py-3 font-mono text-slate-600">{e.tax_code}</td>
                     <td className="px-4 py-3 text-slate-600">{e.pay_basis === "salary" ? `${formatCurrency(e.annual_salary)}/yr` : `${formatCurrency(e.hourly_rate)}/hr`}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>{e.status}</span></td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <a href={`/api/admin/paye/employees/${e.id}/p60`} target="_blank" rel="noreferrer" className="mr-3 text-xs font-medium text-purple-600 hover:underline">P60</a>
+                      {e.status === "left" && <a href={`/api/admin/paye/employees/${e.id}/p45`} target="_blank" rel="noreferrer" className="mr-3 text-xs font-medium text-purple-600 hover:underline">P45</a>}
                       <button onClick={() => openEdit(e)} className="mr-3 text-slate-400 hover:text-purple-600"><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => remove(e.id)} className="text-slate-300 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                     </td>
