@@ -7,8 +7,12 @@
 --
 -- Reminders run while bookings.status = 'quote_sent' and stop the instant the
 -- status changes (e.g. to 'quote_confirmed' when the customer accepts, or to any
--- closed/dead status if the admin moves the lead on). bookings.status is free
--- text — no enum/constraint to alter for the two new values.
+-- closed/dead status if the admin moves the lead on).
+--
+-- PREREQUISITE: run add_quote_statuses.sql FIRST. bookings.status is a Postgres
+-- ENUM (booking_status); the 'quote_sent'/'quote_confirmed' values it adds must
+-- already be committed before the index below (which references 'quote_sent')
+-- will run.
 
 ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS quote_followup_stage INT NOT NULL DEFAULT 0,  -- 0 = none sent yet, 1–7 = ladder step reached
