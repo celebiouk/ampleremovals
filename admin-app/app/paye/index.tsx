@@ -10,7 +10,13 @@ import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
 import { spacing } from "@/lib/tokens";
 
-const CURRENT_TAX_YEAR = "2026-27";
+// The current UK tax year label (boundary is 6 April). Auto-advances each April.
+function currentTaxYear(date: Date = new Date()): string {
+  const m = date.getMonth(), day = date.getDate();
+  const startYear = m < 3 || (m === 3 && day < 6) ? date.getFullYear() - 1 : date.getFullYear();
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+}
+const CURRENT_TAX_YEAR = currentTaxYear();
 
 function taxWeekFor(d: Date): number {
   const year = d.getMonth() < 3 || (d.getMonth() === 3 && d.getDate() < 6) ? d.getFullYear() - 1 : d.getFullYear();

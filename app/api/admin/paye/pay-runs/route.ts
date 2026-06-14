@@ -12,6 +12,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { calculatePayslip, type PayslipYTD } from "@/lib/paye/calculate-payslip";
+import { isKnownTaxYear, knownTaxYears } from "@/lib/paye/rates";
 
 const RunSchema = z.object({
   tax_year: z.string().min(1),
@@ -47,6 +48,16 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.response;
   try {
     const input = RunSchema.parse(await req.json());
+
+    // Refuse to run payroll on a tax year whose rates haven't been added —
+    // prevents silently paying staff on stale rates. Update lib/paye/rates.ts.
+    if (!isKnownTaxYear(input.tax_year)) {
+      return NextResponse.json(
+        { success: false, error: `No PAYE rates defined for ${input.tax_year}. Add the year's figures to lib/paye/rates.ts (known: ${knownTaxYears().join(", ")}).` },
+        { status: 400 }
+      );
+    }
+
     const supabase = createAdminClient();
 
     const reference = `PY-${input.tax_year}-W${String(input.period_no).padStart(2, "0")}`;

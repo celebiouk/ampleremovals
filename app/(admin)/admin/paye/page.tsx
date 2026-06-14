@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, Calendar, Info } from "lucide-react";
 import { toast } from "sonner";
+import { currentTaxYear } from "@/lib/paye/rates";
 
 interface Run {
   id: string;
@@ -15,7 +16,7 @@ interface Run {
   paye_payslips?: Array<{ count?: number }>;
 }
 
-const CURRENT_TAX_YEAR = "2026-27";
+const CURRENT_TAX_YEAR = currentTaxYear();
 
 // Tax week number for a date (weeks run from 6 April).
 function taxWeekFor(dateStr: string): number {
