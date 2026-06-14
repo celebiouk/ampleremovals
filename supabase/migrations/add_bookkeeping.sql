@@ -3,9 +3,7 @@
 -- annual tax-task tracker that drives the "mark as done" reminder stop-condition.
 -- All admin-only. Amounts in POUNDS, NUMERIC(10,2). vat_amount is only used once
 -- the company flips settings.vat_registered on (default off).
-
--- Helper: admin check (matches existing tables, e.g. add_cleaner_earnings.sql)
--- admin_users(user_id) holds admin auth ids.
+-- Access is server-side only (service role bypasses RLS); see the RLS note below.
 
 -- ── 1. Company expenses ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS business_expenses (
