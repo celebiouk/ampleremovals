@@ -85,19 +85,12 @@ ALTER TABLE settings ADD COLUMN IF NOT EXISTS incorporation_date DATE;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS vat_registered BOOLEAN DEFAULT false;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS vat_number TEXT;
 
--- ── RLS: admin-only on all four new tables ───────────────────────────────────
--- Server routes use the service role (bypasses RLS); these policies are defence
--- in depth so nothing is readable/writable by anon/authenticated non-admins.
-DO $$
-DECLARE t TEXT;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['business_expenses','other_income','director_loan_entries','tax_year_tasks']
-  LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', t);
-    EXECUTE format($p$
-      CREATE POLICY "admin_all" ON %I FOR ALL
-      USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()))
-      WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()));
-    $p$, t);
-  END LOOP;
-END $$;
+-- ── RLS: deny all direct client access ───────────────────────────────────────
+-- These tables are only ever read/written server-side via the service role
+-- (createAdminClient), which BYPASSES RLS. Enabling RLS with no policy therefore
+-- denies anon/authenticated clients while leaving the server with full access —
+-- simpler and safer than a policy, and avoids depending on an admins table.
+ALTER TABLE business_expenses     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE other_income          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE director_loan_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tax_year_tasks        ENABLE ROW LEVEL SECURITY;
