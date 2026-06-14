@@ -42,7 +42,13 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/logo.png",
+          "color": "#6b21a8"
+        }
+      ],
       [
         "expo-location",
         {

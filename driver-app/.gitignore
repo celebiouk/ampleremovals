@@ -10,3 +10,11 @@ android/
 *.orig.*
 .DS_Store
 expo-env.d.ts
+
+# Native push / signing credentials — never commit
+google-services.json
+GoogleService-Info.plist
+*.p8
+*.p12
+*.keystore
+*-service-account*.json
