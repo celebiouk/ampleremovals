@@ -81,26 +81,27 @@ export function DriverJobsList({
     const booking = assignment.booking;
     if (!booking) return false;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const moveDate = booking.move_date ? new Date(booking.move_date) : null;
-    if (moveDate) moveDate.setHours(0, 0, 0, 0);
+    // Compare date-only values as YYYY-MM-DD strings. Using Date objects mixes
+    // UTC-midnight (parsed move_date) with local-midnight (today), which in BST
+    // pushes today's jobs into the wrong tab. toDateKey gives the local (UK) day.
+    const todayKey = toDateKey(new Date());
+    const mdKey: string | null = booking.move_date ? String(booking.move_date).slice(0, 10) : null;
+    const ff: string | null = booking.flexible_date_from ? String(booking.flexible_date_from).slice(0, 10) : null;
+    const ft: string | null = booking.flexible_date_to ? String(booking.flexible_date_to).slice(0, 10) : null;
+    const flex = Boolean(booking.is_flexible_date) && ff && ft;
 
     // A picked date takes precedence over the tab filter.
     if (selectedDate) {
-      return moveDate && toDateKey(moveDate) === selectedDate;
+      return mdKey === selectedDate || Boolean(flex && ff! <= selectedDate && ft! >= selectedDate);
     }
 
     switch (activeTab) {
       case "today":
-        return moveDate && moveDate.getTime() === today.getTime();
+        return mdKey === todayKey || Boolean(flex && ff! <= todayKey && ft! >= todayKey);
       case "upcoming":
-        return moveDate && moveDate >= today;
+        return (mdKey ? mdKey >= todayKey : false) || Boolean(flex && ft! >= todayKey);
       case "past":
-        return (
-          booking.status === "job_completed" || (moveDate && moveDate < today)
-        );
+        return booking.status === "job_completed" || (mdKey ? mdKey < todayKey && !flex : false);
       case "all":
       default:
         return true;

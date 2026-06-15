@@ -157,11 +157,14 @@ export function useDriverStats() {
         supabase.from("driver_earnings").select("total_earnings, tip_amount").eq("driver_id", driverId).gte("created_at", startOfMonth.toISOString()),
       ]);
 
-      const weekKey = startOfWeek.getTime();
+      // Compare as YYYY-MM-DD strings (device is in the UK) to avoid the
+      // UTC-midnight shift you get from new Date("YYYY-MM-DD").
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const startKey = `${startOfWeek.getFullYear()}-${pad(startOfWeek.getMonth() + 1)}-${pad(startOfWeek.getDate())}`;
       const jobsThisWeek = (weekAssign ?? []).filter((a) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const md = (a as any).booking?.move_date;
-        return md && new Date(md).getTime() >= weekKey;
+        return md && String(md).slice(0, 10) >= startKey;
       }).length;
 
       const earningsThisMonth = (earnings ?? []).reduce((s, e) => s + (e.total_earnings || 0), 0);

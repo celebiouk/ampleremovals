@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { requireDriver } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { ukToday, ukWeekRange, dateOnly } from "@/lib/dates";
 
 export async function GET(req: Request) {
   const auth = await requireDriver();
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     // NB: addresses(*) not (lat,lng) — resilient if the lat/lng columns aren't
     // present yet (otherwise PostgREST 500s with "column does not exist"). The
     // app reads origin.lat/lng when available, falls back to manual arrival.
-    let q = supabase
+    const { data, error } = await supabase
       .from("bookings")
       .select(
         `*,
@@ -37,30 +38,34 @@ export async function GET(req: Request) {
       )
       .in("id", ids)
       .order("move_date", { ascending: true });
-
-    const today = new Date().toISOString().slice(0, 10);
-    // A booking "falls on" a day via a fixed move_date OR a flexible date range
-    // that spans it — so flexible-date jobs still appear in today/week/upcoming.
-    const flexSpans = (from: string, to: string) =>
-      `and(is_flexible_date.is.true,flexible_date_from.lte.${to},flexible_date_to.gte.${from})`;
-
-    if (scope === "today") {
-      q = q.or(`move_date.eq.${today},${flexSpans(today, today)}`);
-    } else if (scope === "upcoming") {
-      q = q.or(`move_date.gte.${today},and(is_flexible_date.is.true,flexible_date_to.gte.${today})`);
-    } else if (scope === "week") {
-      const now = new Date();
-      const day = (now.getDay() + 6) % 7; // Monday=0
-      const start = new Date(now); start.setDate(now.getDate() - day);
-      const end = new Date(start); end.setDate(start.getDate() + 6);
-      const s = start.toISOString().slice(0, 10);
-      const e = end.toISOString().slice(0, 10);
-      q = q.or(`and(move_date.gte.${s},move_date.lte.${e}),${flexSpans(s, e)}`);
-    }
-
-    const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return NextResponse.json({ success: true, jobs: data ?? [] });
+
+    // Filter by scope in JS using UK calendar dates + string comparison. A
+    // booking falls on a day via a fixed move_date OR a flexible range spanning
+    // it. (Done here, not in SQL, to keep timezone logic correct and avoid
+    // fragile PostgREST or()/date casts.)
+    const today = ukToday();
+    const { start, end } = ukWeekRange();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const inScope = (b: any): boolean => {
+      const md = dateOnly(b.move_date);
+      const ff = dateOnly(b.flexible_date_from);
+      const ft = dateOnly(b.flexible_date_to);
+      const flex = Boolean(b.is_flexible_date) && ff && ft;
+      if (scope === "today") {
+        return md === today || (flex ? ff! <= today && ft! >= today : false);
+      }
+      if (scope === "upcoming") {
+        return (md ? md >= today : false) || (flex ? ft! >= today : false);
+      }
+      if (scope === "week") {
+        return (md ? md >= start && md <= end : false) || (flex ? ff! <= end && ft! >= start : false);
+      }
+      return true;
+    };
+
+    const jobs = (data ?? []).filter(inScope);
+    return NextResponse.json({ success: true, jobs });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
