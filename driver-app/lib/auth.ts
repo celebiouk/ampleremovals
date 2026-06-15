@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { ENV } from "./env";
 
 export interface SignInResult {
   ok: boolean;
@@ -41,17 +42,21 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Where the reset email's link lands. We send the driver to the web "set new
- * password" page (which already handles the recovery session) rather than a
- * native deep link — it's reliable cross-device and reuses one working flow for
- * web + app. This exact URL must be in Supabase Auth → URL Configuration →
- * Redirect URLs.
+ * Trigger a driver password reset. Calls our own API route, which mints the
+ * secure link via the admin API and sends a branded email through Resend (not
+ * Supabase's default mailer). The link lands on the web "set new password" page.
+ * Always resolves ok on a 2xx — the route never reveals whether an account exists.
  */
-const RESET_REDIRECT_URL = "https://www.ampleremovals.com/drivers/reset-password/update";
-
 export async function sendPasswordReset(email: string): Promise<SignInResult> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: RESET_REDIRECT_URL,
-  });
-  return error ? { ok: false, error: error.message } : { ok: true };
+  try {
+    const res = await fetch(`${ENV.SITE_URL}/api/drivers/reset-password/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    if (!res.ok) return { ok: false, error: "Could not send the reset email. Please try again." };
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error. Please check your connection and try again." };
+  }
 }

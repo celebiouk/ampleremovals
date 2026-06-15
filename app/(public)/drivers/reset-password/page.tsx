@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Loader2, Truck, MailCheck, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,12 +20,15 @@ export default function DriverResetPasswordPage() {
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/drivers/reset-password/update`,
+      // Our own route: mints the link via the admin API and sends a branded
+      // Resend email (instead of Supabase's default mailer).
+      const res = await fetch("/api/drivers/reset-password/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
 
-      if (error) {
+      if (!res.ok) {
         toast.error("Could not send reset email. Please try again.");
         setLoading(false);
         return;
