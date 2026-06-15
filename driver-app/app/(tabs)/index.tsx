@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { CalendarCheck, PoundSterling, Gift, Truck, Sun } from "lucide-react-native";
@@ -46,7 +46,13 @@ export default function TodayScreen() {
   const name = profile.data?.preferred_name || profile.data?.first_name || "Driver";
 
   return (
-    <Screen title="Today" subtitle={`${greeting()}, ${name}`} onRefresh={onRefresh} refreshing={refreshing}>
+    <Screen
+      title="Today"
+      subtitle={`${greeting()}, ${name}`}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
+      headerRight={<Image source={require("../../assets/logo.png")} style={{ width: 104, height: 32 }} resizeMode="contain" accessibilityLabel="Ample Removals" />}
+    >
       <OfflineBanner />
 
       {/* Stats */}
