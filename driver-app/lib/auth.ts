@@ -40,9 +40,18 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }
 
+/**
+ * Where the reset email's link lands. We send the driver to the web "set new
+ * password" page (which already handles the recovery session) rather than a
+ * native deep link — it's reliable cross-device and reuses one working flow for
+ * web + app. This exact URL must be in Supabase Auth → URL Configuration →
+ * Redirect URLs.
+ */
+const RESET_REDIRECT_URL = "https://www.ampleremovals.com/drivers/reset-password/update";
+
 export async function sendPasswordReset(email: string): Promise<SignInResult> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: "ampledriver://update-password",
+    redirectTo: RESET_REDIRECT_URL,
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }

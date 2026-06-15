@@ -2,9 +2,11 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { signInDriver } from "@/lib/auth";
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,6 +54,9 @@ export default function LoginScreen() {
                 className="items-center rounded-xl bg-brand-purple-800 py-3.5 active:opacity-90"
               >
                 {busy ? <ActivityIndicator color="#fff" /> : <Text className="text-base font-bold text-white">Sign in</Text>}
+              </Pressable>
+              <Pressable onPress={() => router.push("/forgot-password")} className="mt-4 items-center py-1">
+                <Text className="text-sm font-medium text-brand-purple-800">Forgot password?</Text>
               </Pressable>
             </View>
           </KeyboardAvoidingView>

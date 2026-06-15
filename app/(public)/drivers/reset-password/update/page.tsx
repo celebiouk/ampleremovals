@@ -17,27 +17,43 @@ export default function DriverUpdatePasswordPage() {
 
   useEffect(() => {
     // Supabase establishes a temporary recovery session from the email link.
+    // The browser client auto-exchanges the link's ?code= (PKCE) or #access_token
+    // (implicit) on load — which is async — so we wait for the auth event rather
+    // than reading the session once and prematurely showing "Link Expired".
     const supabase = createClient();
-
-    async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setHasSession(!!session);
+    let resolved = false;
+    const finish = (ok: boolean) => {
+      if (resolved) return;
+      resolved = true;
+      setHasSession(ok);
       setCheckingSession(false);
-    }
+    };
 
-    // Listen for the PASSWORD_RECOVERY event fired when the link is opened
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
-        setHasSession(true);
-        setCheckingSession(false);
-      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) finish(true);
     });
 
-    checkSession();
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return finish(true);
+
+      // No session yet. If the URL carries a recovery code/token the client is
+      // mid-exchange — keep showing the spinner until the auth event lands.
+      const url = new URL(window.location.href);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const hasRecoveryParams =
+        url.searchParams.has("code") ||
+        hash.has("access_token") ||
+        hash.get("type") === "recovery" ||
+        url.searchParams.get("type") === "recovery";
+
+      if (!hasRecoveryParams) return finish(false); // genuinely no/invalid link
+      // Safety net: if no event fires within 8s, treat the link as expired.
+      window.setTimeout(() => finish(false), 8000);
+    })();
+
     return () => subscription.unsubscribe();
   }, []);
 
