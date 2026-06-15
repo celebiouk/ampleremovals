@@ -107,6 +107,32 @@ export async function isValidPostcode(postcode: string): Promise<boolean> {
 }
 
 /**
+ * Geocode a UK postcode to { lat, lng } via postcodes.io (free, no key).
+ * Returns null if the postcode can't be resolved — callers treat coords as
+ * optional. Used to stamp addresses for the driver map + arrival detection.
+ */
+export async function geocodePostcode(
+  postcode: string
+): Promise<{ lat: number; lng: number } | null> {
+  const trimmed = postcode?.trim();
+  if (!trimmed) return null;
+  try {
+    const res = await fetch(
+      `https://api.postcodes.io/postcodes/${encodeURIComponent(trimmed)}`,
+      { headers: { Accept: "application/json" } }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      result: { latitude: number; longitude: number } | null;
+    };
+    if (!data.result || data.result.latitude == null || data.result.longitude == null) return null;
+    return { lat: data.result.latitude, lng: data.result.longitude };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Calculate distance between two UK postcodes in miles using postcodes.io
  * Returns distance in miles or null if postcodes are invalid
  */

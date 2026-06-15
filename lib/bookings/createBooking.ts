@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
+import { geocodePostcode } from "@/lib/postcode";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -18,6 +19,10 @@ async function insertAddress(
   supabase: any,
   address: AddressOption
 ): Promise<string> {
+  // Geocode the postcode so the driver app gets map pins + 80m arrival
+  // detection. Best-effort: a failed lookup just leaves coords null.
+  const coords = await geocodePostcode(address.postcode);
+
   const { data, error } = await supabase
     .from("addresses")
     .insert({
@@ -25,6 +30,8 @@ async function insertAddress(
       line_2: address.line_2 ?? null,
       city: address.city ?? null,
       postcode: address.postcode,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
     })
     .select("id")
     .single();
