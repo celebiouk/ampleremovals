@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image } from "react-native";
 import Constants from "expo-constants";
-import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert } from "lucide-react-native";
+import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert, Star } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { Screen, Card, Button, toast } from "@/components/ui";
 import { CameraCapture } from "@/components/CameraCapture";
 import { useDriverProfile } from "@/hooks/queries";
@@ -48,6 +49,7 @@ function ReadOnly({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { data: driver, refetch } = useDriverProfile();
   const driverId = useAuthStore((s) => s.driverId);
   const session = useAuthStore((s) => s.session);
@@ -160,6 +162,10 @@ export default function ProfileScreen() {
       </Card>
 
       <View style={{ marginTop: spacing.xl }}>
+        <Button label="My ratings" variant="outline" icon={<Star size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/ratings")} fullWidth />
+      </View>
+
+      <View style={{ marginTop: spacing.md }}>
         <Button label="Sign out" variant="danger" icon={<LogOut size={18} color={colors.white} />} onPress={doSignOut} fullWidth />
       </View>
       <Text style={[type.bodySmall, { color: colors.slate[400], textAlign: "center", marginTop: spacing.lg }]}>Ample Driver v{appVersion}</Text>

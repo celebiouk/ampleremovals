@@ -91,6 +91,34 @@ export function useClockAction() {
   });
 }
 
+export interface DriverRating {
+  bookingId: string;
+  reference: string;
+  serviceType: string;
+  moveDate: string | null;
+  rating: number;
+  feedback: string | null;
+  completedAt: string | null;
+  customerName: string;
+}
+export interface DriverRatingsResult {
+  average: number | null;
+  count: number;
+  ratings: DriverRating[];
+}
+
+/** Customer ratings + comments for the driver's completed jobs. */
+export function useDriverRatings() {
+  return useQuery({
+    queryKey: ["driver-ratings"],
+    queryFn: async (): Promise<DriverRatingsResult> => {
+      const res = await apiFetch(`/api/drivers/ratings`);
+      const json = (await res.json()) as DriverRatingsResult;
+      return { average: json.average ?? null, count: json.count ?? 0, ratings: json.ratings ?? [] };
+    },
+  });
+}
+
 export function useDriverNotifications() {
   return useQuery({
     queryKey: ["driver-notifications"],

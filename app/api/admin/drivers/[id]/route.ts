@@ -51,12 +51,41 @@ export async function GET(
       paid: earnings?.filter((e) => e.status === "paid").reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0,
     };
 
+    // Customer ratings for this driver's jobs (the booking survey is the rating
+    // for whoever did the job).
+    const { data: assigns } = await supabase
+      .from("booking_driver_assignments")
+      .select("booking_id")
+      .eq("driver_id", id);
+    const bookingIds = (assigns ?? []).map((a) => a.booking_id);
+    let ratingsSummary = { average: null as number | null, count: 0, recent: [] as { reference: string; rating: number; feedback: string | null; customerName: string; date: string | null }[] };
+    if (bookingIds.length > 0) {
+      const { data: rated } = await supabase
+        .from("bookings")
+        .select("reference, move_date, survey_rating, survey_feedback, survey_completed_at, customer:customers(full_name)")
+        .in("id", bookingIds)
+        .not("survey_rating", "is", null)
+        .order("survey_completed_at", { ascending: false });
+      const list = rated ?? [];
+      const count = list.length;
+      const average = count > 0 ? Math.round((list.reduce((s, b) => s + (b.survey_rating || 0), 0) / count) * 10) / 10 : null;
+      ratingsSummary = {
+        average,
+        count,
+        recent: list.slice(0, 10).map((b) => {
+          const c = Array.isArray(b.customer) ? b.customer[0] : b.customer;
+          return { reference: b.reference, rating: b.survey_rating as number, feedback: (b.survey_feedback as string | null) ?? null, customerName: c?.full_name ?? "Customer", date: b.move_date };
+        }),
+      };
+    }
+
     return NextResponse.json({
       success: true,
       driver: {
         ...driver,
         job_count: jobCount || 0,
         earnings_summary: earningsSummary,
+        ratings: ratingsSummary,
       },
     });
   } catch (error) {

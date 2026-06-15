@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CalendarCheck, Truck, PoundSterling, Gift, Calendar, MapPin, ChevronRight, X } from "lucide-react";
+import { DriverRatingsWidget } from "@/components/drivers/DriverRatingsWidget";
 
 /** Local YYYY-MM-DD for a date (avoids UTC shift from toISOString). */
 function toDateKey(d: Date): string {
@@ -191,6 +192,9 @@ export default function DriverDashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Customer ratings */}
+      <DriverRatingsWidget />
 
       {/* Upcoming Jobs Section */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

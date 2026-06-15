@@ -233,6 +233,36 @@ export default function DriverProfilePage() {
             </dl>
           </div>
 
+          {/* Customer ratings */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Customer Ratings</h3>
+              {driver.ratings?.average != null && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xl font-bold text-slate-900">{driver.ratings.average.toFixed(1)}</span>
+                  <span className="text-amber-500">★</span>
+                  <span className="text-sm text-slate-500">({driver.ratings.count})</span>
+                </div>
+              )}
+            </div>
+            {!driver.ratings || driver.ratings.count === 0 ? (
+              <p className="text-sm text-slate-500">No customer ratings yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {driver.ratings.recent.map((r: any, i: number) => (
+                  <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-amber-500">{"★".repeat(r.rating)}<span className="text-slate-300">{"★".repeat(5 - r.rating)}</span></span>
+                      <span className="font-mono text-xs text-slate-400">{r.reference}</span>
+                    </div>
+                    <p className="mt-1 text-xs font-medium text-slate-600">{r.customerName}</p>
+                    {r.feedback && <p className="mt-1 text-sm italic text-slate-700">“{r.feedback}”</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Documents */}
           <DriverDocuments driverId={driverId} />
         </div>
