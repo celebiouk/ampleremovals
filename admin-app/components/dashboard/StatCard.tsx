@@ -19,10 +19,14 @@ interface StatCardProps {
   /** Animate up to this number, formatted via `format`. Overrides `value`. */
   countTo?: number;
   format?: (n: number) => string;
+  /** Semantic tint hint (accepted for convenience; styling is theme-driven). */
+  variant?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style?: any;
 }
 
 export function StatCard({
-  label, value, delta, icon, iconTint, gradient, countTo, format,
+  label, value, delta, icon, iconTint, gradient, countTo, format, style,
 }: StatCardProps) {
   const theme = useTheme();
   const animated = useCountUp(countTo ?? 0);
@@ -39,6 +43,7 @@ export function StatCard({
           backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder,
         },
         shadows.md,
+        style,
       ]}
     >
       {icon ? (

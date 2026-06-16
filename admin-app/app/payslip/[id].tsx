@@ -200,7 +200,7 @@ export default function PayslipDetailScreen() {
             icon={<Plus size={18} color={colors.white} />}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              router.push(`/payslip/${payslipId}/adjustments`);
+              router.push(`/payslip/${payslipId}/adjustments` as any);
             }}
           />
           {payslip.status === "pending" && (

@@ -14,7 +14,7 @@ export default function PaymentsScreen() {
 
   const navigateTo = (path: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push(path);
+    router.push(path as any);
   };
 
   return (

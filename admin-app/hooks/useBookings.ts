@@ -12,9 +12,10 @@ export interface BookingRow extends Booking {
 interface Filters {
   search: string;
   status: BookingStatus | "";
+  service?: string;
 }
 
-async function loadBookings({ search, status }: Filters): Promise<BookingRow[]> {
+async function loadBookings({ search, status, service }: Filters): Promise<BookingRow[]> {
   let query = supabase
     .from("bookings")
     .select(
@@ -29,6 +30,7 @@ async function loadBookings({ search, status }: Filters): Promise<BookingRow[]> 
     .limit(200);
 
   if (status) query = query.eq("status", status);
+  if (service) query = query.eq("service_type", service);
 
   const { data, error } = await query;
   if (error) throw error;

@@ -209,7 +209,7 @@ export default function PayslipsScreen() {
                   <Pressable
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                      router.push(`/payslips/${ps.id}`);
+                      router.push(`/payslips/${ps.id}` as any);
                     }}
                   >
                     <Card style={{ padding: spacing.base }}>

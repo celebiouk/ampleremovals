@@ -100,7 +100,7 @@ export default function PayslipDetailScreen() {
               style={{
                 borderTopWidth: 1,
                 borderTopColor: colors.slate[200],
-                paddingTopWidth: spacing.base,
+                paddingTop: spacing.base,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",

@@ -15,7 +15,6 @@ import { formatCurrency } from "@/lib/utils";
 import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
 import { spacing } from "@/lib/tokens";
-import Alert from "@react-native-menu/menu";
 
 export default function PayRunDetailScreen() {
   const router = useRouter();
@@ -314,7 +313,7 @@ export default function PayRunDetailScreen() {
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    router.push(`/payslip/${ps.id}`);
+                    router.push(`/payslip/${ps.id}` as any);
                   }}
                 >
                   <Card style={{ padding: spacing.base }}>

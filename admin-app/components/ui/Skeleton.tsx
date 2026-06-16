@@ -11,10 +11,12 @@ interface SkeletonProps {
   width?: DimensionValue;
   height?: number;
   rounded?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style?: any;
 }
 
 /** Shimmer skeleton — a highlight gradient slides across a muted base. */
-export function Skeleton({ className, width, height, rounded = radius.md }: SkeletonProps) {
+export function Skeleton({ className, width, height, rounded = radius.md, style }: SkeletonProps) {
   const theme = useTheme();
   const x = useSharedValue(-1);
 
@@ -32,6 +34,7 @@ export function Skeleton({ className, width, height, rounded = radius.md }: Skel
       style={[
         width != null || height != null ? { width, height } : null,
         { borderRadius: rounded },
+        style,
       ]}
     >
       <Animated.View style={[{ ...StyleSheetAbsoluteFill }, shimmer]}>

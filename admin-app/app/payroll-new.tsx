@@ -75,7 +75,7 @@ export default function NewPayRunScreen() {
       if (data.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         qc.invalidateQueries({ queryKey: ["payRuns"] });
-        router.replace(`/payroll/${data.data.runId}`);
+        router.replace(`/payroll/${data.data.runId}` as any);
       } else {
         throw new Error(data.error || "Failed to create pay run");
       }

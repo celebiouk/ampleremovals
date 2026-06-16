@@ -35,14 +35,14 @@ export function showError(
 ) {
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
 
-  const buttons = [
-    { text: "Dismiss", style: "cancel" as const },
+  const buttons: { text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }[] = [
+    { text: "Dismiss", style: "cancel" },
   ];
 
   if (onRetry) {
     buttons.unshift({
       text: "Retry",
-      style: "default" as const,
+      style: "default",
       onPress: onRetry,
     });
   }

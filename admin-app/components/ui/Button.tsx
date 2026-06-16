@@ -15,6 +15,8 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   loading?: boolean;
   /** Lucide icon element, rendered before the label. */
   icon?: React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style?: any;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -35,7 +37,7 @@ const SIZE: Record<Size, { height: number; px: number; radius: number; font: num
 };
 
 export function Button({
-  label, variant = "primary", size = "md", loading = false, disabled, icon, onPress, ...props
+  label, variant = "primary", size = "md", loading = false, disabled, icon, onPress, style, ...props
 }: ButtonProps) {
   const v = VARIANT[variant];
   const s = SIZE[size];
@@ -57,6 +59,7 @@ export function Button({
       onPressOut={() => { scale.value = withSpring(1, { damping: 18, stiffness: 280 }); }}
       style={[
         animStyle,
+        style,
         {
           minHeight: Math.max(s.height, MIN_TOUCH),
           height: s.height,

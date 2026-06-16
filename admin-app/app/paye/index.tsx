@@ -63,7 +63,7 @@ export default function PayeRunsScreen() {
         body: JSON.stringify({ tax_year: CURRENT_TAX_YEAR, period_no: week, pay_date: today.toISOString().slice(0, 10) }),
       });
       const data = await res.json();
-      if (data.success) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); router.push(`/paye/${data.id}`); }
+      if (data.success) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); router.push(`/paye/${data.id}` as any); }
       else Alert.alert("Error", data.error || "Failed");
     } catch (e) { Alert.alert("Error", e instanceof Error ? e.message : "Failed"); }
     finally { setCreating(false); }
@@ -95,7 +95,7 @@ export default function PayeRunsScreen() {
           }
           ListEmptyComponent={<EmptyState title="No pay runs" message="Add employees on the web, then create a weekly run." />}
           renderItem={({ item: r }) => (
-            <Pressable onPress={() => router.push(`/paye/${r.id}`)}>
+            <Pressable onPress={() => router.push(`/paye/${r.id}` as any)}>
               <Card style={{ padding: spacing.base, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View>
                   <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{r.reference}</Text>

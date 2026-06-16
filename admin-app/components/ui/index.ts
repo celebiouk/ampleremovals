@@ -5,6 +5,7 @@ export { StatusBadge } from "./StatusBadge";
 export { ServiceBadge } from "./ServiceBadge";
 export { Input } from "./Input";
 export { Skeleton } from "./Skeleton";
+export { StatCard } from "../dashboard/StatCard";
 export { EmptyState } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
 export { Avatar } from "./Avatar";

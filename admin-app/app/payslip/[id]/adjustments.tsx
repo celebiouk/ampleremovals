@@ -10,7 +10,7 @@ import { Card, Button, Input, ScreenHeader, Badge } from "@/components/ui";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { colors } from "@/lib/colors";
-import { type } from "@/lib/typography";
+import { type as typo } from "@/lib/typography";
 import { spacing, radius } from "@/lib/tokens";
 
 const TYPES = ["bonus", "deduction", "advance", "expense"] as const;
@@ -75,14 +75,14 @@ export default function AdjustmentsScreen() {
       <ScreenHeader title="Add adjustment" onBack={() => router.back()} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
         <Animated.View entering={FadeInDown.springify()} style={{ marginBottom: spacing.lg }}>
-          <Text style={[type.body, { color: colors.slate[600], marginBottom: spacing.base }]}>
+          <Text style={[typo.body, { color: colors.slate[600], marginBottom: spacing.base }]}>
             Add a bonus, deduction, advance, or expense to this payslip
           </Text>
         </Animated.View>
 
         {/* Type selector */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={{ marginBottom: spacing.lg }}>
-          <Text style={[type.bodySemiBold, { color: colors.slate[900], marginBottom: spacing.base }]}>
+          <Text style={[typo.bodySemiBold, { color: colors.slate[900], marginBottom: spacing.base }]}>
             Type
           </Text>
           <View style={{ gap: spacing.sm }}>
@@ -104,7 +104,7 @@ export default function AdjustmentsScreen() {
               >
                 <Text
                   style={[
-                    type.body,
+                    typo.body,
                     {
                       color: type === t ? colors.white : colors.slate[900],
                       fontWeight: "600",
@@ -139,7 +139,7 @@ export default function AdjustmentsScreen() {
             keyboardType="decimal-pad"
           />
           {amount && (
-            <Text style={[type.bodySmall, { color: colors.slate[600], marginTop: spacing.sm }]}>
+            <Text style={[typo.bodySmall, { color: colors.slate[600], marginTop: spacing.sm }]}>
               Total: {formatCurrency(parseFloat(amount))}
             </Text>
           )}
@@ -151,10 +151,10 @@ export default function AdjustmentsScreen() {
             <Card style={{ padding: spacing.base, backgroundColor: colors.slate[50] }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View>
-                  <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{label}</Text>
+                  <Text style={[typo.bodySemiBold, { color: colors.slate[900] }]}>{label}</Text>
                   <Badge label={type} variant="default" style={{ marginTop: spacing.xs }} />
                 </View>
-                <Text style={[type.h3, { color: parseFloat(amount) >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
+                <Text style={[typo.h3, { color: parseFloat(amount) >= 0 ? colors.accent.DEFAULT : colors.danger.DEFAULT }]}>
                   {parseFloat(amount) >= 0 ? "+" : ""}{formatCurrency(parseFloat(amount))}
                 </Text>
               </View>

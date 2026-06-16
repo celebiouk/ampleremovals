@@ -233,7 +233,7 @@ export default function PayrollScreen() {
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    router.push(`/payroll/${run.id}`);
+                    router.push(`/payroll/${run.id}` as any);
                   }}
                 >
                   <Card style={{ padding: spacing.base }}>
