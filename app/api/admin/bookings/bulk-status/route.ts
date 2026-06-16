@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { ALL_STATUSES } from "@/lib/constants";
+import { sendJobConfirmation } from "@/lib/job-confirmation";
 import type { BookingStatus } from "@/types";
 
 const schema = z.object({
@@ -44,6 +45,12 @@ export async function PATCH(request: NextRequest) {
       performed_by: "admin",
     }));
     if (logRows.length) await supabase.from("activity_log").insert(logRows);
+
+    // Reassure customers whose jobs were newly confirmed in this bulk change.
+    if (newStatus === "deposit_paid_job_confirmed") {
+      const newlyConfirmed = (bookings ?? []).filter((b: { id: string; status: BookingStatus }) => b.status !== "deposit_paid_job_confirmed");
+      await Promise.allSettled(newlyConfirmed.map((b: { id: string }) => sendJobConfirmation(supabase, b.id)));
+    }
 
     return NextResponse.json({ success: true, updated: bookingIds.length });
   } catch (err) {

@@ -4,6 +4,7 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { calculateDriverEarnings } from "@/lib/driver-earnings";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { sendJobConfirmation } from "@/lib/job-confirmation";
 
 const schema = z.object({
   paymentMethod: z.enum(["cash", "bank_transfer", "card"]),
@@ -88,12 +89,13 @@ export async function PATCH(
       data: { bookingId: invoice.booking_id },
     });
 
-    // Trigger automation if deposit paid
+    // Trigger automation if deposit paid + reassure the customer the job is confirmed.
     if (invoice.type === "deposit") {
       try {
         const { data: confirmedRule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
         if (confirmedRule) await supabase.from("automation_logs").insert({ rule_id: confirmedRule.id, booking_id: invoice.booking_id, triggered_at: now, status: "pending" });
       } catch { /* non-critical */ }
+      await sendJobConfirmation(supabase, invoice.booking_id);
     }
 
     // Full balance paid (incl. manual bank transfer / cash) → compute driver

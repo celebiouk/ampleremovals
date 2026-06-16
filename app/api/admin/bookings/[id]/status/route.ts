@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { ALL_STATUSES } from "@/lib/constants";
+import { sendJobConfirmation } from "@/lib/job-confirmation";
 import type { BookingStatus } from "@/types";
 
 const schema = z.object({
@@ -53,6 +54,11 @@ export async function PATCH(
       metadata: { previous: previousStatus, new: newStatus },
       performed_by: "admin",
     });
+
+    // Newly moved to "Job Confirmed" → reassure the customer their booking is set.
+    if (newStatus === "deposit_paid_job_confirmed" && previousStatus !== "deposit_paid_job_confirmed") {
+      await sendJobConfirmation(supabase, bookingId);
+    }
 
     return NextResponse.json({ success: true, newStatus });
   } catch (err) {

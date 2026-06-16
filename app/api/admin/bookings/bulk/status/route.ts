@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendJobConfirmation } from "@/lib/job-confirmation";
 
 export async function PATCH(req: Request) {
   const auth = await requireAdmin();
@@ -50,6 +51,11 @@ export async function PATCH(req: Request) {
     }));
 
     await supabase.from("activity_log").insert(activities);
+
+    // Reassure newly-confirmed customers (idempotent — won't double-send).
+    if (status === "deposit_paid_job_confirmed") {
+      await Promise.allSettled(ids.map((id: string) => sendJobConfirmation(supabase, id)));
+    }
 
     return NextResponse.json({
       success: true,

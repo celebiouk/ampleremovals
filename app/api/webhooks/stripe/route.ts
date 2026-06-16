@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { calculateDriverEarnings } from "@/lib/driver-earnings";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { sendJobConfirmation } from "@/lib/job-confirmation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -92,12 +93,13 @@ export async function POST(request: NextRequest) {
           data: { bookingId: inv.booking_id },
         });
 
-        // Trigger job confirmed automation
+        // Trigger job confirmed automation + reassure the customer.
         if (inv.type === "deposit") {
           try {
             const { data: rule } = await supabase.from("automation_rules").select("id").eq("trigger_event", "status_changed_job_confirmed").eq("is_active", true).maybeSingle();
             if (rule) await supabase.from("automation_logs").insert({ rule_id: rule.id, booking_id: inv.booking_id, triggered_at: now, status: "pending" });
           } catch { /* non-critical */ }
+          await sendJobConfirmation(supabase, inv.booking_id);
         }
 
         // ── PHASE 11D: Calculate Driver Earnings ──────────────────
