@@ -80,7 +80,41 @@ export function ContactDetailsStep() {
           placeholder="07123 456789"
           autoComplete="tel"
         />
+        <HeardAboutField />
       </div>
+    </div>
+  );
+}
+
+const HEARD_OPTIONS = [
+  "Google search",
+  "Facebook",
+  "Instagram",
+  "Friend or family",
+  "Used us before",
+  "Saw our van",
+  "Comparison website",
+  "Other",
+];
+
+function HeardAboutField() {
+  const { control } = useFormContext();
+  const { field } = useController({ name: "heardAbout", control });
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+        How did you hear about us? <span className="font-normal text-slate-400">(optional)</span>
+      </label>
+      <select
+        value={String(field.value ?? "")}
+        onChange={(e) => field.onChange(e.target.value)}
+        className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
+      >
+        <option value="">Select an option…</option>
+        {HEARD_OPTIONS.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
     </div>
   );
 }

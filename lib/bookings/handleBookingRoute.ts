@@ -40,12 +40,16 @@ export async function handleBookingRoute(
 
   const data = parsed.data as AnyBookingForm;
 
+  // Attribution is sent alongside the form but isn't part of the per-service
+  // Zod schema (which strips it), so read it from the raw body.
+  const rawAttribution = (body as { attribution?: Record<string, string> } | null)?.attribution ?? null;
+
   let reference: string;
   let bookingId: string;
   let customerId: string;
 
   try {
-    ({ reference, bookingId, customerId } = await createBooking(serviceType, data));
+    ({ reference, bookingId, customerId } = await createBooking(serviceType, data, rawAttribution));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await logError({

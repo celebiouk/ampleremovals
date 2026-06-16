@@ -46,6 +46,7 @@ const contactFields = {
   fullName: z.string().trim().min(2, "Please enter your full name"),
   email: z.string().trim().email("Enter a valid email address"),
   phone: ukPhoneSchema,
+  heardAbout: z.string().trim().max(100).optional(),
 };
 
 const flexibleDateFields = {

@@ -92,6 +92,16 @@ export interface Booking {
   description: string | null;
   internal_notes: string | null;
   source: string;
+  heard_about_us?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+  gclid?: string | null;
+  fbclid?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
   // Quote fields
   quote_line_items: QuoteLineItem[] | null;
   quote_subtotal: number | null;

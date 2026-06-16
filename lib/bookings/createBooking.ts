@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
 import { geocodePostcode } from "@/lib/postcode";
+import { deriveSource, type Attribution } from "@/lib/attribution";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -52,7 +53,8 @@ export interface BookingResult {
  */
 export async function createBooking(
   serviceType: ServiceType,
-  data: AnyBookingForm
+  data: AnyBookingForm,
+  attribution?: Attribution | null
 ): Promise<BookingResult> {
   const supabase = createServiceClient();
 
@@ -116,7 +118,19 @@ export async function createBooking(
       flexible_date_from: flexFrom,
       flexible_date_to: flexTo,
       description,
-      source: "website",
+      // Self-reported + auto-captured attribution. `source` is the derived
+      // channel (facebook/google_ads/referral/direct…), defaulting to website.
+      heard_about_us: (data as { heardAbout?: string }).heardAbout || null,
+      source: attribution ? deriveSource(attribution) : "website",
+      utm_source: attribution?.utm_source ?? null,
+      utm_medium: attribution?.utm_medium ?? null,
+      utm_campaign: attribution?.utm_campaign ?? null,
+      utm_term: attribution?.utm_term ?? null,
+      utm_content: attribution?.utm_content ?? null,
+      gclid: attribution?.gclid ?? null,
+      fbclid: attribution?.fbclid ?? null,
+      referrer: attribution?.referrer ?? null,
+      landing_page: attribution?.landing_page ?? null,
     })
     .select("id")
     .single();

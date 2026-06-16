@@ -354,6 +354,9 @@ export default function BookingDetailPage() {
                 ["Move Date", booking.is_flexible_date && booking.flexible_date_from && booking.flexible_date_to
                   ? `Flexible: ${formatDate(booking.flexible_date_from)} – ${formatDate(booking.flexible_date_to)}`
                   : booking.move_date ? formatDate(booking.move_date) : "—"],
+                ["Lead Source", booking.source ? String(booking.source).replace(/_/g, " ") : "—"],
+                ["Heard About Us", booking.heard_about_us || "—"],
+                ...(booking.utm_campaign ? [["Campaign", booking.utm_campaign]] : []),
               ].map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                   <dt className="shrink-0 text-slate-500">{label}</dt>

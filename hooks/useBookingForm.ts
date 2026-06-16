@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { WizardConfig } from "@/components/booking/types";
+import { readAttribution } from "@/lib/attribution";
+import { trackLead } from "@/lib/pixels";
 
 /**
  * Orchestrates a service booking wizard: React Hook Form + Zod, per-step
@@ -71,7 +73,8 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       const res = await fetch(config.apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        // Attach first-touch marketing attribution (utm/click ids/referrer).
+        body: JSON.stringify({ ...values, attribution: readAttribution() }),
       });
       const data = (await res.json()) as {
         success: boolean;
@@ -82,6 +85,9 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       if (!res.ok || !data.success || !data.reference) {
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
+
+      // Fire conversion pixels (no-ops if pixels aren't configured).
+      trackLead({ reference: data.reference, service: config.slug });
 
       router.push(
         `/confirmation?ref=${encodeURIComponent(
