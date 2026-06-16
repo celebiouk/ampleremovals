@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
 import { geocodePostcode } from "@/lib/postcode";
 import { deriveSource, type Attribution } from "@/lib/attribution";
+import { computeLeadScore } from "@/lib/lead-scoring";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -103,6 +104,25 @@ export async function createBooking(
   const description =
     "description" in data ? (data.description as string) : null;
 
+  // 3b. Lead score (deterministic). Returning customer = has prior bookings.
+  const derivedSource = attribution ? deriveSource(attribution) : "website";
+  const { count: priorBookings } = await supabase
+    .from("bookings").select("*", { count: "exact", head: true }).eq("customer_id", customerId);
+  const bedrooms = "bedrooms" in data ? ((data as { bedrooms?: string }).bedrooms ?? null) : null;
+  const destinationRequired = serviceType === "removals" || serviceType === "man_and_van";
+  const lead = computeLeadScore({
+    moveDate: moveDate ?? flexFrom,
+    hasEmail: Boolean(data.email),
+    hasPhone: Boolean(data.phone),
+    hasOrigin: true,
+    hasDestination: Boolean(destinationAddressId),
+    destinationRequired,
+    bedrooms,
+    serviceType,
+    source: derivedSource,
+    returningCustomer: (priorBookings ?? 0) > 0,
+  });
+
   // 4. Booking row.
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
@@ -121,7 +141,9 @@ export async function createBooking(
       // Self-reported + auto-captured attribution. `source` is the derived
       // channel (facebook/google_ads/referral/direct…), defaulting to website.
       heard_about_us: (data as { heardAbout?: string }).heardAbout || null,
-      source: attribution ? deriveSource(attribution) : "website",
+      source: derivedSource,
+      lead_score: lead.score,
+      lead_band: lead.band,
       utm_source: attribution?.utm_source ?? null,
       utm_medium: attribution?.utm_medium ?? null,
       utm_campaign: attribution?.utm_campaign ?? null,

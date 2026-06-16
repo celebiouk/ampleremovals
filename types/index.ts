@@ -102,6 +102,8 @@ export interface Booking {
   fbclid?: string | null;
   referrer?: string | null;
   landing_page?: string | null;
+  lead_score?: number | null;
+  lead_band?: string | null;
   // Quote fields
   quote_line_items: QuoteLineItem[] | null;
   quote_subtotal: number | null;

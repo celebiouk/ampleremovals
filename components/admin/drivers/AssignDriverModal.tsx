@@ -71,6 +71,12 @@ export function AssignDriverModal({
 
       if (data.success) {
         toast.success("Driver assigned successfully");
+        // Surface scheduling clashes (non-blocking).
+        if (Array.isArray(data.conflicts) && data.conflicts.length > 0) {
+          data.conflicts.forEach((c: { message: string }) =>
+            toast.warning(c.message, { duration: 8000 }),
+          );
+        }
         onSuccess();
         onClose();
       } else {

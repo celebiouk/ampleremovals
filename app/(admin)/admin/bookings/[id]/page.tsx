@@ -357,6 +357,7 @@ export default function BookingDetailPage() {
                 ["Lead Source", booking.source ? String(booking.source).replace(/_/g, " ") : "—"],
                 ["Heard About Us", booking.heard_about_us || "—"],
                 ...(booking.utm_campaign ? [["Campaign", booking.utm_campaign]] : []),
+                ["Lead Score", booking.lead_score != null ? `${booking.lead_score}/100 · ${String(booking.lead_band ?? "").toUpperCase()}` : "—"],
               ].map(([label, value]) => (
                 <div key={label} className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                   <dt className="shrink-0 text-slate-500">{label}</dt>

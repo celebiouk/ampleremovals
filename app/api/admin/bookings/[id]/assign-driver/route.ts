@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { detectDriverConflicts } from "@/lib/conflict-detection";
 
 /**
  * POST /api/admin/bookings/[id]/assign-driver
@@ -104,9 +105,13 @@ export async function POST(
     // Best-effort: notification failures must never fail the assignment.
     await notifyDriverAssigned(supabase, bookingId, driver);
 
+    // Surface (don't block on) scheduling clashes for this driver.
+    const conflicts = await detectDriverConflicts(supabase, driverId, bookingId).catch(() => []);
+
     return NextResponse.json({
       success: true,
       assignment,
+      conflicts,
     });
   } catch (error) {
     console.error("POST assign-driver error:", error);
