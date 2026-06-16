@@ -1,5 +1,26 @@
 # Lessons Log
 
+## Lesson 12 — Dates: store/compare as YYYY-MM-DD strings; compute "today" in UK tz
+**What happened:** A job dated today showed as "past"/missing in the driver app
+at 2am. Two bugs: (1) the web portal compared `new Date(move_date)` (parsed as
+**UTC midnight**) against a local-midnight `today`, so in BST every job was off by
+an hour and fell into the wrong tab; (2) the mobile jobs API computed "today" via
+`new Date().toISOString()` (UTC) on Vercel, rolling over at the wrong time.
+**Root cause:** Mixing `Date` objects (UTC-parsed) with local time, and using UTC
+for a UK business.
+**Rule going forward:** Use `lib/dates.ts` (`ukToday`, `ukWeekRange`, `dateOnly`).
+Compare date-only values as YYYY-MM-DD **strings**; never `new Date("YYYY-MM-DD")`
+for comparisons. Filter scope in JS, not fragile PostgREST `.or()` date casts.
+
+## Lesson 11 — Don't SELECT columns the schema may not have
+**What happened:** The driver jobs API 500'd ("column addresses.lat does not
+exist") the moment a driver had an assigned job — `addresses.lat/lng` were assumed
+during the driver build but no migration ever added them.
+**Root cause:** Explicit `select(... lat, lng)` hard-depends on columns existing.
+**Rule going forward:** For optional/newer columns, select the relation with `(*)`
+so a missing column can't 500 the query; add the migration AND make the read
+resilient. Verify assumed columns exist in `supabase/migrations/`.
+
 ## Lesson 10 — Mobile bearer auth must be honoured by the shared server client
 **What happened:** The mobile admin app authenticates to `/api/admin/**` with an
 `Authorization: Bearer <supabase access_token>`, but the web `createClient()`
