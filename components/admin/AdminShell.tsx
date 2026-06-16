@@ -33,6 +33,7 @@ const NAV_GROUPS = [
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
       { href: "/admin/drivers", label: "Drivers", icon: Truck },
+      { href: "/admin/porters", label: "Porters", icon: Users },
     ],
   },
   {
