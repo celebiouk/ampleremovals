@@ -596,6 +596,21 @@ export default function BookingDetailPage() {
           {/* Assigned Drivers */}
           <AssignedDrivers bookingId={bookingId} bookingReference={booking.reference} />
 
+          {/* Evidence pack (chain of custody) */}
+          {(booking.pickup_confirmed || booking.delivery_confirmed) && (
+            <Card title="Evidence Pack">
+              <p className="mb-3 text-sm text-slate-500">Chain-of-custody record: contacts, signatures, photos and timestamps for this job.</p>
+              <a
+                href={`/api/admin/bookings/${bookingId}/evidence-pack`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-purple-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-purple-900"
+              >
+                Download evidence pack (PDF)
+              </a>
+            </Card>
+          )}
+
           <Card title="Booking Status">
             <div className="mb-4"><StatusBadge status={booking.status} /></div>
             <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value as BookingStatus)}
