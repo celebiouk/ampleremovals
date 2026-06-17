@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
-import { resend, resendFrom } from "@/lib/resend";
+import { sendChainReceipt } from "@/lib/chain-receipt";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -44,17 +44,8 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
       metadata: { driver_id: auth.driver.id }, performed_by: "driver",
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cust = (booking as any)?.customer;
-    if (cust?.email) {
-      try {
-        await resend.emails.send({
-          from: resendFrom, to: cust.email,
-          subject: "Your Ample Removals pickup is confirmed",
-          html: `<p>Hi ${(cust.full_name ?? "there").split(" ")[0]},</p><p>Your items have been collected and released for transport. Job ref: ${booking?.reference}.</p><p>We'll let you know when the driver is on the way to the delivery address.</p>`,
-        });
-      } catch (e) { console.error("pickup receipt email failed", e); }
-    }
+    // Branded pickup receipt PDF emailed to the customer (best-effort).
+    await sendChainReceipt(supabase, params.bookingId, "pickup");
 
     return NextResponse.json({ success: true });
   } catch (e) {

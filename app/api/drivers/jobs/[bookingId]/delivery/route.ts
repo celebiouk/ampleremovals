@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendChainReceipt } from "@/lib/chain-receipt";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -35,6 +36,9 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
       action: `Delivery confirmed by ${contact_name.trim()}`,
       metadata: { driver_id: auth.driver.id }, performed_by: "driver",
     });
+
+    // Branded delivery receipt PDF emailed to the customer (best-effort).
+    await sendChainReceipt(supabase, params.bookingId, "delivery");
 
     return NextResponse.json({ success: true, contact_name: contact_name.trim() });
   } catch (e) {
