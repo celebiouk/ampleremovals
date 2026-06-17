@@ -28,7 +28,15 @@ interface BookingRow {
   status: BookingStatus; move_date: string | null; is_flexible_date: boolean;
   created_at: string; customer_name: string;
   origin_postcode: string; destination_postcode: string | null;
+  lead_band: string | null; lead_score: number | null;
 }
+
+const LEAD_BADGE: Record<string, string> = {
+  hot: "bg-red-100 text-red-700",
+  warm: "bg-orange-100 text-orange-700",
+  nurture: "bg-blue-100 text-blue-700",
+  cold: "bg-slate-100 text-slate-500",
+};
 
 function BookingsListInner() {
   const router = useRouter();
@@ -90,7 +98,7 @@ function BookingsListInner() {
 
     let q = supabase
       .from("bookings")
-      .select("id,reference,service_type,status,move_date,is_flexible_date,created_at,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)", { count: "exact" })
+      .select("id,reference,service_type,status,move_date,is_flexible_date,created_at,lead_band,lead_score,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
 
@@ -110,6 +118,8 @@ function BookingsListInner() {
       customer_name: (b.customers as { full_name: string } | null)?.full_name ?? "—",
       origin_postcode: (b.origin_addr as { postcode: string } | null)?.postcode ?? "—",
       destination_postcode: (b.dest_addr as { postcode: string } | null)?.postcode ?? null,
+      lead_band: (b.lead_band as string | null) ?? null,
+      lead_score: (b.lead_score as number | null) ?? null,
     }));
 
     if (search) {
@@ -301,7 +311,16 @@ function BookingsListInner() {
                         className="rounded border-slate-300 accent-brand-purple-700" />
                     </td>
                     <td className={`px-4 py-3 font-mono text-sm font-semibold ${isInquiry ? "text-white" : "text-brand-purple-700"}`}>{b.reference}</td>
-                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-700"}`}>{b.customer_name}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-700"}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{b.customer_name}</span>
+                        {b.lead_band && (
+                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${isInquiry ? "bg-white/20 text-white" : LEAD_BADGE[b.lead_band] ?? "bg-slate-100 text-slate-500"}`} title={`Lead score ${b.lead_score ?? "—"}/100`}>
+                            {b.lead_band}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3"><ServiceBadge service={b.service_type} /></td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.origin_postcode}</td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.destination_postcode ?? "N/A"}</td>

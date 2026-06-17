@@ -146,6 +146,8 @@ export function QuoteBuilderModal({
   const [isSending, setIsSending] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [calculatingDistance, setCalculatingDistance] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ total: number; breakdown: { label: string; amount: number }[] } | null>(null);
 
   function getDefaultValidUntil(): string {
     const date = new Date();
@@ -251,6 +253,32 @@ export function QuoteBuilderModal({
       console.log("⏭️ Skipping distance calculation");
     }
   }, [isOpen, existingQuote, serviceData]);
+
+  // Pull the deterministic recommendation (base + size + distance + extras) and
+  // apply it to the main line item. Admin can still edit before sending.
+  const applySuggestion = async () => {
+    setSuggesting(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}/quote/recommend`);
+      const json = (await res.json()) as { success: boolean; recommendation?: { total: number; breakdown: { label: string; amount: number }[] } };
+      if (json.success && json.recommendation) {
+        setSuggestion(json.recommendation);
+        setLineItems((prev) => {
+          if (prev.length === 0) return prev;
+          const updated = [...prev];
+          updated[0] = { ...updated[0], unit_price: json.recommendation!.total, total: updated[0].quantity * json.recommendation!.total };
+          return updated;
+        });
+        toast.success(`Suggested price applied: £${json.recommendation.total.toFixed(2)}`);
+      } else {
+        toast.error("Couldn't generate a suggestion for this booking");
+      }
+    } catch {
+      toast.error("Couldn't generate a suggestion");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const updateLineItem = (index: number, field: keyof QuoteLineItem, value: string | number) => {
     const updated = [...lineItems];
@@ -439,13 +467,29 @@ export function QuoteBuilderModal({
                 </div>
               ))}
             </div>
-            <button
-              onClick={addLineItem}
-              className="mt-3 flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Line Item
-            </button>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                onClick={addLineItem}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Line Item
+              </button>
+              <button
+                onClick={applySuggestion}
+                disabled={suggesting}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand-green-700 bg-brand-green-50 hover:bg-brand-green-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {suggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"}
+                Use suggested price
+              </button>
+            </div>
+            {suggestion && (
+              <div className="mt-3 rounded-xl border border-brand-green-200 bg-brand-green-50 px-4 py-3 text-xs text-brand-green-800">
+                <p className="font-semibold">Recommended: £{suggestion.total.toFixed(2)} (ex-VAT)</p>
+                <p className="mt-1 text-brand-green-700">{suggestion.breakdown.map((b) => `${b.label} £${b.amount}`).join(" · ")}</p>
+              </div>
+            )}
           </div>
 
           {/* Distance calculation info */}
