@@ -29,5 +29,20 @@ export async function GET(req: Request) {
     result[`${c.table}.${c.column}`] = error ? { exists: false, error: error.message } : { exists: true };
   }
 
-  return NextResponse.json({ success: true, result });
+  // Replicate the exact attribution/lead update createBooking does, on the most
+  // recent booking, and report the real error (then leave the value in place).
+  let testUpdate: { ok: boolean; error?: string; bookingId?: string } = { ok: false };
+  const { data: latest } = await supabase.from("bookings").select("id").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (latest) {
+    const { error: upErr } = await supabase.from("bookings").update({
+      heard_about_us: "diagnostic-test",
+      lead_score: 42,
+      lead_band: "warm",
+      utm_source: null, utm_medium: null, utm_campaign: null, utm_term: null,
+      utm_content: null, gclid: null, fbclid: null, referrer: null, landing_page: null,
+    }).eq("id", latest.id);
+    testUpdate = upErr ? { ok: false, error: upErr.message, bookingId: latest.id } : { ok: true, bookingId: latest.id };
+  }
+
+  return NextResponse.json({ success: true, result, testUpdate });
 }
