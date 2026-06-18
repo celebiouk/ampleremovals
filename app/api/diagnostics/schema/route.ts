@@ -30,18 +30,23 @@ export async function GET(req: Request) {
   }
 
   // Replicate the exact attribution/lead update createBooking does, on the most
-  // recent booking, and report the real error (then leave the value in place).
+  // recent booking, to surface the real error — then restore the original values
+  // so this is non-destructive and safe to re-run.
   let testUpdate: { ok: boolean; error?: string; bookingId?: string } = { ok: false };
-  const { data: latest } = await supabase.from("bookings").select("id").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: latest } = await supabase
+    .from("bookings").select("id, lead_score, lead_band, heard_about_us")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (latest) {
     const { error: upErr } = await supabase.from("bookings").update({
-      heard_about_us: "diagnostic-test",
-      lead_score: 42,
-      lead_band: "warm",
-      utm_source: null, utm_medium: null, utm_campaign: null, utm_term: null,
-      utm_content: null, gclid: null, fbclid: null, referrer: null, landing_page: null,
+      heard_about_us: "diagnostic-test", lead_score: 42, lead_band: "warm",
     }).eq("id", latest.id);
     testUpdate = upErr ? { ok: false, error: upErr.message, bookingId: latest.id } : { ok: true, bookingId: latest.id };
+    // Restore originals regardless of outcome.
+    await supabase.from("bookings").update({
+      heard_about_us: latest.heard_about_us ?? null,
+      lead_score: latest.lead_score ?? null,
+      lead_band: latest.lead_band ?? null,
+    }).eq("id", latest.id).then(() => {}, () => {});
   }
 
   return NextResponse.json({ success: true, result, testUpdate });

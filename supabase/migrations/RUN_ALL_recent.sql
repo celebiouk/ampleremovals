@@ -30,7 +30,9 @@ ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS referrer TEXT,
   ADD COLUMN IF NOT EXISTS landing_page TEXT;
 
--- 3b. Lead scoring
+-- 3b. Lead scoring. Drop any stale CHECK constraint from an earlier lead_score
+-- column (a narrower scale) so the 0–100 score can be stored.
+ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_lead_score_check;
 ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS lead_score INT,
   ADD COLUMN IF NOT EXISTS lead_band TEXT;
