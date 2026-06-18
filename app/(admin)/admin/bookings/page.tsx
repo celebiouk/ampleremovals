@@ -96,19 +96,28 @@ function BookingsListInner() {
     const supabase = createClient();
     const from = (page - 1) * PAGE_SIZE;
 
-    let q = supabase
-      .from("bookings")
-      .select("id,reference,service_type,status,move_date,is_flexible_date,created_at,lead_band,lead_score,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+    // Build the query for a given column set, applying the active filters.
+    const baseCols = "id,reference,service_type,status,move_date,is_flexible_date,created_at,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)";
+    const buildQuery = (cols: string) => {
+      let q = supabase
+        .from("bookings")
+        .select(cols, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+      if (service) q = q.eq("service_type", service);
+      if (status) {
+        if (status === "in_progress") q = q.in("status", IN_PROGRESS);
+        else q = q.eq("status", status as BookingStatus);
+      }
+      return q;
+    };
 
-    if (service) q = q.eq("service_type", service);
-    if (status) {
-      if (status === "in_progress") q = q.in("status", IN_PROGRESS);
-      else q = q.eq("status", status as BookingStatus);
+    // Try with lead-score columns; fall back gracefully if that migration
+    // hasn't been run yet (so the list never breaks).
+    let { data, count, error } = await buildQuery(`${baseCols},lead_band,lead_score`);
+    if (error) {
+      ({ data, count } = await buildQuery(baseCols));
     }
-
-    const { data, count } = await q;
 
     let rows: BookingRow[] = (data ?? []).map((b: Record<string, unknown>) => ({
       id: b.id as string, reference: b.reference as string,

@@ -123,7 +123,9 @@ export async function createBooking(
     returningCustomer: (priorBookings ?? 0) > 0,
   });
 
-  // 4. Booking row.
+  // 4. Booking row — only the core columns that have always existed, so a
+  // booking can never fail because an optional analytics column/migration is
+  // missing. (`source` has always existed; default it here.)
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
     .insert({
@@ -138,27 +140,38 @@ export async function createBooking(
       flexible_date_from: flexFrom,
       flexible_date_to: flexTo,
       description,
-      // Self-reported + auto-captured attribution. `source` is the derived
-      // channel (facebook/google_ads/referral/direct…), defaulting to website.
-      heard_about_us: (data as { heardAbout?: string }).heardAbout || null,
       source: derivedSource,
-      lead_score: lead.score,
-      lead_band: lead.band,
-      utm_source: attribution?.utm_source ?? null,
-      utm_medium: attribution?.utm_medium ?? null,
-      utm_campaign: attribution?.utm_campaign ?? null,
-      utm_term: attribution?.utm_term ?? null,
-      utm_content: attribution?.utm_content ?? null,
-      gclid: attribution?.gclid ?? null,
-      fbclid: attribution?.fbclid ?? null,
-      referrer: attribution?.referrer ?? null,
-      landing_page: attribution?.landing_page ?? null,
     })
     .select("id")
     .single();
   if (bookingError || !booking)
     throw new Error(`booking insert failed: ${bookingError?.message}`);
   const bookingId = booking.id as string;
+
+  // 4b. Lead score + marketing attribution — best-effort, so the booking still
+  // succeeds if these columns/migrations aren't present yet.
+  try {
+    const { error: metaErr } = await supabase
+      .from("bookings")
+      .update({
+        heard_about_us: (data as { heardAbout?: string }).heardAbout || null,
+        lead_score: lead.score,
+        lead_band: lead.band,
+        utm_source: attribution?.utm_source ?? null,
+        utm_medium: attribution?.utm_medium ?? null,
+        utm_campaign: attribution?.utm_campaign ?? null,
+        utm_term: attribution?.utm_term ?? null,
+        utm_content: attribution?.utm_content ?? null,
+        gclid: attribution?.gclid ?? null,
+        fbclid: attribution?.fbclid ?? null,
+        referrer: attribution?.referrer ?? null,
+        landing_page: attribution?.landing_page ?? null,
+      })
+      .eq("id", bookingId);
+    if (metaErr) console.warn("booking attribution/lead update skipped:", metaErr.message);
+  } catch (e) {
+    console.warn("booking attribution/lead update skipped:", e);
+  }
 
   // 5. Service-specific detail + additional services.
   if (serviceType === "removals") {
