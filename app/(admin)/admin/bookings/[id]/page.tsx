@@ -23,6 +23,7 @@ import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal"
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
+import { accessFlag } from "@/lib/lead-signals";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -360,6 +361,14 @@ export default function BookingDetailPage() {
                 </div>
               ))}
             </dl>
+            {(() => {
+              const flag = accessFlag(originAddress?.postcode) || accessFlag(destinationAddress?.postcode);
+              return flag ? (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <span>⚠️</span><span>{flag}</span>
+                </div>
+              ) : null;
+            })()}
           </Card>
 
           <Card title="Service Details">

@@ -29,6 +29,7 @@ export interface LeadScoreInput {
   source?: string | null;            // derived channel
   createdAt?: Date;                  // enquiry time (defaults now)
   returningCustomer: boolean;
+  intent?: "high" | "low" | "neutral"; // from keyword detection on the enquiry text
 }
 
 export interface LeadScoreResult {
@@ -88,7 +89,12 @@ export function computeLeadScore(input: LeadScoreInput): LeadScoreResult {
   // Returning customer.
   b.returning = input.returningCustomer ? 10 : 0;
 
-  const score = Math.min(100, Object.values(b).reduce((a, v) => a + v, 0));
+  // Language intent (keyword-detected): high-intent enquiries score higher.
+  if (input.intent === "high") b.intent = 10;
+  else if (input.intent === "low") b.intent = -5;
+  else b.intent = 0;
+
+  const score = Math.max(0, Math.min(100, Object.values(b).reduce((a, v) => a + v, 0)));
   return { score, band: bandFor(score), breakdown: b };
 }
 

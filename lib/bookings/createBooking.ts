@@ -3,6 +3,7 @@ import { generateBookingReference } from "@/lib/utils";
 import { geocodePostcode } from "@/lib/postcode";
 import { deriveSource, type Attribution } from "@/lib/attribution";
 import { computeLeadScore } from "@/lib/lead-scoring";
+import { detectIntent } from "@/lib/lead-signals";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -121,6 +122,7 @@ export async function createBooking(
     serviceType,
     source: derivedSource,
     returningCustomer: (priorBookings ?? 0) > 0,
+    intent: detectIntent(description).level,
   });
 
   // 4. Booking row — only the core columns that have always existed, so a
