@@ -8,18 +8,25 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://pegajpwahlzlhtmltovy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2FqcHdhaGx6bGh0bWx0b3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzAzODAsImV4cCI6MjA5NjI0NjM4MH0.PHlRPGwKGGaoYfy0eFH5-ro9M9pB8aoGlt6O0GO9C9c",
         "EXPO_PUBLIC_SITE_URL": "https://www.ampleremovals.com"
       }
     },
     "preview": {
       "distribution": "internal",
+      "android": { "buildType": "apk" },
       "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://pegajpwahlzlhtmltovy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2FqcHdhaGx6bGh0bWx0b3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzAzODAsImV4cCI6MjA5NjI0NjM4MH0.PHlRPGwKGGaoYfy0eFH5-ro9M9pB8aoGlt6O0GO9C9c",
         "EXPO_PUBLIC_SITE_URL": "https://www.ampleremovals.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://pegajpwahlzlhtmltovy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2FqcHdhaGx6bGh0bWx0b3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzAzODAsImV4cCI6MjA5NjI0NjM4MH0.PHlRPGwKGGaoYfy0eFH5-ro9M9pB8aoGlt6O0GO9C9c",
         "EXPO_PUBLIC_SITE_URL": "https://www.ampleremovals.com"
       }
     }
