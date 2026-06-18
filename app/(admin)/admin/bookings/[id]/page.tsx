@@ -22,6 +22,7 @@ import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
 import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
+import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -313,13 +314,7 @@ export default function BookingDetailPage() {
 
         {/* LEFT PANEL */}
         <div className="space-y-5">
-          <Card title="Customer Details">
-            <p className="text-base font-bold text-slate-900">{customer.full_name}</p>
-            <a href={`mailto:${customer.email}`} className="mt-1.5 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Mail className="h-4 w-4" />{customer.email}</a>
-            <a href={`tel:${customer.phone}`} className="mt-1 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Phone className="h-4 w-4" />{customer.phone}</a>
-            <p className="mt-2 text-xs text-slate-400">Customer since {formatDate(customer.created_at)}</p>
-            <Link href={`/admin/customers/${customer.id}`} className="mt-1 text-xs text-brand-purple-600 hover:underline">View all bookings from this customer →</Link>
-          </Card>
+          <EditableCustomerCard customer={customer} formatDate={formatDate} onSaved={refresh} />
 
           <Card
             title="Booking Details"

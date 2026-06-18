@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Pencil, Check, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
@@ -27,6 +28,32 @@ export default function CustomerDetailPage() {
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
+
+  async function saveCustomer() {
+    if (form.full_name.trim().length < 2) { toast.error("Please enter the customer's name"); return; }
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) { toast.error("Please enter a valid email"); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/customers/${customerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Customer details updated");
+        setCustomer((c) => (c ? { ...c, ...data.customer } : c));
+        setEditing(false);
+      } else toast.error(data.error || "Failed to update");
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -85,29 +112,60 @@ export default function CustomerDetailPage() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 font-semibold text-slate-900">Customer Info</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</p>
-            <p className="mt-1 font-semibold text-slate-800">{customer.full_name}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>
-            <a href={`mailto:${customer.email}`} className="mt-1 flex items-center gap-1.5 text-sm text-brand-purple-700 hover:underline">
-              <Mail className="h-4 w-4" />{customer.email}
-            </a>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone</p>
-            <a href={`tel:${customer.phone}`} className="mt-1 flex items-center gap-1.5 text-sm text-brand-purple-700 hover:underline">
-              <Phone className="h-4 w-4" />{customer.phone}
-            </a>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Customer Since</p>
-            <p className="mt-1 text-sm text-slate-700">{formatDate(customer.created_at)}</p>
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">Customer Info</h3>
+          {!editing ? (
+            <button onClick={() => { setForm({ full_name: customer.full_name, email: customer.email, phone: customer.phone }); setEditing(true); }} className="flex items-center gap-1 text-xs font-medium text-brand-purple-600 hover:text-brand-purple-800">
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button onClick={saveCustomer} disabled={saving} className="flex items-center gap-1 text-xs font-medium text-brand-green-700 disabled:opacity-50">
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save
+              </button>
+              <button onClick={() => setEditing(false)} className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600"><X className="h-3.5 w-3.5" /> Cancel</button>
+            </div>
+          )}
         </div>
+        {!editing ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</p>
+              <p className="mt-1 font-semibold text-slate-800">{customer.full_name}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>
+              <a href={`mailto:${customer.email}`} className="mt-1 flex items-center gap-1.5 text-sm text-brand-purple-700 hover:underline">
+                <Mail className="h-4 w-4" />{customer.email}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone</p>
+              <a href={`tel:${customer.phone}`} className="mt-1 flex items-center gap-1.5 text-sm text-brand-purple-700 hover:underline">
+                <Phone className="h-4 w-4" />{customer.phone}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Customer Since</p>
+              <p className="mt-1 text-sm text-slate-700">{formatDate(customer.created_at)}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</label>
+              <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
+              <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone</label>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} type="tel" className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-purple-400" />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
