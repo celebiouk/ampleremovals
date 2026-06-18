@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
-  Calculator, TrendingDown, TrendingUp, Landmark,
+  Calculator, TrendingDown, TrendingUp, Landmark, Route,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ const NAV_GROUPS = [
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
       { href: "/admin/drivers", label: "Drivers", icon: Truck },
       { href: "/admin/porters", label: "Porters", icon: Users },
+      { href: "/admin/routes", label: "Route Plans", icon: Route },
     ],
   },
   {
