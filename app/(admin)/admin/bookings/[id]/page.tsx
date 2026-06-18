@@ -46,6 +46,27 @@ export default function BookingDetailPage() {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [editingHeard, setEditingHeard] = useState(false);
+  const [savingHeard, setSavingHeard] = useState(false);
+  const [heardValue, setHeardValue] = useState("");
+
+  async function saveHeardAbout() {
+    setSavingHeard(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}/heard-about`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ heard_about_us: heardValue || null }),
+      });
+      const d = await res.json();
+      if (d.success) { toast.success("Updated"); setEditingHeard(false); refresh(); }
+      else toast.error(d.error || "Failed to update");
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setSavingHeard(false);
+    }
+  }
   const [emailExpanded, setEmailExpanded] = useState(false);
   const [smsExpanded, setSmsExpanded] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
@@ -351,7 +372,6 @@ export default function BookingDetailPage() {
                   ? `Flexible: ${formatDate(booking.flexible_date_from)} – ${formatDate(booking.flexible_date_to)}`
                   : booking.move_date ? formatDate(booking.move_date) : "—"],
                 ["Lead Source", booking.source ? String(booking.source).replace(/_/g, " ") : "—"],
-                ["Heard About Us", booking.heard_about_us || "—"],
                 ...(booking.utm_campaign ? [["Campaign", booking.utm_campaign]] : []),
                 ["Lead Score", booking.lead_score != null ? `${booking.lead_score}/100 · ${String(booking.lead_band ?? "").toUpperCase()}` : "—"],
               ].map(([label, value]) => (
@@ -361,6 +381,26 @@ export default function BookingDetailPage() {
                 </div>
               ))}
             </dl>
+
+            {/* Heard about us — editable (can be set/corrected by admin) */}
+            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
+              <span className="text-slate-500">Heard About Us</span>
+              {editingHeard ? (
+                <div className="flex items-center gap-2">
+                  <select value={heardValue} onChange={(e) => setHeardValue(e.target.value)} className="h-8 rounded-lg border border-slate-200 px-2 text-sm">
+                    <option value="">—</option>
+                    {["Google search","Facebook","Instagram","Friend or family","Used us before","Saw our van","Comparison website","Other"].map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <button onClick={saveHeardAbout} disabled={savingHeard} className="text-xs font-semibold text-brand-green-700 disabled:opacity-50">{savingHeard ? "…" : "Save"}</button>
+                  <button onClick={() => setEditingHeard(false)} className="text-xs text-slate-400">Cancel</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-slate-800">{booking.heard_about_us || "—"}</span>
+                  <button onClick={() => { setHeardValue(booking.heard_about_us || ""); setEditingHeard(true); }} className="text-xs font-medium text-brand-purple-600 hover:text-brand-purple-800">Edit</button>
+                </div>
+              )}
+            </div>
             {(() => {
               const flag = accessFlag(originAddress?.postcode) || accessFlag(destinationAddress?.postcode);
               return flag ? (
