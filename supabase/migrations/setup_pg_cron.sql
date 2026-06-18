@@ -55,8 +55,10 @@ begin
   if exists (select 1 from cron.job where jobname = 'eta-engine')     then perform cron.unschedule('eta-engine');     end if;
   if exists (select 1 from cron.job where jobname = 'quote-followup') then perform cron.unschedule('quote-followup'); end if;
   if exists (select 1 from cron.job where jobname = 'lead-routing')   then perform cron.unschedule('lead-routing');   end if;
+  if exists (select 1 from cron.job where jobname = 'late-check')     then perform cron.unschedule('late-check');     end if;
 end $$;
 
 select cron.schedule('eta-engine',     '* * * * *',  $$ select public.invoke_cron('/api/cron/eta-engine');     $$);
 select cron.schedule('quote-followup', '0 * * * *',  $$ select public.invoke_cron('/api/cron/quote-followup'); $$);
-select cron.schedule('lead-routing',   '*/15 * * * *', $$ select public.invoke_cron('/api/cron/lead-routing');   $$);
+select cron.schedule('lead-routing',   '*/15 * * * *', $$ select public.invoke_cron('/api/cron/lead-routing'); $$);
+select cron.schedule('late-check',     '*/15 * * * *', $$ select public.invoke_cron('/api/cron/late-check');   $$);
