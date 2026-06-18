@@ -2,8 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Search } from "lucide-react";
+import { X, Loader2, Search, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+
+interface Suggestion {
+  driverId: string; score: number; available: boolean;
+  jobsThatDay: number; distanceMiles: number | null; reasons: string[];
+}
 
 interface AssignDriverModalProps {
   bookingId: string;
@@ -27,10 +32,13 @@ export function AssignDriverModal({
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [payPercentageOverride, setPayPercentageOverride] = useState("");
   const [isLeadDriver, setIsLeadDriver] = useState(false);
+  const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
+  const [topId, setTopId] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
       loadDrivers();
+      loadSuggestions();
     }
   }, [isOpen]);
 
@@ -46,6 +54,22 @@ export function AssignDriverModal({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadSuggestions() {
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}/suggest-driver`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.suggestions)) {
+        const map: Record<string, Suggestion> = {};
+        data.suggestions.forEach((s: Suggestion) => { map[s.driverId] = s; });
+        setSuggestions(map);
+        if (data.suggestions[0]) {
+          setTopId(data.suggestions[0].driverId);
+          setSelectedDriverId((cur) => cur || data.suggestions[0].driverId); // pre-select best
+        }
+      }
+    } catch { /* suggestions are optional */ }
   }
 
   async function handleAssign() {
@@ -90,15 +114,18 @@ export function AssignDriverModal({
     }
   }
 
-  const filteredDrivers = drivers.filter((driver) => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      driver.first_name?.toLowerCase().includes(search) ||
-      driver.last_name?.toLowerCase().includes(search) ||
-      driver.email?.toLowerCase().includes(search)
-    );
-  });
+  const filteredDrivers = drivers
+    .filter((driver) => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        driver.first_name?.toLowerCase().includes(search) ||
+        driver.last_name?.toLowerCase().includes(search) ||
+        driver.email?.toLowerCase().includes(search)
+      );
+    })
+    // Best-suggested drivers first.
+    .sort((a, b) => (suggestions[b.id]?.score ?? -1) - (suggestions[a.id]?.score ?? -1));
 
   if (!isOpen) return null;
 
@@ -153,11 +180,23 @@ export function AssignDriverModal({
                       {driver.first_name?.[0]}{driver.last_name?.[0]}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-slate-900">
-                        {driver.first_name} {driver.last_name}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900">{driver.first_name} {driver.last_name}</span>
+                        {topId === driver.id && (
+                          <span className="flex items-center gap-1 rounded-full bg-brand-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-green-700">
+                            <Sparkles className="h-3 w-3" /> Recommended
+                          </span>
+                        )}
+                        {suggestions[driver.id] && !suggestions[driver.id].available && (
+                          <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                            <AlertTriangle className="h-3 w-3" /> Clash
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-slate-600">
-                        Default pay: {driver.default_pay_percentage}%
+                        {suggestions[driver.id]
+                          ? suggestions[driver.id].reasons.join(" · ")
+                          : `Default pay: ${driver.default_pay_percentage}%`}
                       </div>
                     </div>
                   </button>
