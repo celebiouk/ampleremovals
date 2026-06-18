@@ -2,7 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, Lightbulb } from "lucide-react";
+import { Loader2, TrendingUp, Lightbulb, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 
 interface Row { key: string; total: number; won: number; lost: number; conversion: number; value: number }
@@ -50,19 +51,44 @@ function Table({ title, rows }: { title: string; rows: Row[] }) {
 export default function InsightsPage() {
   const [data, setData] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(true);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/insights").then((r) => r.json()).then((d) => { if (d.success) setData(d); }).finally(() => setLoading(false));
   }, []);
+
+  async function backfillScores() {
+    setBackfilling(true);
+    try {
+      const res = await fetch("/api/admin/leads/backfill-scores", { method: "POST" });
+      const d = await res.json();
+      if (d.success) toast.success(`Scored ${d.updated} booking${d.updated === 1 ? "" : "s"}. Refresh any booking to see it.`);
+      else toast.error(d.error || "Couldn't recompute — run the migration first.");
+    } catch {
+      toast.error("Couldn't recompute lead scores");
+    } finally {
+      setBackfilling(false);
+    }
+  }
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-brand-purple-600" /></div>;
   if (!data) return <p className="text-slate-500">Couldn&apos;t load insights.</p>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900"><TrendingUp className="h-6 w-6 text-brand-purple-700" /> Insights</h1>
-        <p className="text-sm text-slate-500">Conversion &amp; value across the last 180 days. Pure stats from your own bookings.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900"><TrendingUp className="h-6 w-6 text-brand-purple-700" /> Insights</h1>
+          <p className="text-sm text-slate-500">Conversion &amp; value across the last 180 days. Pure stats from your own bookings.</p>
+        </div>
+        <button
+          onClick={backfillScores}
+          disabled={backfilling}
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-brand-purple-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+        >
+          {backfilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Recompute lead scores
+        </button>
       </div>
 
       {data.headlines.length > 0 && (
