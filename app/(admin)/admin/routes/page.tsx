@@ -2,7 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Route, MapPin, Clock, Coffee, RefreshCw } from "lucide-react";
+import { Loader2, Route, MapPin, Clock, Coffee, RefreshCw, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
 function tomorrowISO(): string {
@@ -16,6 +16,19 @@ export default function RoutesPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
+  const [debriefs, setDebriefs] = useState<Record<string, any>>({});
+  const [debriefLoading, setDebriefLoading] = useState<string>("");
+
+  async function loadDebrief(driverId: string) {
+    setDebriefLoading(driverId);
+    try {
+      const res = await fetch(`/api/admin/routes/debrief?driverId=${driverId}&date=${date}`);
+      const data = await res.json();
+      setDebriefs((d) => ({ ...d, [driverId]: data.debrief ?? null }));
+    } finally {
+      setDebriefLoading("");
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,8 +87,45 @@ export default function RoutesPage() {
                   <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> Start {p.recommended_start}</span>
                   <span>{p.total_stops} stops</span>
                   <span>{p.total_miles} mi</span>
+                  <button onClick={() => loadDebrief(p.driver_id)} className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200">
+                    {debriefLoading === p.driver_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="h-3.5 w-3.5" />} Debrief
+                  </button>
                 </div>
               </div>
+
+              {debriefs[p.driver_id] !== undefined && (
+                debriefs[p.driver_id] === null ? (
+                  <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">No debrief data yet for this day.</p>
+                ) : (
+                  <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        ["On-time", debriefs[p.driver_id].onTimePct != null ? `${debriefs[p.driver_id].onTimePct}%` : "—"],
+                        ["Completed", `${debriefs[p.driver_id].completedStops}/${debriefs[p.driver_id].totalStops}`],
+                        ["Late stops", String(debriefs[p.driver_id].lateStops)],
+                        ["Est. fuel", `£${debriefs[p.driver_id].fuelCostEstimate?.toFixed(2)}`],
+                      ].map(([l, v]) => (
+                        <div key={l} className="rounded-lg bg-white p-2 text-center">
+                          <p className="text-base font-bold text-slate-900">{v}</p>
+                          <p className="text-[10px] uppercase tracking-wide text-slate-400">{l}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      {debriefs[p.driver_id].rows.map((r: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="font-mono text-slate-600">{r.reference}</span>
+                          <span className="text-slate-500">
+                            target {r.targetArrival} · {r.actualArrival ? `arrived ${r.actualArrival}` : "no arrival"}
+                            {r.onTime === false && <span className="ml-1 font-semibold text-red-600">+{r.lateByMin}m late</span>}
+                            {r.onTime === true && <span className="ml-1 font-semibold text-green-600">on time</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
               <ol className="space-y-2">
                 {(p.stops ?? []).map((s: any, i: number) => (
                   <li key={i} className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${s.isBreak ? "border-amber-200 bg-amber-50" : "border-slate-100 bg-slate-50"}`}>

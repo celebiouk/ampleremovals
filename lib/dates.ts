@@ -28,6 +28,14 @@ export function dateOnly(value: string | null | undefined): string | null {
   return value.slice(0, 10);
 }
 
+/** Minutes since midnight (UK time) for a timestamp — for comparing against
+ *  "HH:MM" target times. */
+export function ukMinutesOfDay(value: string | Date): number {
+  const hm = new Intl.DateTimeFormat("en-GB", { timeZone: UK_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
+  const [h, m] = hm.split(":").map((n) => parseInt(n, 10));
+  return (h % 24) * 60 + m;
+}
+
 /** Monday-start week range (YYYY-MM-DD) containing the UK "today". */
 export function ukWeekRange(): { start: string; end: string } {
   const today = ukToday();
