@@ -5,6 +5,7 @@ import { SERVICE_SCHEMAS } from "@/lib/schemas/booking";
 import { AddressStep } from "@/components/booking/steps/AddressStep";
 import { PropertyDetailsStep } from "@/components/booking/steps/PropertyDetailsStep";
 import { AdditionalServicesStep } from "@/components/booking/steps/AdditionalServicesStep";
+import { CleaningUpsellStep } from "@/components/booking/steps/CleaningUpsellStep";
 import { DescriptionStep } from "@/components/booking/steps/DescriptionStep";
 import { MoveDateStep } from "@/components/booking/steps/MoveDateStep";
 import { ContactDetailsStep } from "@/components/booking/steps/ContactDetailsStep";
@@ -89,6 +90,7 @@ const removals: Builder = (initialPostcode) => ({
     step("extras", "Additional services", [], <AdditionalServicesStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
+    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
       { title: "Removal", editStep: 0, rows: [{ label: "Type", key: "removalType" }] },
@@ -98,7 +100,7 @@ const removals: Builder = (initialPostcode) => ({
       { title: "Extras", editStep: 4, rows: [{ label: "Services", key: "additionalServices" }] },
       { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
       { title: "Date", editStep: 6, rows: dateRows },
-      { title: "Contact", editStep: 7, rows: contactRows },
+      { title: "Contact", editStep: 8, rows: contactRows },
     ]),
   ],
 });
@@ -133,6 +135,7 @@ const manAndVan: Builder = (initialPostcode) => ({
     step("extras", "Additional services", [], <AdditionalServicesStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
+    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
       { title: "From", editStep: 0, rows: [{ label: "Address", key: "originAddress" }] },
@@ -141,7 +144,7 @@ const manAndVan: Builder = (initialPostcode) => ({
       { title: "Extras", editStep: 3, rows: [{ label: "Services", key: "additionalServices" }] },
       { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
       { title: "Date", editStep: 5, rows: dateRows },
-      { title: "Contact", editStep: 6, rows: contactRows },
+      { title: "Contact", editStep: 7, rows: contactRows },
     ]),
   ],
 });
@@ -176,13 +179,14 @@ const houseClearance: Builder = (initialPostcode) => ({
     step("items", "Items of note", [], <ItemsOfNoteStep />),
     step("description", "About the clearance", ["description"], <DescriptionStep />),
     step("date", "Preferred date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
+    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
     step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
     reviewStep([
       { title: "Property", editStep: 0, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
       { title: "Clearance", editStep: 2, rows: [{ label: "Type", key: "clearanceType" }, { label: "Items", key: "itemsOfNote" }] },
       { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
       { title: "Date", editStep: 5, rows: dateRows },
-      { title: "Contact", editStep: 6, rows: contactRows },
+      { title: "Contact", editStep: 7, rows: contactRows },
     ]),
   ],
 });

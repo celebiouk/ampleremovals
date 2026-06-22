@@ -331,6 +331,17 @@ export default function BookingDetailPage() {
         </Link>
       </div>
 
+      {/* Cross-sell flag: customer wants end-of-tenancy cleaning at 30% off */}
+      {booking.wants_eot_cleaning && (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border-2 border-brand-green-300 bg-brand-green-50 p-4">
+          <span className="text-2xl">🧹</span>
+          <div>
+            <p className="font-bold text-brand-green-900">Customer wants End of Tenancy Cleaning</p>
+            <p className="text-sm text-brand-green-700">They opted in during booking — quote the cleaning at <strong>30% off</strong> and add it to their job.</p>
+          </div>
+        </div>
+      )}
+
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[55fr_45fr]">
 

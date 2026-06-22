@@ -157,6 +157,7 @@ export async function createBooking(
       .from("bookings")
       .update({
         heard_about_us: (data as { heardAbout?: string }).heardAbout || null,
+        wants_eot_cleaning: (data as { wantsEotCleaning?: boolean }).wantsEotCleaning ?? false,
         lead_score: lead.score,
         lead_band: lead.band,
         utm_source: attribution?.utm_source ?? null,

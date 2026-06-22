@@ -42,6 +42,10 @@ ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS quote_followup_stage INT NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS quote_last_followup_at TIMESTAMPTZ;
 
+-- 3c-ii. Cross-sell: wants end-of-tenancy cleaning at 30% off
+ALTER TABLE bookings
+  ADD COLUMN IF NOT EXISTS wants_eot_cleaning BOOLEAN DEFAULT false;
+
 -- 3d. Driver-app journey / chain-of-custody state
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS current_journey_leg TEXT;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS journey_started_at TIMESTAMPTZ;

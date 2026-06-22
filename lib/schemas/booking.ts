@@ -113,6 +113,7 @@ export const RemovalsFormSchema = z
     destinationAddress: AddressOptionSchema,
     additionalServices: AdditionalServicesSchema,
     description: z.string().trim().min(20, "Please give us at least 20 characters of detail"),
+    wantsEotCleaning: z.boolean().optional(),
     ...flexibleDateFields,
     ...contactFields,
   })
@@ -129,6 +130,7 @@ export const ManAndVanFormSchema = z
     }),
     additionalServices: AdditionalServicesSchema,
     description: z.string().trim().min(20, "Please give us at least 20 characters of detail"),
+    wantsEotCleaning: z.boolean().optional(),
     ...flexibleDateFields,
     ...contactFields,
   })
@@ -145,6 +147,7 @@ export const HouseClearanceFormSchema = z
     }),
     itemsOfNote: z.array(z.string()).default([]),
     description: z.string().trim().min(20, "Please give us at least 20 characters of detail"),
+    wantsEotCleaning: z.boolean().optional(),
     ...flexibleDateFields,
     ...contactFields,
   })
