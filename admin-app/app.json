@@ -42,7 +42,11 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "280798b8-6727-4704-afd9-679700ff0843"
       }
-    }
+    },
+    "owner": "ccmendel"
   }
 }
