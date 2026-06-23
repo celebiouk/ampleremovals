@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       .from("bookings")
       .select(
         "id, reference, status, current_journey_leg, arrived_at, completed_at, " +
-          "current_eta_timestamp, call1_eta_timestamp, call2_eta_timestamp, call3_eta_timestamp, " +
+          "call1_eta_timestamp, call2_eta_timestamp, call3_eta_timestamp, " +
           "origin:addresses!origin_address_id(line_1, city, postcode, lat, lng), " +
           "destination:addresses!destination_address_id(line_1, city, postcode, lat, lng)"
       )
@@ -54,7 +54,18 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     const b = booking as any;
     const destination = leg === "delivery" ? b.destination : b.origin;
     // Prefer the continuously-refreshed live ETA; fall back to the call snapshots.
-    const eta = b.current_eta_timestamp || b.call3_eta_timestamp || b.call2_eta_timestamp || b.call1_eta_timestamp || null;
+    // Read it separately + best-effort so a missing migration never breaks tracking.
+    let liveEta: string | null = null;
+    try {
+      const { data: live } = await supabase
+        .from("bookings")
+        .select("current_eta_timestamp")
+        .eq("id", booking.id)
+        .maybeSingle();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      liveEta = (live as any)?.current_eta_timestamp ?? null;
+    } catch { /* column not migrated yet */ }
+    const eta = liveEta || b.call3_eta_timestamp || b.call2_eta_timestamp || b.call1_eta_timestamp || null;
 
     return NextResponse.json({
       success: true,

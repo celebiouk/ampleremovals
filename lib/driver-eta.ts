@@ -116,7 +116,6 @@ export async function startJourneyCall1(
     current_journey_leg: leg,
     call1_eta_timestamp: dm?.etaTimestamp ?? null,
     call1_duration_seconds: dm?.durationSeconds ?? null,
-    current_eta_timestamp: dm?.etaTimestamp ?? null, // live ETA the cron keeps refreshing
     scheduled_call2_time: scheduledCall2,
     call2_eta_timestamp: null, call2_duration_seconds: null, call2_notification_sent: false,
     scheduled_call3_time: null, call3_eta_timestamp: null, call3_duration_seconds: null, call3_notification_sent: false,
@@ -125,6 +124,11 @@ export async function startJourneyCall1(
   if (leg === "pickup") update.journey_started_at = now.toISOString();
   else update.delivery_started_at = now.toISOString();
   await supabase.from("bookings").update(update).eq("id", bookingId);
+  // Seed the live ETA separately — best-effort so a missing migration never blocks
+  // the journey from starting.
+  if (dm?.etaTimestamp) {
+    await supabase.from("bookings").update({ current_eta_timestamp: dm.etaTimestamp }).eq("id", bookingId);
+  }
 
   const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
   await notifyCustomer("journey_started", ctx);
