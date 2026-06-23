@@ -184,5 +184,10 @@ ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS waiver_signature_url TEXT,
   ADD COLUMN IF NOT EXISTS waiver_signed_at TIMESTAMPTZ;
 
--- ── Live ETA (continuously refreshed from driver GPS) ──────────────────────
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS current_eta_timestamp TIMESTAMPTZ;
+-- ── Live ETA (cheap, refreshed from driver GPS only when moving) ───────────
+ALTER TABLE bookings
+  ADD COLUMN IF NOT EXISTS current_eta_timestamp TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS eta_calc_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS eta_last_lat NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS eta_last_lng NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS eta_last_duration_seconds INTEGER;

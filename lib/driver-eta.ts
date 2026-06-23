@@ -124,10 +124,16 @@ export async function startJourneyCall1(
   if (leg === "pickup") update.journey_started_at = now.toISOString();
   else update.delivery_started_at = now.toISOString();
   await supabase.from("bookings").update(update).eq("id", bookingId);
-  // Seed the live ETA separately — best-effort so a missing migration never blocks
-  // the journey from starting.
+  // Seed the live ETA + its baseline (position/duration) separately — best-effort so
+  // a missing migration never blocks the journey from starting.
   if (dm?.etaTimestamp) {
-    await supabase.from("bookings").update({ current_eta_timestamp: dm.etaTimestamp }).eq("id", bookingId);
+    await supabase.from("bookings").update({
+      current_eta_timestamp: dm.etaTimestamp,
+      eta_calc_at: now.toISOString(),
+      eta_last_lat: driverLat,
+      eta_last_lng: driverLng,
+      eta_last_duration_seconds: dm.durationSeconds,
+    }).eq("id", bookingId);
   }
 
   const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
@@ -203,36 +209,79 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
   await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "3", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired, type: fired ? "10min" : null, nextAt: null });
 }
 
+// Keep the live ETA cheap. A traffic-aware Distance Matrix call costs ~1¢, so we:
+//  • only call Google when the driver has actually MOVED (parked → hold for free), and
+//  • cap calls to once per booking per ~10 min even while moving.
+// → a 1-hour journey stays well under 10¢; a parked driver costs nothing.
+const ETA_REFRESH_THROTTLE_MS = 10 * 60 * 1000;
+const ETA_STATIONARY_M = 150;
+
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 /**
- * Recompute the live ETA for every active journey from the driver's CURRENT GPS +
- * live traffic, and store it in current_eta_timestamp. Runs each minute so the
- * customer sees a real road-based ETA — if the driver is parked the ETA holds
- * steady instead of counting down to zero. Best-effort per booking.
+ * Refresh the live ETA for active journeys from the driver's GPS — but cheaply.
+ * Parked drivers hold their ETA for free; moving drivers recalc at most every
+ * ~10 minutes. Best-effort per booking (columns may not be migrated yet).
  */
-export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: number }> {
+export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: number; held: number }> {
   const { data: active } = await supabase
     .from("bookings")
-    .select("id, current_journey_leg")
+    .select("id, current_journey_leg, eta_calc_at, eta_last_lat, eta_last_lng, eta_last_duration_seconds")
     .not("current_journey_leg", "is", null)
     .is("arrived_at", null);
 
   let refreshed = 0;
+  let held = 0;
+  const nowMs = Date.now();
   for (const row of active ?? []) {
     try {
-      const booking = await loadBooking(supabase, row.id);
-      if (!booking) continue;
       const driver = await leadDriver(supabase, row.id);
       const gps = driver ? await driverGps(supabase, driver.id) : null;
       if (!gps) continue; // no live position yet — leave the last ETA in place
+      const gLat = Number(gps.lat);
+      const gLng = Number(gps.lng);
+      const lastLat = row.eta_last_lat != null ? Number(row.eta_last_lat) : null;
+      const lastLng = row.eta_last_lng != null ? Number(row.eta_last_lng) : null;
+      const lastDur = row.eta_last_duration_seconds != null ? Number(row.eta_last_duration_seconds) : null;
+      const moved = lastLat != null && lastLng != null ? haversineMeters(gLat, gLng, lastLat, lastLng) : Infinity;
+      const sinceCalc = row.eta_calc_at ? nowMs - new Date(row.eta_calc_at).getTime() : Infinity;
+
+      // Parked → hold the ETA steady for free (no Google call).
+      if (moved < ETA_STATIONARY_M && lastDur != null) {
+        await supabase.from("bookings").update({
+          current_eta_timestamp: new Date(nowMs + lastDur * 1000).toISOString(),
+        }).eq("id", row.id);
+        held++;
+        continue;
+      }
+      // Moving but recalculated recently → let the page count down; don't spend a call.
+      if (sinceCalc < ETA_REFRESH_THROTTLE_MS && lastDur != null) continue;
+
+      // Moving + due (or first time) → exactly one Google call.
+      const booking = await loadBooking(supabase, row.id);
+      if (!booking) continue;
       const dest = legDest(booking, row.current_journey_leg as Leg);
-      const dm = await distanceMatrix(Number(gps.lat), Number(gps.lng), dest.dest);
-      await supabase.from("bookings").update({ current_eta_timestamp: dm.etaTimestamp }).eq("id", row.id);
+      const dm = await distanceMatrix(gLat, gLng, dest.dest);
+      await supabase.from("bookings").update({
+        current_eta_timestamp: dm.etaTimestamp,
+        eta_calc_at: new Date(nowMs).toISOString(),
+        eta_last_lat: gLat,
+        eta_last_lng: gLng,
+        eta_last_duration_seconds: dm.durationSeconds,
+      }).eq("id", row.id);
       refreshed++;
     } catch (e) {
       console.error("[eta] live refresh failed", row.id, e);
     }
   }
-  return { refreshed };
+  return { refreshed, held };
 }
 
 /** Cron entry: process every due Call 2 / Call 3. */
