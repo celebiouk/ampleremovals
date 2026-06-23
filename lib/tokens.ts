@@ -66,3 +66,38 @@ export function verifyQuoteConfirmToken(
     return false;
   }
 }
+
+/** Signing secret for driver-assignment links (falls back to CRON_SECRET so it
+ *  always works without extra config). */
+function assignmentSecret(): string {
+  return process.env.QUOTE_CONFIRM_SECRET || process.env.CRON_SECRET || "ample-assignment";
+}
+
+/** Token for a driver to accept/decline a specific job assignment (no login). */
+export function generateAssignmentToken(bookingId: string, driverId: string): string {
+  const timestamp = Date.now();
+  const payload = `assign:${bookingId}:${driverId}:${timestamp}`;
+  const hash = crypto.createHmac("sha256", assignmentSecret()).update(payload).digest("hex");
+  return `${timestamp}.${hash}`;
+}
+
+export function verifyAssignmentToken(
+  bookingId: string,
+  driverId: string,
+  token: string,
+  expiryDays = 30
+): boolean {
+  try {
+    const [timestampStr, providedHash] = token.split(".");
+    if (!timestampStr || !providedHash) return false;
+    const timestamp = parseInt(timestampStr, 10);
+    if (isNaN(timestamp)) return false;
+    if (Date.now() - timestamp > expiryDays * 24 * 60 * 60 * 1000) return false;
+
+    const payload = `assign:${bookingId}:${driverId}:${timestamp}`;
+    const expectedHash = crypto.createHmac("sha256", assignmentSecret()).update(payload).digest("hex");
+    return crypto.timingSafeEqual(Buffer.from(providedHash, "hex"), Buffer.from(expectedHash, "hex"));
+  } catch {
+    return false;
+  }
+}

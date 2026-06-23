@@ -151,6 +151,15 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
                             Lead
                           </span>
                         )}
+                        {assignment.acceptance_status === "accepted" && (
+                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">✓ Accepted</span>
+                        )}
+                        {assignment.acceptance_status === "declined" && (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">✕ Declined</span>
+                        )}
+                        {(!assignment.acceptance_status || assignment.acceptance_status === "pending") && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Awaiting response</span>
+                        )}
                       </div>
                       <p className="text-sm text-slate-600">
                         Pay: {assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}%

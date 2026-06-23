@@ -158,7 +158,9 @@ CREATE TABLE IF NOT EXISTS route_plans (
 CREATE INDEX IF NOT EXISTS idx_route_plans_date ON route_plans (plan_date);
 
 ALTER TABLE booking_driver_assignments
-  ADD COLUMN IF NOT EXISTS route_sequence INT;
+  ADD COLUMN IF NOT EXISTS route_sequence INT,
+  ADD COLUMN IF NOT EXISTS acceptance_status TEXT DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
 
 -- ── 7. Indexes (non-partial to stay safe alongside the new enum values) ──────
 CREATE INDEX IF NOT EXISTS idx_bookings_lead_score ON bookings (lead_score DESC);

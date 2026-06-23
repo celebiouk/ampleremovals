@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { detectDriverConflicts } from "@/lib/conflict-detection";
+import { generateAssignmentToken } from "@/lib/tokens";
 
 /**
  * POST /api/admin/bookings/[id]/assign-driver
@@ -103,7 +104,7 @@ export async function POST(
 
     // Notify the driver they've been assigned (Email + SMS + WhatsApp).
     // Best-effort: notification failures must never fail the assignment.
-    await notifyDriverAssigned(supabase, bookingId, driver);
+    await notifyDriverAssigned(supabase, bookingId, driverId, driver);
 
     // Surface (don't block on) scheduling clashes for this driver.
     const conflicts = await detectDriverConflicts(supabase, driverId, bookingId).catch(() => []);
@@ -131,6 +132,7 @@ export async function POST(
 async function notifyDriverAssigned(
   supabase: any,
   bookingId: string,
+  driverId: string,
   driver: { first_name: string; preferred_name: string | null; email: string | null; phone: string | null }
 ) {
   try {
@@ -161,7 +163,9 @@ async function notifyDriverAssigned(
     const pickup = booking.origin_address?.postcode || "—";
     const dropoff = booking.destination_address?.postcode;
     const route = dropoff ? `${pickup} → ${dropoff}` : pickup;
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/drivers/jobs/${bookingId}`;
+    // Token-gated, no-login link to view details + accept/decline.
+    const token = generateAssignmentToken(bookingId, driverId);
+    const respondUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/drivers/respond/${bookingId}/${driverId}/${token}`;
 
     // Email
     if (driver.email) {
@@ -169,22 +173,23 @@ async function notifyDriverAssigned(
         await resend.emails.send({
           from: resendFrom,
           to: driver.email,
-          subject: `New job assigned — ${dateStr} (${booking.reference})`,
+          subject: `New job assigned — please accept or decline (${booking.reference})`,
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #6b21a8;">You've been assigned a new job</h2>
               <p>Hi ${name},</p>
-              <p>You've been assigned to a ${service} job. Here are the details:</p>
+              <p>You've been assigned to a ${service} job. Please <strong>view the details and let us know if you can take it</strong>.</p>
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>Date:</strong> ${dateStr}</p>
                 <p><strong>Service:</strong> ${service}</p>
                 <p><strong>Route:</strong> ${route}</p>
                 <p><strong>Reference:</strong> ${booking.reference}</p>
               </div>
-              <a href="${portalUrl}" style="display:inline-block;background:#6b21a8;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;">
-                View Job in Portal
+              <a href="${respondUrl}" style="display:inline-block;background:#6b21a8;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:bold;">
+                View details &amp; respond
               </a>
-              <p style="margin-top:24px;">See you there!<br><strong>Ample Removals</strong></p>
+              <p style="margin-top:16px;color:#64748b;font-size:13px;">On the next screen you can <strong>Accept</strong> or <strong>Decline</strong> this job.</p>
+              <p style="margin-top:24px;">Thanks,<br><strong>Ample Removals</strong></p>
             </div>
           `,
         });
@@ -195,7 +200,7 @@ async function notifyDriverAssigned(
 
     // SMS + WhatsApp
     if (driver.phone) {
-      const msg = `Hi ${name}, you've been assigned a ${service} job on ${dateStr} (${route}). Ref ${booking.reference}. View it here: ${portalUrl}`;
+      const msg = `Hi ${name}, you've been assigned a ${service} job on ${dateStr} (${route}). Ref ${booking.reference}. View details & accept/decline: ${respondUrl}`;
       try {
         await sendSMS(driver.phone, msg);
       } catch (e) {
