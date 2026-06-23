@@ -42,3 +42,7 @@ shot-*.png
 # Secret / local-only files — never commit
 vercel-env.txt
 .claude/settings.local.json
+
+# Apple App Store Connect API key (never commit)
+AuthKey_*.p8
+*.p8
