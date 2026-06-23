@@ -18,7 +18,9 @@ import { notifyCustomer, notifyAdmin, type NotifyContext, type JourneyEvent } fr
 
 export type Leg = "pickup" | "delivery";
 
-const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+// Format in UK time — the server runs in UTC, so without this the ETA prints an
+// hour behind during BST (e.g. a 12:55 ETA shows as "11:55", looking like the past).
+const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
 const driverName = (d: any) => d?.preferred_name || d?.first_name || "Your driver";
 
 async function loadBooking(supabase: any, bookingId: string) {
