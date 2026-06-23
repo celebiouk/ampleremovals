@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import twilio from "twilio";
+import { normaliseSmsBody } from "@/lib/twilio";
 
 export async function POST(
   req: Request,
@@ -106,7 +107,7 @@ export async function POST(
     if (worker.notifications_sms && worker.phone) {
       try {
         await twilioClient.messages.create({
-          body: `Hi ${worker.first_name}, your payslip for ${(payslip.pay_runs as any)?.reference} is ready. Amount: £${(payslip.net_pay / 100).toFixed(2)}. Log in to view details.`,
+          body: normaliseSmsBody(`Hi ${worker.first_name}, your payslip for ${(payslip.pay_runs as any)?.reference} is ready. Amount: £${(payslip.net_pay / 100).toFixed(2)}. Log in to view details.`),
           from: process.env.TWILIO_PHONE_NUMBER,
           to: worker.phone,
         });

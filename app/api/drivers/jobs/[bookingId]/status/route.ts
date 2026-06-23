@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { JOB_STATUS_LABELS } from "@/lib/constants";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { normaliseSmsBody } from "@/lib/twilio";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -229,7 +230,7 @@ async function sendCustomerNotifications(
       process.env.TWILIO_AUTH_TOKEN!
     );
     await twilioClient.messages.create({
-      body: msg.sms,
+      body: normaliseSmsBody(msg.sms),
       from: process.env.TWILIO_PHONE_NUMBER,
       to: customer.phone,
     });

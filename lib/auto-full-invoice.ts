@@ -226,7 +226,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
     }
 
     // SMS + WhatsApp (the owner's "send a message" = email + SMS + WhatsApp).
-    const smsBody = `Ample Removals: Your final balance invoice ${invoiceNumber} for ${formatCurrency(total)} has been emailed. Pay by bank transfer — details in the email. Ref ${booking.reference}`;
+    const smsBody = `Ample Removals: Your final balance invoice ${invoiceNumber} (${formatCurrency(total)}) has been emailed - pay by bank transfer, details inside. Questions? Call ${companyPhone}. Ref ${booking.reference}`;
     await sendSMS(customer.phone, smsBody).catch(() => {});
     await sendWhatsApp(
       customer.phone,

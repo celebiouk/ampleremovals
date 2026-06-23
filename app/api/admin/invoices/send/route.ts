@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { normaliseUKPhone, formatDate, formatCurrency } from "@/lib/utils";
 import { downloadInvoicePDF, getInvoiceSignedURL, uploadInvoicePDF } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
   try {
     if (twilioClient && customer.phone) {
       const msg = `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay by bank transfer - details in email.`;
-      await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: msg.slice(0, 160) });
+      await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: normaliseSmsBody(msg) });
     }
   } catch (err) {
     await logError({ message: `Invoice SMS failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });

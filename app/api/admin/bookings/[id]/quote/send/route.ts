@@ -5,6 +5,7 @@ import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
 import { uploadQuotePDF, getQuoteSignedURL } from "@/lib/storage";
 import { formatCurrency } from "@/lib/utils";
+import { COMPANY_PHONE } from "@/lib/constants";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
@@ -204,7 +205,7 @@ export async function POST(
       </div>
     `;
 
-    const smsBody = `Ample Removals: Your quote for ${booking.service_type.replace(/_/g, " ")} is ready! Total: ${formatCurrency(Number(booking.quote_total))}. Check your email for the full PDF. Valid until ${pdfData.valid_until}. Reply to confirm. Ref: ${booking.reference}`;
+    const smsBody = `Ample Removals: Your ${booking.service_type.replace(/_/g, " ")} quote ${formatCurrency(Number(booking.quote_total))} is ready - full details & confirm link emailed to you. Questions? Call ${COMPANY_PHONE}. Ref ${booking.reference}`;
 
     const whatsappBody = `Hi ${customer.full_name}! Your Ample Removals quote is ready:\n\n📋 Service: ${booking.service_type.replace(/_/g, " ")}\n💷 Total: ${formatCurrency(Number(booking.quote_total))}\n📅 Valid until: ${pdfData.valid_until}\n\nFull PDF sent to your email. Reply here or call us to confirm!\n\nRef: ${booking.reference}`;
 

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { normaliseUKPhone, formatDate, formatCurrency } from "@/lib/utils";
 import { downloadInvoicePDF, getInvoiceSignedURL } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (twilioClient && customer.phone) {
-      const msg = `Reminder: Invoice ${invoice.invoice_number} for ${formatCurrency(invoice.total)} is due. Pay: ${invoice.stripe_payment_link}`.slice(0, 160);
+      const msg = normaliseSmsBody(`Reminder: Invoice ${invoice.invoice_number} for ${formatCurrency(invoice.total)} is due. Pay: ${invoice.stripe_payment_link}`);
       await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: msg });
     }
   } catch (err) {

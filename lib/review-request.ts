@@ -5,7 +5,7 @@
  */
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
-import { SERVICE_LABELS, DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
+import { SERVICE_LABELS, DEFAULT_GOOGLE_REVIEW_LINK, COMPANY_PHONE } from "@/lib/constants";
 import type { ServiceType } from "@/types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -48,12 +48,13 @@ export async function sendReviewRequest(supabase: any, bookingId: string): Promi
               <a href="${reviewLink}" style="display:inline-block;background:#16a34a;color:#fff;padding:14px 30px;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;">⭐ Leave a Google Review</a>
             </div>
             <p style="color:#94a3b8;font-size:13px;text-align:center;">Booking ${booking.reference}</p>
+            <p style="color:#64748b;font-size:13px;text-align:center;">Questions? Call us on <a href="tel:+443335772070" style="color:#6b21a8;">${COMPANY_PHONE}</a></p>
           </div>
         </div>`,
       }).catch(() => {});
     }
     if (customer.phone) {
-      await sendSMS(customer.phone, `Hi ${first}, thanks for choosing ${company}! If you were happy with our service, we'd really appreciate a quick review: ${reviewLink}`).catch(() => {});
+      await sendSMS(customer.phone, `Hi ${first}, thanks for choosing ${company}! If you were happy with our service, we'd really appreciate a quick review: ${reviewLink} Questions? ${COMPANY_PHONE}`).catch(() => {});
       await sendWhatsApp(customer.phone, `Hi ${first}! 🎉\n\nThank you for choosing *${company}*. We hope your ${serviceLabel.toLowerCase()} went smoothly!\n\nIf you were happy with the service, a quick Google review would mean the world to us ⭐\n\n${reviewLink}\n\nThank you! 🙏`).catch(() => {});
     }
 

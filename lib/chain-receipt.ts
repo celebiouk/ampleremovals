@@ -40,6 +40,7 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
     } catch { /* none */ }
 
     const { data: settings } = await supabase.from("settings").select("company_name, company_phone").eq("id", 1).single();
+    const companyPhone = settings?.company_phone ?? "0333 577 2070";
     const legLabel = leg === "pickup" ? "Pickup" : "Delivery";
     const serviceLabel = SERVICE_LABELS[b.service_type as ServiceType] ?? b.service_type;
     const confirmedAt = b[`${leg}_confirmed_at`] ? formatDateTime(b[`${leg}_confirmed_at`]) : new Date().toLocaleString("en-GB");
@@ -65,8 +66,8 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
 
     if (customer.phone) {
       const smsText = leg === "pickup"
-        ? `Ample Removals: Pickup confirmed for ${b.reference} ✅ Your items are with us. Receipt emailed to you.`
-        : `Ample Removals: Delivery confirmed for ${b.reference} ✅ Thank you for choosing us! Receipt emailed to you.`;
+        ? `Ample Removals: Pickup confirmed for ${b.reference}. Your items are with us. Receipt emailed to you. Questions? ${companyPhone}`
+        : `Ample Removals: Delivery confirmed for ${b.reference}. Thank you for choosing us! Receipt emailed to you. Questions? ${companyPhone}`;
       await sendSMS(customer.phone, smsText).catch(() => {});
     }
 
@@ -82,6 +83,7 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
           <p style="color:#1e293b;">Hi ${first},</p>
           <p style="color:#475569;line-height:1.6;">${body}</p>
           <p style="color:#64748b;font-size:13px;">Job reference: <strong>${b.reference}</strong></p>
+          <p style="color:#64748b;font-size:13px;">Questions? Call us on <strong>${companyPhone}</strong></p>
         </div>
       </div>`,
       attachments: [{ filename: `${legLabel}-Receipt-${b.reference}.pdf`, content: pdf.toString("base64") }],

@@ -149,7 +149,7 @@ export async function GET(req: Request) {
         // Also SMS so it's unmissable.
         if (customer.phone) {
           const first = (customer.full_name || "there").split(" ")[0];
-          await sendSMS(customer.phone, `Hi ${first}, it's Ample Removals - hope you're settled in! If we did a good job, a quick review would mean a lot: ${DEFAULT_GOOGLE_REVIEW_LINK}`).catch(() => {});
+          await sendSMS(customer.phone, `Hi ${first}, it's Ample Removals - hope you're settled in! If we did a good job, a quick review would mean a lot: ${DEFAULT_GOOGLE_REVIEW_LINK} Questions? 0333 577 2070`).catch(() => {});
         }
 
         // Log activity

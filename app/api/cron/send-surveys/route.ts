@@ -129,7 +129,8 @@ export async function GET(req: Request) {
 
               <p style="font-size: 14px; color: #64748b; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
                 Thank you for choosing Ample Removals!<br>
-                <strong style="color: #6b21a8;">The Team</strong>
+                <strong style="color: #6b21a8;">The Team</strong><br>
+                Questions? Call us on <a href="tel:03335772070" style="color: #6b21a8;">0333 577 2070</a>
               </p>
 
               <p style="font-size: 12px; color: #94a3b8; margin-top: 24px;">
@@ -154,7 +155,7 @@ export async function GET(req: Request) {
         // Also SMS so it's unmissable.
         if (customer.phone) {
           const first = (customer.full_name || "there").split(" ")[0];
-          await sendSMS(customer.phone, `Hi ${first}, how did Ample Removals do? A quick rating helps us a lot: ${surveyBaseUrl} - thank you! Ref ${booking.reference}`).catch(() => {});
+          await sendSMS(customer.phone, `Hi ${first}, how did Ample Removals do? A quick rating helps us a lot: ${surveyBaseUrl} - thank you! Questions? 0333 577 2070. Ref ${booking.reference}`).catch(() => {});
         }
 
         // Mark survey as sent

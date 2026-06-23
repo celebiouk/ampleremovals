@@ -1,5 +1,5 @@
 import { resend, resendFrom, resendAdminEmails } from "@/lib/resend";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { formatDate, normaliseUKPhone } from "@/lib/utils";
@@ -428,7 +428,7 @@ export async function sendCustomerConfirmationSMS(
     await twilioClient.messages.create({
       from: twilioFrom,
       to,
-      body: body.length > 160 ? body.slice(0, 157) + "…" : body,
+      body: normaliseSmsBody(body),
     });
 
     await logActivity(payload.bookingId, payload.customerId, "Customer SMS confirmation sent", {

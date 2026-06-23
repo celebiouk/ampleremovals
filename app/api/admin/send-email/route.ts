@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { normaliseUKPhone } from "@/lib/utils";
 import { logError } from "@/lib/log-error";
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         await twilioClient.messages.create({
           from: twilioFrom,
           to: normaliseUKPhone(customer.phone),
-          body: sms,
+          body: normaliseSmsBody(sms),
         });
       } catch (smsErr) {
         await logError({ message: `Admin email SMS failed: ${smsErr instanceof Error ? smsErr.message : String(smsErr)}`, metadata: { bookingId }, level: "warn" });

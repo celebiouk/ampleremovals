@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { normaliseUKPhone } from "@/lib/utils";
 import { renderTemplate } from "@/lib/automation-templates";
 import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
@@ -124,7 +124,7 @@ async function processBookingCreatedRule(
           const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE;
           if (adminPhone) {
             const msg = `⚠️ Uncontacted lead: ${customer.full_name} — ${b.service_type} ${b.reference}. Call now: ${customer.phone}`;
-            await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(adminPhone), body: msg.slice(0, 160) });
+            await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(adminPhone), body: normaliseSmsBody(msg) });
           }
         }
       }
@@ -191,7 +191,7 @@ async function processDayBeforeRule(
 
       if (twilioClient && customer.phone) {
         const msg = renderTemplate("Hi {{name}}, reminder: your {{service}} is tomorrow. Our team will call to confirm arrival. – Ample Removals", vars);
-        await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: msg.slice(0, 160) });
+        await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: normaliseSmsBody(msg) });
       }
 
       await resend.emails.send({

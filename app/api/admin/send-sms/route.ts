@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
-import { twilioClient, twilioFrom } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
 import { normaliseUKPhone } from "@/lib/utils";
 import { logError } from "@/lib/log-error";
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     await twilioClient.messages.create({
       from: twilioFrom,
       to: normaliseUKPhone(customer.phone),
-      body: message,
+      body: normaliseSmsBody(message),
     });
 
     await supabase.from("activity_log").insert({

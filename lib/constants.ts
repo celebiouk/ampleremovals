@@ -3,6 +3,9 @@ import type { BookingStatus, ServiceType } from "@/types";
 /** Google review link — fallback when the Settings value is empty. */
 export const DEFAULT_GOOGLE_REVIEW_LINK = "https://g.page/r/Cc7Zw55gchwDEAI/review";
 
+/** Public contact number shown to customers so they always know who to call. */
+export const COMPANY_PHONE = "0333 577 2070";
+
 // ── Status labels ──────────────────────────────────────────────────────────
 
 export const STATUS_LABELS: Record<BookingStatus, string> = {
