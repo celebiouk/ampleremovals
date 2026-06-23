@@ -36,6 +36,7 @@ export default function TrackPage() {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<TrackData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [staticMapFailed, setStaticMapFailed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -56,7 +57,14 @@ export default function TrackPage() {
   }, [load]);
 
   const center = data?.location || data?.destination || null;
-  const mapSrc = center
+  // Preferred: server-rendered map with a driver pin (D) + destination pin (B) +
+  // route line. Refreshes when the driver's position updates. Falls back to the
+  // keyless embed if the Static Maps API isn't enabled on the key.
+  const hasMapData = !!(data?.location || data?.destination);
+  const staticMapSrc = hasMapData
+    ? `/api/track/${token}/map?ts=${encodeURIComponent(data?.location?.recorded_at ?? "init")}`
+    : null;
+  const embedSrc = center
     ? `https://maps.google.com/maps?q=${center.lat},${center.lng}&z=14&output=embed`
     : null;
 
@@ -91,11 +99,19 @@ export default function TrackPage() {
             </div>
 
             <div className="mt-6 overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl">
-              {mapSrc ? (
+              {staticMapSrc && !staticMapFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={staticMapSrc}
+                  alt="Live driver location"
+                  className="h-[360px] w-full object-cover"
+                  onError={() => setStaticMapFailed(true)}
+                />
+              ) : embedSrc ? (
                 <iframe
-                  key={mapSrc}
+                  key={embedSrc}
                   title="Driver location"
-                  src={mapSrc}
+                  src={embedSrc}
                   className="h-[360px] w-full border-0"
                   loading="lazy"
                 />
@@ -103,6 +119,12 @@ export default function TrackPage() {
                 <div className="grid h-[360px] place-items-center text-white/60">Waiting for driver location…</div>
               )}
             </div>
+            {staticMapSrc && !staticMapFailed && (
+              <div className="mt-3 flex items-center justify-center gap-5 text-xs text-white/70">
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full bg-[#6b21a8]" /> Your driver</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full bg-[#16a34a]" /> Destination</span>
+              </div>
+            )}
 
             {data.destination && (
               <div className="mt-5 rounded-2xl bg-white/10 p-4">
