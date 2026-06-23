@@ -21,10 +21,10 @@ export const WHATSAPP_TEMPLATES = {
   booking_details_updated: "HXdae340de9ccd6428ba6bc9d52cafccbb",
   reschedule_confirmed: "HXb5cd3058bbf7955296875d3246149abd",
   // B. Driver ETA & move-day (UTILITY)
-  driver_on_the_way: "HX34ac557634d53ce8e89b0c4589fe4e1d",
-  driver_20_mins_away: "HXa4269948abb271f0ab3b3e4218ef1802",
+  driver_on_the_way: "HX0b387a7b731f3fa4ba9290a7909ff48b",
+  driver_20_mins_away: "HX834fee3617b82703ef888a6ff7413e04",
   driver_10_mins_away: "HX58859e022b877069b4139ec02dd2b013",
-  driver_15_mins_to_delivery: "HX83a188cbbc96ffd6f4d015854f297270",
+  driver_15_mins_to_delivery: "HXd37f59435fd5eac6c2fb65d688f7c003",
   driver_arrived: "HXa523054acb1f74d54dc0d413cbd7e8c0",
   driver_running_late: "HX77ee9099a494269bc56abcbcc02fd013",
   move_reminder_7_day: "HX16896f9e52ee8ab0a2dbf18e56495f8e",
@@ -33,11 +33,11 @@ export const WHATSAPP_TEMPLATES = {
   move_reminder_1_day: "HXb44a7e1c8001c6f10b04cffc587380c2",
   weather_alert: "HXd5b3a69133bbf8d62fc78c0519cde78e",
   // C. Driver-facing (UTILITY)
-  driver_job_assigned: "HX161cb2f5036a61693560a42fd6db4061",
+  driver_job_assigned: "HXf0aa6475be5f0564f1688453e336f284",
   driver_jobs_tomorrow: "HX6b931795a45d6aa1f6289e3dbe143902",
   // D. Promotional (MARKETING)
   anniversary_offer: "HX80fa7e248d20833df6011c457bc4f77d",
-  loyalty_offer_3_month: "HXbef184816477c36ed53e67c7c6f31354",
+  loyalty_offer_3_month: "HXf4c9880fb6257ea6105cae4f40b62ca8",
   referral_invite: "HXed4cdd4ad383c53fbcde4066bd7575ff",
   seasonal_campaign: "HXee8965072b2f3689f730f855cf9c36c6",
 } as const;

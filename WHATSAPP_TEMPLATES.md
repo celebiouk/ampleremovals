@@ -132,6 +132,8 @@ Variables: `{{1}}` driver name · `{{2}}` ETA · `{{3}}` reference · `{{4}}` tr
 Your Ample Removals driver {{1}} is on the way! Estimated arrival: {{2}} (job {{3}}).
 
 Track them live here: {{4}}
+
+See you soon!
 ```
 Sample: `James` · `10:30` · `RMV-2026-X8K4P` · `https://www.ampleremovals.com/track/...`
 
@@ -141,6 +143,8 @@ Variables: `{{1}}` reference · `{{2}}` tracking link
 Your Ample Removals driver is about 20 minutes away (job {{1}}). Please get ready.
 
 Track live: {{2}}
+
+See you shortly!
 ```
 Sample: `RMV-2026-X8K4P` · `https://www.ampleremovals.com/track/...`
 
@@ -154,7 +158,7 @@ Sample: `RMV-2026-X8K4P`
 ### `driver_15_mins_to_delivery`
 Variables: `{{1}}` delivery address · `{{2}}` reference
 ```
-Your Ample Removals driver will arrive at your delivery address ({{1}}) in about 15 minutes. Job {{2}}.
+Your Ample Removals driver will arrive at your delivery address ({{1}}) in about 15 minutes for job {{2}}. Please be ready to receive your items.
 ```
 Sample: `12 High St, Manchester, M1 2AB` · `RMV-2026-X8K4P`
 
@@ -230,6 +234,8 @@ Ref: {{2}}
 Date: {{3}}
 
 View the details and accept or decline here: {{4}}
+
+Thank you.
 ```
 Sample: `James` · `RMV-2026-X8K4P` · `30/06/2026` · `https://www.ampleremovals.com/drivers/respond/...`
 
@@ -260,7 +266,7 @@ Variables: `{{1}}` first name · `{{2}}` reference
 ```
 Hi {{1}}, it's been three months since your move!
 
-As a valued Ample Removals customer, enjoy 20% off your next move. Valid 30 days. Call 0333 577 2070 and quote {{2}}.
+As a valued Ample Removals customer, enjoy 20% off your next move. Valid 30 days. Quote {{2}} when you call 0333 577 2070.
 ```
 Sample: `Sam` · `RMV-2026-X8K4P`
 
