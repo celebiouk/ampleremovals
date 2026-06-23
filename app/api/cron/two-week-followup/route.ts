@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend } from "@/lib/resend";
+import { sendSMS } from "@/lib/twilio";
 import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
 
 /**
@@ -143,6 +144,12 @@ export async function GET(req: Request) {
           console.log(`✅ 2-week follow-up sent to ${customer.email}`);
         } catch (emailErr) {
           console.error(`❌ Follow-up email failed:`, emailErr);
+        }
+
+        // Also SMS so it's unmissable.
+        if (customer.phone) {
+          const first = (customer.full_name || "there").split(" ")[0];
+          await sendSMS(customer.phone, `Hi ${first}, it's Ample Removals - hope you're settled in! If we did a good job, a quick review would mean a lot: ${DEFAULT_GOOGLE_REVIEW_LINK}`).catch(() => {});
         }
 
         // Log activity

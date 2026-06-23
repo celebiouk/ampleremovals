@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { sendEmail, resendAdminEmails } from "@/lib/resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * POST /api/quote-confirm
@@ -114,13 +115,19 @@ export async function POST(req: NextRequest) {
       .select(`
         reference,
         service_type,
-        customer:customers(full_name, email)
+        customer:customers(full_name, email, phone)
       `)
       .eq("id", bookingId)
       .single();
 
     if (booking) {
       const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
+
+      // Confirmation SMS (unmissable) alongside the email.
+      if (customer?.phone) {
+        const first = (customer.full_name || "there").split(" ")[0];
+        await sendSMS(customer.phone, `Ample Removals: Thanks ${first}, your quote is CONFIRMED (ref ${booking.reference}). We'll send your deposit invoice shortly. Any questions? 0333 577 2070`).catch(() => {});
+      }
 
       // Send confirmation email to customer
       await sendEmail({

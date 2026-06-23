@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
+import { sendSMS } from "@/lib/twilio";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -111,13 +112,13 @@ export async function POST(req: Request) {
     // Get worker info
     const { data: driver } = await supabase
       .from("drivers")
-      .select("id, email, first_name")
+      .select("id, email, first_name, phone")
       .eq("user_id", userId)
       .single();
 
     const { data: cleaner } = await supabase
       .from("cleaners")
-      .select("id, email, first_name")
+      .select("id, email, first_name, phone")
       .eq("user_id", userId)
       .single();
 
@@ -177,6 +178,11 @@ export async function POST(req: Request) {
         { success: false, error: "Failed to send email" },
         { status: 500 }
       );
+    }
+
+    // SMS the worker too (unmissable).
+    if (worker.phone) {
+      await sendSMS(worker.phone, `Ample Removals: Hi ${worker.first_name}, your payslip for ${payslip.pay_runs.reference} is ready (net £${(payslip.net_pay / 100).toFixed(2)}). Full details emailed + in your account.`).catch(() => {});
     }
 
     // Log to activity log

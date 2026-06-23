@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * GET /api/cron/send-surveys
@@ -148,6 +149,12 @@ export async function GET(req: Request) {
           console.log(`✅ Survey email sent to ${customer.email}`);
         } catch (emailErr) {
           console.error(`❌ Email failed:`, emailErr);
+        }
+
+        // Also SMS so it's unmissable.
+        if (customer.phone) {
+          const first = (customer.full_name || "there").split(" ")[0];
+          await sendSMS(customer.phone, `Hi ${first}, how did Ample Removals do? A quick rating helps us a lot: ${surveyBaseUrl} - thank you! Ref ${booking.reference}`).catch(() => {});
         }
 
         // Mark survey as sent

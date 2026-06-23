@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Resend } from "resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * GET /api/admin/drivers/[id]
@@ -206,6 +207,11 @@ export async function PATCH(
       } catch (emailError) {
         console.error("Failed to send approval email:", emailError);
         // Don't fail the update if email fails
+      }
+
+      // SMS the driver too (unmissable).
+      if (driver.phone) {
+        await sendSMS(driver.phone, `Ample Removals: Congratulations ${driver.first_name}! Your driver application is APPROVED ✅ You can now log in and accept jobs: ${process.env.NEXT_PUBLIC_SITE_URL}/drivers/login`).catch(() => {});
       }
     }
 

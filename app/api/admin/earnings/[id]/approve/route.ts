@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Resend } from "resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * POST /api/admin/earnings/[id]/approve
@@ -86,6 +87,11 @@ export async function POST(
       } catch (emailError) {
         console.error("Failed to send earnings approval email:", emailError);
       }
+    }
+
+    // SMS the driver too (unmissable).
+    if (earning.driver?.phone) {
+      await sendSMS(earning.driver.phone, `Ample Removals: Hi ${earning.driver.first_name}, your earnings of £${earning.total_earnings.toFixed(2)} for job ${earning.booking?.reference ?? ""} have been approved. Payment to follow.`).catch(() => {});
     }
 
     return NextResponse.json({

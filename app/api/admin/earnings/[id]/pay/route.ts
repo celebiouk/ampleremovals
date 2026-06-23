@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Resend } from "resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * POST /api/admin/earnings/[id]/pay
@@ -26,7 +27,7 @@ export async function POST(
         paid_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select("*, driver:drivers(first_name, last_name, email), booking:bookings(reference)")
+      .select("*, driver:drivers(first_name, last_name, email, phone), booking:bookings(reference)")
       .single();
 
     if (error) {
@@ -81,6 +82,11 @@ export async function POST(
       } catch (emailError) {
         console.error("Failed to send payment email:", emailError);
       }
+    }
+
+    // SMS the driver too (unmissable).
+    if (earning.driver?.phone) {
+      await sendSMS(earning.driver.phone, `Ample Removals: Hi ${earning.driver.first_name}, you've been paid £${earning.total_earnings.toFixed(2)} for job ${earning.booking?.reference ?? ""}. Thank you!`).catch(() => {});
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
+import { sendSMS } from "@/lib/twilio";
 
 /**
  * POST /api/drivers/register
@@ -183,6 +184,11 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       });
+
+      // SMS the applicant too (unmissable).
+      if (phone) {
+        await sendSMS(phone, `Ample Removals: Hi ${firstName}, we've received your driver application ✅ Our team will review it within 24-48 hours and let you know. Thank you!`).catch(() => {});
+      }
     } catch (emailError) {
       console.error("Failed to send emails:", emailError);
       // Don't fail the registration if emails fail

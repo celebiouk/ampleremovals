@@ -5,6 +5,7 @@
  */
 import { generateReceiptPDF } from "@/lib/pdf/generate-receipt";
 import { resend, resendFrom } from "@/lib/resend";
+import { sendSMS } from "@/lib/twilio";
 import { formatDateTime } from "@/lib/utils";
 import { SERVICE_LABELS } from "@/lib/constants";
 import type { ServiceType } from "@/types";
@@ -20,7 +21,7 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
       .select(`
         reference, service_type,
         ${leg}_contact_name, ${leg}_comments, ${leg}_confirmed_at,
-        customer:customers(full_name, email),
+        customer:customers(full_name, email, phone),
         addr:addresses!${addrFk}(line_1, city, postcode)
       `)
       .eq("id", bookingId)
@@ -28,7 +29,7 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
     if (!b) return;
 
     const customer = Array.isArray(b.customer) ? b.customer[0] : b.customer;
-    if (!customer?.email) return;
+    if (!customer) return;
     const addr = Array.isArray(b.addr) ? b.addr[0] : b.addr;
 
     // Count photos in storage for this leg (best-effort).
@@ -62,7 +63,14 @@ export async function sendChainReceipt(supabase: any, bookingId: string, leg: "p
       ? `Your items have been <strong>collected and released for transport</strong>. Your pickup receipt is attached.`
       : `Your items have been <strong>delivered and received</strong>. Your delivery receipt is attached — thank you for choosing us!`;
 
-    await resend.emails.send({
+    if (customer.phone) {
+      const smsText = leg === "pickup"
+        ? `Ample Removals: Pickup confirmed for ${b.reference} ✅ Your items are with us. Receipt emailed to you.`
+        : `Ample Removals: Delivery confirmed for ${b.reference} ✅ Thank you for choosing us! Receipt emailed to you.`;
+      await sendSMS(customer.phone, smsText).catch(() => {});
+    }
+
+    if (customer.email) await resend.emails.send({
       from: resendFrom,
       to: customer.email,
       subject: `Your Ample Removals ${legLabel.toLowerCase()} receipt — ${b.reference}`,
