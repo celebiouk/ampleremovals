@@ -191,3 +191,7 @@ ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS eta_last_lat NUMERIC(10,7),
   ADD COLUMN IF NOT EXISTS eta_last_lng NUMERIC(10,7),
   ADD COLUMN IF NOT EXISTS eta_last_duration_seconds INTEGER;
+
+-- ── Driver decline reason ──────────────────────────────────────────────────
+ALTER TABLE booking_driver_assignments
+  ADD COLUMN IF NOT EXISTS decline_reason TEXT;

@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { requireDriver } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { ukToday, ukNextDays, dateOnly } from "@/lib/dates";
+import { redactJobForDriver } from "@/lib/driver-job-view";
 
 export async function GET(req: Request) {
   const auth = await requireDriver();
@@ -20,10 +21,13 @@ export async function GET(req: Request) {
 
     const { data: assigns } = await supabase
       .from("booking_driver_assignments")
-      .select("booking_id")
+      .select("booking_id, acceptance_status, decline_reason")
       .eq("driver_id", auth.driver.id);
     const ids = (assigns ?? []).map((a: any) => a.booking_id);
     if (ids.length === 0) return NextResponse.json({ success: true, jobs: [] });
+    const acceptanceById = new Map<string, { acceptance_status: string | null; decline_reason: string | null }>(
+      (assigns ?? []).map((a: any) => [a.booking_id, { acceptance_status: a.acceptance_status ?? null, decline_reason: a.decline_reason ?? null }])
+    );
 
     // NB: addresses(*) not (lat,lng) — resilient if the lat/lng columns aren't
     // present yet (otherwise PostgREST 500s with "column does not exist"). The
@@ -49,7 +53,12 @@ export async function GET(req: Request) {
     // calendar week — so jobs later this week + early next week all show.
     const { start, end } = ukNextDays(7);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isCompleted = (b: any): boolean => Boolean(b.completed_at) || b.status === "job_completed";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inScope = (b: any): boolean => {
+      // The "completed" tab shows past/finished jobs; every other scope hides them.
+      if (scope === "completed") return isCompleted(b);
+      if (isCompleted(b)) return false;
       const md = dateOnly(b.move_date);
       const ff = dateOnly(b.flexible_date_from);
       const ft = dateOnly(b.flexible_date_to);
@@ -66,7 +75,11 @@ export async function GET(req: Request) {
       return true;
     };
 
-    const jobs = (data ?? []).filter(inScope);
+    // Filter, then REDACT each job to what this driver may see at this lifecycle stage.
+    const jobs = (data ?? [])
+      .filter(inScope)
+      .map((b: any) => redactJobForDriver(b, acceptanceById.get(b.id)?.acceptance_status ?? null))
+      .map((b: any) => ({ ...b, decline_reason: acceptanceById.get(b.id)?.decline_reason ?? null }));
     return NextResponse.json({ success: true, jobs });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

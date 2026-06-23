@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 import { requireDriver } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { outwardCode } from "@/lib/driver-job-view";
 
 export async function GET() {
   const auth = await requireDriver();
@@ -26,14 +27,16 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("id, reference, service_type, move_date, survey_rating, survey_feedback, survey_completed_at, customer:customers(full_name)")
+      .select("id, reference, service_type, move_date, survey_rating, survey_feedback, survey_completed_at, origin:addresses!origin_address_id(postcode), destination:addresses!destination_address_id(postcode)")
       .in("id", ids)
       .not("survey_rating", "is", null)
       .order("survey_completed_at", { ascending: false });
     if (error) throw new Error(error.message);
 
+    // Completed jobs are redacted: no customer name — only outward postcodes + the rating.
     const ratings = (data ?? []).map((b) => {
-      const customer = Array.isArray(b.customer) ? b.customer[0] : b.customer;
+      const origin = Array.isArray(b.origin) ? b.origin[0] : b.origin;
+      const destination = Array.isArray(b.destination) ? b.destination[0] : b.destination;
       return {
         bookingId: b.id,
         reference: b.reference,
@@ -42,7 +45,8 @@ export async function GET() {
         rating: b.survey_rating as number,
         feedback: (b.survey_feedback as string | null) ?? null,
         completedAt: b.survey_completed_at,
-        customerName: customer?.full_name ?? "Customer",
+        pickupOutward: outwardCode((origin as { postcode?: string } | null)?.postcode),
+        destinationOutward: outwardCode((destination as { postcode?: string } | null)?.postcode),
       };
     });
 

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Send, Loader2, CheckCircle } from "lucide-react";
+import { Send, Loader2, CheckCircle, Star } from "lucide-react";
 import { toast } from "sonner";
+import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
 
 export default function SurveyPage() {
   const params = useParams();
@@ -71,8 +72,36 @@ export default function SurveyPage() {
 
   const ratingInfo = getRatingInfo();
 
-  // Submitted state
+  // Submitted state — 5 stars are funnelled to a public Google review; anything
+  // less stays as private internal feedback (already captured above).
   if (submitted) {
+    if (rating === 5) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-white p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-yellow-100">
+              <Star className="h-10 w-10 fill-yellow-500 text-yellow-500" />
+            </div>
+            <h1 className="mt-6 text-3xl font-bold text-slate-900">You made our day! 🎉</h1>
+            <p className="mt-4 text-lg text-slate-600">
+              Thank you for the 5 stars. Would you share that on Google? It only takes a
+              few seconds and helps other families find us.
+            </p>
+            <a
+              href={DEFAULT_GOOGLE_REVIEW_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-8 py-4 font-semibold text-white hover:bg-green-700"
+            >
+              <Star className="h-5 w-5 fill-white" /> Leave a Google review
+            </a>
+            <button onClick={() => router.push("/")} className="mt-4 block w-full text-sm text-slate-500 hover:text-slate-700">
+              No thanks
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-purple-50 to-white p-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
@@ -81,10 +110,10 @@ export default function SurveyPage() {
           </div>
           <h1 className="mt-6 text-3xl font-bold text-slate-900">Thank You!</h1>
           <p className="mt-4 text-lg text-slate-600">
-            Your feedback helps us improve our service.
+            Your feedback goes straight to our team so we can put things right and improve.
           </p>
           <p className="mt-6 text-sm text-slate-500">
-            We truly appreciate you taking the time to share your thoughts!
+            We truly appreciate you taking the time to share your thoughts.
           </p>
           <button
             onClick={() => router.push("/")}

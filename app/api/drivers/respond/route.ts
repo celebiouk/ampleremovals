@@ -61,13 +61,17 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null) as { bookingId?: string; driverId?: string; token?: string; action?: string } | null;
+  const body = await req.json().catch(() => null) as { bookingId?: string; driverId?: string; token?: string; action?: string; reason?: string } | null;
   const bookingId = body?.bookingId ?? "";
   const driverId = body?.driverId ?? "";
   const token = body?.token ?? "";
   const action = body?.action;
+  const reason = (body?.reason ?? "").toString().trim();
   if (action !== "accept" && action !== "decline") {
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
+  }
+  if (action === "decline" && !reason) {
+    return NextResponse.json({ success: false, error: "Please give a reason for declining." }, { status: 400 });
   }
   if (!verifyAssignmentToken(bookingId, driverId, token)) {
     return NextResponse.json({ success: false, error: "This link is invalid or has expired." }, { status: 401 });
@@ -82,7 +86,7 @@ export async function POST(req: Request) {
   const status = action === "accept" ? "accepted" : "declined";
   const { error } = await supabase
     .from("booking_driver_assignments")
-    .update({ acceptance_status: status, responded_at: new Date().toISOString() })
+    .update({ acceptance_status: status, responded_at: new Date().toISOString(), decline_reason: action === "decline" ? reason : null })
     .eq("id", assignment.id);
   if (error) return NextResponse.json({ success: false, error: "Couldn't save your response." }, { status: 500 });
 
@@ -93,14 +97,14 @@ export async function POST(req: Request) {
   const ref = booking?.reference ?? "";
   await supabase.from("activity_log").insert({
     booking_id: bookingId,
-    action: `Driver ${status} the job: ${name}`,
-    metadata: { driverId, status }, performed_by: "driver",
+    action: `Driver ${status} the job: ${name}${action === "decline" ? ` — reason: ${reason}` : ""}`,
+    metadata: { driverId, status, reason: action === "decline" ? reason : null }, performed_by: "driver",
   });
   try {
     await supabase.from("notifications").insert({
       type: "driver_response",
       title: action === "accept" ? "Driver accepted job" : "⚠️ Driver declined job",
-      description: `${name} ${status} job ${ref}.`,
+      description: `${name} ${status} job ${ref}${action === "decline" ? ` — "${reason}"` : ""}.`,
       booking_id: bookingId,
     });
   } catch { /* non-critical */ }
