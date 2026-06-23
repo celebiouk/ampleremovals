@@ -72,12 +72,16 @@ export default function JobDetailScreen() {
       const dest = legDestination(j, leg);
       const pos = await getCurrentPosition();
       if (!pos) { toast.error("Location needed", "Enable location to start the journey."); return; }
-      await apiFetch(`/api/drivers/jobs/${j.id}/journey/start`, { method: "POST", body: JSON.stringify({ leg, lat: pos.lat, lng: pos.lng }) });
-      await startBackgroundLocation({
-        bookingId: j.id, leg,
-        destLat: Number(dest?.lat) || pos.lat, destLng: Number(dest?.lng) || pos.lng,
-        arrivedFired: false,
-      });
+      const res = await apiFetch(`/api/drivers/jobs/${j.id}/journey/start`, { method: "POST", body: JSON.stringify({ leg, lat: pos.lat, lng: pos.lng }) });
+      // Server geocodes the destination and returns its coords. NEVER fall back to
+      // the driver's own position — that makes the 80m check fire "arrived" instantly.
+      // 0 = unknown destination → the task won't auto-arrive; driver taps "I've arrived".
+      const startData = (await res.json().catch(() => ({}))) as { destLat?: number; destLng?: number };
+      const sLat = Number(startData?.destLat);
+      const sLng = Number(startData?.destLng);
+      const destLat = sLat && Number.isFinite(sLat) ? sLat : (Number(dest?.lat) || 0);
+      const destLng = sLng && Number.isFinite(sLng) ? sLng : (Number(dest?.lng) || 0);
+      await startBackgroundLocation({ bookingId: j.id, leg, destLat, destLng, arrivedFired: false });
       toast.success(`Journey to ${leg} started`, "Live tracking is now on.");
       await refetch();
     } catch (e) {

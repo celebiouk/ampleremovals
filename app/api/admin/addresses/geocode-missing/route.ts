@@ -5,14 +5,18 @@
  * bookings work with the driver app's map + arrival detection. Safe to re-run.
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { geocodePostcode } from "@/lib/postcode";
 
-export async function POST() {
-  const supabaseAuth = await createClient();
-  const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function POST(req: NextRequest) {
+  // Allow either an admin session OR a CRON_SECRET bearer (so it can be run as a one-off).
+  const cronOk = req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
+  if (!cronOk) {
+    const supabaseAuth = await createClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
 
   const supabase = createAdminClient();
 

@@ -58,7 +58,13 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
   await uploadPoint({ lat: latitude, lng: longitude, heading, speed, accuracy });
 
   const journey = await getActiveJourney();
-  if (journey && !journey.arrivedFired && hasArrived(latitude, longitude, journey.destLat, journey.destLng)) {
+  // Only auto-detect arrival when we have a real destination. destLat/destLng = 0
+  // (or non-finite) means "unknown" — never auto-fire (the driver uses "I've arrived").
+  const hasDest =
+    !!journey &&
+    Number.isFinite(journey.destLat) && Number.isFinite(journey.destLng) &&
+    journey.destLat !== 0 && journey.destLng !== 0;
+  if (journey && hasDest && !journey.arrivedFired && hasArrived(latitude, longitude, journey.destLat, journey.destLng)) {
     const ok = await postOrQueue(`/api/drivers/jobs/${journey.bookingId}/arrived`, {
       leg: journey.leg, lat: latitude, lng: longitude,
     });
