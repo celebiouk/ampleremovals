@@ -4,6 +4,7 @@ import { resend, resendFrom } from "@/lib/resend";
 import { twilioClient, twilioFrom } from "@/lib/twilio";
 import { normaliseUKPhone } from "@/lib/utils";
 import { renderTemplate } from "@/lib/automation-templates";
+import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
 import { logError } from "@/lib/log-error";
 
 /**
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Fetch company settings for template variables
     const { data: settings } = await supabase.from("settings").select("*").eq("id", 1).single();
     const companyPhone = settings?.company_phone ?? "0333 577 2070";
-    const googleReviewLink = settings?.google_review_link ?? "[Google Review Link]";
+    const googleReviewLink = settings?.google_review_link || DEFAULT_GOOGLE_REVIEW_LINK;
 
     for (const rule of rules) {
       try {

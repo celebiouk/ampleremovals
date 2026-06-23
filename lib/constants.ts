@@ -1,5 +1,8 @@
 import type { BookingStatus, ServiceType } from "@/types";
 
+/** Google review link — fallback when the Settings value is empty. */
+export const DEFAULT_GOOGLE_REVIEW_LINK = "https://g.page/r/Cc7Zw55gchwDEAI/review";
+
 // ── Status labels ──────────────────────────────────────────────────────────
 
 export const STATUS_LABELS: Record<BookingStatus, string> = {

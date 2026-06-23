@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
 
 /**
  * POST /api/admin/driver-status
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
     } else if (status === "job_completed") {
       // Get Google review link from settings
       const { data: settings } = await supabase.from("settings").select("google_review_link").eq("id", 1).single();
-      const googleReviewLink = settings?.google_review_link || "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review";
+      const googleReviewLink = settings?.google_review_link || DEFAULT_GOOGLE_REVIEW_LINK;
 
       const tipLink = `${process.env.NEXT_PUBLIC_SITE_URL}/tip/${bookingId}`;
 

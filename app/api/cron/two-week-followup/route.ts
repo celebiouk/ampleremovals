@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend } from "@/lib/resend";
+import { DEFAULT_GOOGLE_REVIEW_LINK } from "@/lib/constants";
 
 /**
  * GET /api/cron/two-week-followup
@@ -107,7 +108,7 @@ export async function GET(req: Request) {
               </p>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="#" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                <a href="${DEFAULT_GOOGLE_REVIEW_LINK}" style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
                   ⭐ Leave a Google Review
                 </a>
               </div>

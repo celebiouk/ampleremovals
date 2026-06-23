@@ -1,17 +1,25 @@
 import twilio from "twilio";
 
 /**
- * Twilio client. Guarded so that builds and dev servers don't crash when
- * SMS credentials are still placeholders — the client is only constructed
- * when both SID and auth token are present.
+ * Twilio client. Prefers API Key auth (TWILIO_API_KEY_SID + _SECRET, the
+ * recommended/revocable credentials) and falls back to the account Auth Token.
+ * Guarded so builds/dev don't crash when credentials are still placeholders.
+ *
+ * Required env: TWILIO_ACCOUNT_SID (AC…) plus EITHER
+ *   • TWILIO_API_KEY_SID (SK…) + TWILIO_API_KEY_SECRET   (recommended), OR
+ *   • TWILIO_AUTH_TOKEN
  */
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
+const apiKeySid = process.env.TWILIO_API_KEY_SID;
+const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 
 export const twilioClient =
-  accountSid && accountSid.startsWith("AC") && authToken
-    ? twilio(accountSid, authToken)
-    : null;
+  accountSid && accountSid.startsWith("AC") && apiKeySid?.startsWith("SK") && apiKeySecret
+    ? twilio(apiKeySid, apiKeySecret, { accountSid })
+    : accountSid && accountSid.startsWith("AC") && authToken
+      ? twilio(accountSid, authToken)
+      : null;
 
 export const twilioFrom = process.env.TWILIO_PHONE_NUMBER ?? "";
 export const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_NUMBER ?? "whatsapp:+14155238886"; // Twilio sandbox default
