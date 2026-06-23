@@ -92,14 +92,28 @@ export async function startJourneyCall1(
 ) {
   const booking = await loadBooking(supabase, bookingId);
   const dest = legDest(booking, leg);
-  const dm = await distanceMatrix(driverLat, driverLng, dest.dest);
+
+  // Traffic-aware ETA is best-effort: if the Distance Matrix is unavailable
+  // (e.g. GOOGLE_MAPS_API_KEY not set, quota, network) we still start the journey
+  // and notify the customer — just without the precise minutes. Start Journey
+  // must never be blocked by the ETA service.
+  let dm: { durationSeconds: number; etaTimestamp: string } | null = null;
+  try {
+    dm = await distanceMatrix(driverLat, driverLng, dest.dest);
+  } catch (e) {
+    console.error("[eta] Call 1 ETA unavailable — starting journey without precise ETA", e);
+  }
+
   const now = new Date();
-  const scheduledCall2 = new Date(now.getTime() + Math.max(0, dm.durationSeconds - 1200) * 1000).toISOString();
+  // Schedule the 20-min check only when we have a real ETA (Calls 2/3 also need the API).
+  const scheduledCall2 = dm
+    ? new Date(now.getTime() + Math.max(0, dm.durationSeconds - 1200) * 1000).toISOString()
+    : null;
 
   const update: any = {
     current_journey_leg: leg,
-    call1_eta_timestamp: dm.etaTimestamp,
-    call1_duration_seconds: dm.durationSeconds,
+    call1_eta_timestamp: dm?.etaTimestamp ?? null,
+    call1_duration_seconds: dm?.durationSeconds ?? null,
     scheduled_call2_time: scheduledCall2,
     call2_eta_timestamp: null, call2_duration_seconds: null, call2_notification_sent: false,
     scheduled_call3_time: null, call3_eta_timestamp: null, call3_duration_seconds: null, call3_notification_sent: false,
@@ -109,15 +123,15 @@ export async function startJourneyCall1(
   else update.delivery_started_at = now.toISOString();
   await supabase.from("bookings").update(update).eq("id", bookingId);
 
-  const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode, fmt(dm.etaTimestamp));
+  const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
   await notifyCustomer("journey_started", ctx);
   await notifyAdmin(supabase, bookingId, "journey_started", ctx);
   await logCall(supabase, {
     bookingId, driverId: driver?.id ?? null, leg, call: "1", dLat: driverLat, dLng: driverLng,
-    destLat: dest.lat, destLng: dest.lng, dur: dm.durationSeconds, eta: dm.etaTimestamp,
+    destLat: dest.lat, destLng: dest.lng, dur: dm?.durationSeconds ?? null, eta: dm?.etaTimestamp ?? null,
     fired: true, type: "journey_started", nextAt: scheduledCall2,
   });
-  return { etaTimestamp: dm.etaTimestamp, durationSeconds: dm.durationSeconds };
+  return { etaTimestamp: dm?.etaTimestamp ?? null, durationSeconds: dm?.durationSeconds ?? null };
 }
 
 /** Process one due scheduled call (2 or 3) from the cron. */
