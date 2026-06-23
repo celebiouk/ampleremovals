@@ -211,9 +211,11 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
 
 // Keep the live ETA cheap. A traffic-aware Distance Matrix call costs ~1¢, so we:
 //  • only call Google when the driver has actually MOVED (parked → hold for free), and
-//  • cap calls to once per booking per ~10 min even while moving.
-// → a 1-hour journey stays well under 10¢; a parked driver costs nothing.
-const ETA_REFRESH_THROTTLE_MS = 10 * 60 * 1000;
+//  • recalc less often when far out, more often near arrival (where accuracy matters).
+// → a 1-hour journey stays under 10¢; a parked driver costs nothing.
+const ETA_THROTTLE_FAR_MS = 12 * 60 * 1000;  // > 15 min away
+const ETA_THROTTLE_NEAR_MS = 4 * 60 * 1000;  // ≤ 15 min away
+const ETA_NEAR_MIN = 15;
 const ETA_STATIONARY_M = 150;
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -233,7 +235,7 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
 export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: number; held: number }> {
   const { data: active } = await supabase
     .from("bookings")
-    .select("id, current_journey_leg, eta_calc_at, eta_last_lat, eta_last_lng, eta_last_duration_seconds")
+    .select("id, current_journey_leg, current_eta_timestamp, eta_calc_at, eta_last_lat, eta_last_lng, eta_last_duration_seconds")
     .not("current_journey_leg", "is", null)
     .is("arrived_at", null);
 
@@ -261,8 +263,13 @@ export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: num
         held++;
         continue;
       }
+      // Recalc more often once the driver is close (accuracy matters most there).
+      const remainingMin = row.current_eta_timestamp
+        ? (new Date(row.current_eta_timestamp).getTime() - nowMs) / 60000
+        : Infinity;
+      const throttleMs = remainingMin <= ETA_NEAR_MIN ? ETA_THROTTLE_NEAR_MS : ETA_THROTTLE_FAR_MS;
       // Moving but recalculated recently → let the page count down; don't spend a call.
-      if (sinceCalc < ETA_REFRESH_THROTTLE_MS && lastDur != null) continue;
+      if (sinceCalc < throttleMs && lastDur != null) continue;
 
       // Moving + due (or first time) → exactly one Google call.
       const booking = await loadBooking(supabase, row.id);

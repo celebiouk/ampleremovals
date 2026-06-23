@@ -28,7 +28,9 @@ type TrackData = {
 function etaLabel(eta: string | null): string {
   if (!eta) return "Calculating…";
   const mins = Math.round((new Date(eta).getTime() - Date.now()) / 60000);
-  if (mins <= 1) return "Arriving now";
+  // Floor: between recalcs the countdown can drift low — don't claim "Arriving now"
+  // (that comes only from the server's confirmed-arrival state). "Arriving soon" caps it.
+  if (mins <= 2) return "Arriving soon";
   return `${mins} min away`;
 }
 
