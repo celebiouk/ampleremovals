@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { requireDriver } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
-import { ukToday, ukWeekRange, dateOnly } from "@/lib/dates";
+import { ukToday, ukNextDays, dateOnly } from "@/lib/dates";
 
 export async function GET(req: Request) {
   const auth = await requireDriver();
@@ -45,7 +45,9 @@ export async function GET(req: Request) {
     // it. (Done here, not in SQL, to keep timezone logic correct and avoid
     // fragile PostgREST or()/date casts.)
     const today = ukToday();
-    const { start, end } = ukWeekRange();
+    // "week" now means a rolling NEXT 7 DAYS (today → today+7), not the Mon–Sun
+    // calendar week — so jobs later this week + early next week all show.
+    const { start, end } = ukNextDays(7);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inScope = (b: any): boolean => {
       const md = dateOnly(b.move_date);

@@ -36,6 +36,14 @@ export function ukMinutesOfDay(value: string | Date): number {
   return (h % 24) * 60 + m;
 }
 
+/** Rolling window from UK today through today + n days (inclusive), as YYYY-MM-DD. */
+export function ukNextDays(n: number): { start: string; end: string } {
+  const today = ukToday();
+  const d = new Date(today + "T12:00:00Z"); // noon UTC avoids any DST edge
+  const end = new Date(d); end.setUTCDate(d.getUTCDate() + n);
+  return { start: today, end: end.toISOString().slice(0, 10) };
+}
+
 /** Monday-start week range (YYYY-MM-DD) containing the UK "today". */
 export function ukWeekRange(): { start: string; end: string } {
   const today = ukToday();
