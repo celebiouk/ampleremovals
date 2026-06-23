@@ -17,6 +17,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.ampleremovals.driver",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Ample Driver uses your location to give customers a live ETA and to detect arrival at the job.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ample Driver tracks your location during a job so customers get live ETAs even when the app is in the background.",
         "NSCameraUsageDescription": "Ample Driver uses the camera to photograph items at pickup and delivery.",
