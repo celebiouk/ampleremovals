@@ -9,6 +9,9 @@ export interface DistanceResult {
   etaTimestamp: string; // ISO
 }
 
+/** Padding added to every ETA to absorb stops, parking and load-in delays. */
+const ETA_BUFFER_SECONDS = 5 * 60;
+
 export async function distanceMatrix(
   originLat: number,
   originLng: number,
@@ -34,8 +37,10 @@ export async function distanceMatrix(
     throw new Error(`Distance Matrix error: ${element?.status ?? data.status}`);
   }
 
-  // duration_in_traffic when available (traffic-aware), else duration.
-  const durationSeconds: number = element.duration_in_traffic?.value ?? element.duration.value;
+  // duration_in_traffic when available (traffic-aware), else duration. We add a
+  // small fixed buffer so the customer-facing ETA accounts for real-world delays.
+  const drive: number = element.duration_in_traffic?.value ?? element.duration.value;
+  const durationSeconds = drive + ETA_BUFFER_SECONDS;
   const etaTimestamp = new Date(Date.now() + durationSeconds * 1000).toISOString();
   return { durationSeconds, etaTimestamp };
 }

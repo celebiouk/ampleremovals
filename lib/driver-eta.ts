@@ -116,6 +116,7 @@ export async function startJourneyCall1(
     current_journey_leg: leg,
     call1_eta_timestamp: dm?.etaTimestamp ?? null,
     call1_duration_seconds: dm?.durationSeconds ?? null,
+    current_eta_timestamp: dm?.etaTimestamp ?? null, // live ETA the cron keeps refreshing
     scheduled_call2_time: scheduledCall2,
     call2_eta_timestamp: null, call2_duration_seconds: null, call2_notification_sent: false,
     scheduled_call3_time: null, call3_eta_timestamp: null, call3_duration_seconds: null, call3_notification_sent: false,
@@ -196,6 +197,38 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
     call3_eta_timestamp: dm.etaTimestamp, call3_duration_seconds: dur, call3_notification_sent: true,
   }).eq("id", bookingId);
   await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "3", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired, type: fired ? "10min" : null, nextAt: null });
+}
+
+/**
+ * Recompute the live ETA for every active journey from the driver's CURRENT GPS +
+ * live traffic, and store it in current_eta_timestamp. Runs each minute so the
+ * customer sees a real road-based ETA — if the driver is parked the ETA holds
+ * steady instead of counting down to zero. Best-effort per booking.
+ */
+export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: number }> {
+  const { data: active } = await supabase
+    .from("bookings")
+    .select("id, current_journey_leg")
+    .not("current_journey_leg", "is", null)
+    .is("arrived_at", null);
+
+  let refreshed = 0;
+  for (const row of active ?? []) {
+    try {
+      const booking = await loadBooking(supabase, row.id);
+      if (!booking) continue;
+      const driver = await leadDriver(supabase, row.id);
+      const gps = driver ? await driverGps(supabase, driver.id) : null;
+      if (!gps) continue; // no live position yet — leave the last ETA in place
+      const dest = legDest(booking, row.current_journey_leg as Leg);
+      const dm = await distanceMatrix(Number(gps.lat), Number(gps.lng), dest.dest);
+      await supabase.from("bookings").update({ current_eta_timestamp: dm.etaTimestamp }).eq("id", row.id);
+      refreshed++;
+    } catch (e) {
+      console.error("[eta] live refresh failed", row.id, e);
+    }
+  }
+  return { refreshed };
 }
 
 /** Cron entry: process every due Call 2 / Call 3. */

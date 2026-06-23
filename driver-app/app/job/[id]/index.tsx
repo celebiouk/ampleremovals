@@ -40,10 +40,23 @@ export default function JobDetailScreen() {
   const refetch = useCallback(() => job.refetch(), [job]);
 
   // Auto-refresh every 20s while en route, so background arrival + ETA surface here.
+  // Also push a foreground GPS fix each tick — this keeps the live map + ETA moving
+  // even when the OS hasn't granted "Always" background location.
   useEffect(() => {
     if (!active) return;
-    const t = setInterval(() => job.refetch(), 20_000);
-    return () => clearInterval(t);
+    let cancelled = false;
+    async function tick() {
+      job.refetch();
+      try {
+        const pos = await getCurrentPosition();
+        if (pos && !cancelled) {
+          await postOrQueue("/api/drivers/location", { lat: pos.lat, lng: pos.lng, recorded_at: new Date().toISOString() });
+        }
+      } catch { /* best-effort */ }
+    }
+    tick();
+    const t = setInterval(tick, 20_000);
+    return () => { cancelled = true; clearInterval(t); };
   }, [active, job]);
 
   // Reset the arrived takeover whenever we leave an "at stop" phase.

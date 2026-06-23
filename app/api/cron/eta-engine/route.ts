@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { runDueEtaCalls } from "@/lib/driver-eta";
+import { runDueEtaCalls, refreshActiveEtas } from "@/lib/driver-eta";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,7 +17,9 @@ export async function GET(req: Request) {
   try {
     const supabase = createAdminClient();
     const result = await runDueEtaCalls(supabase);
-    return NextResponse.json({ success: true, ...result });
+    // Keep every active journey's ETA fresh from the driver's live GPS.
+    const live = await refreshActiveEtas(supabase);
+    return NextResponse.json({ success: true, ...result, ...live });
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 });
   }

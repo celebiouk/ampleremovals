@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       .from("bookings")
       .select(
         "id, reference, status, current_journey_leg, arrived_at, completed_at, " +
-          "call1_eta_timestamp, call2_eta_timestamp, call3_eta_timestamp, " +
+          "current_eta_timestamp, call1_eta_timestamp, call2_eta_timestamp, call3_eta_timestamp, " +
           "origin:addresses!origin_address_id(line_1, city, postcode, lat, lng), " +
           "destination:addresses!destination_address_id(line_1, city, postcode, lat, lng)"
       )
@@ -53,7 +53,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b = booking as any;
     const destination = leg === "delivery" ? b.destination : b.origin;
-    const eta = b.call3_eta_timestamp || b.call2_eta_timestamp || b.call1_eta_timestamp || null;
+    // Prefer the continuously-refreshed live ETA; fall back to the call snapshots.
+    const eta = b.current_eta_timestamp || b.call3_eta_timestamp || b.call2_eta_timestamp || b.call1_eta_timestamp || null;
 
     return NextResponse.json({
       success: true,

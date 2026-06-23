@@ -125,6 +125,13 @@ export default function TrackPage() {
                 <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full bg-[#16a34a]" /> Destination</span>
               </div>
             )}
+            {(staticMapFailed || !staticMapSrc) && embedSrc && (
+              <p className="mt-3 text-center text-xs text-white/60">
+                {data.location
+                  ? "📍 Showing your driver's live location"
+                  : "📍 Showing the destination — your driver will appear here once they set off"}
+              </p>
+            )}
 
             {data.destination && (
               <div className="mt-5 rounded-2xl bg-white/10 p-4">
