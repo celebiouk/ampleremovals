@@ -176,3 +176,10 @@ ALTER TABLE driver_push_tokens         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE porters                    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE booking_porter_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE route_plans                ENABLE ROW LEVEL SECURITY;
+
+-- ── Liability waiver (driver app) ──────────────────────────────────────────
+ALTER TABLE bookings
+  ADD COLUMN IF NOT EXISTS waiver_signed BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS waiver_signer_name TEXT,
+  ADD COLUMN IF NOT EXISTS waiver_signature_url TEXT,
+  ADD COLUMN IF NOT EXISTS waiver_signed_at TIMESTAMPTZ;
