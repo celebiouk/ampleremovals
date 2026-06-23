@@ -306,7 +306,10 @@ async function sendWeatherAlert(
   const whatsappBody = `🌧️ *Weather Alert*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}\n\n*Weather Expected:*\n${weather.type}\n\n*Don't Worry!*\n✅ We're experienced in all weather\n✅ Items will be protected\n✅ Move goes ahead as planned\n\n*Your Prep:*\n• Have towels ready\n• Clear pathways\n• Keep boxes away from doors\n\n*Need to reschedule?*\nCall: *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
   try {
-    await sendWhatsApp(customer.phone, whatsappBody);
+    await sendWhatsApp(customer.phone, whatsappBody, {
+      name: "weather_alert",
+      variables: { "1": moveDate, "2": weather.type, "3": booking.reference },
+    });
     console.log(`✅ WhatsApp sent to ${customer.phone}`);
   } catch (whatsappErr) {
     console.error(`❌ WhatsApp failed:`, whatsappErr);

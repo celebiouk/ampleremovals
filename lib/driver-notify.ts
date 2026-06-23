@@ -74,6 +74,24 @@ function bodies(ev: JourneyEvent, c: NotifyContext): { email: { subject: string;
   }
 }
 
+/** The approved WhatsApp template (+ variables) for each journey event. */
+function waTemplate(ev: JourneyEvent, c: NotifyContext): {
+  name: "driver_on_the_way" | "driver_20_mins_away" | "driver_10_mins_away" | "driver_arrived";
+  variables: Record<string, string>;
+} {
+  const link = trackLink(c.trackingToken);
+  switch (ev) {
+    case "journey_started":
+      return { name: "driver_on_the_way", variables: { "1": c.driverName, "2": c.etaTime ?? "soon", "3": c.reference, "4": link } };
+    case "20min":
+      return { name: "driver_20_mins_away", variables: { "1": c.reference, "2": link } };
+    case "10min":
+      return { name: "driver_10_mins_away", variables: { "1": c.reference } };
+    case "arrived":
+      return { name: "driver_arrived", variables: { "1": c.reference } };
+  }
+}
+
 /** Fire all customer channels (best-effort). */
 export async function notifyCustomer(ev: JourneyEvent, c: NotifyContext): Promise<void> {
   const b = bodies(ev, c);
@@ -84,7 +102,7 @@ export async function notifyCustomer(ev: JourneyEvent, c: NotifyContext): Promis
   }
   if (c.customerPhone) {
     try { await sendSMS(c.customerPhone, b.sms); } catch (e) { console.error("[driver-notify] sms failed", e); }
-    try { await sendWhatsApp(c.customerPhone, b.whatsapp); } catch (e) { console.error("[driver-notify] whatsapp failed", e); }
+    try { await sendWhatsApp(c.customerPhone, b.whatsapp, waTemplate(ev, c)); } catch (e) { console.error("[driver-notify] whatsapp failed", e); }
   }
 }
 

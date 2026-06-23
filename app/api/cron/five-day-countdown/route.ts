@@ -166,7 +166,10 @@ export async function GET(req: Request) {
         const whatsappBody = `⚡ *5 Days to Go!*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}\n\n*Today's Tasks:*\n⚡ Notify utilities (gas, electric, water, internet)\n📬 Update address with banks, DVLA, GP\n📺 Update TV license & council tax\n📮 Consider Royal Mail redirection\n\n💡 Tip: Take meter reading photos on move day!\n\nBooking: ${booking.reference}`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "move_reminder_5_day",
+            variables: { "1": customer.full_name.split(" ")[0], "2": moveDate, "3": booking.reference },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

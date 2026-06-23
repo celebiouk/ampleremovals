@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
         id,
         reference,
         service_type,
+        live_tracking_token,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
         destination:addresses!destination_address_id(line_1, line_2, city, postcode)
@@ -282,8 +283,15 @@ export async function POST(req: NextRequest) {
       console.error(`❌ SMS failed:`, smsErr);
     }
 
+    const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ampleremovals.com";
+    const trackLink = booking.live_tracking_token ? `${SITE}/track/${booking.live_tracking_token}` : SITE;
+    const waTemplate =
+      status === "20_mins_away" ? { name: "driver_20_mins_away" as const, variables: { "1": booking.reference, "2": trackLink } }
+      : status === "10_mins_away" ? { name: "driver_10_mins_away" as const, variables: { "1": booking.reference } }
+      : status === "15_mins_to_delivery" ? { name: "driver_15_mins_to_delivery" as const, variables: { "1": destinationAddress, "2": booking.reference } }
+      : undefined;
     try {
-      await sendWhatsApp(customer.phone, whatsappBody);
+      await sendWhatsApp(customer.phone, whatsappBody, waTemplate);
       console.log(`✅ WhatsApp sent to ${customer.phone}`);
     } catch (whatsappErr) {
       console.error(`❌ WhatsApp failed:`, whatsappErr);

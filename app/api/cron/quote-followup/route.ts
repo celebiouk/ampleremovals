@@ -138,7 +138,10 @@ async function sendReminder(booking: any, stage: number, supabase: any): Promise
   try {
     if (customer.email) await resend.emails.send({ from: resendFrom, to: customer.email, subject: emailSubject, html: emailBody });
     if (customer.phone) await sendSMS(customer.phone, smsBody);
-    if (customer.phone) await sendWhatsApp(customer.phone, whatsappBody);
+    if (customer.phone) await sendWhatsApp(customer.phone, whatsappBody, {
+      name: "quote_followup",
+      variables: { "1": customer.full_name.split(" ")[0], "2": String(total), "3": confirmUrl, "4": booking.reference },
+    });
 
     await supabase.from("activity_log").insert({
       booking_id: booking.id,

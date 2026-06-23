@@ -112,7 +112,10 @@ export async function GET(req: Request) {
         const first = jobs[0];
         await sendSMS(driver.phone, `Ample Removals: Hi ${name}, you have ${count} job${count === 1 ? "" : "s"} tomorrow (${niceDate}). First: ${first.reference} — ${first.pickup}. Full details in the driver app.`).catch(() => {});
         const waList = jobs.map((j, i) => `${i + 1}. *${j.reference}* — ${j.service}\n   👤 ${j.customer}\n   📍 ${j.pickup}${j.dropoff ? ` → ${j.dropoff}` : ""}`).join("\n\n");
-        await sendWhatsApp(driver.phone, `🚚 *Tomorrow's Jobs* — ${niceDate}\n\nHi ${name}, you have *${count} job${count === 1 ? "" : "s"}* tomorrow:\n\n${waList}\n\nOpen the driver app for full details & live tracking. 📲`).catch(() => {});
+        await sendWhatsApp(driver.phone, `🚚 *Tomorrow's Jobs* — ${niceDate}\n\nHi ${name}, you have *${count} job${count === 1 ? "" : "s"}* tomorrow:\n\n${waList}\n\nOpen the driver app for full details & live tracking. 📲`, {
+          name: "driver_jobs_tomorrow",
+          variables: { "1": name, "2": String(count), "3": niceDate },
+        }).catch(() => {});
       }
 
       // Mark each job reminded.

@@ -246,7 +246,15 @@ export async function POST(
 
     // Send WhatsApp
     let whatsappSuccess = false;
-    const whatsappResult = await sendWhatsApp(customer.phone, whatsappBody);
+    const whatsappResult = await sendWhatsApp(customer.phone, whatsappBody, {
+      name: "quote_ready",
+      variables: {
+        "1": customer.full_name.split(" ")[0],
+        "2": booking.service_type.replace(/_/g, " "),
+        "3": formatCurrency(Number(booking.quote_total)),
+        "4": booking.reference,
+      },
+    });
     if (whatsappResult.success) {
       whatsappSuccess = true;
     } else {

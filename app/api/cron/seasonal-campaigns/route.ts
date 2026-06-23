@@ -169,7 +169,11 @@ export async function GET(req: Request) {
           try {
             await sendWhatsApp(
               customer.phone,
-              `🎊 *${campaign.name}*\n\nHi ${customer.full_name}!\n\n*${campaign.discount_percentage}% OFF* all our services!\n\n📦 House Removals\n📦 Man and Van\n📦 House Clearance\n📦 Cleaning Services\n\nCall *0333 577 2070*\nMention: *${campaign.name.toUpperCase()}*\n\n⏰ Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}\n\nAmple Removals`
+              `🎊 *${campaign.name}*\n\nHi ${customer.full_name}!\n\n*${campaign.discount_percentage}% OFF* all our services!\n\n📦 House Removals\n📦 Man and Van\n📦 House Clearance\n📦 Cleaning Services\n\nCall *0333 577 2070*\nMention: *${campaign.name.toUpperCase()}*\n\n⏰ Valid until ${new Date(campaign.end_date).toLocaleDateString("en-GB")}\n\nAmple Removals`,
+              {
+                name: "seasonal_campaign",
+                variables: { "1": customer.full_name.split(" ")[0], "2": `${campaign.discount_percentage}% off all services until ${new Date(campaign.end_date).toLocaleDateString("en-GB")} - mention ${campaign.name.toUpperCase()}` },
+              }
             );
           } catch (whatsappErr) {
             console.error(`❌ WhatsApp failed:`, whatsappErr);

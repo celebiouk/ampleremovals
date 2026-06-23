@@ -55,7 +55,11 @@ export async function sendReviewRequest(supabase: any, bookingId: string): Promi
     }
     if (customer.phone) {
       await sendSMS(customer.phone, `Hi ${first}, thanks for choosing ${company}! If you were happy with our service, we'd really appreciate a quick review: ${reviewLink} Questions? ${COMPANY_PHONE}`).catch(() => {});
-      await sendWhatsApp(customer.phone, `Hi ${first}! 🎉\n\nThank you for choosing *${company}*. We hope your ${serviceLabel.toLowerCase()} went smoothly!\n\nIf you were happy with the service, a quick Google review would mean the world to us ⭐\n\n${reviewLink}\n\nThank you! 🙏`).catch(() => {});
+      await sendWhatsApp(
+        customer.phone,
+        `Hi ${first}! 🎉\n\nThank you for choosing *${company}*. We hope your ${serviceLabel.toLowerCase()} went smoothly!\n\nIf you were happy with the service, a quick Google review would mean the world to us ⭐\n\n${reviewLink}\n\nThank you! 🙏`,
+        { name: "review_request", variables: { "1": first, "2": reviewLink } },
+      ).catch(() => {});
     }
 
     await supabase.from("activity_log").insert({

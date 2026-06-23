@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { WHATSAPP_TEMPLATES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
 
 /**
  * Twilio client. Prefers API Key auth (TWILIO_API_KEY_SID + _SECRET, the
@@ -72,12 +73,39 @@ export async function sendSMS(to: string, body: string): Promise<{ success: bool
 
 /**
  * Send a WhatsApp message via Twilio.
+ *
+ * WhatsApp blocks business-initiated free-form text outside the 24h customer
+ * window (error 63016) — those must use a pre-approved template. So when a
+ * `template` is supplied we send via its Content SID + variables; if that send
+ * fails (e.g. the template isn't approved by Meta yet) we fall back to the
+ * free-text `body`, which still delivers inside the 24h window. Calls without a
+ * template (e.g. admin alerts / session replies) just send free text.
+ *
  * The 'to' number must be in E.164 format, e.g., "+447700900000".
- * Returns { success: true } on success, { success: false, error: string } on failure.
  */
-export async function sendWhatsApp(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+export async function sendWhatsApp(
+  to: string,
+  body: string,
+  template?: { name: WhatsAppTemplate; variables: Record<string, string> },
+): Promise<{ success: boolean; error?: string }> {
   if (!twilioClient) {
     return { success: false, error: "Twilio not configured" };
+  }
+  const contentSid = template ? WHATSAPP_TEMPLATES[template.name] : undefined;
+  // Preferred path: send via the approved template.
+  if (contentSid) {
+    try {
+      await twilioClient.messages.create({
+        from: twilioWhatsAppFrom,
+        to: `whatsapp:${to}`,
+        contentSid,
+        contentVariables: JSON.stringify(template!.variables),
+      });
+      return { success: true };
+    } catch (err) {
+      // Template not approved yet / send failed — fall through to free text.
+      if (!body) return { success: false, error: String(err) };
+    }
   }
   try {
     await twilioClient.messages.create({

@@ -196,7 +196,10 @@ export async function GET(req: Request) {
         const whatsappBody = `🚨 *MOVING DAY TOMORROW!*\n\nHi ${customer.full_name},\n\nWe're all set! Final checklist:\n\n✅ Pack essentials box\n✅ Clear pathways\n✅ Parking ready\n✅ Meter readings\n✅ Valuables with you\n✅ Get good sleep!\n\n${!addressConfirmed ? "⚠️ *Important:* Please confirm your addresses (check your email)\n\n" : ""}We'll keep you updated tomorrow!\n\nCall us: *0333 577 2070*\nBooking: ${booking.reference}`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "move_reminder_1_day",
+            variables: { "1": customer.full_name.split(" ")[0], "2": booking.reference },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

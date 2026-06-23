@@ -82,7 +82,10 @@ export async function GET(req: Request) {
       }
       if (customer.phone) {
         await sendSMS(customer.phone, `Ample Removals: Sorry ${first}, your driver is running ~${mins} mins behind. We'll be with you as soon as we can. Job ${b.reference}. Questions? ${phone}`).catch(() => {});
-        await sendWhatsApp(customer.phone, `Hi ${first}, quick update — your Ample Removals driver is running *~${mins} mins behind schedule*. Sorry for the delay, we'll be with you shortly! 🚚\n\nJob ${b.reference}`).catch(() => {});
+        await sendWhatsApp(customer.phone, `Hi ${first}, quick update — your Ample Removals driver is running *~${mins} mins behind schedule*. Sorry for the delay, we'll be with you shortly! 🚚\n\nJob ${b.reference}`, {
+          name: "driver_running_late",
+          variables: { "1": first, "2": String(mins), "3": b.reference },
+        }).catch(() => {});
       }
       await supabase.from("activity_log").insert({ booking_id: b.id, action: "Running late notice sent", metadata: { lateBy: mins }, performed_by: "system" });
       notified++;

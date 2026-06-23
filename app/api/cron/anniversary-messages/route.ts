@@ -192,7 +192,10 @@ export async function GET(req: Request) {
         const whatsappBody = `🎂 *Happy 1-Year Move Anniversary!*\n\nHi ${customer.full_name}!\n\nIt's been *one year* since we helped you move to ${destinationArea}! 🏡\n\n🎁 *Anniversary Special:*\n*15% OFF* your next move or service\n\nValid for 30 days!\n\nCall *0333 577 2070* and mention:\n*1-YEAR ANNIVERSARY*\n\n${referralLink ? `💝 *Refer a Friend:*\nYour code: *${customer.referral_code}*\nBoth get £20!\n\n` : ""}Cheers to more great years ahead! 🥂\n\nAmple Removals Team`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "anniversary_offer",
+            variables: { "1": customer.full_name.split(" ")[0] },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

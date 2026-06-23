@@ -171,7 +171,10 @@ export async function GET(req: Request) {
         const whatsappBody = `🎁 *20% OFF for You!*\n\nHi ${customer.full_name}!\n\nIt's been 3 months since we helped you move, and we wanted to thank you with an exclusive offer:\n\n*20% OFF* your next move or furniture delivery! 🚚\n\n✅ Valid for 30 days\n✅ For our valued regular customers\n\nCall us on *0333 577 2070* and mention:\n*${booking.reference}*\n\nWe look forward to helping you again!\n\nAmple Removals Team`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "loyalty_offer_3_month",
+            variables: { "1": customer.full_name.split(" ")[0], "2": booking.reference },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

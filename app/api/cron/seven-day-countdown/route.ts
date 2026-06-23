@@ -182,7 +182,10 @@ export async function GET(req: Request) {
         const whatsappBody = `📅 *Your Move is 1 Week Away!*\n\n${moveDate}\n\n*This Week's Tasks:*\n📦 Pack non-essentials\n🛒 Order packing materials\n🧹 Declutter & donate\n📁 Organize documents\n\nMore reminders coming as we get closer!\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "move_reminder_7_day",
+            variables: { "1": customer.full_name.split(" ")[0], "2": moveDate, "3": booking.reference },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

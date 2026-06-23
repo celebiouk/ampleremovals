@@ -155,7 +155,8 @@ export async function POST(
       try {
         await sendWhatsApp(
           customer.phone,
-          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`
+          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`,
+          { name: "booking_details_updated", variables: { "1": customer.full_name.split(" ")[0], "2": "addresses", "3": booking.reference } }
         );
       } catch (whatsappErr) {
         console.error("WhatsApp failed:", whatsappErr);

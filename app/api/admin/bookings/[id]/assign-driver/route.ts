@@ -207,7 +207,10 @@ async function notifyDriverAssigned(
         console.error("Driver assignment SMS failed:", e);
       }
       try {
-        await sendWhatsApp(driver.phone, msg);
+        await sendWhatsApp(driver.phone, msg, {
+          name: "driver_job_assigned",
+          variables: { "1": name, "2": booking.reference, "3": dateStr, "4": respondUrl },
+        });
       } catch (e) {
         console.error("Driver assignment WhatsApp failed:", e);
       }

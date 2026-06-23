@@ -109,7 +109,11 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
     }
     if (customer.phone) {
       await sendSMS(customer.phone, `Ample Removals: Great news ${first}, your booking ${booking.reference} (${serviceLabel}, ${dateStr}) is CONFIRMED. Nothing else to do for now — we'll be in touch. Questions? ${phone}`).catch(() => {});
-      await sendWhatsApp(customer.phone, `✅ *Booking Confirmed!*\n\nHi ${first}, your Ample Removals booking is all set:\n\n📋 *${booking.reference}*\n🚚 ${serviceLabel}\n📅 ${dateStr}\n\nThere's *nothing else you need to do* right now — we'll be in touch as your date approaches. Any questions, just call *${phone}*. 😊`).catch(() => {});
+      await sendWhatsApp(
+        customer.phone,
+        `✅ *Booking Confirmed!*\n\nHi ${first}, your Ample Removals booking is all set:\n\n📋 *${booking.reference}*\n🚚 ${serviceLabel}\n📅 ${dateStr}\n\nThere's *nothing else you need to do* right now — we'll be in touch as your date approaches. Any questions, just call *${phone}*. 😊`,
+        { name: "booking_confirmed", variables: { "1": first, "2": booking.reference, "3": serviceLabel, "4": dateStr } },
+      ).catch(() => {});
     }
 
     await supabase.from("activity_log").insert({

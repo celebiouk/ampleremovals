@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { JOB_STATUS_LABELS } from "@/lib/constants";
 import { sendAdminPush } from "@/lib/push-dispatch";
-import { normaliseSmsBody } from "@/lib/twilio";
+import { normaliseSmsBody, sendWhatsApp } from "@/lib/twilio";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -238,18 +238,16 @@ async function sendCustomerNotifications(
     console.error("SMS send error:", error);
   }
 
-  // Send WhatsApp
+  // Send WhatsApp (via approved template where we have the variables; free-text
+  // fallback otherwise — only the ETA engine has the driver name / address).
+  const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ampleremovals.com";
+  const trackLink = booking.live_tracking_token ? `${SITE}/track/${booking.live_tracking_token}` : SITE;
+  const waTemplate =
+    status === "twenty_mins_away" ? { name: "driver_20_mins_away" as const, variables: { "1": booking.reference, "2": trackLink } }
+    : status === "ten_mins_away" ? { name: "driver_10_mins_away" as const, variables: { "1": booking.reference } }
+    : undefined;
   try {
-    const twilio = (await import("twilio")).default;
-    const twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID!,
-      process.env.TWILIO_AUTH_TOKEN!
-    );
-    await twilioClient.messages.create({
-      body: msg.sms,
-      from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-      to: `whatsapp:${customer.phone}`,
-    });
+    await sendWhatsApp(customer.phone, msg.sms, waTemplate);
   } catch (error) {
     console.error("WhatsApp send error:", error);
   }

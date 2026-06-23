@@ -164,7 +164,10 @@ export async function GET(req: Request) {
         const whatsappBody = `🏠 *MOVING TODAY!*\n\nHi ${customer.full_name},\n\nPlease confirm your addresses:\n\n📍 *Pick-up:* ${originAddress}\n🏁 *Delivery:* ${destinationAddress}\n\nConfirm here: ${confirmUrl}\n\nBooking: ${booking.reference}`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "address_confirmation_request",
+            variables: { "1": customer.full_name.split(" ")[0], "2": confirmUrl, "3": booking.reference },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);

@@ -231,6 +231,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
     await sendWhatsApp(
       customer.phone,
       `Hi ${first}! Your driver has arrived. 📄 Your *final balance* invoice *${invoiceNumber}* for *${formatCurrency(total)}* is in your email.\n\nPay by bank transfer (details in the email).\n\nRef: ${booking.reference}`,
+      { name: "final_invoice_sent", variables: { "1": first, "2": invoiceNumber, "3": formatCurrency(total), "4": booking.reference } },
     ).catch(() => {});
 
     // Mark sent + advance the booking to "Full Invoice Sent".

@@ -143,7 +143,8 @@ export async function POST(
       try {
         await sendWhatsApp(
           customer.phone,
-          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`
+          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`,
+          { name: "booking_details_updated", variables: { "1": customer.full_name.split(" ")[0], "2": "move date", "3": booking.reference } }
         );
       } catch (whatsappErr) {
         console.error("WhatsApp failed:", whatsappErr);

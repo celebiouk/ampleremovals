@@ -191,7 +191,10 @@ export async function GET(req: Request) {
         const whatsappBody = `🎁 *Refer & Earn £20!*\n\nHi ${customer.full_name}!\n\nKnow someone moving? Help them save *£20* and earn *£20 credit* for yourself!\n\n✅ Your friend gets £20 off\n✅ You get £20 credit\n✅ No limit - refer as many as you like!\n\n*Your Code:* ${referralCode}\n\n*Share Your Link:*\n${referralUrl}\n\nThanks for being a valued customer! 💜\n\nAmple Removals`;
 
         try {
-          await sendWhatsApp(customer.phone, whatsappBody);
+          await sendWhatsApp(customer.phone, whatsappBody, {
+            name: "referral_invite",
+            variables: { "1": customer.full_name.split(" ")[0], "2": referralCode, "3": referralUrl },
+          });
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);
