@@ -79,6 +79,24 @@ export default function BookingDetailPage() {
   const [deleteInvoiceDialogOpen, setDeleteInvoiceDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string; type: string; amount: number } | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  // Embed mode (admin app WebView): ?embed=quote|deposit|full auto-opens that modal,
+  // and we postMessage the app when it closes so it can dismiss the in-app browser.
+  const [embedMode, setEmbedMode] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") setEmbedMode(new URLSearchParams(window.location.search).get("embed"));
+  }, []);
+  useEffect(() => {
+    if (!data || !embedMode) return;
+    if (embedMode === "quote") setQuoteModalOpen(true);
+    else if (embedMode === "deposit") setGenerateInvoiceType("deposit");
+    else if (embedMode === "full") setGenerateInvoiceType("full_balance");
+  }, [data, embedMode]);
+  const notifyEmbedDone = () => {
+    if (embedMode && typeof window !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).ReactNativeWebView?.postMessage(JSON.stringify({ type: "embed-done" }));
+    }
+  };
   const [callBackReminderOpen, setCallBackReminderOpen] = useState(false);
   const [updatingDriverStatus, setUpdatingDriverStatus] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
@@ -829,7 +847,7 @@ export default function BookingDetailPage() {
       {data && generateInvoiceType && (
         <GenerateInvoiceModal
           isOpen={!!generateInvoiceType}
-          onClose={() => setGenerateInvoiceType(null)}
+          onClose={() => { setGenerateInvoiceType(null); notifyEmbedDone(); }}
           bookingId={bookingId}
           type={generateInvoiceType}
           bookingReference={data.booking.reference}
@@ -837,7 +855,7 @@ export default function BookingDetailPage() {
           serviceType={data.booking.service_type as ServiceType}
           additionalServices={data.additionalServices}
           quoteTotal={data.booking.quote_total}
-          onSuccess={() => { refresh(); setGenerateInvoiceType(null); }}
+          onSuccess={() => { refresh(); setGenerateInvoiceType(null); notifyEmbedDone(); }}
         />
       )}
 
@@ -876,8 +894,8 @@ export default function BookingDetailPage() {
             ].filter(Boolean) as Array<{ name: string; price?: number }> : undefined,
           }}
           isOpen={quoteModalOpen}
-          onClose={() => setQuoteModalOpen(false)}
-          onSaved={refresh}
+          onClose={() => { setQuoteModalOpen(false); notifyEmbedDone(); }}
+          onSaved={() => { refresh(); notifyEmbedDone(); }}
         />
       )}
       <InvoiceDetailModal

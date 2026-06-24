@@ -4,7 +4,7 @@ import {
   ScrollView, View, Text, Pressable, Modal, Alert, RefreshControl, Linking, Platform, TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -175,8 +175,9 @@ export default function BookingDetailScreen() {
 
         {/* Quick actions */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
-          <QuickAction icon={<FileText size={16} color={colors.primary.DEFAULT} />} label="Create Quote" onPress={() => setQuoteOpen(true)} />
-          <QuickAction icon={<Receipt size={16} color={colors.primary.DEFAULT} />} label="Generate Invoice" onPress={() => setInvoiceOpen(true)} />
+          <QuickAction icon={<FileText size={16} color={colors.primary.DEFAULT} />} label="Create Quote" onPress={() => router.push(`/embed?bookingId=${id}&type=quote` as Href)} />
+          <QuickAction icon={<Receipt size={16} color={colors.primary.DEFAULT} />} label="Deposit Invoice" onPress={() => router.push(`/embed?bookingId=${id}&type=deposit` as Href)} />
+          <QuickAction icon={<Receipt size={16} color={colors.primary.DEFAULT} />} label="Full Invoice" onPress={() => router.push(`/embed?bookingId=${id}&type=full` as Href)} />
           <QuickAction icon={<MessageSquare size={16} color={colors.primary.DEFAULT} />} label="Message" onPress={() => setMessageOpen(true)} />
         </ScrollView>
 
