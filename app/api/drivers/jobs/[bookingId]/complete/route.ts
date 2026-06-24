@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendAdminPush } from "@/lib/push-dispatch";
-import { sendReviewRequest } from "@/lib/review-request";
+import { sendRatingRequest } from "@/lib/rating-request";
 
 export async function POST(_req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -56,8 +56,9 @@ export async function POST(_req: Request, { params }: { params: { bookingId: str
     });
     try { await sendAdminPush({ title: "Job completed", body: `${booking.reference} completed — invoice triggered`, data: { bookingId: params.bookingId } }); } catch { /* best-effort */ }
 
-    // Thank the customer + ask for a Google review (best-effort, idempotent).
-    await sendReviewRequest(supabase, params.bookingId);
+    // Ask the customer to rate the move immediately (best-effort, idempotent).
+    // 5★ → Google review · 1–4★ → internal feedback (handled by the survey flow).
+    await sendRatingRequest(supabase, params.bookingId);
 
     return NextResponse.json({ success: true });
   } catch (e) {
