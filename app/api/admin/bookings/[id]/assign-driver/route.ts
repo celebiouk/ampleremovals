@@ -19,7 +19,7 @@ export async function POST(
     if (!auth.ok) return auth.response;
 
     const { id: bookingId } = params;
-    const { driverId, payPercentageOverride, isLeadDriver } = await req.json();
+    const { driverId, payPercentageOverride, isLeadDriver, role } = await req.json();
 
     if (!driverId) {
       return NextResponse.json(
@@ -77,6 +77,12 @@ export async function POST(
         { success: false, error: "Failed to assign driver" },
         { status: 500 }
       );
+    }
+
+    // Set the role separately + best-effort, so a missing migration can't block
+    // the assignment itself (defaults to 'driver').
+    if (role === "porter") {
+      await supabase.from("booking_driver_assignments").update({ role: "porter" }).eq("id", assignment.id);
     }
 
     // Create earnings placeholder (will be calculated when invoice is paid)

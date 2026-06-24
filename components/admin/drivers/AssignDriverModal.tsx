@@ -32,6 +32,7 @@ export function AssignDriverModal({
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [payPercentageOverride, setPayPercentageOverride] = useState("");
   const [isLeadDriver, setIsLeadDriver] = useState(false);
+  const [role, setRole] = useState<"driver" | "porter">("driver");
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
   const [topId, setTopId] = useState<string>("");
 
@@ -88,6 +89,7 @@ export function AssignDriverModal({
           driverId: selectedDriverId,
           payPercentageOverride: payPercentageOverride ? parseFloat(payPercentageOverride) : null,
           isLeadDriver,
+          role,
         }),
       });
 
@@ -239,6 +241,25 @@ export function AssignDriverModal({
                   </div>
                 </div>
               </label>
+            )}
+
+            {/* Role: driver or porter */}
+            {selectedDriverId && (
+              <div className="rounded-xl border border-slate-200 p-3">
+                <div className="mb-2 text-sm font-medium text-slate-900">Role on this job</div>
+                <div className="flex gap-2">
+                  {(["driver", "porter"] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize ${role === r ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Actions */}
