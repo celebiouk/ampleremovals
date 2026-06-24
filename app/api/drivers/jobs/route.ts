@@ -28,6 +28,14 @@ export async function GET(req: Request) {
     const acceptanceById = new Map<string, { acceptance_status: string | null; decline_reason: string | null }>(
       (assigns ?? []).map((a: any) => [a.booking_id, { acceptance_status: a.acceptance_status ?? null, decline_reason: a.decline_reason ?? null }])
     );
+    // Role (driver | porter) — separate best-effort query so a missing migration
+    // never breaks the jobs list.
+    const roleById = new Map<string, string>();
+    const { data: roleRows } = await supabase
+      .from("booking_driver_assignments")
+      .select("booking_id, role")
+      .eq("driver_id", auth.driver.id);
+    for (const r of roleRows ?? []) if ((r as any).role) roleById.set((r as any).booking_id, (r as any).role);
 
     // NB: addresses(*) not (lat,lng) — resilient if the lat/lng columns aren't
     // present yet (otherwise PostgREST 500s with "column does not exist"). The
@@ -64,6 +72,10 @@ export async function GET(req: Request) {
       const ft = dateOnly(b.flexible_date_to);
       const flex = Boolean(b.is_flexible_date) && ff && ft;
       if (scope === "today") {
+        // Today's jobs, PLUS any past-dated job that still isn't delivered — it
+        // rolls over and stays in "Today" until the driver marks it done.
+        // (Completed jobs are already excluded above.)
+        if (md != null && md < today) return true;
         return md === today || (flex ? ff! <= today && ft! >= today : false);
       }
       if (scope === "upcoming") {
@@ -79,7 +91,7 @@ export async function GET(req: Request) {
     const jobs = (data ?? [])
       .filter(inScope)
       .map((b: any) => redactJobForDriver(b, acceptanceById.get(b.id)?.acceptance_status ?? null))
-      .map((b: any) => ({ ...b, decline_reason: acceptanceById.get(b.id)?.decline_reason ?? null }));
+      .map((b: any) => ({ ...b, decline_reason: acceptanceById.get(b.id)?.decline_reason ?? null, role: roleById.get(b.id) ?? "driver" }));
     return NextResponse.json({ success: true, jobs });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

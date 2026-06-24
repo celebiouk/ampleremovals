@@ -195,3 +195,7 @@ ALTER TABLE bookings
 -- ── Driver decline reason ──────────────────────────────────────────────────
 ALTER TABLE booking_driver_assignments
   ADD COLUMN IF NOT EXISTS decline_reason TEXT;
+
+-- ── Driver assignment role (driver | porter) ───────────────────────────────
+ALTER TABLE booking_driver_assignments
+  ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'driver';
