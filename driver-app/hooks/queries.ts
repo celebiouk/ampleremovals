@@ -215,3 +215,83 @@ export function useDriverStats() {
     },
   });
 }
+
+// ── Expenses ────────────────────────────────────────────────────────────────
+export interface Expense {
+  id: string; category: string; amount: number; note: string | null;
+  receipt_url: string | null; status: string; created_at: string;
+}
+export function useExpenses() {
+  return useQuery({
+    queryKey: ["expenses"],
+    queryFn: async (): Promise<Expense[]> => {
+      const res = await apiFetch("/api/drivers/expenses");
+      const j = (await res.json()) as { expenses?: Expense[] };
+      return j.expenses ?? [];
+    },
+  });
+}
+export function useSubmitExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { category: string; amount: number; note?: string; receipt_url?: string }) => {
+      const res = await apiFetch("/api/drivers/expenses", { method: "POST", body: JSON.stringify(input) });
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
+  });
+}
+
+// ── Leave / availability ──────────────────────────────────────────────────────
+export interface LeaveRequest {
+  id: string; start_date: string; end_date: string; reason: string | null;
+  status: string; created_at: string;
+}
+export function useLeave() {
+  return useQuery({
+    queryKey: ["leave"],
+    queryFn: async (): Promise<LeaveRequest[]> => {
+      const res = await apiFetch("/api/drivers/leave");
+      const j = (await res.json()) as { requests?: LeaveRequest[] };
+      return j.requests ?? [];
+    },
+  });
+}
+export function useSubmitLeave() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { start_date: string; end_date: string; reason?: string }) => {
+      const res = await apiFetch("/api/drivers/leave", { method: "POST", body: JSON.stringify(input) });
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+  });
+}
+
+// ── On-site extra charge for a job ────────────────────────────────────────────
+export function useAddCharge(bookingId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { description: string; amount: number }) => {
+      const res = await apiFetch(`/api/drivers/jobs/${bookingId}/charges`, { method: "POST", body: JSON.stringify(input) });
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["job", bookingId] }),
+  });
+}
+
+// ── Payslips ──────────────────────────────────────────────────────────────────
+export interface Payslip {
+  id: string; reference: string; gross_earnings: number; tips_total: number;
+  net_pay: number; status: string; created_at: string;
+}
+export function usePayslips() {
+  return useQuery({
+    queryKey: ["payslips"],
+    queryFn: async (): Promise<Payslip[]> => {
+      const res = await apiFetch("/api/drivers/payslips");
+      const j = (await res.json()) as { payslips?: Payslip[] };
+      return j.payslips ?? [];
+    },
+  });
+}

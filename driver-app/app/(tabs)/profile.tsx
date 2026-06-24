@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image } from "react-native";
 import Constants from "expo-constants";
-import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert, Star, CheckCircle2 } from "lucide-react-native";
+import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert, Star, CheckCircle2, Wallet, Receipt, CalendarOff } from "lucide-react-native";
 import { useRouter, type Href } from "expo-router";
 import { Screen, Card, Button, toast } from "@/components/ui";
 import { CameraCapture } from "@/components/CameraCapture";
@@ -167,6 +167,15 @@ export default function ProfileScreen() {
 
       <View style={{ marginTop: spacing.md }}>
         <Button label="Completed jobs" variant="outline" icon={<CheckCircle2 size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/completed" as Href)} fullWidth />
+      </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Button label="Payslips" variant="outline" icon={<Wallet size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/payslips" as Href)} fullWidth />
+      </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Button label="Expenses" variant="outline" icon={<Receipt size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/expenses" as Href)} fullWidth />
+      </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Button label="Time off" variant="outline" icon={<CalendarOff size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/leave" as Href)} fullWidth />
       </View>
 
       <View style={{ marginTop: spacing.md }}>

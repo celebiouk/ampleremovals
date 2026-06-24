@@ -35,6 +35,7 @@ export interface Job {
   destination?: Address | null;
   // Server-enforced visibility (lib/driver-job-view)
   acceptance_status?: "pending" | "accepted" | "declined" | null;
+  role?: "driver" | "porter" | string | null;
   visibility_phase?: "pending" | "accepted" | "declined" | "completed" | null;
   decline_reason?: string | null;
   hours_until_job?: number | null;

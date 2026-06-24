@@ -7,6 +7,7 @@ import {
 } from "lucide-react-native";
 import { Screen, Card, Button, Badge, toast, ErrorState, Skeleton } from "@/components/ui";
 import { ArrivedModal } from "@/components/ArrivedModal";
+import { JobExtraButton } from "@/components/JobExtraButton";
 import { useJob, useJobExtras } from "@/hooks/queries";
 import { colors, radius, spacing, shadows, type } from "@/lib/theme";
 import { customerShortName, serviceLabel, formatDate, formatCurrency } from "@/lib/format";
@@ -148,12 +149,26 @@ export default function JobDetailScreen() {
         </View>
       </View>
 
-      {/* Journey engine */}
-      <JourneyPanel job={j} phase={phase!} busy={busy} onStart={startJourney} onArrived={markArrived}
-        onConfirmPickup={() => router.push(`/job/${j.id}/pickup`)}
-        onConfirmDelivery={() => router.push(`/job/${j.id}/delivery`)}
-        onComplete={() => router.push(`/job/${j.id}/complete`)}
-      />
+      {/* Journey engine — porters don't drive, so they skip it (lead driver handles it) */}
+      {j.role === "porter" ? (
+        <View style={[{ borderRadius: radius.xl, padding: spacing.lg, backgroundColor: colors.white }, shadows.sm]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Badge label="Porter" bg="#ede9fe" fg="#6b21a8" />
+            <Text style={[type.bodySmall, { color: colors.slate[500], flex: 1 }]}>
+              You&apos;re a porter on this job — the lead driver handles the journey, pickup and delivery sign-off.
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <JourneyPanel job={j} phase={phase!} busy={busy} onStart={startJourney} onArrived={markArrived}
+          onConfirmPickup={() => router.push(`/job/${j.id}/pickup`)}
+          onConfirmDelivery={() => router.push(`/job/${j.id}/delivery`)}
+          onComplete={() => router.push(`/job/${j.id}/complete`)}
+        />
+      )}
+
+      {/* On-site extra charge */}
+      <JobExtraButton bookingId={j.id} />
 
       {/* Contact */}
       {j.customer?.phone ? (

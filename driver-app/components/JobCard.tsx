@@ -23,6 +23,7 @@ export function JobCard({ job, onPress }: { job: Job; onPress: () => void }) {
               fg={today ? colors.primary.DEFAULT : colors.slate[600]}
             />
             <Badge label={serviceLabel(job.service_type)} bg={colors.slate[100]} fg={svc} />
+            {job.role === "porter" ? <Badge label="Porter" bg="#ede9fe" fg="#6b21a8" /> : null}
             {status !== "not_started" ? <Badge label={JOB_STATUS_LABELS[status] ?? status} bg={tint.bg} fg={tint.fg} dot /> : null}
           </View>
 
