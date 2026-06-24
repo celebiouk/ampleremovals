@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/anyvan-rating-requests",
+      "schedule": "0 13 * * *"
+    },
+    {
       "path": "/api/cron/seven-day-countdown",
       "schedule": "0 9 * * *"
     },
