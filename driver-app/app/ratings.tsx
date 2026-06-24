@@ -56,7 +56,9 @@ export default function RatingsScreen() {
                 <Text style={[type.bodySmall, { color: colors.slate[400] }]}>{r.moveDate ? formatDate(r.moveDate) : ""}</Text>
               </View>
               <Text style={[type.label, { color: colors.slate[700] }]}>
-                {r.customerName} · {serviceLabel(r.serviceType)}
+                {serviceLabel(r.serviceType)}
+                {r.pickupOutward ? ` · ${r.pickupOutward}` : ""}
+                {r.destinationOutward ? ` → ${r.destinationOutward}` : ""}
               </Text>
               {r.feedback ? (
                 <Text style={[type.body, { color: colors.slate[600], marginTop: spacing.xs, fontStyle: "italic" }]}>“{r.feedback}”</Text>

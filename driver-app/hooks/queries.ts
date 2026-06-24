@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import type { Job, ClockStatus, DriverNotification } from "@/lib/types";
 
-type Scope = "today" | "upcoming" | "week";
+type Scope = "today" | "upcoming" | "week" | "completed";
 
 /** Jobs list for a scope, via the server route (service-role, traffic-safe). */
 export function useJobs(scope: Scope) {
@@ -18,22 +18,35 @@ export function useJobs(scope: Scope) {
   });
 }
 
-/** A single job with full detail. Read via Supabase directly (RLS lets a driver
- *  read their assigned bookings — same boundary the web portal relies on). */
+/** A single job, REDACTED server-side to what the driver may see at this stage
+ *  (phone gated to 24h before, email never, completed jobs reduced to postcodes). */
 export function useJob(bookingId: string | undefined) {
   return useQuery({
     queryKey: ["job", bookingId],
     enabled: !!bookingId,
     queryFn: async (): Promise<Job> => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          "*, customer:customers(*), origin:addresses!origin_address_id(*), destination:addresses!destination_address_id(*)"
-        )
-        .eq("id", bookingId)
-        .single();
-      if (error) throw new Error(error.message);
-      return data as Job;
+      const res = await apiFetch(`/api/drivers/jobs/${bookingId}`);
+      const json = (await res.json()) as { success: boolean; job?: Job; error?: string };
+      if (!json.success || !json.job) throw new Error(json.error || "Failed to load job");
+      return json.job;
+    },
+  });
+}
+
+/** Accept or decline an assigned job. Decline requires a reason. */
+export function useRespondToJob(bookingId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { action: "accept" | "decline"; reason?: string }) => {
+      const res = await apiFetch(`/api/drivers/jobs/${bookingId}/respond`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+      qc.invalidateQueries({ queryKey: ["job", bookingId] });
     },
   });
 }
@@ -99,7 +112,8 @@ export interface DriverRating {
   rating: number;
   feedback: string | null;
   completedAt: string | null;
-  customerName: string;
+  pickupOutward: string | null;
+  destinationOutward: string | null;
 }
 export interface DriverRatingsResult {
   average: number | null;

@@ -8,6 +8,7 @@ export interface Address {
   city?: string | null;
   county?: string | null;
   postcode?: string | null;
+  postcode_outward?: string | null; // completed jobs: only the outward code survives
   lat?: number | null;
   lng?: number | null;
 }
@@ -32,6 +33,13 @@ export interface Job {
   customer?: Customer | null;
   origin?: Address | null;
   destination?: Address | null;
+  // Server-enforced visibility (lib/driver-job-view)
+  acceptance_status?: "pending" | "accepted" | "declined" | null;
+  visibility_phase?: "pending" | "accepted" | "declined" | "completed" | null;
+  decline_reason?: string | null;
+  hours_until_job?: number | null;
+  phone_unlocks_in_hours?: number | null;
+  rating?: number | null; // completed jobs: the customer's rating
   // Journey / chain-of-custody state (from add_driver_app.sql)
   current_journey_leg?: "pickup" | "delivery" | null;
   journey_started_at?: string | null;
