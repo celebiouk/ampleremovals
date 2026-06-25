@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, CalendarDays, User } from "lucide-react-native";
+import { Home, CalendarDays, User, BarChart3, Receipt } from "lucide-react-native";
 
 export default function TabsLayout() {
   return (
@@ -13,6 +13,8 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: ({ color }) => <Home size={22} color={color} /> }} />
       <Tabs.Screen name="schedule" options={{ title: "Schedule", tabBarIcon: ({ color }) => <CalendarDays size={22} color={color} /> }} />
+      <Tabs.Screen name="performance" options={{ title: "Stats", tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} /> }} />
+      <Tabs.Screen name="expenses" options={{ title: "Expenses", tabBarIcon: ({ color }) => <Receipt size={22} color={color} /> }} />
       {/* Alerts tab removed — drivers get push notifications; no in-app alerts feed needed. */}
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <User size={22} color={color} /> }} />

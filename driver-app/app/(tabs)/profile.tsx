@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Image } from "react-native";
 import Constants from "expo-constants";
-import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert, Star, CheckCircle2, Wallet, Receipt, CalendarOff, BarChart3 } from "lucide-react-native";
+import { Camera, LogOut, Car, IdCard, Phone, User, ShieldAlert, Star, CheckCircle2, Wallet, CalendarOff } from "lucide-react-native";
 import { useRouter, type Href } from "expo-router";
 import { Screen, Card, Button, toast } from "@/components/ui";
 import { CameraCapture } from "@/components/CameraCapture";
@@ -162,9 +162,6 @@ export default function ProfileScreen() {
       </Card>
 
       <View style={{ marginTop: spacing.xl }}>
-        <Button label="My performance" variant="outline" icon={<BarChart3 size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/performance" as Href)} fullWidth />
-      </View>
-      <View style={{ marginTop: spacing.md }}>
         <Button label="My ratings" variant="outline" icon={<Star size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/ratings")} fullWidth />
       </View>
 
@@ -173,9 +170,6 @@ export default function ProfileScreen() {
       </View>
       <View style={{ marginTop: spacing.md }}>
         <Button label="Payslips" variant="outline" icon={<Wallet size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/payslips" as Href)} fullWidth />
-      </View>
-      <View style={{ marginTop: spacing.md }}>
-        <Button label="Expenses" variant="outline" icon={<Receipt size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/expenses" as Href)} fullWidth />
       </View>
       <View style={{ marginTop: spacing.md }}>
         <Button label="Time off" variant="outline" icon={<CalendarOff size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/leave" as Href)} fullWidth />
