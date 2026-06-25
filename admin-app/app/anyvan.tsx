@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Truck, Check, Star } from "lucide-react-native";
 import { LargeHeader } from "@/components/shared/LargeHeader";
 import { Card, Button, Input, Badge, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { DateField } from "@/components/DateField";
 import { useAnyVanJobs, useAddAnyVanJob } from "@/hooks/useOps";
 import { colors } from "@/lib/colors";
 import { type } from "@/lib/typography";
@@ -53,8 +54,8 @@ export default function AnyVanScreen() {
           <Input label="Email (optional)" value={email} onChangeText={setEmail} placeholder="name@email.com" autoCapitalize="none" keyboardType="email-address" />
           <Input label="Amount (£, optional)" value={amount} onChangeText={setAmount} placeholder="0.00" keyboardType="decimal-pad" />
           <View className="flex-row gap-3">
-            <View className="flex-1"><Input label="Delivery date" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" autoCapitalize="none" /></View>
-            <View className="flex-1"><Input label="Time" value={time} onChangeText={setTime} placeholder="HH:MM" autoCapitalize="none" /></View>
+            <View className="flex-1"><DateField label="Delivery date" value={date} onChange={setDate} placeholder="Pick date" /></View>
+            <View className="flex-1"><DateField label="Time" mode="time" value={time} onChange={setTime} placeholder="Pick time" /></View>
           </View>
           <Input label="Driver name" value={driver} onChangeText={setDriver} placeholder="Who did the job" />
           <View className="mt-2">

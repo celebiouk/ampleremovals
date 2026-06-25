@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { CalendarOff, Check } from "lucide-react-native";
 import { Screen, Card, Button, Badge, EmptyState, ErrorState, Skeleton, toast } from "@/components/ui";
+import { DateField } from "@/components/DateField";
 import { useLeave, useSubmitLeave } from "@/hooks/queries";
 import { formatDate } from "@/lib/format";
 import { colors, radius, spacing, type } from "@/lib/theme";
@@ -11,7 +12,6 @@ const TINT: Record<string, { bg: string; fg: string }> = {
   approved: { bg: "#dcfce7", fg: "#166534" },
   rejected: { bg: "#fee2e2", fg: "#991b1b" },
 };
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function LeaveScreen() {
   const list = useLeave();
@@ -21,8 +21,8 @@ export default function LeaveScreen() {
   const [reason, setReason] = useState("");
 
   async function send() {
-    if (!ISO.test(start)) { toast.warning("Enter a start date as YYYY-MM-DD"); return; }
-    const e = ISO.test(end) ? end : start;
+    if (!start) { toast.warning("Pick a start date"); return; }
+    const e = end || start;
     try {
       await submit.mutateAsync({ start_date: start, end_date: e, reason: reason.trim() || undefined });
       toast.success("Request sent", "The office will review it");
@@ -36,12 +36,10 @@ export default function LeaveScreen() {
     <Screen title="Time off" back onRefresh={() => list.refetch()} refreshing={list.isRefetching}>
       <Card>
         <Text style={[type.label, { color: colors.primary.DEFAULT, marginBottom: spacing.sm }]}>Request time off</Text>
-        <Text style={[type.bodySmall, { color: colors.slate[500], marginBottom: spacing.md }]}>Dates as YYYY-MM-DD. Leave the end date blank for a single day.</Text>
+        <Text style={[type.bodySmall, { color: colors.slate[500], marginBottom: spacing.md }]}>Pick a start date. Leave the end blank for a single day.</Text>
         <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm }}>
-          <TextInput value={start} onChangeText={setStart} placeholder="Start (YYYY-MM-DD)" placeholderTextColor={colors.slate[400]} autoCapitalize="none"
-            style={[type.bodyLarge, { flex: 1, color: colors.slate[900], height: 52, borderWidth: 1.5, borderColor: colors.slate[200], borderRadius: radius.md, paddingHorizontal: spacing.md }]} />
-          <TextInput value={end} onChangeText={setEnd} placeholder="End (optional)" placeholderTextColor={colors.slate[400]} autoCapitalize="none"
-            style={[type.bodyLarge, { flex: 1, color: colors.slate[900], height: 52, borderWidth: 1.5, borderColor: colors.slate[200], borderRadius: radius.md, paddingHorizontal: spacing.md }]} />
+          <View style={{ flex: 1 }}><DateField label="Start" value={start} onChange={setStart} placeholder="Pick date" /></View>
+          <View style={{ flex: 1 }}><DateField label="End (optional)" value={end} onChange={setEnd} placeholder="Same day" minimumDate={start ? new Date(`${start}T12:00:00`) : undefined} /></View>
         </View>
         <TextInput value={reason} onChangeText={setReason} placeholder="Reason (optional)" placeholderTextColor={colors.slate[400]}
           style={[type.bodyLarge, { color: colors.slate[900], height: 52, borderWidth: 1.5, borderColor: colors.slate[200], borderRadius: radius.md, paddingHorizontal: spacing.md, marginBottom: spacing.md }]} />

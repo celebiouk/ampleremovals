@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
-import { View, Text, TextInput } from "react-native";
-import { CheckCircle2, Star } from "lucide-react-native";
+import { View, Text, Pressable } from "react-native";
+import { CheckCircle2, Star, X } from "lucide-react-native";
 import { Screen, Card, EmptyState, ErrorState, Skeleton, Badge } from "@/components/ui";
+import { DateField } from "@/components/DateField";
 import { useJobs } from "@/hooks/queries";
 import { serviceLabel, formatDate } from "@/lib/format";
 import { colors, radius, spacing, type } from "@/lib/theme";
-
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Past jobs — heavily redacted: only outward postcodes + the rating survive.
  *  Filterable by a date range (a single day = same from/to). */
@@ -17,24 +16,29 @@ export default function CompletedScreen() {
 
   const filtered = useMemo(() => {
     const all = jobs.data ?? [];
-    const f = ISO.test(from) ? from : null;
-    const t = ISO.test(to) ? to : f; // single date if only "from" set
-    if (!f) return all;
+    if (!from) return all;
+    const t = to || from; // single date if only "from" set
     return all.filter((j) => {
       const d = (j.move_date ?? "").slice(0, 10);
-      return d && d >= f && d <= (t ?? f);
+      return d && d >= from && d <= t;
     });
   }, [jobs.data, from, to]);
 
   return (
     <Screen title="Completed jobs" back onRefresh={() => jobs.refetch()} refreshing={jobs.isRefetching}>
       <Card style={{ marginBottom: spacing.base }}>
-        <Text style={[type.label, { color: colors.primary.DEFAULT, marginBottom: spacing.sm }]}>Filter by date</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm }}>
+          <Text style={[type.label, { color: colors.primary.DEFAULT }]}>Filter by date</Text>
+          {(from || to) ? (
+            <Pressable onPress={() => { setFrom(""); setTo(""); }} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <X size={14} color={colors.slate[400]} />
+              <Text style={[type.bodySmall, { color: colors.slate[500] }]}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          <TextInput value={from} onChangeText={setFrom} placeholder="From (YYYY-MM-DD)" placeholderTextColor={colors.slate[400]} autoCapitalize="none"
-            style={[type.body, { flex: 1, color: colors.slate[900], height: 46, borderWidth: 1.5, borderColor: colors.slate[200], borderRadius: radius.md, paddingHorizontal: spacing.md }]} />
-          <TextInput value={to} onChangeText={setTo} placeholder="To (optional)" placeholderTextColor={colors.slate[400]} autoCapitalize="none"
-            style={[type.body, { flex: 1, color: colors.slate[900], height: 46, borderWidth: 1.5, borderColor: colors.slate[200], borderRadius: radius.md, paddingHorizontal: spacing.md }]} />
+          <View style={{ flex: 1 }}><DateField label="From" value={from} onChange={setFrom} placeholder="Any" /></View>
+          <View style={{ flex: 1 }}><DateField label="To" value={to} onChange={setTo} placeholder="Same day" minimumDate={from ? new Date(`${from}T12:00:00`) : undefined} /></View>
         </View>
       </Card>
       {jobs.isLoading ? (
