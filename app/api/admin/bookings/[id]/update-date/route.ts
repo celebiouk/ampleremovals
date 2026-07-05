@@ -47,10 +47,12 @@ export async function POST(
     const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer as { full_name: string; email: string; phone: string };
     const oldDate = booking.move_date;
 
-    // Update move date
+    // Update move date. Setting a specific date pins the booking to a FIXED date,
+    // so clear the flexible-date flag — otherwise the UI keeps showing the old
+    // "Flexible: from – to" range and the change looks like it didn't take.
     const { error: updateError } = await supabase
       .from("bookings")
-      .update({ move_date: moveDate })
+      .update({ move_date: moveDate, is_flexible_date: false })
       .eq("id", bookingId);
 
     if (updateError) {
