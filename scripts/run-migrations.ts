@@ -101,6 +101,31 @@ const MIGRATIONS = [
       ) AS v(name,trigger_event,action_type,delay_minutes,is_active)
       WHERE NOT EXISTS (SELECT 1 FROM automation_rules LIMIT 1)`,
   },
+  // Instant-quote + lead flow (Removals) — see add_instant_quote_lead_flow.sql
+  {
+    name: "bookings instant-quote/lead columns",
+    sql: `ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS floor TEXT,
+      ADD COLUMN IF NOT EXISTS has_lift BOOLEAN,
+      ADD COLUMN IF NOT EXISTS parking_within_20m BOOLEAN,
+      ADD COLUMN IF NOT EXISTS special_instructions TEXT,
+      ADD COLUMN IF NOT EXISTS inventory JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS has_white_goods BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS deposit_amount NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS deposit_status TEXT DEFAULT 'unpaid',
+      ADD COLUMN IF NOT EXISTS deposit_claimed_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS is_partial_lead BOOLEAN DEFAULT FALSE`,
+  },
+  { name: "bookings deposit_status check", sql: "ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_deposit_status_check" },
+  { name: "bookings deposit_status check add", sql: "ALTER TABLE bookings ADD CONSTRAINT bookings_deposit_status_check CHECK (deposit_status IN ('unpaid','claimed','verified'))" },
+  {
+    name: "additional_services add-on quantities",
+    sql: `ALTER TABLE additional_services
+      ADD COLUMN IF NOT EXISTS packing_hours INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS dismantle_count INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS assemble_count INT DEFAULT 0`,
+  },
+  { name: "bookings partial_lead index", sql: "CREATE INDEX IF NOT EXISTS idx_bookings_partial_lead ON bookings (is_partial_lead) WHERE is_partial_lead = TRUE" },
 ];
 
 async function run() {

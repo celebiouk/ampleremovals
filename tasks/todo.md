@@ -5,7 +5,8 @@ Ends in an editable instant quote → "Reserve My Moving Date" → 25% **bank-tr
 deposit (customer self-declares "I've paid" → team verifies). Reduce manual work.
 
 ### Locked decisions
-- Scope: **Removals + Man & Van** only.
+- Scope: **Removals only** for the auto-quote (Man & Van auto-quote deferred — keeps
+  its existing manual flow for now).
 - Removals price (no white goods / with): studio 400/450, 1-bed 450/500, 2-bed 500/550,
   3-bed 550/600, 4-bed 600/650, 5+ 650/700. White goods = **flat +£50, hidden**, folded
   into base line (not removable, not shown).
@@ -17,20 +18,21 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
 - "Parking within 20m" = unpaid **access question** (not a paid service).
 
 ### Pending inputs from owner
-- [ ] Man & Van small / medium / large flat prices.
-- [ ] Bank details for the deposit screen (account name, sort code, account number, ref).
-- [ ] Confirm EOT extrapolated bands + studio/1-bed removals bands.
+- [x] ~~Man & Van prices~~ — auto-quote deferred, not needed for now.
+- [x] Bank details — RECEIVED (Ample Logistics Limited, 30-54-66, 12963462) → in env.
+- [ ] `DATABASE_URL` in .env.local so I can APPLY the migration automatically.
+- [ ] Confirm EOT extrapolated bands + studio/1-bed removals bands (currently assumed).
 
 ### Plan
 **Phase A — Foundation (server, testable now)**
-- [x] `lib/quote-engine.ts` — instant quote + 25% deposit (Removals locked; M&V stubbed). Verified.
-- [ ] Migration `add_instant_quote_lead_flow.sql`: on `bookings` add `floor`, `has_lift`,
-      `parking_within_20m`, `special_instructions`, `inventory JSONB`, `has_white_goods`,
-      `deposit_amount`, `deposit_status` (unpaid|claimed|verified), `deposit_claimed_at`,
-      `is_partial_lead`; on `additional_services` add `packing_hours`, `dismantle_count`,
-      `assemble_count`. (Reuse existing `quote_line_items`/`quote_total` + `quote_confirmed`.)
-- [ ] Extend booking Zod schema + `createBooking` to persist the new fields, derive
-      `has_white_goods`, compute & store the quote + `deposit_amount`.
+- [x] `lib/quote-engine.ts` — instant quote + 25% deposit (Removals only, verified).
+- [x] `lib/inventory-catalog.ts` — item template taxonomy + white-goods detection.
+- [x] Migration `add_instant_quote_lead_flow.sql` written + added to run-migrations.ts.
+      ⚠ NOT YET APPLIED — needs `DATABASE_URL`.
+- [x] Extended booking Zod schema + `createBooking`: persists floor/lift/parking/
+      special-instructions/inventory, derives `has_white_goods`, computes & stores the
+      quote + `deposit_amount` (best-effort, tolerant of the un-applied migration).
+- [x] Bank details wired into env (.env.local + .env.example).
 **Phase B — Capture UI (web wizard)**
 - [ ] `InventoryStep` — item template with variants + quantities, designed to feel FAST.
 - [ ] `AccessStep` — floor / which floor / lift / parking-within-20m / special instructions.

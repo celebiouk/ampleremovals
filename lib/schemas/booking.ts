@@ -56,6 +56,29 @@ const flexibleDateFields = {
   flexibleDateTo: z.coerce.date().optional(),
 };
 
+/** One selected inventory line from the item template. */
+export const InventorySelectionSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  variant: z.string().optional(),
+  quantity: z.coerce.number().int().min(1).max(99),
+});
+
+/**
+ * Logistics + item-template fields shared by move services. All optional so the
+ * existing flows keep validating; the new capture UI (Phase B) populates them.
+ */
+const logisticsFields = {
+  inventory: z.array(InventorySelectionSchema).optional().default([]),
+  floor: z.string().trim().max(20).optional(),
+  hasLift: z.boolean().optional(),
+  parkingWithin20m: z.boolean().optional(),
+  specialInstructions: z.string().trim().max(1000).optional(),
+  packingHours: z.coerce.number().int().min(0).max(40).optional().default(0),
+  dismantleCount: z.coerce.number().int().min(0).max(99).optional().default(0),
+  assembleCount: z.coerce.number().int().min(0).max(99).optional().default(0),
+};
+
 /** Shared refinement for the flexible/specific date step. */
 function validateFlexibleDate(
   d: {
@@ -114,6 +137,7 @@ export const RemovalsFormSchema = z
     additionalServices: AdditionalServicesSchema,
     description: z.string().trim().min(20, "Please give us at least 20 characters of detail"),
     wantsEotCleaning: z.boolean().optional(),
+    ...logisticsFields,
     ...flexibleDateFields,
     ...contactFields,
   })

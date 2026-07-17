@@ -105,6 +105,17 @@ export interface Booking {
   lead_score?: number | null;
   lead_band?: string | null;
   wants_eot_cleaning?: boolean | null;
+  // Instant-quote + lead flow (Removals)
+  floor?: string | null;
+  has_lift?: boolean | null;
+  parking_within_20m?: boolean | null;
+  special_instructions?: string | null;
+  inventory?: { key: string; label: string; variant?: string; quantity: number }[] | null;
+  has_white_goods?: boolean | null;
+  deposit_amount?: number | null;
+  deposit_status?: "unpaid" | "claimed" | "verified" | null;
+  deposit_claimed_at?: string | null;
+  is_partial_lead?: boolean | null;
   // Quote fields
   quote_line_items: QuoteLineItem[] | null;
   quote_subtotal: number | null;
@@ -175,6 +186,10 @@ export interface AdditionalServices {
   packing_materials: boolean;
   disassemble_furniture: boolean;
   assemble_furniture: boolean;
+  // Quantities that feed the instant-quote engine.
+  packing_hours?: number;
+  dismantle_count?: number;
+  assemble_count?: number;
 }
 
 // ── Activity / audit tables ───────────────────────────────

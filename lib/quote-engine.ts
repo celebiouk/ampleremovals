@@ -1,5 +1,5 @@
 /**
- * Instant customer-facing quote engine (Removals + Man & Van).
+ * Instant customer-facing quote engine (Removals only, for now).
  *
  * Deterministic, no AI. Produces the line items the CUSTOMER sees plus the total
  * and the 25% deposit. This is intentionally separate from
@@ -7,11 +7,13 @@
  * this one encodes the owner's published pricing that customers are quoted and
  * can act on directly.
  *
+ * Man & Van is deliberately NOT auto-quoted yet — it keeps the existing manual
+ * flow until the owner confirms van-size pricing.
+ *
  * Pricing rules (confirmed with the owner):
  *  - Removals base is by bedroom band. Having ANY white goods adds a FLAT £50 —
  *    folded INTO the base line so the customer never sees the uplift as its own
  *    row and cannot remove it.
- *  - Man & Van is priced by van size (flat), not bedrooms.
  *  - Packing: £35 / hour × hours the customer selects.
  *  - Dismantling: £20 / item × quantity.
  *  - Assembling: £20 / item × quantity.
@@ -33,11 +35,8 @@ export interface QuoteLine extends QuoteLineItem {
 }
 
 export interface QuoteEngineInput {
-  serviceType: "removals" | "man_and_van";
   /** Removals: "studio" | "1" | "2" | "3" | "4" | "5+" */
   bedrooms?: string | null;
-  /** Man & Van: "small" | "medium" | "large" */
-  vanType?: string | null;
   /** True if the inventory includes any white good (fridge freezer, washing
    *  machine, tumble dryer, dishwasher, chest freezer). Adds a hidden +£50. */
   hasWhiteGoods?: boolean;
@@ -77,17 +76,6 @@ const REMOVALS_BASE: Record<string, number> = {
   "5+": 650,
 };
 
-/**
- * Man & Van flat price by van size.
- * TODO(owner): PLACEHOLDER values — replace with the real small/medium/large
- * prices before Man & Van goes live. Kept non-zero so the engine is testable.
- */
-const MAN_AND_VAN_BY_VAN: Record<string, number> = {
-  small: 250,
-  medium: 350,
-  large: 450,
-};
-
 /** Packing help, per hour. */
 export const PACKING_PER_HOUR = 35;
 
@@ -122,30 +110,16 @@ export function buildQuote(input: QuoteEngineInput): QuoteEngineResult {
   const lines: QuoteLine[] = [];
 
   // 1. Base move price (not removable). White-goods uplift folded in silently.
-  if (input.serviceType === "removals") {
-    const bedrooms = input.bedrooms && input.bedrooms in REMOVALS_BASE ? input.bedrooms : "1";
-    const base = REMOVALS_BASE[bedrooms] + (input.hasWhiteGoods ? WHITE_GOODS_UPLIFT : 0);
-    lines.push({
-      key: "base",
-      description: `Removals — ${bedroomLabel(bedrooms)}`,
-      quantity: 1,
-      unit_price: base,
-      total: base,
-      removable: false,
-    });
-  } else {
-    const vanType = input.vanType && input.vanType in MAN_AND_VAN_BY_VAN ? input.vanType : "small";
-    const base = MAN_AND_VAN_BY_VAN[vanType];
-    const vanLabel = vanType.charAt(0).toUpperCase() + vanType.slice(1);
-    lines.push({
-      key: "base",
-      description: `Man & Van — ${vanLabel} van`,
-      quantity: 1,
-      unit_price: base,
-      total: base,
-      removable: false,
-    });
-  }
+  const bedrooms = input.bedrooms && input.bedrooms in REMOVALS_BASE ? input.bedrooms : "1";
+  const base = REMOVALS_BASE[bedrooms] + (input.hasWhiteGoods ? WHITE_GOODS_UPLIFT : 0);
+  lines.push({
+    key: "base",
+    description: `Removals — ${bedroomLabel(bedrooms)}`,
+    quantity: 1,
+    unit_price: base,
+    total: base,
+    removable: false,
+  });
 
   // 2. Packing help (£35/hr) — removable.
   const packingHours = Math.max(0, Math.floor(input.packingHours ?? 0));

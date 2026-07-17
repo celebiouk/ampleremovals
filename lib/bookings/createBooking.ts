@@ -5,6 +5,8 @@ import { deriveSource, type Attribution } from "@/lib/attribution";
 import { computeLeadScore } from "@/lib/lead-scoring";
 import { detectIntent } from "@/lib/lead-signals";
 import { ukDateString } from "@/lib/dates";
+import { buildQuote } from "@/lib/quote-engine";
+import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -231,6 +233,59 @@ export async function createBooking(
       access_instructions: d.accessInstructions ?? null,
       addons: d.addons ?? [],
     });
+  }
+
+  // 5b. Removals instant quote + logistics. Best-effort so a booking never fails
+  // if the instant-quote migration hasn't been applied yet (Lesson 11).
+  if (serviceType === "removals") {
+    const d = data as RemovalsForm;
+    const inventory = Array.isArray(d.inventory) ? d.inventory : [];
+    const whiteGoods = hasWhiteGoods(inventory);
+    const quote = buildQuote({
+      bedrooms: d.bedrooms,
+      hasWhiteGoods: whiteGoods,
+      packingHours: d.packingHours ?? 0,
+      dismantleCount: d.dismantleCount ?? 0,
+      assembleCount: d.assembleCount ?? 0,
+      eotCleaning: Boolean(d.wantsEotCleaning),
+    });
+
+    try {
+      const { error: quoteErr } = await supabase
+        .from("bookings")
+        .update({
+          floor: d.floor ?? null,
+          has_lift: d.hasLift ?? null,
+          parking_within_20m: d.parkingWithin20m ?? null,
+          special_instructions: d.specialInstructions ?? null,
+          inventory,
+          has_white_goods: whiteGoods,
+          // Reuse the existing quote columns; store full lines (incl. key +
+          // removable) so the reveal screen can edit them.
+          quote_line_items: quote.lines,
+          quote_subtotal: quote.total,
+          quote_total: quote.total,
+          deposit_amount: quote.depositAmount,
+        })
+        .eq("id", bookingId);
+      if (quoteErr) console.warn("removals quote/logistics update skipped:", quoteErr.message);
+    } catch (e) {
+      console.warn("removals quote/logistics update skipped:", e);
+    }
+
+    try {
+      const { error: qtyErr } = await supabase
+        .from("additional_services")
+        .update({
+          packing_hours: d.packingHours ?? 0,
+          dismantle_count: d.dismantleCount ?? 0,
+          assemble_count: d.assembleCount ?? 0,
+        })
+        .eq("booking_id", bookingId);
+      if (qtyErr) console.warn("additional_services quantities update skipped:", qtyErr.message);
+    } catch (e) {
+      console.warn("additional_services quantities update skipped:", e);
+    }
   }
 
   // 6. Status history + activity log (best-effort).
