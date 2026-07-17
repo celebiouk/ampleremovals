@@ -46,7 +46,6 @@ export async function markQuoteSent(
       previous_status: previousStatus,
       new_status: "quote_sent",
       changed_by: "system",
-      reason: "Instant quote generated and sent to customer",
     }),
     supabase.from("activity_log").insert({
       booking_id: bookingId,
