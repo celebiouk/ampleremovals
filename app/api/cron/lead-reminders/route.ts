@@ -12,8 +12,12 @@ const SCHEDULE_HOURS = [2, 7, 24, 72, 120];
 /**
  * GET /api/cron/lead-reminders
  * Chases pending New Leads (is_partial_lead) that the customer hasn't completed,
- * sending the next due reminder (email + SMS + WhatsApp) at 2h / 7h / 24h / 72h /
- * 5 days after creation, then stopping. Runs frequently (see vercel.json).
+ * sending the NEXT due reminder (email + SMS + WhatsApp) per run, then stopping
+ * after all 5 (or >5 days). Thresholds are 2h/7h/24h/72h/120h since creation.
+ *
+ * On Vercel Hobby crons run once daily (see vercel.json), so in practice this
+ * sends ~one nudge per day for up to 5 days. On Pro the schedule can be tightened
+ * to hourly to hit the exact 2h/7h early cadence.
  */
 export async function GET(req: Request) {
   if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
