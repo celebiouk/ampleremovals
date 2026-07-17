@@ -57,11 +57,17 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
 - [x] createBooking split so the quote persists into existing columns pre-migration.
       Verified: page renders, routes compile + reject bad tokens (401). Full happy-path
       E2E pending the migration + a real submission (avoided polluting prod).
-**Phase D — Admin "New Lead" + self-serve completion link**
-- [ ] Admin web `New Lead` (name/email/phone → Complete) + `/api/admin/leads/create`.
-- [ ] Tri-channel invite (SMS + email + WhatsApp) with unique completion link.
-- [ ] `/complete/[bookingId]/[token]` page — greets by name, prefilled contact, runs
-      capture + quote flow. Reuse `lib/tokens.ts` HMAC pattern.
+**Phase D — Admin "New Lead" + self-serve completion link** ✅
+- [x] Admin web `New Lead` page (name/email/phone → Complete) + nav entry (AdminShell)
+      + `/api/admin/leads/create` (requireAdmin; creates partial lead; shows link).
+- [x] Tri-channel invite `lib/lead-invite.ts` (email + SMS + WhatsApp free-text).
+      TODO: add a `lead_details_request` WhatsApp template for guaranteed delivery.
+- [x] `/complete/[bookingId]/[token]` page — verifies token server-side, greets by
+      name, renders the Removals wizard in COMPLETION mode (CompletionFlow) with
+      contact pre-filled; submit → `/api/leads/complete` → `completeLead` updates the
+      existing booking + quote → routes to the quote page. Reuses lib/tokens HMAC.
+- [x] WizardConfig.completion + useBookingForm completion branch (update, not create).
+      Verified: pages render, routes compile + enforce token/admin auth (401/307).
 **Phase E — Admin mobile "New Lead"** (EAS rebuild)
 - [ ] New Lead quick-create screen in admin-app.
 **Phase F — Polish, test end-to-end, deploy.**

@@ -24,7 +24,7 @@ import type {
 const toDateString = (d?: Date | null): string | null =>
   d ? ukDateString(d) : null;
 
-async function insertAddress(
+export async function insertAddress(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   address: AddressOption

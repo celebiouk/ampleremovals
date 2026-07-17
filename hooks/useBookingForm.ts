@@ -80,11 +80,21 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
           value instanceof Date ? [key, toISODate(value)] : [key, value]
         )
       );
-      const res = await fetch(config.apiPath, {
+
+      // Completion mode: update the admin-created lead instead of creating a new
+      // booking, then jump straight to its quote page.
+      const isCompletion = Boolean(config.completion);
+      const endpoint = isCompletion ? "/api/leads/complete" : config.apiPath;
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Attach first-touch marketing attribution (utm/click ids/referrer).
-        body: JSON.stringify({ ...payload, attribution: readAttribution() }),
+        // Attach first-touch marketing attribution (utm/click ids/referrer), and
+        // the lead id + token when completing.
+        body: JSON.stringify({
+          ...payload,
+          attribution: readAttribution(),
+          ...(isCompletion ? config.completion : {}),
+        }),
       });
       const data = (await res.json()) as {
         success: boolean;
@@ -101,9 +111,12 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       // Fire conversion pixels (no-ops if pixels aren't configured).
       trackLead({ reference: data.reference, service: config.slug });
 
-      // Removals gets the instant-quote → reserve → deposit flow. Every other
-      // service keeps the plain confirmation page.
-      if (config.slug === "removals" && data.bookingId && data.quoteToken) {
+      // Completion mode: straight to the lead's quote page (we already hold its
+      // id + token). Otherwise Removals gets the instant-quote flow and every
+      // other service keeps the plain confirmation page.
+      if (config.completion) {
+        router.push(`/quote/${config.completion.bookingId}/${config.completion.token}`);
+      } else if (config.slug === "removals" && data.bookingId && data.quoteToken) {
         router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
       } else {
         router.push(

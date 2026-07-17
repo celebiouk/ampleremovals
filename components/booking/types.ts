@@ -22,4 +22,10 @@ export interface WizardConfig<T extends FieldValues = FieldValues> {
   schema: z.ZodType<any, any, any>;
   defaultValues: DefaultValues<T>;
   steps: WizardStep[];
+  /**
+   * When present, the wizard is COMPLETING an existing admin-created lead rather
+   * than creating a new booking: submit updates that booking (via the completion
+   * endpoint) and routes to its quote page.
+   */
+  completion?: { bookingId: string; token: string };
 }
