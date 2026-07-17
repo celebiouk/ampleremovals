@@ -464,18 +464,52 @@ export default function BookingDetailPage() {
                 {(endOfTenancyDetails.addons?.length ?? 0) > 0 && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Add-ons</dt><dd className="font-medium">{endOfTenancyDetails.addons?.join(", ")}</dd></div>}
                 {endOfTenancyDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="font-medium">{endOfTenancyDetails.access_instructions}</dd></div>}
               </>)}
+
+              {/* Access details captured in the wizard (removals) */}
+              {booking.floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.floor === "ground" ? "Ground floor" : `Floor ${booking.floor}`}</dd></div>}
+              {booking.has_lift != null && <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.has_lift ? "Yes" : "No"}</dd></div>}
+              {booking.parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.parking_within_20m ? "Yes" : "No"}</dd></div>}
+              {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Special Instructions</dt><dd className="font-medium">{booking.special_instructions}</dd></div>}
             </dl>
           </Card>
 
+          {Array.isArray(booking.inventory) && booking.inventory.length > 0 && (
+            <Card title="Items to Move">
+              <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+                {booking.inventory.map((it, i) => (
+                  <li key={i} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5">
+                    <span className="text-slate-700">{it.label}</span>
+                    <span className="font-semibold text-brand-purple-800">×{it.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
           {additionalServices && (
             <Card title="Additional Services">
-              {[additionalServices.packing_services && "Packing Services", additionalServices.packing_materials && "Packing Materials", additionalServices.disassemble_furniture && "Disassemble Furniture", additionalServices.assemble_furniture && "Assemble Furniture"].filter(Boolean).length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {[additionalServices.packing_services && "Packing Services", additionalServices.packing_materials && "Packing Materials", additionalServices.disassemble_furniture && "Disassemble Furniture", additionalServices.assemble_furniture && "Assemble Furniture"].filter(Boolean).map(s => (
-                    <span key={s as string} className="rounded-full bg-brand-green-50 px-3 py-1 text-xs font-medium text-brand-green-800">{s as string}</span>
-                  ))}
-                </div>
-              ) : <p className="text-sm text-slate-400">No additional services requested</p>}
+              {(() => {
+                // Prefer the instant-quote quantities; fall back to the legacy booleans.
+                const extras = [
+                  additionalServices.packing_hours
+                    ? `Packing — ${additionalServices.packing_hours} hr${additionalServices.packing_hours === 1 ? "" : "s"}`
+                    : additionalServices.packing_services ? "Packing Services" : null,
+                  additionalServices.packing_materials ? "Packing Materials" : null,
+                  additionalServices.dismantle_count
+                    ? `Dismantle — ${additionalServices.dismantle_count} item${additionalServices.dismantle_count === 1 ? "" : "s"}`
+                    : additionalServices.disassemble_furniture ? "Disassemble Furniture" : null,
+                  additionalServices.assemble_count
+                    ? `Assemble — ${additionalServices.assemble_count} item${additionalServices.assemble_count === 1 ? "" : "s"}`
+                    : additionalServices.assemble_furniture ? "Assemble Furniture" : null,
+                ].filter(Boolean) as string[];
+                return extras.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {extras.map((s) => (
+                      <span key={s} className="rounded-full bg-brand-green-50 px-3 py-1 text-xs font-medium text-brand-green-800">{s}</span>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-slate-400">No additional services requested</p>;
+              })()}
             </Card>
           )}
 

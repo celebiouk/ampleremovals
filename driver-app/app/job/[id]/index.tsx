@@ -240,6 +240,48 @@ export default function JobDetailScreen() {
         </Card>
       ) : null}
 
+      {/* Access — floor / lift / parking the customer told us about */}
+      {(j.floor || j.has_lift != null || j.parking_within_20m != null) ? (
+        <Card style={{ marginTop: spacing.base }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
+            <Home size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Access</Text>
+          </View>
+          {j.floor ? (
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
+              <Text style={[type.body, { color: colors.slate[500] }]}>Floor</Text>
+              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.floor === "ground" ? "Ground floor" : `Floor ${j.floor}`}</Text>
+            </View>
+          ) : null}
+          {j.has_lift != null ? (
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
+              <Text style={[type.body, { color: colors.slate[500] }]}>Lift</Text>
+              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.has_lift ? "Yes" : "No"}</Text>
+            </View>
+          ) : null}
+          {j.parking_within_20m != null ? (
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
+              <Text style={[type.body, { color: colors.slate[500] }]}>Parking within 20m</Text>
+              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.parking_within_20m ? "Yes" : "No"}</Text>
+            </View>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {/* What you're moving — the customer's item list */}
+      {Array.isArray(j.inventory) && j.inventory.length > 0 ? (
+        <Card style={{ marginTop: spacing.base }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
+            <Package size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>What you&apos;re moving</Text>
+          </View>
+          {j.inventory.map((it, i) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
+              <Text style={[type.body, { color: colors.slate[700], flex: 1 }]}>{it.label}</Text>
+              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>×{it.quantity}</Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+
       {active ? (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: spacing.lg }}>
           <ActivityIndicator size="small" color={colors.primary.DEFAULT} />

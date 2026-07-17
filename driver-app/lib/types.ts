@@ -30,6 +30,11 @@ export interface Job {
   latest_driver_status?: string | null;
   description?: string | null;
   special_instructions?: string | null;
+  // Move details the customer selected (from the instant-quote wizard)
+  floor?: string | null;
+  has_lift?: boolean | null;
+  parking_within_20m?: boolean | null;
+  inventory?: { key: string; label: string; variant?: string; quantity: number }[] | null;
   customer?: Customer | null;
   origin?: Address | null;
   destination?: Address | null;
