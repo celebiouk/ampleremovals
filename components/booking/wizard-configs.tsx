@@ -5,6 +5,9 @@ import { SERVICE_SCHEMAS } from "@/lib/schemas/booking";
 import { AddressStep } from "@/components/booking/steps/AddressStep";
 import { PropertyDetailsStep } from "@/components/booking/steps/PropertyDetailsStep";
 import { AdditionalServicesStep } from "@/components/booking/steps/AdditionalServicesStep";
+import { ExtraHelpStep } from "@/components/booking/steps/ExtraHelpStep";
+import { InventoryStep } from "@/components/booking/steps/InventoryStep";
+import { AccessStep } from "@/components/booking/steps/AccessStep";
 import { CleaningUpsellStep } from "@/components/booking/steps/CleaningUpsellStep";
 import { DescriptionStep } from "@/components/booking/steps/DescriptionStep";
 import { MoveDateStep } from "@/components/booking/steps/MoveDateStep";
@@ -57,7 +60,7 @@ const reviewStep = (sections: ReviewSection[]): WizardStep =>
 
 type Builder = (initialPostcode: string) => WizardConfig<FieldValues>;
 
-/* ── Removals (11 steps) ──────────────────────────────────── */
+/* ── Removals (13 steps) ──────────────────────────────────── */
 const removals: Builder = (initialPostcode) => ({
   service: "removals",
   slug: "removals",
@@ -71,7 +74,15 @@ const removals: Builder = (initialPostcode) => ({
     bedrooms: undefined,
     destinationPostcode: "",
     destinationAddress: undefined,
+    inventory: [],
+    floor: undefined,
+    hasLift: undefined,
+    parkingWithin20m: undefined,
+    specialInstructions: "",
     additionalServices: NO_EXTRAS,
+    packingHours: 0,
+    dismantleCount: 0,
+    assembleCount: 0,
     description: "",
     isFlexibleDate: false,
     moveDate: undefined,
@@ -87,7 +98,9 @@ const removals: Builder = (initialPostcode) => ({
     step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
     step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
     step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="What is the address you are moving to?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
-    step("extras", "Additional services", [], <AdditionalServicesStep />),
+    step("inventory", "What you're moving", [], <InventoryStep />),
+    step("access", "Access details", [], <AccessStep />),
+    step("extras", "Extra help", [], <ExtraHelpStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
     step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
@@ -97,10 +110,12 @@ const removals: Builder = (initialPostcode) => ({
       { title: "From", editStep: 1, rows: [{ label: "Address", key: "originAddress" }] },
       { title: "Property", editStep: 2, rows: [{ label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
       { title: "To", editStep: 3, rows: [{ label: "Address", key: "destinationAddress" }] },
-      { title: "Extras", editStep: 4, rows: [{ label: "Services", key: "additionalServices" }] },
-      { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 6, rows: dateRows },
-      { title: "Contact", editStep: 8, rows: contactRows },
+      { title: "Items", editStep: 4, rows: [{ label: "Items", key: "inventory" }] },
+      { title: "Access", editStep: 5, rows: [{ label: "Floor", key: "floor" }, { label: "Lift", key: "hasLift" }, { label: "Parking ≤20m", key: "parkingWithin20m" }, { label: "Instructions", key: "specialInstructions" }] },
+      { title: "Extra help", editStep: 6, rows: [{ label: "Services", key: "additionalServices" }, { label: "Packing", key: "packingHours" }, { label: "Dismantle", key: "dismantleCount" }, { label: "Assemble", key: "assembleCount" }] },
+      { title: "About", editStep: 7, rows: [{ label: "Description", key: "description" }] },
+      { title: "Date", editStep: 8, rows: dateRows },
+      { title: "Contact", editStep: 10, rows: contactRows },
     ]),
   ],
 });

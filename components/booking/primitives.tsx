@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, AlertCircle, type LucideIcon } from "lucide-react";
+import { Check, AlertCircle, Plus, Minus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ── Step heading ─────────────────────────────────────────── */
@@ -165,6 +165,63 @@ export function ToggleCard({
         )}
       </span>
     </button>
+  );
+}
+
+/* ── Quantity stepper ─────────────────────────────────────── */
+/**
+ * Compact −/+ counter. At 0 it collapses to a single "add" button so long item
+ * lists stay calm and scannable; once selected it expands to − n +.
+ */
+export function QuantityStepper({
+  value,
+  onChange,
+  min = 0,
+  max = 99,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  const dec = () => onChange(Math.max(min, value - 1));
+  const inc = () => onChange(Math.min(max, value + 1));
+
+  if (value <= 0) {
+    return (
+      <button
+        type="button"
+        onClick={inc}
+        aria-label="Add"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-brand-purple-700 transition-colors hover:border-brand-purple-400 hover:bg-brand-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple-600 focus-visible:ring-offset-2"
+      >
+        <Plus className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={dec}
+        aria-label="Decrease"
+        className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-200 text-slate-600 transition-colors hover:border-brand-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple-600 focus-visible:ring-offset-2"
+      >
+        <Minus className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+      <span className="w-8 text-center font-display text-base font-bold tabular-nums text-brand-purple-950">
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={inc}
+        aria-label="Increase"
+        className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-brand-purple-600 bg-brand-purple-800 text-white transition-colors hover:bg-brand-purple-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple-600 focus-visible:ring-offset-2"
+      >
+        <Plus className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    </div>
   );
 }
 

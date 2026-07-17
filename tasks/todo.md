@@ -33,11 +33,16 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       special-instructions/inventory, derives `has_white_goods`, computes & stores the
       quote + `deposit_amount` (best-effort, tolerant of the un-applied migration).
 - [x] Bank details wired into env (.env.local + .env.example).
-**Phase B — Capture UI (web wizard)**
-- [ ] `InventoryStep` — item template with variants + quantities, designed to feel FAST.
-- [ ] `AccessStep` — floor / which floor / lift / parking-within-20m / special instructions.
-- [ ] Add-on quantity inputs — packing hours, dismantle count, assemble count.
-- [ ] Wire into Removals + Man & Van wizard configs (add bedrooms to M&V? no — van size).
+**Phase B — Capture UI (web wizard)** ✅ (Removals)
+- [x] `InventoryStep` — item template (5 categories, variants, quantities). Quiet
+      tap-to-add rows (QuantityStepper collapses to a single ＋ at 0) so it feels fast.
+- [x] `AccessStep` — ground/upstairs + floor level, lift, parking-within-20m, special
+      instructions. All optional.
+- [x] `ExtraHelpStep` — packing hours (£35/hr) + dismantle/assemble counts (£20/item)
+      + packing materials; keeps `additionalServices` booleans in sync.
+- [x] Wired into the Removals wizard (13 steps) + review sections; ReviewStep renders
+      the inventory summary + add-on quantities. Route compiles + renders (HTTP 200).
+- [ ] Man & Van capture (deferred with its auto-quote).
 **Phase C — Instant quote experience (web)**
 - [ ] ~5s "getting your best quote" loading screen (beautiful).
 - [ ] Editable quote reveal — remove packing/dismantle/assemble/cleaning (✕), recompute API.

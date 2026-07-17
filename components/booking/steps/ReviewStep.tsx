@@ -45,8 +45,20 @@ function isAddress(v: unknown): v is AddressOption {
   return typeof v === "object" && v !== null && "line_1" in v;
 }
 
+/** Unit suffix for the quantity-based add-on fields. */
+const QUANTITY_UNITS: Record<string, string> = {
+  packingHours: "hour",
+  dismantleCount: "item",
+  assembleCount: "item",
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatValue(key: string, value: any): string {
+  if (key in QUANTITY_UNITS) {
+    const n = Number(value) || 0;
+    if (n <= 0) return "—";
+    return `${n} ${QUANTITY_UNITS[key]}${n === 1 ? "" : "s"}`;
+  }
   if (value === undefined || value === null || value === "") return "—";
   if (value instanceof Date) return formatDate(value);
   if (isAddress(value)) {
@@ -59,6 +71,13 @@ function formatValue(key: string, value: any): string {
       .filter(([, v]) => v)
       .map(([k]) => humanize(k));
     return on.length ? on.join(", ") : "None";
+  }
+  // Inventory: array of { label, quantity } selections.
+  if (key === "inventory" && Array.isArray(value)) {
+    if (!value.length) return "None added";
+    return value
+      .map((s) => `${s.label}${s.quantity > 1 ? ` ×${s.quantity}` : ""}`)
+      .join(", ");
   }
   if (Array.isArray(value)) return value.length ? value.join(", ") : "None";
   if (typeof value === "boolean") return value ? "Yes" : "No";
