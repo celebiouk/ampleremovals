@@ -82,8 +82,11 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       YYYY-MM-DD via PostgREST. See lessons #13/#14.
 - [x] Bank env vars → Vercel production (4 vars) + prod redeploy. Verified the
       details are inlined in the live quote page's JS chunk.
+- [x] Base moving prices CONFIRMED (owner locked 2-bed/3-bed/+£50; studio £400/£450 &
+      1-bed £450/£500 kept as £50 step-downs). Already matched the live engine — no change.
+- [ ] Confirm EOT cleaning extrapolation (studio £100/1-bed £150/4-bed £300/5+ £350;
+      2-bed £200 & 3-bed £250 already given).
 - [ ] `lead_details_request` WhatsApp template (Meta approval).
-- [ ] Confirm studio/1-bed + EOT extrapolated prices.
 - [ ] EAS rebuild of admin-app to ship mobile New Lead.
 
 Note: DATABASE_URL (with DB password) now in .env.local (gitignored) for future
