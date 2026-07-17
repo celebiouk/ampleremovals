@@ -1,3 +1,14 @@
+# Task: Deposit lifecycle (reserve → invoice sent → claimed → admin confirms) ✅
+1. [x] Reserve → status `deposit_invoice_sent` + send deposit request (amount, bank
+       details, reference) by email + SMS + WhatsApp (sendDepositMessages). Quote page
+       resumes at the deposit screen if the customer returns via the link.
+2. [x] "I've made the payment" → deposit_status=claimed (existing) + admin booking page
+       shows an amber "customer says they've paid — Confirm Deposit" banner + button.
+3. [x] Admin "Confirm Deposit" → /api/admin/bookings/[id]/confirm-deposit: status
+       `deposit_paid_job_confirmed`, deposit_status=verified, notify customer "Ample
+       Removals has confirmed your deposit" (email + SMS + WhatsApp).
+Verified live: 7/7 (reserve→deposit_invoice_sent, recompute, claim, admin-guard).
+
 # Task: Post-quote lifecycle + full detail visibility (follow-up) ✅
 
 ### Plan

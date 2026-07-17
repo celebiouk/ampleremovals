@@ -46,6 +46,7 @@ export default function BookingDetailPage() {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [confirmingDeposit, setConfirmingDeposit] = useState(false);
   const [editingHeard, setEditingHeard] = useState(false);
   const [savingHeard, setSavingHeard] = useState(false);
   const [heardValue, setHeardValue] = useState("");
@@ -311,6 +312,20 @@ export default function BookingDetailPage() {
 
   const visibleHistory = showAllHistory ? statusHistory : statusHistory.slice(0, 5);
 
+  async function handleConfirmDeposit() {
+    setConfirmingDeposit(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}/confirm-deposit`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) { toast.success("Deposit confirmed — customer notified"); refresh(); }
+      else toast.error(json.error || "Failed to confirm deposit");
+    } catch {
+      toast.error("Failed to confirm deposit");
+    } finally {
+      setConfirmingDeposit(false);
+    }
+  }
+
   const Card = ({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) => (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
@@ -348,6 +363,32 @@ export default function BookingDetailPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
       </div>
+
+      {/* Customer clicked "I've made the payment" — awaiting the team's confirmation */}
+      {booking.deposit_status === "claimed" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💷</span>
+            <div>
+              <p className="font-bold text-amber-900">Customer says they&apos;ve paid the deposit</p>
+              <p className="text-sm text-amber-700">They tapped &ldquo;I&apos;ve made the payment&rdquo;. Check the bank account, then confirm to lock in the job and notify them.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleConfirmDeposit}
+            disabled={confirmingDeposit}
+            className="rounded-xl bg-brand-green-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-green-500 disabled:opacity-50"
+          >
+            {confirmingDeposit ? "Confirming…" : "Confirm Deposit"}
+          </button>
+        </div>
+      )}
+
+      {booking.deposit_status === "verified" && (
+        <div className="flex items-center gap-2 rounded-2xl border border-brand-green-200 bg-brand-green-50 px-4 py-2.5 text-sm font-medium text-brand-green-800">
+          <Check className="h-4 w-4" /> Deposit confirmed — customer notified.
+        </div>
+      )}
 
       {/* Cross-sell flag: customer wants end-of-tenancy cleaning at 30% off */}
       {booking.wants_eot_cleaning && (

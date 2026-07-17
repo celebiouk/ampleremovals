@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { depositFor } from "@/lib/deposit";
+import { sendDepositMessages } from "@/lib/bookings/quoteDelivery";
 
 export const runtime = "nodejs";
 
@@ -11,10 +12,10 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * POST /api/quote/reserve
- * Customer confirms their (possibly edited) quote. Recomputes the total
- * SERVER-SIDE from the stored line items minus any removed removable lines
- * (never trusting a client total), persists it, and moves the booking to
- * `quote_confirmed`. Idempotent-ish: re-reserving just re-confirms.
+ * Customer reserves their date. Recomputes the total SERVER-SIDE from the stored
+ * line items minus any removed removable lines (never trusting a client total),
+ * persists it, moves the booking to `deposit_invoice_sent` (the deposit request
+ * is now sent), and sends the deposit details by email + SMS + WhatsApp.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const { data: booking, error } = await supabase
       .from("bookings")
-      .select("status, quote_line_items")
+      .select("status, reference, quote_line_items, customer:customers!inner(full_name, email, phone)")
       .eq("id", bookingId)
       .single();
     if (error || !booking) {
@@ -50,15 +51,15 @@ export async function POST(req: NextRequest) {
     );
     const deposit = depositFor(total);
 
-    // Best-effort deposit_amount (new column). Core columns first so the confirm
-    // always persists.
+    // Reserving sends the deposit request → move to "Deposit Invoice Sent". Core
+    // columns first so the reserve always persists.
     const { error: updErr } = await supabase
       .from("bookings")
       .update({
         quote_line_items: keptLines,
         quote_subtotal: total,
         quote_total: total,
-        status: "quote_confirmed",
+        status: "deposit_invoice_sent",
       })
       .eq("id", bookingId);
     if (updErr) {
@@ -73,16 +74,30 @@ export async function POST(req: NextRequest) {
       supabase.from("status_history").insert({
         booking_id: bookingId,
         previous_status: booking.status,
-        new_status: "quote_confirmed",
+        new_status: "deposit_invoice_sent",
         changed_by: "customer",
       }),
       supabase.from("activity_log").insert({
         booking_id: bookingId,
-        action: "quote_confirmed",
+        action: "Customer reserved their date — deposit invoice sent",
         metadata: { total, deposit, removed_lines: removed },
         performed_by: "customer",
       }),
     ]);
+
+    // Send the deposit details across all channels (best-effort, never blocks).
+    const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
+    if (customer) {
+      await sendDepositMessages({
+        bookingId,
+        token,
+        reference: booking.reference as string,
+        firstName: (customer.full_name ?? "there").split(" ")[0],
+        email: customer.email,
+        phone: customer.phone,
+        deposit,
+      });
+    }
 
     return NextResponse.json({ success: true, total, deposit });
   } catch (err) {

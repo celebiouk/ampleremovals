@@ -32,6 +32,7 @@ interface QuoteData {
   total: number;
   deposit: number;
   depositStatus: string;
+  status: string;
   hasQuote: boolean;
 }
 
@@ -86,9 +87,17 @@ export default function QuotePage() {
           return;
         }
         setQuote(data);
-        if (data.depositStatus === "claimed") setStage("done");
-        else if (!data.hasQuote) { setError("quote-pending"); setStage("error"); }
-        else setStage("reveal");
+        // Resume where they left off: already paid/claimed → done; already
+        // reserved (deposit invoice sent) → straight to the deposit screen.
+        if (data.depositStatus === "claimed" || data.depositStatus === "verified" || data.status === "deposit_paid_job_confirmed") {
+          setStage("done");
+        } else if (data.status === "deposit_invoice_sent") {
+          setStage("deposit");
+        } else if (!data.hasQuote) {
+          setError("quote-pending"); setStage("error");
+        } else {
+          setStage("reveal");
+        }
       } catch {
         if (!cancelled) { setError("Network error. Please try again."); setStage("error"); }
       }
