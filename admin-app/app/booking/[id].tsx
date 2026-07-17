@@ -93,6 +93,19 @@ export default function BookingDetailScreen() {
     }
   }
 
+  async function confirmDeposit() {
+    setBusy(true);
+    try {
+      await apiFetch(`/api/admin/bookings/${id}/confirm-deposit`, { method: "POST" });
+      invalidateAll();
+      Alert.alert("Deposit confirmed", "The customer has been notified.");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to confirm deposit");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function reschedule(date: Date, notify: boolean) {
     setBusy(true);
     try {
@@ -194,6 +207,25 @@ export default function BookingDetailScreen() {
             <ChevronDown size={18} color="#94a3b8" />
           </Pressable>
         </Card>
+
+        {/* Deposit claimed — awaiting the team's confirmation */}
+        {booking.deposit_status === "claimed" && (
+          <View className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+            <View className="flex-row items-start gap-3">
+              <Text className="text-2xl">💷</Text>
+              <View className="flex-1">
+                <Text className="text-base font-bold text-amber-900 dark:text-amber-300">Customer says they&apos;ve paid</Text>
+                <Text className="mt-0.5 text-sm text-amber-800 dark:text-amber-400">They tapped &quot;I&apos;ve made the payment&quot;. Check the bank, then confirm to lock in the job and notify them.</Text>
+              </View>
+            </View>
+            <Button label="Confirm Deposit" onPress={confirmDeposit} loading={busy} size="lg" style={{ marginTop: 12 }} />
+          </View>
+        )}
+        {booking.deposit_status === "verified" && (
+          <View className="rounded-2xl border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/30">
+            <Text className="text-sm font-medium text-green-700 dark:text-green-400">✅ Deposit confirmed — customer notified.</Text>
+          </View>
+        )}
 
         {/* Move date */}
         <Card>

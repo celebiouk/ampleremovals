@@ -78,6 +78,8 @@ export interface Booking {
   destination_address_id?: string | null;
   move_date?: string | null;
   quote_total?: number | null;
+  deposit_amount?: number | null;
+  deposit_status?: "unpaid" | "claimed" | "verified" | null;
   latest_driver_status?: JobStatusUpdate | null;
   created_at: string;
 }
