@@ -250,8 +250,27 @@ export async function createBooking(
       eotCleaning: Boolean(d.wantsEotCleaning),
     });
 
+    // Persist the quote into the EXISTING quote columns first, in its own
+    // statement, so it saves even if the newer instant-quote columns haven't
+    // been migrated yet (a single failing column would otherwise void it all).
     try {
       const { error: quoteErr } = await supabase
+        .from("bookings")
+        .update({
+          quote_line_items: quote.lines, // full lines (incl. key + removable) for the reveal
+          quote_subtotal: quote.total,
+          quote_total: quote.total,
+        })
+        .eq("id", bookingId);
+      if (quoteErr) console.warn("removals quote update skipped:", quoteErr.message);
+    } catch (e) {
+      console.warn("removals quote update skipped:", e);
+    }
+
+    // New instant-quote/logistics columns — separate best-effort statement so a
+    // not-yet-applied migration can't take the quote down with it (Lesson 11).
+    try {
+      const { error: logisticsErr } = await supabase
         .from("bookings")
         .update({
           floor: d.floor ?? null,
@@ -260,17 +279,12 @@ export async function createBooking(
           special_instructions: d.specialInstructions ?? null,
           inventory,
           has_white_goods: whiteGoods,
-          // Reuse the existing quote columns; store full lines (incl. key +
-          // removable) so the reveal screen can edit them.
-          quote_line_items: quote.lines,
-          quote_subtotal: quote.total,
-          quote_total: quote.total,
           deposit_amount: quote.depositAmount,
         })
         .eq("id", bookingId);
-      if (quoteErr) console.warn("removals quote/logistics update skipped:", quoteErr.message);
+      if (logisticsErr) console.warn("removals logistics update skipped:", logisticsErr.message);
     } catch (e) {
-      console.warn("removals quote/logistics update skipped:", e);
+      console.warn("removals logistics update skipped:", e);
     }
 
     try {

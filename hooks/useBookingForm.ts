@@ -89,6 +89,8 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       const data = (await res.json()) as {
         success: boolean;
         reference?: string;
+        bookingId?: string;
+        quoteToken?: string | null;
         error?: string;
       };
 
@@ -99,11 +101,17 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       // Fire conversion pixels (no-ops if pixels aren't configured).
       trackLead({ reference: data.reference, service: config.slug });
 
-      router.push(
-        `/confirmation?ref=${encodeURIComponent(
-          data.reference
-        )}&service=${config.slug}`
-      );
+      // Removals gets the instant-quote → reserve → deposit flow. Every other
+      // service keeps the plain confirmation page.
+      if (config.slug === "removals" && data.bookingId && data.quoteToken) {
+        router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
+      } else {
+        router.push(
+          `/confirmation?ref=${encodeURIComponent(
+            data.reference
+          )}&service=${config.slug}`
+        );
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";

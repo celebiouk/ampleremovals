@@ -43,13 +43,20 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
 - [x] Wired into the Removals wizard (13 steps) + review sections; ReviewStep renders
       the inventory summary + add-on quantities. Route compiles + renders (HTTP 200).
 - [ ] Man & Van capture (deferred with its auto-quote).
-**Phase C — Instant quote experience (web)**
-- [ ] ~5s "getting your best quote" loading screen (beautiful).
-- [ ] Editable quote reveal — remove packing/dismantle/assemble/cleaning (✕), recompute API.
-- [ ] "Reserve My Moving Date" → status `quote_confirmed` everywhere.
-- [ ] Deposit screen: bank details (from env) + "I've made payment" → deposit claimed.
-- [ ] "A team member will be in touch" thank-you + business phone. Make organic bookings
-      end here too.
+**Phase C — Instant quote experience (web)** ✅
+- [x] Quote page `/quote/[bookingId]/[token]` (token-secured, no login).
+- [x] ~5s "getting you the best quote" loading screen (animated, rotating messages).
+- [x] Editable quote reveal — remove/re-add removable lines (✕/＋), live total + deposit;
+      white-goods uplift stays hidden in the non-removable base line.
+- [x] "Reserve My Moving Date" → `/api/quote/reserve` recomputes server-side → status
+      `quote_confirmed` + status_history + activity_log.
+- [x] Deposit screen: bank details (Ample Logistics, from env) + reference + "I've made
+      the payment" → `/api/deposit/claim` (deposit_status=claimed, alerts team to verify).
+- [x] "A team member will be in touch" thank-you + call button. Organic Removals bookings
+      now route here (useBookingForm); other services keep /confirmation.
+- [x] createBooking split so the quote persists into existing columns pre-migration.
+      Verified: page renders, routes compile + reject bad tokens (401). Full happy-path
+      E2E pending the migration + a real submission (avoided polluting prod).
 **Phase D — Admin "New Lead" + self-serve completion link**
 - [ ] Admin web `New Lead` (name/email/phone → Complete) + `/api/admin/leads/create`.
 - [ ] Tri-channel invite (SMS + email + WhatsApp) with unique completion link.

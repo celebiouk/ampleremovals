@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
+import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { logError } from "@/lib/log-error";
 import {
   sendCustomerConfirmationEmail,
@@ -93,5 +94,10 @@ export async function handleBookingRoute(
     sendCustomerConfirmationSMS(notifPayload),
   ]);
 
-  return NextResponse.json({ success: true, reference, bookingId });
+  // A signed token lets the customer view + reserve their quote and claim the
+  // deposit without logging in. Null if QUOTE_CONFIRM_SECRET isn't set — the
+  // client then falls back to the plain confirmation page.
+  const quoteToken = generateQuoteConfirmToken(bookingId);
+
+  return NextResponse.json({ success: true, reference, bookingId, quoteToken });
 }
