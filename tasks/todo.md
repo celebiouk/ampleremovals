@@ -1,3 +1,22 @@
+# Task: Fix BST move-date off-by-one (website booking)
+### Plan
+- [x] Add `toISODate` (local YYYY-MM-DD) helper to `lib/utils.ts`
+- [x] Serialise date fields to plain strings at the submit boundary (`useBookingForm`)
+- [x] Harden server `createBooking.toDateString` to resolve in UK tz (`ukDateString`)
+- [x] Verify old-vs-new across BST/GMT/DST-boundary dates (all correct)
+- [x] Log the lesson (lessons.md #13)
+
+### Review
+Website bookings for summer dates were stored one day early. Root cause was a
+`Date` crossing to the server and being serialised as UTC. Fix keeps the form
+working with Date objects but sends plain local `YYYY-MM-DD`, so the day the
+customer picked is preserved. Admin edit path was already correct. NOTE: historical
+bookings can't be auto-corrected — the original intended date was never recorded
+separately (customers saw the shifted date too). Offered a read-only audit of
+upcoming BST-range bookings as a follow-up.
+
+---
+
 # Driver + Admin App Programme
 
 Big batch from the owner. Built in stages; driver-app + admin-app changes ship on EAS rebuilds.

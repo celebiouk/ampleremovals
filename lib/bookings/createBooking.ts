@@ -4,6 +4,7 @@ import { geocodePostcode } from "@/lib/postcode";
 import { deriveSource, type Attribution } from "@/lib/attribution";
 import { computeLeadScore } from "@/lib/lead-scoring";
 import { detectIntent } from "@/lib/lead-signals";
+import { ukDateString } from "@/lib/dates";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -14,8 +15,12 @@ import type {
   AnyBookingForm,
 } from "@/lib/schemas/booking";
 
+// Resolve any incoming date/timestamp to its UK (Europe/London) calendar date
+// as YYYY-MM-DD. The client now sends plain local date strings, but resolving in
+// UK time means even a full timestamp never lands on the wrong day the way a raw
+// `toISOString()` (UTC) would for BST dates.
 const toDateString = (d?: Date | null): string | null =>
-  d ? new Date(d).toISOString().slice(0, 10) : null;
+  d ? ukDateString(d) : null;
 
 async function insertAddress(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,21 @@
 # Lessons Log
 
+## Lesson 13 — Serialise picked dates as local YYYY-MM-DD, never let JSON.stringify hit a Date
+**What happened:** A customer picking a summer move date on the website had it
+stored **one day early** (pick 20 Jul → stored 19 Jul). The calendar hands back a
+Date at the customer's LOCAL midnight; `JSON.stringify` serialises it via
+`toISOString()` (UTC), and in BST (UTC+1) local midnight is 23:00 the previous
+day UTC — so the day rolls back. `createBooking` then kept that with
+`toISOString().slice(0,10)`. Winter (GMT) dates were unaffected, which is why it
+hid. The admin app was already correct (`toDateKey` subtracts the tz offset).
+**Root cause:** A `Date` object crossed the client→server boundary. Any UTC
+serialisation of a local-midnight Date shifts BST dates back a day — the exact
+trap [[lesson-12]] warned about, but on the WRITE path, not the read/compare path.
+**Rule going forward:** For a date-only field, never send a `Date`. Format it to
+`YYYY-MM-DD` from LOCAL components at the submit boundary (`toISODate` in
+`lib/utils.ts`) so no timezone is ever attached. On the server resolve dates in
+UK time (`ukDateString` from `lib/dates.ts`), never raw `toISOString().slice(0,10)`.
+
 ## Lesson 12 — Dates: store/compare as YYYY-MM-DD strings; compute "today" in UK tz
 **What happened:** A job dated today showed as "past"/missing in the driver app
 at 2am. Two bugs: (1) the web portal compared `new Date(move_date)` (parsed as

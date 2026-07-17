@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { WizardConfig } from "@/components/booking/types";
 import { readAttribution } from "@/lib/attribution";
 import { trackLead } from "@/lib/pixels";
+import { toISODate } from "@/lib/utils";
 
 /**
  * Orchestrates a service booking wizard: React Hook Form + Zod, per-step
@@ -70,11 +71,20 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
     setIsSubmitting(true);
     try {
       const values = form.getValues();
+      // Date pickers give us a Date at the customer's local midnight. Send date
+      // fields as plain YYYY-MM-DD (local) strings so JSON.stringify can't
+      // convert them to UTC and shift BST dates back a day. Any top-level Date
+      // (moveDate, flexibleDateFrom/To, tenancyEndDate) is normalised here.
+      const payload = Object.fromEntries(
+        Object.entries(values).map(([key, value]) =>
+          value instanceof Date ? [key, toISODate(value)] : [key, value]
+        )
+      );
       const res = await fetch(config.apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Attach first-touch marketing attribution (utm/click ids/referrer).
-        body: JSON.stringify({ ...values, attribution: readAttribution() }),
+        body: JSON.stringify({ ...payload, attribution: readAttribution() }),
       });
       const data = (await res.json()) as {
         success: boolean;

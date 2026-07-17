@@ -91,3 +91,18 @@ export function formatDateTime(date: string | Date): string {
   const seconds = String(d.getSeconds()).padStart(2, "0");
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
+
+/**
+ * Serialise a picked Date to a plain calendar date `YYYY-MM-DD` using its LOCAL
+ * components. The calendar/date pickers hand us a Date at the customer's local
+ * midnight; `JSON.stringify` (and `toISOString()`) would convert that to UTC and
+ * shift British Summer Time dates back a day (pick 20 Jul → stored 19 Jul).
+ * Reading the local components keeps the exact day the customer chose, with no
+ * timezone attached — the value the API expects for a date-only field.
+ */
+export function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
