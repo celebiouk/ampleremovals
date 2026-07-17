@@ -68,9 +68,18 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       existing booking + quote → routes to the quote page. Reuses lib/tokens HMAC.
 - [x] WizardConfig.completion + useBookingForm completion branch (update, not create).
       Verified: pages render, routes compile + enforce token/admin auth (401/307).
-**Phase E — Admin mobile "New Lead"** (EAS rebuild)
-- [ ] New Lead quick-create screen in admin-app.
-**Phase F — Polish, test end-to-end, deploy.**
+**Phase E — Admin mobile "New Lead"** ✅ (ships on next EAS rebuild)
+- [x] `admin-app/app/lead/new.tsx` — New Lead screen (name/email/phone → Complete →
+      /api/admin/leads/create via apiFetch); success state with share-link + channels.
+- [x] Nav entry in More → Operations (mobile more.tsx).
+      Verified: typecheck clean (only pre-existing expo-file-system errors remain).
+
+**Phase F — Polish, test end-to-end, deploy** (remaining)
+- [ ] Apply migration (needs DATABASE_URL) → run one real lead through the whole flow.
+- [ ] Bank env vars into Vercel (deposit screen in prod).
+- [ ] `lead_details_request` WhatsApp template (Meta approval).
+- [ ] Confirm studio/1-bed + EOT extrapolated prices.
+- [ ] EAS rebuild of admin-app to ship mobile New Lead.
 
 ### Review
 (fill in as phases land)
