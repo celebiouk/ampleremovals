@@ -6,6 +6,8 @@ export interface LeadInvite {
   email: string;
   phone: string;
   link: string;
+  /** True for a chase-up reminder (softer nudge wording). */
+  reminder?: boolean;
 }
 
 /**
@@ -17,21 +19,28 @@ export interface LeadInvite {
  * approved template. We send free text here (Twilio falls back to it); add a
  * `lead_details_request` template and wire it in for guaranteed delivery.
  */
-export async function sendLeadInvite({ firstName, email, phone, link }: LeadInvite) {
+export async function sendLeadInvite({ firstName, email, phone, link, reminder = false }: LeadInvite) {
+  const intro = reminder
+    ? "Just a friendly reminder — we still need a few details to get your removals quote ready. It only takes a couple of minutes."
+    : "We received your request for a quote, but we need a few more details to get you the best price. It only takes a couple of minutes.";
+  const heading = reminder ? "A quick reminder about your quote" : "Just a few more details";
+  const emailSubject = reminder
+    ? "Reminder: finish your quote — Ample Removals"
+    : "We need a few more details for your quote — Ample Removals";
+
   const smsText =
-    `Hi ${firstName}, we received your request for a quote from Ample Removals but need a few more details. ` +
+    `Hi ${firstName}, ${reminder ? "just a reminder" : "we received your request for a quote from Ample Removals"} — we need a few more details. ` +
     `Add them here to get your instant quote: ${link}\n\nThank you, Daniel`;
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px;">Just a few more details</h1>
+        <h1 style="color: #fff; margin: 0; font-size: 22px;">${heading}</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px; color: #1e293b;">Hi ${firstName},</p>
         <p style="font-size: 16px; color: #1e293b; margin: 16px 0;">
-          We received your request for a quote, but we need a few more details to get you the best price.
-          It only takes a couple of minutes.
+          ${intro}
         </p>
         <p style="text-align: center; margin: 28px 0;">
           <a href="${link}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
@@ -46,11 +55,11 @@ export async function sendLeadInvite({ firstName, email, phone, link }: LeadInvi
     </div>`;
 
   const whatsappText =
-    `Hi ${firstName}, thanks for your interest in Ample Removals! 🚚\n\n` +
+    `Hi ${firstName}, ${reminder ? "just a reminder" : "thanks for your interest in Ample Removals!"} 🚚\n\n` +
     `We just need a few more details to get you an instant quote. Tap here:\n${link}\n\nThank you, Daniel`;
 
   await Promise.allSettled([
-    sendEmail({ to: email, subject: "We need a few more details for your quote — Ample Removals", html: emailHtml }),
+    sendEmail({ to: email, subject: emailSubject, html: emailHtml }),
     sendSMS(phone, smsText),
     // Uses the approved template once WHATSAPP_LEAD_DETAILS_SID is set; the
     // free-text body is the fallback until then.

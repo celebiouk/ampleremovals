@@ -126,6 +126,13 @@ const MIGRATIONS = [
       ADD COLUMN IF NOT EXISTS assemble_count INT DEFAULT 0`,
   },
   { name: "bookings partial_lead index", sql: "CREATE INDEX IF NOT EXISTS idx_bookings_partial_lead ON bookings (is_partial_lead) WHERE is_partial_lead = TRUE" },
+  // New-lead reminder ladder — see add_lead_reminders.sql
+  {
+    name: "bookings lead reminder columns",
+    sql: `ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS lead_reminder_stage INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS lead_last_reminder_at TIMESTAMPTZ`,
+  },
 ];
 
 async function run() {

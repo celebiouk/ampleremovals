@@ -34,6 +34,32 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // 0. Dedup — if a pending lead already exists for this email OR phone, don't
+  //    create a second one. Tell the admin it's already been added.
+  const { data: matches } = await supabase
+    .from("customers")
+    .select("id")
+    .or(`email.eq.${email},phone.eq.${phone}`);
+  const matchIds = (matches ?? []).map((m) => m.id);
+  if (matchIds.length) {
+    const { data: existing } = await supabase
+      .from("bookings")
+      .select("id, reference")
+      .in("customer_id", matchIds)
+      .eq("is_partial_lead", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      const dupToken = generateQuoteConfirmToken(existing.id);
+      const dupLink = dupToken ? `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/complete/${existing.id}/${dupToken}` : null;
+      return NextResponse.json(
+        { success: false, alreadyExists: true, error: "This lead has already been added.", bookingId: existing.id, reference: existing.reference, link: dupLink },
+        { status: 409 }
+      );
+    }
+  }
+
   // 1. Customer (upsert by unique email).
   const { data: customer, error: custErr } = await supabase
     .from("customers")
