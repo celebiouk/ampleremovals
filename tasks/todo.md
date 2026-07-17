@@ -86,8 +86,16 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       1-bed £450/£500 kept as £50 step-downs). Already matched the live engine — no change.
 - [ ] Confirm EOT cleaning extrapolation (studio £100/1-bed £150/4-bed £300/5+ £350;
       2-bed £200 & 3-bed £250 already given).
-- [ ] `lead_details_request` WhatsApp template (Meta approval).
-- [ ] EAS rebuild of admin-app to ship mobile New Lead.
+- [x] `lead_details_request` WhatsApp template — drafted (WHATSAPP_TEMPLATES.md),
+      added to the SID map (env `WHATSAPP_LEAD_DETAILS_SID`), and wired into the invite
+      (free-text fallback until Meta approves + the SID is set).
+- [x] EAS iOS production build TRIGGERED (build #9, com.ampleremovals.admin) — running
+      on EAS. Next: `eas submit --platform ios` to push to TestFlight once it's READY.
+      https://expo.dev/accounts/ccmendel/projects/ample-admin-app/builds/3d5a1e61-b397-4b56-98c0-1feed3b83afe
+
+### Owner to-do (external, can't be scripted)
+- Submit `lead_details_request` to Meta via Twilio; set WHATSAPP_LEAD_DETAILS_SID in Vercel.
+- Confirm EOT cleaning bands (studio £100 / 1-bed £150 / 4-bed £300 / 5+ £350).
 
 Note: DATABASE_URL (with DB password) now in .env.local (gitignored) for future
 migrations — run `npx ts-node scripts/run-migrations.ts` or add statements there.
