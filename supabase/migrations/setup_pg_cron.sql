@@ -1,9 +1,10 @@
 -- ============================================================================
 -- Frequent schedulers via Supabase pg_cron (Vercel Hobby only allows daily crons)
 --
--- Drives the two sub-daily endpoints that can't live on Vercel Hobby:
+-- Drives the sub-daily endpoints that can't live on Vercel Hobby:
 --   • /api/cron/eta-engine     — every minute (driver-app smart-ETA Calls 2/3)
 --   • /api/cron/quote-followup — hourly       (quote reminder ladder)
+--   • /api/cron/lead-reminders — hourly       (new-lead reminder ladder)
 --
 -- Both endpoints are protected by CRON_SECRET (Bearer). The secret + the app's
 -- base URL are read from Supabase Vault so nothing sensitive lives in git.
@@ -56,9 +57,11 @@ begin
   if exists (select 1 from cron.job where jobname = 'quote-followup') then perform cron.unschedule('quote-followup'); end if;
   if exists (select 1 from cron.job where jobname = 'lead-routing')   then perform cron.unschedule('lead-routing');   end if;
   if exists (select 1 from cron.job where jobname = 'late-check')     then perform cron.unschedule('late-check');     end if;
+  if exists (select 1 from cron.job where jobname = 'lead-reminders') then perform cron.unschedule('lead-reminders'); end if;
 end $$;
 
 select cron.schedule('eta-engine',     '* * * * *',  $$ select public.invoke_cron('/api/cron/eta-engine');     $$);
 select cron.schedule('quote-followup', '0 * * * *',  $$ select public.invoke_cron('/api/cron/quote-followup'); $$);
 select cron.schedule('lead-routing',   '*/15 * * * *', $$ select public.invoke_cron('/api/cron/lead-routing'); $$);
 select cron.schedule('late-check',     '*/15 * * * *', $$ select public.invoke_cron('/api/cron/late-check');   $$);
+select cron.schedule('lead-reminders', '0 * * * *',  $$ select public.invoke_cron('/api/cron/lead-reminders'); $$);

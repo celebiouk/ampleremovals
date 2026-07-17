@@ -15,9 +15,10 @@ const SCHEDULE_HOURS = [2, 7, 24, 72, 120];
  * sending the NEXT due reminder (email + SMS + WhatsApp) per run, then stopping
  * after all 5 (or >5 days). Thresholds are 2h/7h/24h/72h/120h since creation.
  *
- * On Vercel Hobby crons run once daily (see vercel.json), so in practice this
- * sends ~one nudge per day for up to 5 days. On Pro the schedule can be tightened
- * to hourly to hit the exact 2h/7h early cadence.
+ * Driven HOURLY by Supabase pg_cron (setup_pg_cron.sql), not Vercel — Vercel
+ * Hobby only allows daily crons, so the sub-daily reminder ladder lives in
+ * pg_cron alongside eta-engine / quote-followup. Hourly runs hit the 2h/7h/24h/
+ * 72h/5-day thresholds closely.
  */
 export async function GET(req: Request) {
   if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
