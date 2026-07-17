@@ -80,7 +80,8 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       reserve → deposit claim), against the real DB, test data cleaned up. Confirmed
       move_date stores as an exact `date` (2026-08-15); DB is UTC; app reads correct
       YYYY-MM-DD via PostgREST. See lessons #13/#14.
-- [ ] Bank env vars into Vercel (deposit screen in prod).
+- [x] Bank env vars → Vercel production (4 vars) + prod redeploy. Verified the
+      details are inlined in the live quote page's JS chunk.
 - [ ] `lead_details_request` WhatsApp template (Meta approval).
 - [ ] Confirm studio/1-bed + EOT extrapolated prices.
 - [ ] EAS rebuild of admin-app to ship mobile New Lead.
