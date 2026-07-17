@@ -12,7 +12,6 @@ export const resendAdminEmails = [
   "hello@ampleremovals.com",
   "bookings@ampleremovals.com",
   "rita@ampleremovals.com",
-  "amanda@ampleremovals.com",
 ];
 
 // Single admin email for backwards compatibility
