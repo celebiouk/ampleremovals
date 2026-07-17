@@ -1,3 +1,19 @@
+# Task: Post-quote lifecycle + full detail visibility (follow-up)
+
+### Plan
+1. [ ] When the instant quote is generated (organic booking + lead completion), move
+       status → `quote_sent` ("Quote Sent to Customer") with status_history + activity,
+       and start the existing quote follow-up ladder.
+2. [ ] Send the quote by email + SMS + WhatsApp with a "Reserve My Moving Date" link back
+       to /quote/[id]/[token] — so an abandoned browser still has the quote.
+3. [ ] Notify admin when a lead completes the form (like a new booking).
+4. [ ] Reword quote/confirm messaging → "reserve your date — you can change it later".
+5. [ ] Admin booking detail: show inventory, floor, lift, parking-within-20m, special
+       instructions, packing hrs / dismantle / assemble counts.
+6. [ ] Driver: same details visible (driver jobs API select + driver app job screen).
+
+---
+
 # Task: Lead → Instant Quote → Reserve → Deposit (Removals + Man & Van)
 
 Goal: one automatic flow for both admin-created leads and organic website bookings.

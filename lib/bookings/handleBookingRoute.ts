@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
+import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { logError } from "@/lib/log-error";
 import {
   sendCustomerConfirmationEmail,
@@ -48,9 +49,10 @@ export async function handleBookingRoute(
   let reference: string;
   let bookingId: string;
   let customerId: string;
+  let quoteTotal: number | null | undefined;
 
   try {
-    ({ reference, bookingId, customerId } = await createBooking(serviceType, data, rawAttribution));
+    ({ reference, bookingId, customerId, quoteTotal } = await createBooking(serviceType, data, rawAttribution));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await logError({
@@ -87,17 +89,35 @@ export async function handleBookingRoute(
       : null,
   };
 
-  // Fire all 3 notifications in parallel — failures never block the response
-  await Promise.allSettled([
-    sendCustomerConfirmationEmail(notifPayload),
-    sendAdminNewBookingEmail(notifPayload),
-    sendCustomerConfirmationSMS(notifPayload),
-  ]);
-
   // A signed token lets the customer view + reserve their quote and claim the
   // deposit without logging in. Null if QUOTE_CONFIRM_SECRET isn't set — the
   // client then falls back to the plain confirmation page.
   const quoteToken = generateQuoteConfirmToken(bookingId);
+
+  // Notifications (never block the response). Removals ships an instant quote, so
+  // the customer gets the quote + a reserve link (covers an abandoned browser);
+  // the admin still gets the new-booking alert. Other services keep the generic
+  // confirmation trio.
+  if (serviceType === "removals" && quoteToken) {
+    await Promise.allSettled([
+      sendAdminNewBookingEmail(notifPayload),
+      sendReserveMessages({
+        bookingId,
+        token: quoteToken,
+        reference,
+        firstName: data.fullName.split(" ")[0],
+        email: data.email,
+        phone: data.phone,
+        total: quoteTotal ?? 0,
+      }),
+    ]);
+  } else {
+    await Promise.allSettled([
+      sendCustomerConfirmationEmail(notifPayload),
+      sendAdminNewBookingEmail(notifPayload),
+      sendCustomerConfirmationSMS(notifPayload),
+    ]);
+  }
 
   return NextResponse.json({ success: true, reference, bookingId, quoteToken });
 }

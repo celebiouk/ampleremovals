@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { RemovalsFormSchema } from "@/lib/schemas/booking";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { completeLead } from "@/lib/bookings/completeLead";
+import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
+import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import { logError } from "@/lib/log-error";
 
 export const runtime = "nodejs";
@@ -37,7 +39,46 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { reference } = await completeLead(bookingId, parsed.data);
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data);
+    const d = parsed.data;
+
+    // Notify the admin (like a normal new booking) and send the customer their
+    // quote + reserve link. Best-effort — never blocks the response.
+    const notifPayload: NotificationPayload = {
+      bookingId,
+      customerId,
+      reference,
+      serviceType: "removals",
+      customerName: d.fullName,
+      email: d.email,
+      phone: d.phone,
+      originAddress: d.originAddress ?? null,
+      destinationAddress: d.destinationAddress ?? null,
+      moveDate: d.moveDate ? String(d.moveDate) : null,
+      isFlexibleDate: Boolean(d.isFlexibleDate),
+      flexibleDateFrom: d.flexibleDateFrom ? String(d.flexibleDateFrom) : null,
+      flexibleDateTo: d.flexibleDateTo ? String(d.flexibleDateTo) : null,
+      description: d.description ?? null,
+      additionalServices: {
+        packingServices: d.additionalServices.packing_services,
+        packingMaterials: d.additionalServices.packing_materials,
+        disassembleFurniture: d.additionalServices.disassemble_furniture,
+        assembleFurniture: d.additionalServices.assemble_furniture,
+      },
+    };
+    await Promise.allSettled([
+      sendAdminNewBookingEmail(notifPayload),
+      sendReserveMessages({
+        bookingId,
+        token,
+        reference,
+        firstName: d.fullName.split(" ")[0],
+        email: d.email,
+        phone: d.phone,
+        total: quoteTotal,
+      }),
+    ]);
+
     return NextResponse.json({ success: true, reference, bookingId, quoteToken: token });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

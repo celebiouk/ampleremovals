@@ -7,6 +7,7 @@ import { detectIntent } from "@/lib/lead-signals";
 import { ukDateString } from "@/lib/dates";
 import { buildQuote } from "@/lib/quote-engine";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
+import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -53,6 +54,8 @@ export interface BookingResult {
   reference: string;
   bookingId: string;
   customerId: string;
+  /** Instant-quote total (removals only) — for the reserve message. */
+  quoteTotal?: number | null;
 }
 
 /**
@@ -237,6 +240,7 @@ export async function createBooking(
 
   // 5b. Removals instant quote + logistics. Best-effort so a booking never fails
   // if the instant-quote migration hasn't been applied yet (Lesson 11).
+  let quoteTotal: number | null = null;
   if (serviceType === "removals") {
     const d = data as RemovalsForm;
     const inventory = Array.isArray(d.inventory) ? d.inventory : [];
@@ -249,6 +253,7 @@ export async function createBooking(
       assembleCount: d.assembleCount ?? 0,
       eotCleaning: Boolean(d.wantsEotCleaning),
     });
+    quoteTotal = quote.total;
 
     // Persist the quote into the EXISTING quote columns first, in its own
     // statement, so it saves even if the newer instant-quote columns haven't
@@ -317,5 +322,11 @@ export async function createBooking(
     performed_by: "website",
   });
 
-  return { reference, bookingId, customerId };
+  // 7. Removals ships an instant quote — advance the pipeline to "Quote Sent to
+  // Customer" so the dashboard and follow-up automations treat it as a live quote.
+  if (serviceType === "removals") {
+    await markQuoteSent(supabase, bookingId, "inquiry");
+  }
+
+  return { reference, bookingId, customerId, quoteTotal };
 }

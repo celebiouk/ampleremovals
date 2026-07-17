@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { insertAddress } from "@/lib/bookings/createBooking";
+import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import { buildQuote } from "@/lib/quote-engine";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import { ukDateString } from "@/lib/dates";
@@ -10,6 +11,8 @@ const toDateString = (d?: Date | null): string | null => (d ? ukDateString(d) : 
 export interface CompleteLeadResult {
   reference: string;
   bookingId: string;
+  customerId: string;
+  quoteTotal: number;
 }
 
 /**
@@ -141,5 +144,8 @@ export async function completeLead(
     performed_by: "customer",
   });
 
-  return { reference: booking.reference as string, bookingId };
+  // 9. The quote is now ready → advance to "Quote Sent to Customer".
+  await markQuoteSent(supabase, bookingId, (booking.status as string) ?? null);
+
+  return { reference: booking.reference as string, bookingId, customerId, quoteTotal: quote.total };
 }
