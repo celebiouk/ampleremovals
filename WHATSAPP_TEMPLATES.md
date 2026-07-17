@@ -32,6 +32,17 @@ message our platform sends (quote ready, reminders, driver ETA, review, etc.) is
 
 ## A. Core customer journey — create first (Category: UTILITY)
 
+### `lead_details_request`
+Variables: `{{1}}` first name · `{{2}}` completion link
+```
+Hi {{1}}, thanks for your enquiry with Ample Removals. To get your instant quote we just need a few more details.
+
+Tap here to finish: {{2}}
+
+It only takes a couple of minutes. Any questions, call us on 0333 577 2070.
+```
+Sample: `Sam` · `https://www.ampleremovals.com/complete/8f3a.../a1b2c3...`
+
 ### `quote_ready`
 Variables: `{{1}}` first name · `{{2}}` service · `{{3}}` total · `{{4}}` reference
 ```

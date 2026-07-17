@@ -12,6 +12,9 @@
  */
 export const WHATSAPP_TEMPLATES = {
   // A. Core customer journey (UTILITY)
+  // Pending Meta approval — set WHATSAPP_LEAD_DETAILS_SID once Twilio issues the
+  // Content SID; until then sendWhatsApp() falls back to free text automatically.
+  lead_details_request: process.env.WHATSAPP_LEAD_DETAILS_SID ?? "",
   quote_ready: "HX1ae25e96643c687667ccbc942ee3b33c",
   quote_followup: "HXc2761401b99ab9aeceef7a5c74f8ebb4",
   booking_confirmed: "HX16d26e3fdcf5166604a6cce411a27d0c",

@@ -52,6 +52,11 @@ export async function sendLeadInvite({ firstName, email, phone, link }: LeadInvi
   await Promise.allSettled([
     sendEmail({ to: email, subject: "We need a few more details for your quote — Ample Removals", html: emailHtml }),
     sendSMS(phone, smsText),
-    sendWhatsApp(phone, whatsappText),
+    // Uses the approved template once WHATSAPP_LEAD_DETAILS_SID is set; the
+    // free-text body is the fallback until then.
+    sendWhatsApp(phone, whatsappText, {
+      name: "lead_details_request",
+      variables: { "1": firstName, "2": link },
+    }),
   ]);
 }
