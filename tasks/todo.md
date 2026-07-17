@@ -1,3 +1,34 @@
+# PLAN (awaiting go-ahead): New Lead management + paste-to-prefill
+
+## A. New Lead list + dedup + reminders
+- **Migration**: on bookings add `lead_reminder_stage INT DEFAULT 0`,
+  `lead_last_reminder_at TIMESTAMPTZ`. (is_partial_lead already exists.)
+- **Dedup** (`/api/admin/leads/create`): before creating, if a partial lead
+  (is_partial_lead=true) already exists for the same email/phone → return
+  "already added" + the existing completion link, don't create a duplicate.
+- **New Lead list**: `GET /api/admin/leads` → partial leads (is_partial_lead=true)
+  with customer, created_at, reminder stage. Shown BELOW the New Lead form on
+  web (/admin/leads/new) and mobile (lead/new). Each row: name/email/phone,
+  "sent N reminders", copy link, **Send reminder** button.
+- **Auto-move to Bookings**: completeLead already flips is_partial_lead=false, so
+  a completed lead drops off the list and appears in Bookings automatically. ✓
+- **Reminder automation**: cron `/api/cron/lead-reminders` (Vercel cron ~every
+  30 min): for partial leads, send the due reminder (email+SMS+WhatsApp) at
+  **2h / 7h / 24h / 72h / 5 days** after creation (lead_reminder_stage 1..5),
+  then STOP after 5 days (lead stays in the list). Register in vercel.json.
+- **Manual reminder**: `POST /api/admin/leads/[id]/remind` → send now (button).
+
+## B. Paste-to-prefill New Lead
+- `lib/parseLeadMessage.ts`: extract Name / email / Phone Number from a pasted
+  lead message (regex on the "Label: value" lines). Tolerant of the sample format.
+- Web + mobile New Lead: a "Paste lead message" box → "Extract & prefill" fills
+  the name/email/phone fields; the normal manual form stays exactly as-is.
+
+## Open question
+- Dedup key: match duplicates on **email**, **phone**, or **either**?
+
+---
+
 # Task: Deposit lifecycle (reserve → invoice sent → claimed → admin confirms) ✅
 1. [x] Reserve → status `deposit_invoice_sent` + send deposit request (amount, bank
        details, reference) by email + SMS + WhatsApp (sendDepositMessages). Quote page
