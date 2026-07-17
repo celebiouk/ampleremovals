@@ -9,7 +9,6 @@ export const resendFrom =
 // daniel@ampleremovals.com is the MAIN email - must receive ALL notifications
 export const resendAdminEmails = [
   "daniel@ampleremovals.com",  // MAIN - receives everything
-  "hello@ampleremovals.com",
   "bookings@ampleremovals.com",
   "rita@ampleremovals.com",
 ];
