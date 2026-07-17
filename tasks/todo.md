@@ -1,4 +1,11 @@
-# PLAN (awaiting go-ahead): New Lead management + paste-to-prefill
+# New Lead management + paste-to-prefill ✅ (dedup: email OR phone)
+# Built: migration (lead_reminder_stage/at) applied; dedup + GET /api/admin/leads
+# + manual remind + hourly cron ladder (2h/7h/24h/72h/5d); parseLeadMessage;
+# web + mobile New Lead paste box + pending-leads list w/ reminders. Routes
+# verified (auth-guarded 401/307); parser verified against the sample.
+# (original plan below)
+
+# PLAN (done): New Lead management + paste-to-prefill
 
 ## A. New Lead list + dedup + reminders
 - **Migration**: on bookings add `lead_reminder_stage INT DEFAULT 0`,
