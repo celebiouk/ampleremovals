@@ -75,11 +75,18 @@ deposit (customer self-declares "I've paid" → team verifies). Reduce manual wo
       Verified: typecheck clean (only pre-existing expo-file-system errors remain).
 
 **Phase F — Polish, test end-to-end, deploy** (remaining)
-- [ ] Apply migration (needs DATABASE_URL) → run one real lead through the whole flow.
+- [x] Migration APPLIED to live DB — 13/13 columns verified.
+- [x] Live E2E test PASSED 20/20 (create → persist → quote → reserve → editable
+      reserve → deposit claim), against the real DB, test data cleaned up. Confirmed
+      move_date stores as an exact `date` (2026-08-15); DB is UTC; app reads correct
+      YYYY-MM-DD via PostgREST. See lessons #13/#14.
 - [ ] Bank env vars into Vercel (deposit screen in prod).
 - [ ] `lead_details_request` WhatsApp template (Meta approval).
 - [ ] Confirm studio/1-bed + EOT extrapolated prices.
 - [ ] EAS rebuild of admin-app to ship mobile New Lead.
+
+Note: DATABASE_URL (with DB password) now in .env.local (gitignored) for future
+migrations — run `npx ts-node scripts/run-migrations.ts` or add statements there.
 
 ### Review
 (fill in as phases land)

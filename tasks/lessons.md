@@ -1,5 +1,18 @@
 # Lessons Log
 
+## Lesson 14 — The `pg` driver turns DATE columns into local-midnight JS Dates
+**What happened:** A live E2E test read `bookings.move_date` (a `date` column) via
+node-postgres and got `2026-08-14T23:00:00.000Z` for a stored `2026-08-15`,
+looking like an off-by-one shift. It wasn't — the DB value was correct.
+**Root cause:** node-postgres parses `date` (OID 1082) into a JS `Date` at the
+TEST MACHINE's local midnight (BST here = UTC+1), so `.toISOString()` rolls back
+an hour into the previous day. The real app never sees this: it reads through
+Supabase/PostgREST, which serves a `date` as the plain string `"2026-08-15"`.
+**Rule going forward:** When verifying `date` columns via `pg`, select
+`col::text` (or compare calendar parts) — never `.toISOString().slice(0,10)`.
+Trust the PostgREST/supabase-js read path (plain YYYY-MM-DD string), which is
+what production uses. Related: [[lesson-13]], [[lesson-12]].
+
 ## Lesson 13 — Serialise picked dates as local YYYY-MM-DD, never let JSON.stringify hit a Date
 **What happened:** A customer picking a summer move date on the website had it
 stored **one day early** (pick 20 Jul → stored 19 Jul). The calendar hands back a
