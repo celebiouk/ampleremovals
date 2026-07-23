@@ -132,8 +132,8 @@ export async function POST(request: NextRequest) {
         <h3 style="margin:0 0 12px 0;color:#1e293b;font-size:15px;">Bank Transfer Details</h3>
         <table style="width:100%;font-size:14px;">
           <tr><td style="color:#64748b;padding:6px 0;">Account Name</td><td style="font-weight:600;text-align:right;">AMPLE LOGISTICS LIMITED</td></tr>
-          <tr><td style="color:#64748b;padding:6px 0;">Sort Code</td><td style="font-weight:600;text-align:right;">23-11-85</td></tr>
-          <tr><td style="color:#64748b;padding:6px 0;">Account Number</td><td style="font-weight:600;text-align:right;">93265041</td></tr>
+          <tr><td style="color:#64748b;padding:6px 0;">Sort Code</td><td style="font-weight:600;text-align:right;">30-54-66</td></tr>
+          <tr><td style="color:#64748b;padding:6px 0;">Account Number</td><td style="font-weight:600;text-align:right;">12963462</td></tr>
           <tr><td style="color:#64748b;padding:6px 0;">Reference</td><td style="font-weight:600;text-align:right;color:#6b21a8;">${invoice.invoice_number}</td></tr>
         </table>
         <p style="color:#64748b;font-size:12px;margin:12px 0 0 0;">⚠️ Please use your invoice number as the payment reference</p>
