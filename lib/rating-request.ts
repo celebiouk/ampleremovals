@@ -12,19 +12,30 @@ import type { ServiceType } from "@/types";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ampleremovals.com";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export async function sendRatingRequest(supabase: any, bookingId: string): Promise<void> {
+export interface RatingRequestOptions {
+  /** "all" = email + SMS + WhatsApp (initial, on completion); "email" = email only
+   *  (the daily reminders — we don't SMS/WhatsApp every single day). */
+  channel?: "all" | "email";
+}
+
+export async function sendRatingRequest(
+  supabase: any,
+  bookingId: string,
+  opts: RatingRequestOptions = {}
+): Promise<void> {
   try {
-    const { data: already } = await supabase
-      .from("activity_log").select("id")
-      .eq("booking_id", bookingId).eq("action", "Rating request sent")
-      .limit(1).maybeSingle();
-    if (already) return;
+    const channel = opts.channel ?? "all";
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select("reference, service_type, customer:customers(full_name, email, phone)")
+      .select("reference, service_type, survey_rating, survey_sent_at, survey_reminder_count, customer:customers(full_name, email, phone)")
       .eq("id", bookingId).single();
     if (!booking) return;
+    if (booking.survey_rating != null) return;                 // already reviewed → stop
+    const sentCount = Number(booking.survey_reminder_count ?? 0);
+    if (sentCount >= 7) return;                                 // 7 days of nudges done
+    // At most one nudge per ~day (also stops a re-complete double-send).
+    if (booking.survey_sent_at && Date.now() - new Date(booking.survey_sent_at).getTime() < 20 * 3600 * 1000) return;
     const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
     if (!customer) return;
 
@@ -63,16 +74,21 @@ export async function sendRatingRequest(supabase: any, bookingId: string): Promi
         </div>`,
       }).catch(() => {});
     }
-    if (customer.phone) {
+    // SMS + WhatsApp only on the initial request — the daily reminders are email-only.
+    if (channel === "all" && customer.phone) {
       await sendSMS(customer.phone, `Hi ${first}, thanks for choosing ${company}! How did we do? Rate us here: ${landing} Questions? ${COMPANY_PHONE}`).catch(() => {});
       // Free-text WhatsApp (delivers within the 24h window post-job); no template needed.
       await sendWhatsApp(customer.phone, `Hi ${first}! 🌟 Thanks for choosing *${company}*. How did your ${serviceLabel.toLowerCase()} go? Tap to rate us:\n${landing}`).catch(() => {});
     }
 
+    await supabase.from("bookings").update({
+      survey_sent_at: new Date().toISOString(),
+      survey_reminder_count: sentCount + 1,
+    }).eq("id", bookingId);
     await supabase.from("activity_log").insert({
       booking_id: bookingId,
-      action: "Rating request sent",
-      metadata: { landing },
+      action: sentCount === 0 ? "Rating request sent" : `Review reminder ${sentCount + 1} sent`,
+      metadata: { landing, channel },
       performed_by: "system",
     });
   } catch (e) {
