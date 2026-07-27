@@ -209,33 +209,26 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
   await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "3", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired, type: fired ? "10min" : null, nextAt: null });
 }
 
-// Keep the live ETA cheap. A traffic-aware Distance Matrix call costs ~1¢, so we:
-//  • only call Google when the driver has actually MOVED (parked → hold for free), and
-//  • recalc less often when far out, more often near arrival (where accuracy matters).
-// → a 1-hour journey stays under 10¢; a parked driver costs nothing.
-const ETA_THROTTLE_FAR_MS = 12 * 60 * 1000;  // > 15 min away
-const ETA_THROTTLE_NEAR_MS = 4 * 60 * 1000;  // ≤ 15 min away
+// Recalc the traffic-aware ETA on a TIME cadence — regardless of whether the
+// driver is moving — so a driver stuck in traffic shows a GROWING ETA that tracks
+// Google/Apple Maps. (The old logic "held" the ETA while the driver was barely
+// moving, which reset the countdown and hid the delay: the customer saw "10 min"
+// while the driver was 45 min away in traffic.) A Distance Matrix call is ~1¢, so
+// we recalc every few minutes, tighter near arrival where accuracy matters most.
+const ETA_REFRESH_FAR_MS = 3 * 60 * 1000;  // > 15 min away → recalc every ~3 min
+const ETA_REFRESH_NEAR_MS = 90 * 1000;     // ≤ 15 min away → recalc every ~90 s
 const ETA_NEAR_MIN = 15;
-const ETA_STATIONARY_M = 150;
-
-function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
 
 /**
- * Refresh the live ETA for active journeys from the driver's GPS — but cheaply.
- * Parked drivers hold their ETA for free; moving drivers recalc at most every
- * ~10 minutes. Best-effort per booking (columns may not be migrated yet).
+ * Refresh the live ETA for active journeys from the driver's GPS. Recalculates
+ * (traffic-aware) once the last calc is older than the cadence above — even if
+ * the driver hasn't moved — so heavy traffic pushes the ETA out. Between recalcs
+ * the tracking page counts down from the last real value. Best-effort per booking.
  */
 export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: number; held: number }> {
   const { data: active } = await supabase
     .from("bookings")
-    .select("id, current_journey_leg, current_eta_timestamp, eta_calc_at, eta_last_lat, eta_last_lng, eta_last_duration_seconds")
+    .select("id, current_journey_leg, current_eta_timestamp, eta_calc_at")
     .not("current_journey_leg", "is", null)
     .is("arrived_at", null);
 
@@ -244,43 +237,30 @@ export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: num
   const nowMs = Date.now();
   for (const row of active ?? []) {
     try {
-      const driver = await leadDriver(supabase, row.id);
-      const gps = driver ? await driverGps(supabase, driver.id) : null;
-      if (!gps) continue; // no live position yet — leave the last ETA in place
-      const gLat = Number(gps.lat);
-      const gLng = Number(gps.lng);
-      const lastLat = row.eta_last_lat != null ? Number(row.eta_last_lat) : null;
-      const lastLng = row.eta_last_lng != null ? Number(row.eta_last_lng) : null;
-      const lastDur = row.eta_last_duration_seconds != null ? Number(row.eta_last_duration_seconds) : null;
-      const moved = lastLat != null && lastLng != null ? haversineMeters(gLat, gLng, lastLat, lastLng) : Infinity;
-      const sinceCalc = row.eta_calc_at ? nowMs - new Date(row.eta_calc_at).getTime() : Infinity;
-
-      // Parked → hold the ETA steady for free (no Google call).
-      if (moved < ETA_STATIONARY_M && lastDur != null) {
-        await supabase.from("bookings").update({
-          current_eta_timestamp: new Date(nowMs + lastDur * 1000).toISOString(),
-        }).eq("id", row.id);
-        held++;
-        continue;
-      }
-      // Recalc more often once the driver is close (accuracy matters most there).
+      // Recalc more often the closer they are (accuracy matters most near arrival).
       const remainingMin = row.current_eta_timestamp
         ? (new Date(row.current_eta_timestamp).getTime() - nowMs) / 60000
         : Infinity;
-      const throttleMs = remainingMin <= ETA_NEAR_MIN ? ETA_THROTTLE_NEAR_MS : ETA_THROTTLE_FAR_MS;
-      // Moving but recalculated recently → let the page count down; don't spend a call.
-      if (sinceCalc < throttleMs && lastDur != null) continue;
+      const interval = remainingMin <= ETA_NEAR_MIN ? ETA_REFRESH_NEAR_MS : ETA_REFRESH_FAR_MS;
+      const sinceCalc = row.eta_calc_at ? nowMs - new Date(row.eta_calc_at).getTime() : Infinity;
+      // Recent enough → let the page count down toward the last real ETA.
+      if (sinceCalc < interval) { held++; continue; }
 
-      // Moving + due (or first time) → exactly one Google call.
+      const driver = await leadDriver(supabase, row.id);
+      const gps = driver ? await driverGps(supabase, driver.id) : null;
+      if (!gps) continue; // no live position yet — keep the last ETA
+
       const booking = await loadBooking(supabase, row.id);
       if (!booking) continue;
       const dest = legDest(booking, row.current_journey_leg as Leg);
-      const dm = await distanceMatrix(gLat, gLng, dest.dest);
+      // Traffic-aware (duration_in_traffic): a jam pushes the ETA out even when the
+      // driver is barely moving.
+      const dm = await distanceMatrix(Number(gps.lat), Number(gps.lng), dest.dest);
       await supabase.from("bookings").update({
         current_eta_timestamp: dm.etaTimestamp,
         eta_calc_at: new Date(nowMs).toISOString(),
-        eta_last_lat: gLat,
-        eta_last_lng: gLng,
+        eta_last_lat: Number(gps.lat),
+        eta_last_lng: Number(gps.lng),
         eta_last_duration_seconds: dm.durationSeconds,
       }).eq("id", row.id);
       refreshed++;
