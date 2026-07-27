@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Linking, Share, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Linking, Share, Pressable, ActivityIndicator, Alert, ActionSheetIOS, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Navigation, MapPin, Home, Calendar, Users, PoundSterling, Info, Truck,
@@ -22,8 +22,28 @@ function fullAddress(a?: Address | null): string {
   if (!a) return "—";
   return [a.line_1, a.line_2, a.city, a.county, a.postcode].filter(Boolean).join(", ");
 }
-function directionsUrl(a?: Address | null): string {
-  return `https://maps.google.com/?q=${encodeURIComponent(fullAddress(a))}`;
+/** Destination for a maps deep-link: prefer exact coords, else the text address. */
+function mapsDestination(a?: Address | null): string {
+  if (a?.lat != null && a?.lng != null) return `${a.lat},${a.lng}`;
+  return fullAddress(a);
+}
+/** Let the driver pick their maps app (Apple Maps or Google Maps) rather than
+ *  forcing Google Maps. On iOS shows a native chooser; Android opens Google Maps. */
+function openDirections(a?: Address | null) {
+  const dest = encodeURIComponent(mapsDestination(a));
+  const apple = `http://maps.apple.com/?daddr=${dest}&dirflg=d`;
+  const google = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+  if (Platform.OS === "ios") {
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: "Open directions in", options: ["Maps", "Google Maps", "Cancel"], cancelButtonIndex: 2 },
+      (i) => { if (i === 0) Linking.openURL(apple); else if (i === 1) Linking.openURL(google); },
+    );
+  } else {
+    Alert.alert("Open directions in", undefined, [
+      { text: "Google Maps", onPress: () => Linking.openURL(google) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
 }
 
 export default function JobDetailScreen() {
@@ -317,7 +337,7 @@ function AddressCard({ kind, address }: { kind: "pickup" | "delivery"; address?:
       </View>
       <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{fullAddress(address)}</Text>
       <Text style={[type.h2, { color: colors.slate[900], marginTop: 4, marginBottom: spacing.md, fontFamily: type.mono.fontFamily }]}>{address.postcode ?? "—"}</Text>
-      <Button label="Get directions" variant={isPickup ? "primary" : "accent"} icon={<Navigation size={18} color={colors.white} />} onPress={() => Linking.openURL(directionsUrl(address))} fullWidth />
+      <Button label="Get directions" variant={isPickup ? "primary" : "accent"} icon={<Navigation size={18} color={colors.white} />} onPress={() => openDirections(address)} fullWidth />
     </Card>
   );
 }
