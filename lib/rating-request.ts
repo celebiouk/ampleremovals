@@ -33,8 +33,15 @@ export async function sendRatingRequest(supabase: any, bookingId: string): Promi
     const first = (customer.full_name || "there").split(" ")[0];
     const serviceLabel = SERVICE_LABELS[booking.service_type as ServiceType] ?? booking.service_type;
     const landing = `${SITE}/survey/${bookingId}`;
-    const stars = [5, 4, 3, 2, 1]
-      .map((n) => `<a href="${SITE}/survey/${bookingId}/${n}" style="text-decoration:none;font-size:34px;margin:0 3px;">⭐</a>`)
+    // Numbered gold stars (1→5) so it's obvious which to tap — the number sits
+    // inside each star. Ordered low→high; tapping the "5" star gives 5 stars.
+    const stars = [1, 2, 3, 4, 5]
+      .map(
+        (n) => `<a href="${SITE}/survey/${bookingId}/${n}" style="text-decoration:none;display:inline-block;position:relative;width:48px;height:48px;margin:0 3px;vertical-align:middle;">
+          <span style="font-size:48px;line-height:48px;color:#f59e0b;">&#9733;</span>
+          <span style="position:absolute;top:0;left:0;width:48px;height:48px;line-height:48px;text-align:center;color:#ffffff;font-weight:bold;font-size:19px;">${n}</span>
+        </a>`
+      )
       .join("");
 
     if (customer.email) {
@@ -49,7 +56,8 @@ export async function sendRatingRequest(supabase: any, bookingId: string): Promi
           <div style="background:#fff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:28px;text-align:center;">
             <p style="color:#475569;line-height:1.6;">We hope your ${serviceLabel.toLowerCase()} went smoothly. How did we do?</p>
             <div style="margin:20px 0;">${stars}</div>
-            <p style="color:#94a3b8;font-size:13px;">Tap a star to rate us · Booking ${booking.reference}</p>
+            <p style="color:#64748b;font-size:13px;">Tap the star with your rating — <strong>5 is the best!</strong></p>
+            <p style="color:#94a3b8;font-size:12px;">Booking ${booking.reference}</p>
             <p style="color:#64748b;font-size:13px;">Questions? Call ${COMPANY_PHONE}</p>
           </div>
         </div>`,
