@@ -36,6 +36,20 @@
 
 ---
 
+# Task: Delivery invoice + reviews + tracking ETA + directions ✅
+1. [x] Balance invoice now fires on DELIVERY confirmation (not pickup arrival), with a
+       SHORT pay link (/pay/<code>) in email + SMS + WhatsApp. Full quote if no deposit
+       paid, else the remainder. New invoices.pay_code column + generatePayCode().
+2. [x] Pay page /pay/[code]: amount, reference, bank details + "I've made the payment"
+       (records a claim, alerts the team). Fixed status_history `reason` insert bug.
+3. [x] Numbered rating stars (1–5 inside each star) in the review email + survey page.
+4. [x] Live tracking ETA: refreshActiveEtas recalcs traffic-aware ETA on a time cadence
+       (~90s near / ~3min far) regardless of movement, so traffic pushes the ETA out
+       instead of a blind countdown. Removed the "parked hold" that masked delays.
+5. [x] Driver "Get directions" → chooser (Maps / Google Maps) on iOS; no longer forces
+       Google Maps. (driver-app — ships on next EAS build.)
+Verified: web deploy ok; pay + survey routes render; typecheck clean.
+
 # Task: Deposit lifecycle (reserve → invoice sent → claimed → admin confirms) ✅
 1. [x] Reserve → status `deposit_invoice_sent` + send deposit request (amount, bank
        details, reference) by email + SMS + WhatsApp (sendDepositMessages). Quote page
