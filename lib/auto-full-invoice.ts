@@ -1,6 +1,6 @@
 /**
- * Auto full-balance invoice — fired when the driver confirms arrival at the
- * PICKUP. It bills the remaining balance the customer owes:
+ * Auto full-balance invoice — fired when the driver confirms DELIVERY. It bills
+ * the remaining balance the customer owes:
  *
  *     full balance (gross) = last quote total  −  confirmed deposit paid
  *
@@ -16,10 +16,11 @@ import { generateInvoicePDF } from "@/lib/pdf/generate-invoice-pdf";
 import { uploadInvoicePDF, getInvoiceSignedURL, downloadInvoicePDF } from "@/lib/storage";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
-import { generateInvoiceNumber, formatDate, formatCurrency } from "@/lib/utils";
+import { generateInvoiceNumber, generatePayCode, formatDate, formatCurrency } from "@/lib/utils";
 import { SERVICE_LABELS } from "@/lib/constants";
 import type { ServiceType, InvoicePDFData } from "@/types";
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ampleremovals.com";
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 type Result = { sent: boolean; reason?: string; invoiceNumber?: string; total?: number };
@@ -96,6 +97,15 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
     }
     if (!invoiceNumber) return { sent: false, reason: "could not allocate invoice number" };
 
+    // Short pay-link code (unique) → /pay/<code> shows amount, reference + bank details.
+    let payCode = "";
+    for (let i = 0; i < 10; i++) {
+      const candidate = generatePayCode();
+      const { data: clash } = await supabase.from("invoices").select("id").eq("pay_code", candidate).maybeSingle();
+      if (!clash) { payCode = candidate; break; }
+    }
+    const payLink = payCode ? `${SITE}/pay/${payCode}` : SITE;
+
     const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     // Insert the invoice (sent straight away — this is an automatic send).
@@ -118,6 +128,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
           : `Full balance. Quote total ${formatCurrency(quoteTotal)}.`,
         full_job_value: quoteTotal,
         balance_remaining: total,
+        pay_code: payCode || null,
       })
       .select("id")
       .single();
@@ -195,7 +206,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
           </div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:28px;">
             <p style="color:#1e293b;">Hi ${first},</p>
-            <p style="color:#475569;line-height:1.6;">Your driver has arrived for your move. Please find your <strong>final balance</strong> invoice attached.</p>
+            <p style="color:#475569;line-height:1.6;">Your delivery is complete — thank you! Please settle your <strong>final balance</strong> below. Your invoice is also attached.</p>
             <div style="border:2px solid #6b21a8;border-radius:10px;padding:16px;margin:20px 0;background:#faf5ff;">
               <table style="width:100%;font-size:14px;">
                 <tr><td style="color:#64748b;padding:4px 0;">Invoice Number</td><td style="font-weight:bold;text-align:right;">${invoiceNumber}</td></tr>
@@ -206,6 +217,9 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
                 <tr><td style="color:#64748b;padding:4px 0;">Balance Due</td><td style="font-weight:bold;text-align:right;color:#6b21a8;">${formatCurrency(total)}</td></tr>
               </table>
             </div>
+            <p style="text-align:center;margin:20px 0;">
+              <a href="${payLink}" style="background:#16a34a;color:#fff;text-decoration:none;padding:14px 30px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block;">Pay my balance</a>
+            </p>
             <div style="background:#f8fafc;border-radius:10px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;">
               <h3 style="margin:0 0 12px 0;color:#1e293b;font-size:15px;">Bank Transfer Details</h3>
               <table style="width:100%;font-size:14px;">
@@ -225,13 +239,14 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
       console.error("auto full-invoice email failed:", e);
     }
 
-    // SMS + WhatsApp (the owner's "send a message" = email + SMS + WhatsApp).
-    const smsBody = `Ample Removals: Your final balance invoice ${invoiceNumber} (${formatCurrency(total)}) has been emailed - pay by bank transfer, details inside. Questions? Call ${companyPhone}. Ref ${booking.reference}`;
+    // SMS + WhatsApp (the owner's "send a message" = email + SMS + WhatsApp). Both
+    // carry the SHORT pay link so the customer taps straight through to the amount,
+    // reference + bank details. WhatsApp is free-text (in-window right after a move).
+    const smsBody = `Ample Removals: your balance of ${formatCurrency(total)} is due. Pay here (amount, reference & bank details): ${payLink} — Ref ${booking.reference}. Questions? ${companyPhone}`;
     await sendSMS(customer.phone, smsBody).catch(() => {});
     await sendWhatsApp(
       customer.phone,
-      `Hi ${first}! Your driver has arrived. 📄 Your *final balance* invoice *${invoiceNumber}* for *${formatCurrency(total)}* is in your email.\n\nPay by bank transfer (details in the email).\n\nRef: ${booking.reference}`,
-      { name: "final_invoice_sent", variables: { "1": first, "2": invoiceNumber, "3": formatCurrency(total), "4": booking.reference } },
+      `Hi ${first}! Your delivery is complete 🎉 Your *final balance* is *${formatCurrency(total)}*.\n\nTap to pay — amount, reference & bank details:\n${payLink}\n\nRef: ${booking.reference}`,
     ).catch(() => {});
 
     // Mark sent + advance the booking to "Full Invoice Sent".
@@ -244,13 +259,12 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
         previous_status: booking.status ?? null,
         new_status: "full_invoice_sent",
         changed_by: "system",
-        reason: "Full balance invoice auto-sent on pickup arrival",
       });
     }
 
     await supabase.from("activity_log").insert({
       booking_id: bookingId,
-      action: `Full balance invoice ${invoiceNumber} auto-sent on pickup arrival`,
+      action: `Full balance invoice ${invoiceNumber} auto-sent on delivery`,
       metadata: { invoiceId, invoiceNumber, total, depositPaid, quoteTotal, vatRate },
       performed_by: "system",
     });
@@ -259,7 +273,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
       await supabase.from("notifications").insert({
         type: "invoice_sent",
         title: "Final balance invoice sent",
-        description: `${invoiceNumber} — ${formatCurrency(total)} auto-sent to ${customer.full_name} on pickup arrival.`,
+        description: `${invoiceNumber} — ${formatCurrency(total)} auto-sent to ${customer.full_name} on delivery.`,
         booking_id: bookingId,
       });
     } catch { /* non-critical */ }

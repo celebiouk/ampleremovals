@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendChainReceipt } from "@/lib/chain-receipt";
+import { autoSendFullBalanceInvoice } from "@/lib/auto-full-invoice";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -39,6 +40,13 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
 
     // Branded delivery receipt PDF emailed to the customer (best-effort).
     await sendChainReceipt(supabase, params.bookingId, "delivery");
+
+    // Delivery done → auto-send the final balance invoice with a short pay link
+    // (full quote if no deposit paid, else the remainder). Best-effort: it must
+    // never block the delivery confirmation. Fires before the driver taps Complete.
+    autoSendFullBalanceInvoice(params.bookingId).catch((e) =>
+      console.error("auto full-balance invoice on delivery failed:", e),
+    );
 
     return NextResponse.json({ success: true, contact_name: contact_name.trim() });
   } catch (e) {

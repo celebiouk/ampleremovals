@@ -26,6 +26,14 @@ function randomSuffix(length = 5): string {
 }
 
 /**
+ * Short, URL-safe code for the customer "pay balance" link (/pay/<code>).
+ * 8 unambiguous chars — short enough for SMS/WhatsApp, ~1e12 keyspace.
+ */
+export function generatePayCode(length = 8): string {
+  return randomSuffix(length);
+}
+
+/**
  * Generate a human-friendly booking reference, e.g. `RMV-2026-7F4QK`.
  */
 export function generateBookingReference(serviceType: ServiceType): string {
