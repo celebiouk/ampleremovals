@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, Landmark, CheckCircle2, Phone, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyRow } from "@/components/shared/CopyRow";
 
 const PHONE_DISPLAY = "0333 577 2070";
 const PHONE_TEL = "03335772070";
@@ -84,11 +85,11 @@ export default function PayPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
               {data.bank ? (
                 <dl className="divide-y divide-slate-100">
-                  <Row label="Amount" value={gbp(data.amount)} strong />
-                  <Row label="Account name" value={data.bank.accountName} />
-                  <Row label="Sort code" value={data.bank.sortCode} />
-                  <Row label="Account number" value={data.bank.accountNumber} />
-                  <Row label="Reference" value={data.reference} />
+                  <CopyRow label="Amount" value={gbp(data.amount)} strong />
+                  <CopyRow label="Account name" value={data.bank.accountName} />
+                  <CopyRow label="Sort code" value={data.bank.sortCode} />
+                  <CopyRow label="Account number" value={data.bank.accountNumber} />
+                  <CopyRow label="Reference" value={data.reference} />
                 </dl>
               ) : (
                 <p className="text-sm text-slate-500">
@@ -150,15 +151,6 @@ export default function PayPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-3">
-      <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className={`font-display font-bold tracking-wide ${strong ? "text-lg text-brand-purple-900" : "text-base text-brand-purple-950"}`}>{value}</dd>
     </div>
   );
 }

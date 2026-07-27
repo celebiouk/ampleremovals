@@ -8,6 +8,7 @@ import {
   CalendarCheck, Truck, Sparkles, Landmark, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyRow } from "@/components/shared/CopyRow";
 import { DEPOSIT_PERCENTAGE, BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
 
 const PHONE_DISPLAY = "0333 577 2070";
@@ -354,10 +355,7 @@ function DepositView({ reference, deposit, onClaim }: { reference: string; depos
         {BANK_DETAILS_CONFIGURED ? (
           <dl className="divide-y divide-slate-100">
             {rows.map((r) => (
-              <div key={r.label} className="flex items-center justify-between gap-3 py-3">
-                <dt className="text-sm text-slate-500">{r.label}</dt>
-                <dd className="font-display text-base font-bold tracking-wide text-brand-purple-950">{r.value}</dd>
-              </div>
+              <CopyRow key={r.label} label={r.label} value={r.value} />
             ))}
           </dl>
         ) : (
