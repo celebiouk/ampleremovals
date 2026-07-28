@@ -68,12 +68,12 @@ export const WHITE_GOODS_UPLIFT = 50;
 /** Removals base price by bedroom band, WITHOUT white goods (the +£50 is added
  *  on top when applicable). Confirmed table. */
 const REMOVALS_BASE: Record<string, number> = {
-  studio: 400,
-  "1": 450,
-  "2": 500,
-  "3": 550,
-  "4": 600,
-  "5+": 650,
+  studio: 300,
+  "1": 350,
+  "2": 400,
+  "3": 450,
+  "4": 500,
+  "5+": 550,
 };
 
 /** Packing help, per hour. */
