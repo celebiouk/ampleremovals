@@ -108,6 +108,7 @@ export const INVENTORY_CATALOG: InventoryCategory[] = [
     items: [
       { key: "wardrobe", label: "Wardrobe" },
       { key: "chest_of_drawers", label: "Chest of drawers" },
+      { key: "bookcase", label: "Bookcase" },
       {
         key: "mirror",
         label: "Mirror",

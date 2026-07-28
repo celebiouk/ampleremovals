@@ -65,6 +65,7 @@ function QuantityAddOn({
 export function ExtraHelpStep() {
   const { control, setValue } = useFormContext();
   const packingHours = (useWatch({ control, name: "packingHours" }) as number) ?? 0;
+  const packingMen = (useWatch({ control, name: "packingMen" }) as number) ?? 1;
   const dismantleCount = (useWatch({ control, name: "dismantleCount" }) as number) ?? 0;
   const assembleCount = (useWatch({ control, name: "assembleCount" }) as number) ?? 0;
   const services = useWatch({ control, name: "additionalServices" }) ?? {};
@@ -87,14 +88,56 @@ export function ExtraHelpStep() {
       />
 
       <div className="space-y-3">
-        <QuantityAddOn
-          icon={Package}
-          title="Packing help"
-          description="Our team packs your belongings — £35 per hour."
-          unit="hour"
-          value={packingHours}
-          onChange={(n) => setQuantity("packingHours", "packing_services", n)}
-        />
+        {/* Packing help — choose the number of packers (£35/hr per man) and the hours. */}
+        <div
+          className={cn(
+            "rounded-xl border-2 bg-white p-4 transition-all",
+            packingHours > 0 ? "border-brand-purple-600 bg-brand-purple-50 shadow-sm" : "border-slate-200"
+          )}
+        >
+          <div className="flex items-center gap-4">
+            <span
+              className={cn(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors",
+                packingHours > 0 ? "bg-brand-purple-800 text-white" : "bg-brand-purple-50 text-brand-purple-800"
+              )}
+            >
+              <Package className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-base font-bold text-brand-purple-950">Packing help</p>
+              <p className="mt-0.5 text-sm leading-snug text-slate-500">Our team packs your belongings — £35 per hour, per person.</p>
+            </div>
+            <QuantityStepper value={packingHours} onChange={(n) => setQuantity("packingHours", "packing_services", n)} max={40} />
+          </div>
+          {packingHours > 0 && (
+            <>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-brand-purple-100 pt-3">
+                <span className="text-sm font-semibold text-slate-700">How many packers?</span>
+                <div className="flex gap-2">
+                  {[1, 2].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setValue("packingMen", m, { shouldDirty: true })}
+                      className={cn(
+                        "rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-all",
+                        packingMen === m
+                          ? "border-brand-purple-600 bg-brand-purple-800 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-purple-300"
+                      )}
+                    >
+                      {m} {m === 1 ? "man" : "men"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-2 text-sm font-semibold text-brand-purple-700">
+                {packingMen} {packingMen === 1 ? "man" : "men"} × {packingHours} hour{packingHours === 1 ? "" : "s"} — £{35 * packingMen * packingHours}
+              </p>
+            </>
+          )}
+        </div>
         <QuantityAddOn
           icon={Wrench}
           title="Furniture dismantling"

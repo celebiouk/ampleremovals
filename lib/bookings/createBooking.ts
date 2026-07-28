@@ -249,6 +249,7 @@ export async function createBooking(
       bedrooms: d.bedrooms,
       hasWhiteGoods: whiteGoods,
       packingHours: d.packingHours ?? 0,
+      packingMen: d.packingMen ?? 1,
       dismantleCount: d.dismantleCount ?? 0,
       assembleCount: d.assembleCount ?? 0,
       eotCleaning: Boolean(d.wantsEotCleaning),
@@ -297,6 +298,7 @@ export async function createBooking(
         .from("additional_services")
         .update({
           packing_hours: d.packingHours ?? 0,
+          packing_men: d.packingMen ?? 1,
           dismantle_count: d.dismantleCount ?? 0,
           assemble_count: d.assembleCount ?? 0,
         })

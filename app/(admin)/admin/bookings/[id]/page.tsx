@@ -533,7 +533,7 @@ export default function BookingDetailPage() {
                 // Prefer the instant-quote quantities; fall back to the legacy booleans.
                 const extras = [
                   additionalServices.packing_hours
-                    ? `Packing — ${additionalServices.packing_hours} hr${additionalServices.packing_hours === 1 ? "" : "s"}`
+                    ? `Packing — ${additionalServices.packing_men ?? 1} ${(additionalServices.packing_men ?? 1) === 1 ? "man" : "men"}, ${additionalServices.packing_hours} hr${additionalServices.packing_hours === 1 ? "" : "s"}`
                     : additionalServices.packing_services ? "Packing Services" : null,
                   additionalServices.packing_materials ? "Packing Materials" : null,
                   additionalServices.dismantle_count

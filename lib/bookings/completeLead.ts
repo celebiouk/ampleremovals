@@ -63,6 +63,7 @@ export async function completeLead(
     bedrooms: data.bedrooms,
     hasWhiteGoods: whiteGoods,
     packingHours: data.packingHours ?? 0,
+    packingMen: data.packingMen ?? 1,
     dismantleCount: data.dismantleCount ?? 0,
     assembleCount: data.assembleCount ?? 0,
     eotCleaning: Boolean(data.wantsEotCleaning),
@@ -127,6 +128,7 @@ export async function completeLead(
       .from("additional_services")
       .update({
         packing_hours: data.packingHours ?? 0,
+        packing_men: data.packingMen ?? 1,
         dismantle_count: data.dismantleCount ?? 0,
         assemble_count: data.assembleCount ?? 0,
       })

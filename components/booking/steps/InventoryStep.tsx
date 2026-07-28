@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useController, useFormContext } from "react-hook-form";
 import { StepHeading, QuantityStepper } from "@/components/booking/primitives";
 import {
@@ -43,6 +43,17 @@ export function InventoryStep() {
         ? [...rest, { key: itemKey, label, variant: variantKey, quantity }]
         : rest
     );
+  };
+
+  // "Other" — customer-typed items live in the same inventory array under a
+  // unique `custom:*` key so they get a quantity stepper like everything else.
+  const [customText, setCustomText] = useState("");
+  const customItems = selections.filter((s) => s.key.startsWith("custom:"));
+  const addCustom = () => {
+    const name = customText.trim();
+    if (!name) return;
+    field.onChange([...selections, { key: `custom:${Date.now()}`, label: name, quantity: 1 }]);
+    setCustomText("");
   };
 
   return (
@@ -118,6 +129,45 @@ export function InventoryStep() {
             </div>
           </section>
         ))}
+      </div>
+
+      {/* Your own items (added via "Other") */}
+      {customItems.length > 0 && (
+        <section className="mt-7">
+          <h3 className="mb-2.5 font-display text-sm font-bold uppercase tracking-wide text-slate-400">
+            Your own items
+          </h3>
+          <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {customItems.map((it) => (
+              <div key={it.key} className="flex items-center justify-between gap-3 px-4 py-3">
+                <span className="text-sm font-medium text-brand-purple-950">{it.label}</span>
+                <QuantityStepper value={it.quantity} onChange={(n) => setQty(it.key, it.label, undefined, n)} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Other — type your own item, then pick a quantity like the rest. */}
+      <div className="mt-6 rounded-xl border-2 border-dashed border-slate-200 p-4">
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Other — something not on the list?</label>
+        <div className="flex gap-2">
+          <input
+            value={customText}
+            onChange={(e) => setCustomText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+            placeholder="e.g. Piano, Exercise bike, Fish tank"
+            className="h-11 min-w-0 flex-1 rounded-xl border-2 border-slate-200 px-3 text-base outline-none transition-colors focus:border-brand-purple-600"
+          />
+          <button
+            type="button"
+            onClick={addCustom}
+            disabled={!customText.trim()}
+            className="shrink-0 rounded-xl bg-brand-purple-800 px-5 text-sm font-bold text-white transition-colors hover:bg-brand-purple-900 disabled:opacity-40"
+          >
+            Add
+          </button>
+        </div>
       </div>
     </div>
   );

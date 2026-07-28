@@ -81,6 +81,7 @@ const removals: Builder = (initialPostcode) => ({
     specialInstructions: "",
     additionalServices: NO_EXTRAS,
     packingHours: 0,
+    packingMen: 1,
     dismantleCount: 0,
     assembleCount: 0,
     description: "",

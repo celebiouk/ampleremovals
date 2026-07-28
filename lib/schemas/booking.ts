@@ -75,6 +75,7 @@ const logisticsFields = {
   parkingWithin20m: z.boolean().optional(),
   specialInstructions: z.string().trim().max(1000).optional(),
   packingHours: z.coerce.number().int().min(0).max(40).optional().default(0),
+  packingMen: z.coerce.number().int().min(1).max(2).optional().default(1),
   dismantleCount: z.coerce.number().int().min(0).max(99).optional().default(0),
   assembleCount: z.coerce.number().int().min(0).max(99).optional().default(0),
 };

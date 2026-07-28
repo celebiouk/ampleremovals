@@ -188,6 +188,7 @@ export interface AdditionalServices {
   assemble_furniture: boolean;
   // Quantities that feed the instant-quote engine.
   packing_hours?: number;
+  packing_men?: number;
   dismantle_count?: number;
   assemble_count?: number;
 }

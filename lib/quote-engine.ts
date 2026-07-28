@@ -40,8 +40,10 @@ export interface QuoteEngineInput {
   /** True if the inventory includes any white good (fridge freezer, washing
    *  machine, tumble dryer, dishwasher, chest freezer). Adds a hidden +£50. */
   hasWhiteGoods?: boolean;
-  /** Hours of packing help requested (£35/hr). */
+  /** Hours of packing help requested (£35/hr per man). */
   packingHours?: number;
+  /** Number of packers (1 or 2). Packing is billed £35/hr PER man. */
+  packingMen?: number;
   /** Number of items to dismantle (£20 each). */
   dismantleCount?: number;
   /** Number of items to assemble (£20 each). */
@@ -124,12 +126,14 @@ export function buildQuote(input: QuoteEngineInput): QuoteEngineResult {
   // 2. Packing help (£35/hr) — removable.
   const packingHours = Math.max(0, Math.floor(input.packingHours ?? 0));
   if (packingHours > 0) {
+    const men = Math.min(2, Math.max(1, Math.floor(input.packingMen ?? 1)));
+    const rate = PACKING_PER_HOUR * men; // £35/hr per man
     lines.push({
       key: "packing",
-      description: `Packing help (${packingHours} hour${packingHours === 1 ? "" : "s"})`,
+      description: `Packing help (${men} ${men === 1 ? "man" : "men"}, ${packingHours} hour${packingHours === 1 ? "" : "s"})`,
       quantity: packingHours,
-      unit_price: PACKING_PER_HOUR,
-      total: packingHours * PACKING_PER_HOUR,
+      unit_price: rate,
+      total: packingHours * rate,
       removable: true,
     });
   }
