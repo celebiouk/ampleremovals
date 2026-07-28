@@ -138,6 +138,17 @@ export const INVENTORY_CATALOG: InventoryCategory[] = [
       },
     ],
   },
+  {
+    category: "Garden & other",
+    items: [
+      { key: "garden_table", label: "Garden table" },
+      { key: "garden_chair", label: "Garden chair" },
+      { key: "garden_bench", label: "Garden bench" },
+      { key: "bbq", label: "BBQ" },
+      { key: "bicycle", label: "Bicycle" },
+      { key: "piano", label: "Piano" },
+    ],
+  },
 ];
 
 /** Item keys that count as white goods (drive the hidden +£50). */
