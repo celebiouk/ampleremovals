@@ -99,6 +99,7 @@ export default function BookingDetailPage() {
     }
   };
   const [callBackReminderOpen, setCallBackReminderOpen] = useState(false);
+  const [openReminderId, setOpenReminderId] = useState<string | null>(null);
   const [updatingDriverStatus, setUpdatingDriverStatus] = useState(false);
   const [templateCategory, setTemplateCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
@@ -308,7 +309,7 @@ export default function BookingDetailPage() {
   const { booking, customer, originAddress, destinationAddress,
     removalsDetails, manAndVanDetails, houseClearanceDetails,
     houseCleaningDetails, endOfTenancyDetails, additionalServices,
-    notes, statusHistory, activityLog, invoices } = data;
+    notes, statusHistory, activityLog, invoices, reminders } = data;
 
   const visibleHistory = showAllHistory ? statusHistory : statusHistory.slice(0, 5);
 
@@ -695,6 +696,51 @@ export default function BookingDetailPage() {
             </div>
           </Card>
 
+          {/* Call-back reminders — expandable, one open at a time */}
+          {reminders.length > 0 && (
+            <Card title="Call-back reminders">
+              <div className="space-y-2">
+                {reminders.map((r) => {
+                  const isOpen = openReminderId === r.id;
+                  const done = r.status === "completed" || Boolean(r.completed_at);
+                  const time = new Date(r.reminder_datetime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <div key={r.id} className="overflow-hidden rounded-xl border border-slate-200">
+                      <button
+                        onClick={() => setOpenReminderId(isOpen ? null : r.id)}
+                        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">Call back {formatDate(r.reminder_datetime)} · {time}</p>
+                          <p className="text-xs text-slate-400">Set {formatDate(r.created_at)} · {r.reason.replace(/_/g, " ")}</p>
+                        </div>
+                        <span className="flex shrink-0 items-center gap-2">
+                          {done
+                            ? <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Done</span>
+                            : r.reminder_sent_at
+                              ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">Sent</span>
+                              : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Upcoming</span>}
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-slate-100 bg-slate-50/60 px-3 py-3">
+                          <div className="mb-3 grid grid-cols-2 gap-3 text-xs">
+                            <div><p className="text-slate-400">Reminder set on</p><p className="font-medium text-slate-700">{formatDateTime(r.created_at)}</p></div>
+                            <div><p className="text-slate-400">Call-back day</p><p className="font-medium text-slate-700">{formatDateTime(r.reminder_datetime)}</p></div>
+                          </div>
+                          {r.notes
+                            ? <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{r.notes}</p>
+                            : <p className="text-sm text-slate-400">No note was left for this reminder.</p>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
           {/* Driver Status Actions */}
           <Card title="Driver Status">
             <div className="space-y-2">
@@ -991,6 +1037,16 @@ export default function BookingDetailPage() {
         invoiceType={invoiceToDelete?.type.replace("_", " ") || ""}
         amount={invoiceToDelete?.amount || 0}
       />
+
+      {/* Floating call-back note button — stays reachable as the admin scrolls. */}
+      <button
+        onClick={() => setCallBackReminderOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-amber-500 px-5 py-3.5 font-bold text-white shadow-lg shadow-amber-500/40 transition-transform hover:bg-amber-600 active:scale-95"
+        aria-label="Add a call-back reminder note"
+      >
+        <Bell className="h-5 w-5" />
+        <span className="hidden sm:inline">Call-back note</span>
+      </button>
 
       <CallBackReminderModal
         isOpen={callBackReminderOpen}

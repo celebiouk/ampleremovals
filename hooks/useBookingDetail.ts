@@ -9,6 +9,17 @@ import type {
   HouseCleaningDetails, EndOfTenancyDetails, AdditionalServices,
 } from "@/types";
 
+export interface CallBackReminder {
+  id: string;
+  reminder_datetime: string; // the call-back day
+  reason: string;
+  notes: string | null;
+  status: string;
+  created_at: string;        // when the reminder was set
+  reminder_sent_at: string | null;
+  completed_at: string | null;
+}
+
 export interface BookingDetailData {
   booking: Booking;
   customer: Customer;
@@ -24,6 +35,7 @@ export interface BookingDetailData {
   statusHistory: StatusHistoryEntry[];
   activityLog: ActivityLogEntry[];
   invoices: Invoice[];
+  reminders: CallBackReminder[];
 }
 
 export function useBookingDetail(bookingId: string) {
@@ -63,6 +75,7 @@ export function useBookingDetail(bookingId: string) {
         { data: statusHistory },
         { data: activityLog },
         { data: invoices },
+        { data: reminders },
       ] = await Promise.all([
         supabase.from("customers").select("*").eq("id", booking.customer_id).single(),
         booking.origin_address_id
@@ -81,6 +94,7 @@ export function useBookingDetail(bookingId: string) {
         supabase.from("status_history").select("*").eq("booking_id", bookingId).order("changed_at", { ascending: false }),
         supabase.from("activity_log").select("*").eq("booking_id", bookingId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*").eq("booking_id", bookingId).order("created_at", { ascending: false }),
+        supabase.from("call_back_reminders").select("id, reminder_datetime, reason, notes, status, created_at, reminder_sent_at, completed_at").eq("booking_id", bookingId).order("reminder_datetime", { ascending: false }),
       ]);
 
       setData({
@@ -98,6 +112,7 @@ export function useBookingDetail(bookingId: string) {
         statusHistory: (statusHistory ?? []) as StatusHistoryEntry[],
         activityLog: (activityLog ?? []) as ActivityLogEntry[],
         invoices: (invoices ?? []) as Invoice[],
+        reminders: (reminders ?? []) as CallBackReminder[],
       });
     } catch {
       setError("Failed to load booking");

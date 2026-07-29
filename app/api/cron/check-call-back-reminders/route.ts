@@ -67,6 +67,20 @@ export async function GET(req: Request) {
         const moveDate = booking.move_date ? formatDate(booking.move_date) : "TBC";
         const reasonText = reminder.reason.replace(/_/g, " ");
 
+        // Pull the booking's whole comment thread so the reminder carries the full
+        // context of where the last conversation left off.
+        const { data: bookingNotes } = await supabase
+          .from("booking_notes")
+          .select("note, created_by, created_at")
+          .eq("booking_id", reminder.booking_id)
+          .order("created_at", { ascending: true });
+        const notesThreadHtml = (bookingNotes ?? []).length
+          ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:16px;border-radius:8px;margin:20px 0;">
+               <p style="margin:0;font-weight:bold;color:#334155;">Your notes on this booking (${bookingNotes!.length}):</p>
+               ${bookingNotes!.map((n) => `<div style="border-top:1px solid #e2e8f0;padding-top:10px;margin-top:10px;"><p style="margin:0;color:#475569;white-space:pre-wrap;">${n.note}</p><p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">${n.created_by ?? "admin"} · ${formatDate(n.created_at)}</p></div>`).join("")}
+             </div>`
+          : "";
+
         // Email notification
         const emailSubject = `⏰ Call Back Reminder: ${customer.full_name} — ${booking.reference}`;
         const emailBody = `
@@ -103,10 +117,12 @@ export async function GET(req: Request) {
 
               ${reminder.notes ? `
                 <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 0; font-weight: bold; color: #334155;">Notes:</p>
-                  <p style="margin: 8px 0 0 0; color: #475569;">${reminder.notes}</p>
+                  <p style="margin: 0; font-weight: bold; color: #334155;">Reminder note:</p>
+                  <p style="margin: 8px 0 0 0; color: #475569; white-space:pre-wrap;">${reminder.notes}</p>
                 </div>
               ` : ""}
+
+              ${notesThreadHtml}
 
               <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
                 This reminder was set to help you follow up with this customer at the right time.
