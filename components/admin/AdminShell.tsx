@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
-  Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus,
+  Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ const NAV_GROUPS = [
     label: "OPERATIONS",
     items: [
       { href: "/admin/leads/new", label: "New Lead", icon: UserPlus },
+      { href: "/admin/catalog", label: "Item Catalog", icon: Package },
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },

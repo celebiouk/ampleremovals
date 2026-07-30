@@ -1,5 +1,26 @@
 # Lessons Log
 
+## Lesson 15 — Next.js fetch cache silently poisons a route when its data source is briefly unavailable
+**What happened:** `GET /api/catalog` (a service-role Supabase read, marked
+`export const dynamic = "force-dynamic"`) returned `{items:[]}` for hours even
+though a standalone Node script with the *identical* URL + key + query returned
+the row. Restarting the dev server (even killing all node) did not help. The
+route reported the correct URL, correct service-role key, `error: null`, and
+`rows: 0` — so it was talking to the right DB and getting a genuinely empty
+result set, yet the row existed.
+**Root cause:** I created `catalog_items` via raw SQL, so PostgREST's schema
+cache lagged. The route's very first hit landed in that miss-window and returned
+empty. Next.js **cached that empty fetch response in `.next/cache/fetch-cache`**,
+which is on disk and **survives dev-server restarts**. My standalone scripts use
+plain (unpatched) Node `fetch`, so they always saw live data. `dynamic =
+"force-dynamic"` makes the *route* dynamic but does NOT stop Next.js caching the
+`fetch` calls made inside it (supabase-js uses global fetch).
+**Rule going forward:** Any route whose freshness matters (admin-editable data,
+live reads) must set `export const fetchCache = "force-no-store";` — `dynamic =
+"force-dynamic"` alone is not enough. When a route returns stale/empty data that
+a standalone script contradicts, suspect the on-disk fetch cache before the DB or
+the client; `rm -rf .next/cache` clears a poisoned entry. Related: [[lesson-14]].
+
 ## Lesson 14 — The `pg` driver turns DATE columns into local-midnight JS Dates
 **What happened:** A live E2E test read `bookings.move_date` (a `date` column) via
 node-postgres and got `2026-08-14T23:00:00.000Z` for a stored `2026-08-15`,

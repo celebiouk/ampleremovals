@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useController, useFormContext } from "react-hook-form";
 import { StepHeading, QuantityStepper } from "@/components/booking/primitives";
 import {
   INVENTORY_CATALOG,
   type InventorySelection,
+  type InventoryCategory,
 } from "@/lib/inventory-catalog";
 
 /**
@@ -20,6 +21,26 @@ export function InventoryStep() {
   const { control } = useFormContext();
   const { field } = useController({ name: "inventory", control });
   const selections: InventorySelection[] = Array.isArray(field.value) ? field.value : [];
+
+  // Base catalog + any admin-added items (from /api/catalog), merged by category.
+  const [catalog, setCatalog] = useState<InventoryCategory[]>(INVENTORY_CATALOG);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/catalog")
+      .then((r) => r.json())
+      .then((d: { success?: boolean; items?: { key: string; label: string; category: string }[] }) => {
+        if (cancelled || !d.success || !d.items?.length) return;
+        const merged: InventoryCategory[] = INVENTORY_CATALOG.map((c) => ({ ...c, items: [...c.items] }));
+        for (const it of d.items) {
+          const cat = merged.find((c) => c.category === it.category);
+          if (cat) cat.items.push({ key: it.key, label: it.label });
+          else merged.push({ category: it.category, items: [{ key: it.key, label: it.label }] });
+        }
+        setCatalog(merged);
+      })
+      .catch(() => { /* wizard still works without admin items */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const totalItems = useMemo(
     () => selections.reduce((sum, s) => sum + (s.quantity || 0), 0),
@@ -80,7 +101,7 @@ export function InventoryStep() {
       </div>
 
       <div className="space-y-7">
-        {INVENTORY_CATALOG.map((category) => (
+        {catalog.map((category) => (
           <section key={category.category}>
             <h3 className="mb-2.5 font-display text-sm font-bold uppercase tracking-wide text-slate-400">
               {category.category}
