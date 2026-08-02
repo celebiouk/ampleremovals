@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { calculateDistance } from "@/lib/postcode";
+import { drivingDistanceMiles } from "@/lib/google-maps";
+
+export const runtime = "nodejs";
 
 /**
  * POST /api/postcode/distance
- * Calculate distance between two postcodes in miles
+ * Driving distance between two postcodes in miles (Google Distance Matrix,
+ * mode=driving — the same source the driver ETA uses; never straight-line).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +19,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const distance = await calculateDistance(from, to);
+    const distance = await drivingDistanceMiles(from, to);
 
     return NextResponse.json({ success: true, distance });
   } catch (error) {

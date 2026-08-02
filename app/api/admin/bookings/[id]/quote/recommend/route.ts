@@ -6,7 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { calculateDistance } from "@/lib/postcode";
+import { drivingDistanceMiles } from "@/lib/google-maps";
 import { recommendQuote } from "@/lib/quote-recommendation";
 
 const DETAIL_TABLE: Record<string, string> = {
@@ -35,10 +35,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const origin = (Array.isArray(booking.origin) ? booking.origin[0] : booking.origin) as { postcode?: string } | null;
   const dest = (Array.isArray(booking.destination) ? booking.destination[0] : booking.destination) as { postcode?: string } | null;
 
-  // Distance (origin → destination) where both exist.
+  // Driving distance (origin → destination) where both exist.
   let distanceMiles: number | null = null;
   if (origin?.postcode && dest?.postcode) {
-    distanceMiles = await calculateDistance(origin.postcode, dest.postcode);
+    distanceMiles = await drivingDistanceMiles(origin.postcode, dest.postcode);
   }
 
   // Size + van type from the service detail table.
