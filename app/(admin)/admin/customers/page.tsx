@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Users, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TableSkeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 
 interface CustomerRow {
   id: string;
@@ -123,7 +123,7 @@ function CustomersListInner() {
                 {customers.map(c => (
                   <tr key={c.id} onClick={() => router.push(`/admin/customers/${c.id}`)}
                     className="cursor-pointer border-b border-slate-50 hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-800">{c.full_name}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-slate-800">{upperName(c.full_name)}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{c.email}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{c.phone}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-brand-purple-700">{c.booking_count}</td>

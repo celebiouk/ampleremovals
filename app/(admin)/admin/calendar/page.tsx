@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import type { BookingStatus, ServiceType } from "@/types";
 
 const SERVICE_BG: Record<ServiceType, string> = {
@@ -131,7 +131,7 @@ export default function CalendarPage() {
                       <div key={b.id}
                         onClick={e => { e.stopPropagation(); router.push(`/admin/bookings/${b.id}`); }}
                         className={`truncate rounded px-1 py-0.5 text-[10px] font-semibold text-white cursor-pointer ${SERVICE_BG[b.service_type]}`}>
-                        {b.customer_name.split(" ")[0]}
+                        {upperName(b.customer_name.split(" ")[0])}
                       </div>
                     ))}
                     {dayBookings.length > 2 && (
@@ -154,7 +154,7 @@ export default function CalendarPage() {
                   onClick={() => router.push(`/admin/bookings/${b.id}`)}>
                   <ServiceBadge service={b.service_type} />
                   <div className="flex-1">
-                    <p className="font-semibold text-slate-800">{b.customer_name}</p>
+                    <p className="font-semibold text-slate-800">{upperName(b.customer_name)}</p>
                     <p className="text-sm text-slate-500">{b.origin_postcode}{b.destination_postcode ? ` → ${b.destination_postcode}` : ""}</p>
                   </div>
                   <StatusBadge status={b.status} />
@@ -183,7 +183,7 @@ export default function CalendarPage() {
               {upcoming.map(b => (
                 <div key={b.id} className="cursor-pointer px-5 py-3.5 hover:bg-slate-50" onClick={() => router.push(`/admin/bookings/${b.id}`)}>
                   <p className="text-xs font-semibold text-purple-700">{formatDate(b.move_date)}</p>
-                  <p className="font-medium text-sm text-slate-800">{b.customer_name}</p>
+                  <p className="font-medium text-sm text-slate-800">{upperName(b.customer_name)}</p>
                   <div className="mt-1 flex items-center gap-1.5">
                     <ServiceBadge service={b.service_type} />
                     <StatusBadge status={b.status} />

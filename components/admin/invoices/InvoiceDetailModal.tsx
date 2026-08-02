@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X, ExternalLink, Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, upperName } from "@/lib/utils";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
@@ -141,7 +141,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoiceId, onActionComplet
                     {/* Summary */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-sm">
                       <div className="flex justify-between"><span className="text-slate-500">Type</span><span className="font-medium capitalize">{invoice.type.replace("_", " ")}</span></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Customer</span><span className="font-medium">{invoice.customer_name}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Customer</span><span className="font-medium">{upperName(invoice.customer_name)}</span></div>
                       <div className="flex justify-between"><span className="text-slate-500">Booking</span><span className="font-mono font-semibold text-brand-purple-700">{invoice.booking_reference}</span></div>
                       <div className="flex justify-between"><span className="text-slate-500">Amount</span><span className="font-bold text-brand-purple-800">{formatCurrency(invoice.total)}</span></div>
                       {invoice.due_date && <div className="flex justify-between"><span className="text-slate-500">Due</span><span className={`font-medium ${isOverdue ? "text-red-600" : ""}`}>{formatDate(invoice.due_date)}</span></div>}

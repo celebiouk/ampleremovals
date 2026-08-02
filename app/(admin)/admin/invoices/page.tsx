@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, upperName } from "@/lib/utils";
 import type { BookingStatus, InvoiceStatus, InvoiceType } from "@/types";
 
 interface InvoiceRow {
@@ -223,7 +223,7 @@ function InvoicesContent() {
                   return (
                     <tr key={inv.id} className={`border-b border-slate-50 ${isOverdue ? "bg-red-50" : "hover:bg-slate-50"}`}>
                       <td className="px-4 py-3 font-mono text-sm font-semibold text-brand-purple-700">{inv.invoice_number}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{inv.customer_name}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{upperName(inv.customer_name)}</td>
                       <td className="px-4 py-3 font-mono text-xs text-slate-500">{inv.booking_reference}</td>
                       <td className="px-4 py-3 text-sm capitalize text-slate-600">{inv.type.replace("_", " ")}</td>
                       <td className="px-4 py-3 text-right text-sm font-semibold">{formatCurrency(inv.total)}</td>

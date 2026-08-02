@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { STATUS_DOT_COLOURS } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import type { BookingStatus, ServiceType } from "@/types";
 
 interface KanbanBooking {
@@ -56,7 +56,7 @@ function BookingCard({ booking, isDragging = false }: { booking: KanbanBooking; 
         <ServiceBadge service={booking.service_type} />
         <span className="font-mono text-[10px] font-semibold text-slate-400">{booking.reference}</span>
       </div>
-      <p className="font-semibold text-sm text-slate-900 truncate">{booking.customer_name}</p>
+      <p className="font-semibold text-sm text-slate-900 truncate">{upperName(booking.customer_name)}</p>
       <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
         <span className="truncate">{booking.origin_postcode}</span>
         {booking.destination_postcode && <><span>→</span><span className="truncate">{booking.destination_postcode}</span></>}

@@ -142,7 +142,7 @@ export function InvoiceDocument({ data }: Props) {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>Bill To</Text>
-            <Text style={styles.billToName}>{customerName}</Text>
+            <Text style={styles.billToName}>{(customerName || "").toUpperCase()}</Text>
             <Text style={styles.billToDetail}>{customerEmail}</Text>
             <Text style={styles.billToDetail}>{customerPhone}</Text>
             <Text style={styles.billToDetail}>{originAddress}</Text>

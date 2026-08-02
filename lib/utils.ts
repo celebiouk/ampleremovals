@@ -59,6 +59,16 @@ export function generateReceiptNumber(): string {
 }
 
 /**
+ * How a customer's name is *displayed* across the admin CRM and on every
+ * invoice, receipt and quote: always full uppercase, whatever case it was
+ * entered in. This is a presentation-only transform — the stored name keeps its
+ * original casing so greetings ("Hi Jane,") and matching stay natural.
+ */
+export function upperName(name: string | null | undefined): string {
+  return (name ?? "").toUpperCase();
+}
+
+/**
  * Format a numeric amount as GBP currency, e.g. `£1,250.00`.
  */
 export function formatCurrency(amount: number): string {

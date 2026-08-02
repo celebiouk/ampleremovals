@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, Phone, Pencil, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { upperName } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -87,7 +88,7 @@ export function EditableCustomerCard({
 
       {!editing ? (
         <>
-          <p className="text-base font-bold text-slate-900">{customer.full_name}</p>
+          <p className="text-base font-bold text-slate-900">{upperName(customer.full_name)}</p>
           <a href={`mailto:${customer.email}`} className="mt-1.5 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Mail className="h-4 w-4" />{customer.email}</a>
           <a href={`tel:${customer.phone}`} className="mt-1 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Phone className="h-4 w-4" />{customer.phone}</a>
           <p className="mt-2 text-xs text-slate-400">Customer since {formatDate(customer.created_at)}</p>

@@ -5,6 +5,7 @@ import { X, Calendar, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { upperName } from "@/lib/utils";
 
 interface CallBackReminderModalProps {
   isOpen: boolean;
@@ -97,7 +98,7 @@ export function CallBackReminderModal({
               Set Call Back Reminder
             </h2>
             <p className="text-sm text-slate-600 mt-1">
-              {customerName} — {bookingReference}
+              {upperName(customerName)} — {bookingReference}
             </p>
           </div>
           <button

@@ -5,7 +5,7 @@ import { Download, CreditCard, PoundSterling, AlertCircle, TrendingUp } from "lu
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, upperName } from "@/lib/utils";
 
 interface PaymentRow {
   id: string; amount: number; payment_method: string | null;
@@ -142,7 +142,7 @@ export default function PaymentsPage() {
                 {payments.map(p => (
                   <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm text-slate-600">{formatDate(p.paid_at)}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{p.customer_name}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{upperName(p.customer_name)}</td>
                     <td className="px-4 py-3 font-mono text-sm text-purple-700">{p.booking_reference}</td>
                     <td className="px-4 py-3 font-mono text-sm text-slate-600">{p.invoice_number}</td>
                     <td className="px-4 py-3 text-sm capitalize text-slate-600">{p.type.replace("_", " ")}</td>

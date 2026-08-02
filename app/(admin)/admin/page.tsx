@@ -18,7 +18,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { DepositsToConfirm } from "@/components/admin/DepositsToConfirm";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT, IN_PROGRESS_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -398,7 +398,7 @@ export default function AdminDashboardPage() {
                 <div key={j.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 cursor-pointer" onClick={() => router.push(`/admin/bookings/${j.id}`)}>
                   <span className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold ${colour}`}>{label}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">{j.customer_name}</p>
+                    <p className="truncate text-sm font-medium text-slate-800">{upperName(j.customer_name)}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <ServiceBadge service={j.service_type} />
                       <StatusBadge status={j.status} />

@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { TableSkeleton } from "@/components/admin/AdminSkeleton";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -322,7 +322,7 @@ function BookingsListInner() {
                     <td className={`px-4 py-3 font-mono text-sm font-semibold ${isInquiry ? "text-white" : "text-brand-purple-700"}`}>{b.reference}</td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-700"}`}>
                       <div className="flex items-center gap-2">
-                        <span>{b.customer_name}</span>
+                        <span>{upperName(b.customer_name)}</span>
                         {b.lead_band && (
                           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${isInquiry ? "bg-white/20 text-white" : LEAD_BADGE[b.lead_band] ?? "bg-slate-100 text-slate-500"}`} title={`Lead score ${b.lead_score ?? "—"}/100`}>
                             {b.lead_band}

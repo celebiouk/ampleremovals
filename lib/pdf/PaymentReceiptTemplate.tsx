@@ -117,7 +117,7 @@ export function PaymentReceiptDocument({ data }: { data: PaymentReceiptData }) {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>Received From</Text>
-            <Text style={styles.billToName}>{customerName}</Text>
+            <Text style={styles.billToName}>{(customerName || "").toUpperCase()}</Text>
             {customerEmail ? <Text style={styles.billToDetail}>{customerEmail}</Text> : null}
             {customerPhone ? <Text style={styles.billToDetail}>{customerPhone}</Text> : null}
             {customerAddress ? <Text style={styles.billToDetail}>{customerAddress}</Text> : null}

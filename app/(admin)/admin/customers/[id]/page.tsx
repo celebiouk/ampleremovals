@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import type { BookingStatus, ServiceType } from "@/types";
 
 interface CustomerDetail {
@@ -102,9 +102,9 @@ export default function CustomerDetailPage() {
             <span>/</span>
             <Link href="/admin/customers" className="hover:text-slate-600">Customers</Link>
             <span>/</span>
-            <span className="text-slate-700">{customer.full_name}</span>
+            <span className="text-slate-700">{upperName(customer.full_name)}</span>
           </nav>
-          <h2 className="font-display text-2xl font-bold text-slate-900">{customer.full_name}</h2>
+          <h2 className="font-display text-2xl font-bold text-slate-900">{upperName(customer.full_name)}</h2>
         </div>
         <Link href="/admin/customers" className="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-50">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -131,7 +131,7 @@ export default function CustomerDetailPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</p>
-              <p className="mt-1 font-semibold text-slate-800">{customer.full_name}</p>
+              <p className="mt-1 font-semibold text-slate-800">{upperName(customer.full_name)}</p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>

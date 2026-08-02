@@ -99,7 +99,7 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>Prepared For</Text>
-            <Text style={styles.customerName}>{data.customer_name}</Text>
+            <Text style={styles.customerName}>{(data.customer_name || "").toUpperCase()}</Text>
             <Text style={styles.customerDetail}>{data.customer_email}</Text>
             <Text style={styles.customerDetail}>{data.customer_phone}</Text>
             <Text style={styles.customerDetail}>{data.origin_address}</Text>

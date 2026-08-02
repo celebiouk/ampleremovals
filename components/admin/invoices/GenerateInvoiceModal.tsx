@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Loader2, ExternalLink, Send, FileText, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, upperName } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { ServiceType } from "@/types";
 
@@ -151,7 +151,7 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Generate {typeLabel} Invoice</DialogTitle>
-          <p className="text-sm text-slate-500">{customerName} — {bookingReference}</p>
+          <p className="text-sm text-slate-500">{upperName(customerName)} — {bookingReference}</p>
         </DialogHeader>
 
         {!preview ? (

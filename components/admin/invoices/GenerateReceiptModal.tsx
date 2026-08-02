@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, ExternalLink, Download, CheckCircle2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, upperName } from "@/lib/utils";
 
 interface Props {
   isOpen: boolean;
@@ -87,7 +87,7 @@ export function GenerateReceiptModal({
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-brand-green-600" /> Generate Payment Receipt
           </DialogTitle>
-          <p className="text-sm text-slate-500">{customerName} — {bookingReference}</p>
+          <p className="text-sm text-slate-500">{upperName(customerName)} — {bookingReference}</p>
         </DialogHeader>
 
         {!done ? (

@@ -8,6 +8,7 @@ import {
   BarChart2, Zap, Receipt, CreditCard, Settings, Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { upperName } from "@/lib/utils";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -95,7 +96,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 aria-selected:bg-purple-50 aria-selected:text-purple-900">
                     <ClipboardList className="h-4 w-4 shrink-0 text-slate-400" />
                     <span className="font-mono font-semibold text-purple-700">{b.reference}</span>
-                    <span className="text-slate-500">— {b.customer_name}</span>
+                    <span className="text-slate-500">— {upperName(b.customer_name)}</span>
                   </Command.Item>
                 ))}
               </Command.Group>

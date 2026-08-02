@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Wallet, Check, Loader2, Phone, X, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, upperName } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { ServiceType } from "@/types";
 
@@ -98,7 +98,7 @@ export function DepositsToConfirm({ onConfirmed }: { onConfirmed?: () => void })
                     onClick={() => router.push(`/admin/bookings/${d.id}`)}
                     className="truncate text-sm font-semibold text-slate-800 hover:text-brand-purple-700 hover:underline"
                   >
-                    {d.customer_name}
+                    {upperName(d.customer_name)}
                   </button>
                   {d.claimed && (
                     <span className="shrink-0 rounded-full bg-brand-green-100 px-2 py-0.5 text-[11px] font-bold text-brand-green-800">
