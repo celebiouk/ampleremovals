@@ -2,11 +2,24 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { insertAddress } from "@/lib/bookings/createBooking";
 import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import { buildQuote } from "@/lib/quote-engine";
+import { depositFor } from "@/lib/deposit";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import { ukDateString } from "@/lib/dates";
 import type { RemovalsForm } from "@/lib/schemas/booking";
 
 const toDateString = (d?: Date | null): string | null => (d ? ukDateString(d) : null);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Optional overrides applied when an admin (not the customer) completes a lead. */
+export interface CompleteLeadOptions {
+  /**
+   * A price the admin typed in themselves (they're on a call agreeing it). When
+   * set, it becomes THE quote total — replacing the auto-estimate — and is stored
+   * as a single non-removable line so the quote page, reserve step and 25%
+   * deposit all stay consistent with the agreed figure.
+   */
+  priceOverride?: number;
+}
 
 export interface CompleteLeadResult {
   reference: string;
@@ -25,7 +38,8 @@ export interface CompleteLeadResult {
  */
 export async function completeLead(
   bookingId: string,
-  data: RemovalsForm
+  data: RemovalsForm,
+  opts?: CompleteLeadOptions
 ): Promise<CompleteLeadResult> {
   const supabase = createServiceClient();
 
@@ -69,6 +83,16 @@ export async function completeLead(
     eotCleaning: Boolean(data.wantsEotCleaning),
   });
 
+  // Manual price (admin on a call) wins over the auto-estimate. Stored as one
+  // non-removable line so total = reserve total = the agreed figure everywhere.
+  const override = opts?.priceOverride;
+  const useOverride = typeof override === "number" && Number.isFinite(override) && override > 0;
+  const finalTotal = useOverride ? round2(override) : quote.total;
+  const finalLines = useOverride
+    ? [{ key: "base", description: "Removals service", quantity: 1, unit_price: finalTotal, total: finalTotal, removable: false }]
+    : quote.lines;
+  const finalDeposit = useOverride ? depositFor(finalTotal) : quote.depositAmount;
+
   // 6. Core booking update — addresses, date, description, quote. These columns
   // have always existed, so this must succeed for the completion to count.
   const { error: coreErr } = await supabase
@@ -81,9 +105,9 @@ export async function completeLead(
       flexible_date_from: flexFrom,
       flexible_date_to: flexTo,
       description: data.description ?? null,
-      quote_line_items: quote.lines,
-      quote_subtotal: quote.total,
-      quote_total: quote.total,
+      quote_line_items: finalLines,
+      quote_subtotal: finalTotal,
+      quote_total: finalTotal,
     })
     .eq("id", bookingId);
   if (coreErr) throw new Error(`lead completion failed: ${coreErr.message}`);
@@ -100,7 +124,7 @@ export async function completeLead(
         special_instructions: data.specialInstructions ?? null,
         inventory,
         has_white_goods: whiteGoods,
-        deposit_amount: quote.depositAmount,
+        deposit_amount: finalDeposit,
         is_partial_lead: false,
       })
       .eq("id", bookingId);
@@ -142,12 +166,12 @@ export async function completeLead(
     booking_id: bookingId,
     customer_id: customerId,
     action: "lead_completed",
-    metadata: { reference: booking.reference, quote_total: quote.total },
-    performed_by: "customer",
+    metadata: { reference: booking.reference, quote_total: finalTotal, manual_price: useOverride },
+    performed_by: useOverride ? "admin" : "customer",
   });
 
   // 9. The quote is now ready → advance to "Quote Sent to Customer".
   await markQuoteSent(supabase, bookingId, (booking.status as string) ?? null);
 
-  return { reference: booking.reference as string, bookingId, customerId, quoteTotal: quote.total };
+  return { reference: booking.reference as string, bookingId, customerId, quoteTotal: finalTotal };
 }

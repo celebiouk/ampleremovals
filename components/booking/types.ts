@@ -27,5 +27,14 @@ export interface WizardConfig<T extends FieldValues = FieldValues> {
    * than creating a new booking: submit updates that booking (via the completion
    * endpoint) and routes to its quote page.
    */
-  completion?: { bookingId: string; token: string };
+  completion?: {
+    bookingId: string;
+    token: string;
+    /**
+     * True when an ADMIN is completing the lead (not the customer). Unlocks the
+     * manual price field on the Review step and routes submission to the
+     * admin-authenticated completion endpoint.
+     */
+    admin?: boolean;
+  };
 }

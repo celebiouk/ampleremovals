@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   UserPlus, Loader2, CheckCircle2, Copy, Mail, MessageSquare, Phone,
-  ClipboardPaste, Send, Users, Clock,
+  ClipboardPaste, Send, Users, Clock, PencilLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseLeadMessage } from "@/lib/parseLeadMessage";
@@ -153,7 +153,15 @@ export default function NewLeadPage() {
               </Button>
             </div>
           </div>
-          <Button onClick={() => setResult(null)} className="mt-6 w-full bg-brand-purple-800 hover:bg-brand-purple-900">Add another lead</Button>
+          <a
+            href={result.link}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 hover:bg-amber-100"
+          >
+            <PencilLine className="h-4 w-4" /> Fill it in for them (I&apos;m on a call)
+          </a>
+          <Button onClick={() => setResult(null)} className="mt-3 w-full bg-brand-purple-800 hover:bg-brand-purple-900">Add another lead</Button>
         </div>
       ) : (
         <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -231,12 +239,22 @@ export default function NewLeadPage() {
                     Send reminder
                   </button>
                   {lead.link && (
-                    <button
-                      onClick={() => { navigator.clipboard?.writeText(lead.link!); toast.success("Link copied"); }}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      <Copy className="h-4 w-4" /> Copy link
-                    </button>
+                    <>
+                      <a
+                        href={lead.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+                      >
+                        <PencilLine className="h-4 w-4" /> Fill in for them
+                      </a>
+                      <button
+                        onClick={() => { navigator.clipboard?.writeText(lead.link!); toast.success("Link copied"); }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      >
+                        <Copy className="h-4 w-4" /> Copy link
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

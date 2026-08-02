@@ -82,9 +82,15 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       );
 
       // Completion mode: update the admin-created lead instead of creating a new
-      // booking, then jump straight to its quote page.
+      // booking, then jump straight to its quote page. When an ADMIN is doing the
+      // completing, go through the admin endpoint so their manual price is honoured.
       const isCompletion = Boolean(config.completion);
-      const endpoint = isCompletion ? "/api/leads/complete" : config.apiPath;
+      const isAdminCompletion = isCompletion && Boolean(config.completion?.admin);
+      const endpoint = isAdminCompletion
+        ? "/api/admin/leads/complete"
+        : isCompletion
+        ? "/api/leads/complete"
+        : config.apiPath;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +137,7 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       toast.error(message);
       setIsSubmitting(false);
     }
-  }, [config.apiPath, config.slug, form, router]);
+  }, [config.apiPath, config.slug, config.completion, form, router]);
 
   return {
     form,

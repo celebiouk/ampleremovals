@@ -87,8 +87,9 @@ function formatValue(key: string, value: any): string {
 export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
   const { control } = useFormContext();
   const values = useWatch({ control });
-  const { goToStep } = useWizard();
+  const { goToStep, admin } = useWizard();
   const confirm = useController({ name: "confirmed", control });
+  const adminPrice = useController({ name: "adminPrice", control, defaultValue: "" });
 
   return (
     <div>
@@ -129,6 +130,30 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
           </div>
         ))}
       </div>
+
+      {/* Admin-only: set the quote price by hand. This exact figure is what gets
+          emailed to the customer as their quote — no auto-estimate. */}
+      {admin && (
+        <div className="mt-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+          <label className="block text-sm font-bold text-amber-900">Set the quote price (admin)</label>
+          <p className="mt-0.5 text-xs text-amber-700">
+            Whatever you enter here is emailed to the customer as their quote. Leave blank to use the auto-estimate.
+          </p>
+          <div className="relative mt-3 max-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              inputMode="decimal"
+              value={(adminPrice.field.value as string) ?? ""}
+              onChange={(e) => adminPrice.field.onChange(e.target.value)}
+              placeholder="0.00"
+              className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Confirm checkbox */}
       <button

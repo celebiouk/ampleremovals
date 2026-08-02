@@ -42,7 +42,7 @@ export function BookingWizard<T extends FieldValues>({
 
   return (
     <FormProvider {...form}>
-      <WizardProvider goToStep={goToStep}>
+      <WizardProvider goToStep={goToStep} admin={Boolean(config.completion?.admin)}>
         <div className="mx-auto w-full max-w-[680px]">
           {/* Progress header (above the card) */}
           <div className="mb-5 px-1">

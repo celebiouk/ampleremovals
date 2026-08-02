@@ -16,17 +16,20 @@ export function CompletionFlow({
   bookingId,
   token,
   defaults,
+  admin = false,
 }: {
   bookingId: string;
   token: string;
   defaults: { fullName: string; email: string; phone: string };
+  /** True when an admin (not the customer) is filling this in — see completion page. */
+  admin?: boolean;
 }) {
   const config = useMemo<WizardConfig<FieldValues> | null>(() => {
     const base = buildWizardConfig("removals");
     if (!base) return null;
     return {
       ...base,
-      completion: { bookingId, token },
+      completion: { bookingId, token, admin },
       defaultValues: {
         ...base.defaultValues,
         fullName: defaults.fullName,
@@ -34,7 +37,7 @@ export function CompletionFlow({
         phone: defaults.phone,
       },
     };
-  }, [bookingId, token, defaults]);
+  }, [bookingId, token, defaults, admin]);
 
   if (!config) return null;
   return <BookingWizard config={config} />;

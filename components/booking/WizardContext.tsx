@@ -9,15 +9,19 @@ interface WizardContextValue {
   setAddresses: (group: string, list: AddressOption[]) => void;
   /** Jump to a step index (used by the Review step's Edit buttons). */
   goToStep: (step: number) => void;
+  /** True when an admin is completing a lead — unlocks the manual price field. */
+  admin: boolean;
 }
 
 const WizardContext = createContext<WizardContextValue | null>(null);
 
 export function WizardProvider({
   goToStep,
+  admin = false,
   children,
 }: {
   goToStep: (step: number) => void;
+  admin?: boolean;
   children: React.ReactNode;
 }) {
   const [addresses, setAddressesState] = useState<
@@ -29,7 +33,7 @@ export function WizardProvider({
   }, []);
 
   return (
-    <WizardContext.Provider value={{ addresses, setAddresses, goToStep }}>
+    <WizardContext.Provider value={{ addresses, setAddresses, goToStep, admin }}>
       {children}
     </WizardContext.Provider>
   );

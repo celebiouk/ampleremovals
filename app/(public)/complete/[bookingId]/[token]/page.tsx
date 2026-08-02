@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Phone, Sparkles } from "lucide-react";
-import { createAdminClient } from "@/lib/supabase/server";
+import { Phone, Sparkles, ShieldCheck } from "lucide-react";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
+import { isAdmin } from "@/lib/user-type";
 import { CompletionFlow } from "@/components/booking/CompletionFlow";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,18 @@ export default async function CompleteLeadPage({
 
   const firstName = customer.full_name.split(" ")[0];
 
+  // Is the person opening this a logged-in admin (filling it in on a call)? If so
+  // they get a manual price field on the Review step, and the agreed price — not
+  // the auto-estimate — is what's emailed to the customer.
+  let admin = false;
+  try {
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    admin = user ? await isAdmin(user.id) : false;
+  } catch {
+    admin = false;
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-24 pt-24 sm:pb-16 sm:pt-28">
       <div className="container">
@@ -77,10 +90,23 @@ export default async function CompleteLeadPage({
           </div>
         </div>
 
+        {admin && (
+          <div className="mx-auto mb-6 flex max-w-[680px] items-start gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div>
+              <p className="font-bold text-amber-900">You&apos;re filling this in as admin</p>
+              <p className="text-sm text-amber-700">
+                On the last step you can set the quote price by hand — that exact figure is what gets emailed to {firstName}.
+              </p>
+            </div>
+          </div>
+        )}
+
         <CompletionFlow
           bookingId={bookingId}
           token={token}
           defaults={{ fullName: customer.full_name, email: customer.email, phone: customer.phone }}
+          admin={admin}
         />
       </div>
 
