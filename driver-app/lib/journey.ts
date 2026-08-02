@@ -31,9 +31,19 @@ export function legDestination(job: Job, leg: "pickup" | "delivery") {
   return leg === "pickup" ? job.origin : job.destination;
 }
 
-/** Best available ETA timestamp from the latest server call. */
+/**
+ * Best available ETA timestamp. Prefer the live, traffic-aware value
+ * (current_eta_timestamp, refreshed continuously server-side) so the app matches
+ * Google/Apple Maps; fall back to the discrete call checkpoints if it's absent.
+ */
 export function currentEta(job: Job): string | null {
-  return job.call3_eta_timestamp || job.call2_eta_timestamp || job.call1_eta_timestamp || null;
+  return (
+    job.current_eta_timestamp ||
+    job.call3_eta_timestamp ||
+    job.call2_eta_timestamp ||
+    job.call1_eta_timestamp ||
+    null
+  );
 }
 
 /** Minutes until an ETA (rounded), or null. */

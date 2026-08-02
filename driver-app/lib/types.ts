@@ -59,6 +59,10 @@ export interface Job {
   call1_eta_timestamp?: string | null;
   call2_eta_timestamp?: string | null;
   call3_eta_timestamp?: string | null;
+  // Live, traffic-aware ETA — refreshed server-side every ~90s-3min from the
+  // driver's GPS. Prefer this over the discrete call1/2/3 values so the app's
+  // ETA tracks Google/Apple Maps instead of a stale checkpoint value.
+  current_eta_timestamp?: string | null;
 }
 
 export interface ClockStatus {
