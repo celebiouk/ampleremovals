@@ -82,7 +82,7 @@ export function DistancePanel({
           </div>
         )}
       </div>
-      <p className="mt-1.5 text-[11px] text-slate-400">Straight-line distance.</p>
+      <p className="mt-1.5 text-[11px] text-slate-400">Driving distance (via road).</p>
     </div>
   );
 }

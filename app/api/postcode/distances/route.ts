@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { calculateDistance } from "@/lib/postcode";
+import { drivingDistanceMiles } from "@/lib/google-maps";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -11,7 +11,9 @@ const FALLBACK_OFFICE = "RG18 3EB";
 
 /**
  * POST /api/postcode/distances
- * Returns the two distances the team cares about for a job, in miles:
+ * Returns the two DRIVING distances the team cares about for a job, in miles
+ * (real road distance via Google Distance Matrix — the same source the driver
+ * ETA uses; not straight-line):
  *  - officeToOrigin      : our office (from Settings) → the first pickup
  *  - originToDestination : pickup → dropoff (null if there's no destination)
  * The office postcode is read from settings so it's never hardcoded.
@@ -42,8 +44,8 @@ export async function POST(req: NextRequest) {
   }
 
   const [officeToOrigin, originToDestination] = await Promise.all([
-    origin ? calculateDistance(office, origin) : Promise.resolve(null),
-    origin && destination ? calculateDistance(origin, destination) : Promise.resolve(null),
+    origin ? drivingDistanceMiles(office, origin) : Promise.resolve(null),
+    origin && destination ? drivingDistanceMiles(origin, destination) : Promise.resolve(null),
   ]);
 
   return NextResponse.json({
