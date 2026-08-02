@@ -385,6 +385,31 @@ export default function BookingDetailPage() {
         </div>
       )}
 
+      {/* Deposit invoice is out but the customer hasn't tapped "I've paid" — let the
+          team confirm directly the moment they see the transfer land in the bank. */}
+      {booking.status === "deposit_invoice_sent" &&
+        booking.deposit_status !== "claimed" &&
+        booking.deposit_status !== "verified" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏦</span>
+            <div>
+              <p className="font-bold text-slate-800">
+                Deposit invoice sent{booking.deposit_amount != null ? ` — ${formatCurrency(booking.deposit_amount)}` : ""}
+              </p>
+              <p className="text-sm text-slate-500">Waiting on their bank transfer. As soon as it lands, confirm to lock in the job and notify them.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleConfirmDeposit}
+            disabled={confirmingDeposit}
+            className="rounded-xl bg-brand-green-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-green-500 disabled:opacity-50"
+          >
+            {confirmingDeposit ? "Confirming…" : "I've received it — confirm"}
+          </button>
+        </div>
+      )}
+
       {booking.deposit_status === "verified" && (
         <div className="flex items-center gap-2 rounded-2xl border border-brand-green-200 bg-brand-green-50 px-4 py-2.5 text-sm font-medium text-brand-green-800">
           <Check className="h-4 w-4" /> Deposit confirmed — customer notified.

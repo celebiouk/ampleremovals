@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
+import { DepositsToConfirm } from "@/components/admin/DepositsToConfirm";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { formatDate } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT, IN_PROGRESS_STATUSES } from "@/lib/constants";
@@ -297,6 +298,9 @@ export default function AdminDashboardPage() {
         <KpiCard label="Conversion Rate" value={kpi?.conversionRate ?? 0} suffix="%" isLoading={isLoading} colour="purple" />
         <KpiCard label="Outstanding" value={kpi?.outstanding ?? 0} prefix="£" isLoading={isLoading} colour="amber" />
       </div>
+
+      {/* Deposits waiting to be confirmed — appears only when there's work to do */}
+      <DepositsToConfirm onConfirmed={load} />
 
       {/* Row 2: Charts */}
       <div className="grid gap-6 lg:grid-cols-[65fr_35fr]">
