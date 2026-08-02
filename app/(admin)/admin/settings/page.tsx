@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 
 interface Settings {
   company_name: string; company_phone: string; company_email: string;
-  company_address: string; google_review_link: string;
+  company_address: string; google_review_link: string; office_postcode: string;
   notify_new_booking: boolean; notify_invoice_paid: boolean;
   notify_invoice_overdue: boolean; overdue_days: number;
   notify_move_date_tomorrow: boolean;
@@ -19,7 +19,7 @@ interface Settings {
 
 const defaultSettings: Settings = {
   company_name: "Ample Removals", company_phone: "0333 577 2070",
-  company_email: "", company_address: "", google_review_link: "",
+  company_email: "", company_address: "", google_review_link: "", office_postcode: "RG18 3EB",
   notify_new_booking: true, notify_invoice_paid: true,
   notify_invoice_overdue: true, overdue_days: 7, notify_move_date_tomorrow: true,
   company_number: "", company_utr: "", financial_year_end: "03-31",
@@ -142,6 +142,10 @@ export default function SettingsPage() {
                 className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-purple-400" />
             </div>
             <InputField label="Google Review Link" value={settings.google_review_link} onChange={set("google_review_link")} placeholder="https://g.page/..." />
+            <div>
+              <InputField label="Office postcode" value={settings.office_postcode} onChange={set("office_postcode")} placeholder="RG18 3EB" />
+              <p className="mt-1 text-xs text-slate-500">Distances (office → first pickup) are measured from here. Change it anytime.</p>
+            </div>
 
             <div className="border-t border-slate-200 pt-4">
               <h3 className="font-semibold text-slate-900">Tax &amp; Filing</h3>

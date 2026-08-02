@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { StepHeading } from "@/components/booking/primitives";
 import { useWizard } from "@/components/booking/WizardContext";
+import { DistancePanel } from "@/components/admin/DistancePanel";
 import type { AddressOption } from "@/types";
 
 export interface ReviewSection {
@@ -131,10 +132,16 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
         ))}
       </div>
 
-      {/* Admin-only: set the quote price by hand. This exact figure is what gets
-          emailed to the customer as their quote — no auto-estimate. */}
+      {/* Admin-only: distances first (office → pickup, pickup → dropoff) so you can
+          judge the job, then set the quote price by hand. This exact figure is what
+          gets emailed to the customer as their quote — no auto-estimate. */}
       {admin && (
-        <div className="mt-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+        <div className="mt-6 space-y-3">
+          <DistancePanel
+            originPostcode={(values?.originAddress as AddressOption | undefined)?.postcode}
+            destinationPostcode={(values?.destinationAddress as AddressOption | undefined)?.postcode}
+          />
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
           <label className="block text-sm font-bold text-amber-900">Set the quote price (admin)</label>
           <p className="mt-0.5 text-xs text-amber-700">
             Whatever you enter here is emailed to the customer as their quote. Leave blank to use the auto-estimate.
@@ -151,6 +158,7 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
               placeholder="0.00"
               className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
             />
+          </div>
           </div>
         </div>
       )}

@@ -24,6 +24,7 @@ import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal"
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
+import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
@@ -434,6 +435,11 @@ export default function BookingDetailPage() {
 
         {/* LEFT PANEL */}
         <div className="space-y-5">
+          {/* Job distances at a glance — no need to open the quote builder */}
+          <DistancePanel
+            originPostcode={originAddress?.postcode}
+            destinationPostcode={destinationAddress?.postcode}
+          />
           <EditableCustomerCard customer={customer} formatDate={formatDate} onSaved={refresh} />
 
           <Card
