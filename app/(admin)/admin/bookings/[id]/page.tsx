@@ -16,6 +16,7 @@ import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
+import { GenerateReceiptModal } from "@/components/admin/invoices/GenerateReceiptModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDialog";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
@@ -74,6 +75,7 @@ export default function BookingDetailPage() {
   const [emailBody, setEmailBody] = useState("");
   const [smsBody, setSmsBody] = useState("");
   const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
@@ -696,6 +698,13 @@ export default function BookingDetailPage() {
                 </>;
               })()}
             </div>
+            {/* Payment receipt — issue a receipt for money already received */}
+            <button
+              onClick={() => setReceiptModalOpen(true)}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-green-200 bg-brand-green-50 px-3 py-2 text-sm font-semibold text-brand-green-700 hover:bg-brand-green-100"
+            >
+              <Receipt className="h-4 w-4" /> Generate Payment Receipt
+            </button>
           </Card>
         </div>
 
@@ -1002,6 +1011,19 @@ export default function BookingDetailPage() {
           additionalServices={data.additionalServices}
           quoteTotal={data.booking.quote_total}
           onSuccess={() => { refresh(); setGenerateInvoiceType(null); notifyEmbedDone(); }}
+        />
+      )}
+
+      {/* Payment receipt modal */}
+      {data && (
+        <GenerateReceiptModal
+          isOpen={receiptModalOpen}
+          onClose={() => setReceiptModalOpen(false)}
+          bookingId={bookingId}
+          bookingReference={data.booking.reference}
+          customerName={data.customer.full_name}
+          defaultAmount={data.booking.quote_total}
+          onGenerated={refresh}
         />
       )}
 

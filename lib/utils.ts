@@ -51,6 +51,14 @@ export function generateInvoiceNumber(): string {
 }
 
 /**
+ * Generate a payment-receipt number, e.g. `RCP-2026-7F4QK`.
+ */
+export function generateReceiptNumber(): string {
+  const year = new Date().getFullYear();
+  return `RCP-${year}-${randomSuffix(5)}`;
+}
+
+/**
  * Format a numeric amount as GBP currency, e.g. `£1,250.00`.
  */
 export function formatCurrency(amount: number): string {
