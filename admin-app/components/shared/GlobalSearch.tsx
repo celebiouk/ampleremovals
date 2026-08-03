@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, X, ClipboardList, User } from "lucide-react-native";
 import { Input, StatusBadge } from "@/components/ui";
+import { upperName } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -100,7 +101,7 @@ export function GlobalSearch({ visible, onClose }: { visible: boolean; onClose: 
                       >
                         <ClipboardList size={18} color="#7e22ce" />
                         <View className="flex-1">
-                          <Text className="font-medium text-slate-900 dark:text-white">{b.customer_name}</Text>
+                          <Text className="font-medium text-slate-900 dark:text-white">{upperName(b.customer_name)}</Text>
                           <Text className="font-mono text-xs text-slate-400">{b.reference}</Text>
                         </View>
                         <StatusBadge status={b.status} />
@@ -122,7 +123,7 @@ export function GlobalSearch({ visible, onClose }: { visible: boolean; onClose: 
                       >
                         <User size={18} color="#7e22ce" />
                         <View className="flex-1">
-                          <Text className="font-medium text-slate-900 dark:text-white">{c.full_name}</Text>
+                          <Text className="font-medium text-slate-900 dark:text-white">{upperName(c.full_name)}</Text>
                           {c.email ? <Text className="text-xs text-slate-400">{c.email}</Text> : null}
                         </View>
                       </Pressable>

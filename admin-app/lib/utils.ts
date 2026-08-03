@@ -42,6 +42,15 @@ export function toDateKey(d: Date): string {
   return local.toISOString().split("T")[0];
 }
 
+/**
+ * How a customer's name is displayed across admin: always full uppercase,
+ * whatever case it was entered in. Presentation-only (mirrors the web app's
+ * upperName) — the stored name keeps its original casing.
+ */
+export function upperName(name?: string | null): string {
+  return (name ?? "").toUpperCase();
+}
+
 /** Privacy-safe customer label: "Jane S." */
 export function customerShortName(fullName?: string | null): string {
   if (!fullName) return "Customer";

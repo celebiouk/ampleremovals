@@ -2,6 +2,7 @@ import { View, Text, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PackageCheck, AlertTriangle } from "lucide-react-native";
 import { LargeHeader } from "@/components/shared/LargeHeader";
+import { upperName } from "@/lib/utils";
 import { Card, Badge, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { useOverdue } from "@/hooks/useOps";
 import { colors } from "@/lib/colors";
@@ -24,7 +25,7 @@ export default function OverdueScreen() {
           (list.data ?? []).map((j) => (
             <Card key={j.id} style={{ marginBottom: 10 }}>
               <View className="flex-row items-center justify-between">
-                <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.customer?.full_name ?? "Customer"}</Text>
+                <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{upperName(j.customer?.full_name) || "Customer"}</Text>
                 <Badge label={`${j.days_overdue}d overdue`} colour="#b91c1c" />
               </View>
               <Text style={[type.mono, { color: colors.slate[400], marginTop: 2 }]}>{j.reference}</Text>

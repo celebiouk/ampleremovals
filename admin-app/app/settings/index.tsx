@@ -30,6 +30,7 @@ export default function SettingsScreen() {
         company_email: form.company_email,
         company_phone: form.company_phone,
         google_review_link: form.google_review_link,
+        office_postcode: form.office_postcode,
         notify_new_booking: form.notify_new_booking,
         notify_invoice_paid: form.notify_invoice_paid,
         notify_invoice_overdue: form.notify_invoice_overdue,
@@ -77,6 +78,10 @@ export default function SettingsScreen() {
               <Input label="Company email" value={form.company_email ?? ""} onChangeText={(v) => set("company_email", v)} autoCapitalize="none" keyboardType="email-address" />
               <Input label="Company phone" value={form.company_phone ?? ""} onChangeText={(v) => set("company_phone", v)} keyboardType="phone-pad" />
               <Input label="Google review link" value={form.google_review_link ?? ""} onChangeText={(v) => set("google_review_link", v)} autoCapitalize="none" />
+              <View>
+                <Input label="Office postcode" value={form.office_postcode ?? ""} onChangeText={(v) => set("office_postcode", v)} autoCapitalize="characters" placeholder="RG18 3EB" />
+                <Text className="mt-1 text-xs text-slate-500">Distances (office → first pickup) are measured from here.</Text>
+              </View>
             </View>
           </Card>
 

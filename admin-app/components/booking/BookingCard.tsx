@@ -6,7 +6,7 @@ import { serviceColors, statusColors, colors } from "@/lib/colors";
 import { type, fonts } from "@/lib/typography";
 import { radius, shadows, spacing } from "@/lib/tokens";
 import { SERVICE_LABELS_SHORT, STATUS_LABELS } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 import type { BookingRow } from "@/hooks/useBookings";
 import type { ServiceType } from "@/types";
 
@@ -52,7 +52,7 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <Text style={{ flex: 1, fontFamily: fonts.displaySemiBold, fontSize: 16, color: colors.slate[900] }} numberOfLines={1}>
-            {booking.customer_name}
+            {upperName(booking.customer_name)}
           </Text>
           {/* Status pill — solid accent so it stands out on the tinted row */}
           <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full, backgroundColor: status.accent }}>

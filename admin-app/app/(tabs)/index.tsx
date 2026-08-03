@@ -7,6 +7,7 @@ import { Card, Skeleton, ErrorState } from "@/components/ui";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { DepositsToConfirm } from "@/components/dashboard/DepositsToConfirm";
 import { MiniBarChart } from "@/components/dashboard/MiniBarChart";
 import { PipelineBars } from "@/components/dashboard/PipelineBars";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -69,6 +70,9 @@ export default function DashboardScreen() {
             <ErrorState message="Couldn't load dashboard data." onRetry={refetch} />
           ) : (
             <>
+              {/* Deposits waiting to be confirmed — appears only when there's work */}
+              <DepositsToConfirm onConfirmed={refetch} />
+
               {/* Overview */}
               <Text className="font-display text-lg text-slate-900">Overview</Text>
               <View className="flex-row gap-4">

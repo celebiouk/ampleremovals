@@ -7,6 +7,7 @@ export interface Settings {
   company_email: string | null;
   company_phone: string | null;
   google_review_link: string | null;
+  office_postcode: string | null;
   notify_new_booking: boolean | null;
   notify_invoice_paid: boolean | null;
   notify_invoice_overdue: boolean | null;

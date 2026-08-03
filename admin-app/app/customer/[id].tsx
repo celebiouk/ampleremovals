@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Mail, Phone, ChevronRight, Calendar, MapPin } from "lucide-react-native";
 import { Card, Button, StatusBadge, ServiceBadge, Skeleton, ErrorState, EmptyState } from "@/components/ui";
 import { useCustomerDetail } from "@/hooks/useCustomers";
-import { formatDate } from "@/lib/utils";
+import { formatDate, upperName } from "@/lib/utils";
 
 export default function CustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,7 +16,7 @@ export default function CustomerDetailScreen() {
       <View className="flex-row items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
         <Pressable onPress={() => router.back()} className="p-1"><ArrowLeft size={24} color="#7e22ce" /></Pressable>
         <Text className="flex-1 text-xl font-bold text-slate-900 dark:text-white" numberOfLines={1}>
-          {data?.customer.full_name ?? "Customer"}
+          {upperName(data?.customer.full_name) || "Customer"}
         </Text>
       </View>
 
@@ -38,7 +38,7 @@ export default function CustomerDetailScreen() {
                 </Text>
               </View>
               <View className="flex-1">
-                <Text className="text-lg font-bold text-slate-900 dark:text-white">{data.customer.full_name}</Text>
+                <Text className="text-lg font-bold text-slate-900 dark:text-white">{upperName(data.customer.full_name)}</Text>
                 <Text className="text-sm text-slate-500 dark:text-slate-400">
                   Since {formatDate(data.customer.created_at)}
                 </Text>

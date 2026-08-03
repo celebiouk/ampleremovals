@@ -1,12 +1,12 @@
 import { View, Text, FlatList, Pressable, RefreshControl, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { ArrowLeft, Download, CreditCard } from "lucide-react-native";
 import { Card, Skeleton, EmptyState, ErrorState } from "@/components/ui";
 import { usePayments, type PaymentRow } from "@/hooks/usePayments";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, upperName } from "@/lib/utils";
 
 export default function PaymentsScreen() {
   const router = useRouter();
@@ -65,7 +65,7 @@ export default function PaymentsScreen() {
           renderItem={({ item }: { item: PaymentRow }) => (
             <View className="flex-row items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               <View className="flex-1">
-                <Text className="font-semibold text-slate-900 dark:text-white">{item.customer_name}</Text>
+                <Text className="font-semibold text-slate-900 dark:text-white">{upperName(item.customer_name)}</Text>
                 <Text className="font-mono text-xs text-slate-400">{item.invoice_number}</Text>
                 <Text className="mt-0.5 text-xs text-slate-400">
                   {formatDateTime(item.paid_at)}{item.payment_method ? ` · ${item.payment_method.replace("_", " ")}` : ""}

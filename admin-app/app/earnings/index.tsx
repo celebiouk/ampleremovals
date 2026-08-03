@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable, Alert, RefreshControl } from "react-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { ArrowLeft, Check, CheckCheck, Download, PoundSterling } from "lucide-react-native";
 import { Card, Badge, Skeleton, ErrorState, EmptyState } from "@/components/ui";

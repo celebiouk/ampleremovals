@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { Download, CheckCheck, Lock, Search, Archive } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Card, Badge, Skeleton, ErrorState, Button, ScreenHeader, StatCard, Input } from "@/components/ui";

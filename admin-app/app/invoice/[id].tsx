@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react-native";
 import { Card, Button, Badge, Skeleton, ErrorState } from "@/components/ui";
 import { useInvoiceDetail } from "@/hooks/useInvoices";
 import { apiFetch } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, upperName } from "@/lib/utils";
 import { INVOICE_STATUS_LABELS, INVOICE_STATUS_COLOURS } from "@/lib/constants";
 
 export default function InvoiceDetailScreen() {
@@ -81,7 +81,7 @@ export default function InvoiceDetailScreen() {
               <Badge label={inv.type === "deposit" ? "Deposit" : "Full balance"} colour="bg-slate-100 text-slate-600" />
             </View>
             <Text className="text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(inv.total)}</Text>
-            <Text className="mt-1 text-slate-500 dark:text-slate-400">{inv.customer_name} · {inv.booking_reference}</Text>
+            <Text className="mt-1 text-slate-500 dark:text-slate-400">{upperName(inv.customer_name)} · {inv.booking_reference}</Text>
           </Card>
 
           <Card>

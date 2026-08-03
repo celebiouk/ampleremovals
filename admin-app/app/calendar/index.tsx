@@ -6,7 +6,7 @@ import { Calendar } from "react-native-calendars";
 import { ArrowLeft, MapPin, ChevronRight } from "lucide-react-native";
 import { Skeleton, ErrorState, EmptyState, ServiceBadge } from "@/components/ui";
 import { useCalendar, type CalendarBooking } from "@/hooks/useCalendar";
-import { toDateKey } from "@/lib/utils";
+import { toDateKey, upperName } from "@/lib/utils";
 import { statusColors, colors } from "@/lib/colors";
 import { STATUS_LABELS } from "@/lib/constants";
 
@@ -148,7 +148,7 @@ function JobCard({
             </Text>
           ) : null}
         </View>
-        <Text className="text-lg font-extrabold text-slate-900">{b.customer_name}</Text>
+        <Text className="text-lg font-extrabold text-slate-900">{upperName(b.customer_name)}</Text>
         <View className="mt-1 flex-row items-center gap-1.5">
           <MapPin size={16} color="#475569" />
           <Text className="text-base font-semibold text-slate-700">

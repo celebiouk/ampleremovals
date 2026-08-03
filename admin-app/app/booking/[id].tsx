@@ -19,12 +19,14 @@ import { DriverStatusBar } from "@/components/booking/DriverStatusBar";
 import { AssignedDriversSection } from "@/components/booking/AssignedDriversSection";
 import { QuoteSheet } from "@/components/booking/QuoteSheet";
 import { GenerateInvoiceSheet } from "@/components/booking/GenerateInvoiceSheet";
+import { DistancePanel } from "@/components/booking/DistancePanel";
+import { GenerateReceiptSheet } from "@/components/booking/GenerateReceiptSheet";
 import { colors } from "@/lib/colors";
 import { useBookingDetail } from "@/hooks/useBookingDetail";
 import { apiFetch } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { subscribeToBookingActivity, subscribeToBookingNotes, unsubscribe } from "@/lib/realtime";
-import { formatCurrency, formatDate, formatDateTime, toDateKey } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, toDateKey, upperName } from "@/lib/utils";
 import { STATUS_LABELS, ALL_STATUSES, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { Address, BookingStatus } from "@/types";
 
@@ -58,6 +60,7 @@ export default function BookingDetailScreen() {
   const [reminderOpen, setReminderOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   function invalidateAll() {
@@ -176,7 +179,7 @@ export default function BookingDetailScreen() {
           <View className="mb-2 flex-row flex-wrap gap-2">
             <ServiceBadge service={booking.service_type} />
           </View>
-          <Text className="text-2xl font-bold text-white">{customer?.full_name ?? "—"}</Text>
+          <Text className="text-2xl font-bold text-white">{upperName(customer?.full_name) || "—"}</Text>
           <Text className="font-mono text-sm text-purple-200">{booking.reference}</Text>
           {booking.move_date ? (
             <View className="mt-3 flex-row items-center gap-2">
@@ -252,7 +255,7 @@ export default function BookingDetailScreen() {
         {customer ? (
           <Card>
             <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Customer</Text>
-            <Text className="font-medium text-slate-900 dark:text-white">{customer.full_name}</Text>
+            <Text className="font-medium text-slate-900 dark:text-white">{upperName(customer.full_name)}</Text>
             <View className="mt-3 flex-row flex-wrap gap-2">
               {customer.phone ? (
                 <Button label="Call" variant="outline" size="sm" onPress={() => Linking.openURL(`tel:${customer.phone}`)} />
@@ -290,6 +293,9 @@ export default function BookingDetailScreen() {
           ) : null}
         </Card>
 
+        {/* Distances at a glance (office → pickup, pickup → dropoff) */}
+        <DistancePanel originPostcode={origin?.postcode} destinationPostcode={destination?.postcode} />
+
         {/* Money */}
         <Card>
           <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Financials</Text>
@@ -311,6 +317,14 @@ export default function BookingDetailScreen() {
               </View>
             ))
           )}
+          {/* Payment receipt — issue a receipt for money already received */}
+          <Pressable
+            onPress={() => setReceiptOpen(true)}
+            className="mt-3 flex-row items-center justify-center gap-2 rounded-xl border border-brand-green-200 bg-brand-green-50 px-3 py-2.5"
+          >
+            <Receipt size={16} color="#16a34a" />
+            <Text className="text-sm font-semibold text-brand-green-700">Generate Payment Receipt</Text>
+          </Pressable>
         </Card>
 
         {/* Notes */}
@@ -527,6 +541,16 @@ export default function BookingDetailScreen() {
         bookingId={id!}
         onClose={() => setInvoiceOpen(false)}
         onDone={() => { setInvoiceOpen(false); invalidateAll(); }}
+      />
+
+      <GenerateReceiptSheet
+        visible={receiptOpen}
+        bookingId={id!}
+        bookingReference={booking.reference}
+        customerName={customer?.full_name ?? "Customer"}
+        defaultAmount={booking.quote_total}
+        onClose={() => setReceiptOpen(false)}
+        onDone={() => { setReceiptOpen(false); invalidateAll(); }}
       />
     </Shell>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Truck, Check, Star } from "lucide-react-native";
+import { upperName } from "@/lib/utils";
 import { LargeHeader } from "@/components/shared/LargeHeader";
 import { Card, Button, Input, Badge, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { DateField } from "@/components/DateField";
@@ -74,7 +75,7 @@ export default function AnyVanScreen() {
           (list.data ?? []).map((j) => (
             <Card key={j.id} style={{ marginBottom: 8 }}>
               <View className="flex-row items-center justify-between">
-                <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.customer_name}</Text>
+                <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{upperName(j.customer_name)}</Text>
                 {j.rating != null ? (
                   <View className="flex-row items-center gap-1">
                     <Star size={14} color="#f59e0b" fill="#f59e0b" /><Text style={[type.bodySmall, { color: colors.slate[700] }]}>{j.rating}/5</Text>

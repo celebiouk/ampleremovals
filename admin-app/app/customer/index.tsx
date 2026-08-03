@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, FlatList, Pressable, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { upperName } from "@/lib/utils";
 import { ArrowLeft, Search, ChevronRight, Mail, Phone } from "lucide-react-native";
 import { Input, Skeleton, EmptyState, ErrorState } from "@/components/ui";
 import { useCustomers, type CustomerRow } from "@/hooks/useCustomers";
@@ -44,7 +45,7 @@ export default function CustomersScreen() {
                 <Text className="font-bold text-brand-purple-700">{item.full_name?.[0]?.toUpperCase() ?? "?"}</Text>
               </View>
               <View className="flex-1">
-                <Text className="font-semibold text-slate-900 dark:text-white">{item.full_name}</Text>
+                <Text className="font-semibold text-slate-900 dark:text-white">{upperName(item.full_name)}</Text>
                 <View className="mt-0.5 flex-row items-center gap-3">
                   {item.email ? (
                     <View className="flex-row items-center gap-1"><Mail size={12} color="#94a3b8" /><Text className="text-xs text-slate-500" numberOfLines={1}>{item.email}</Text></View>

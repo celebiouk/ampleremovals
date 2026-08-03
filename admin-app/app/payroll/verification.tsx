@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { CheckCircle2, TrendingUp, Download } from "lucide-react-native";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { Card, ScreenHeader, Skeleton, ErrorState, StatCard, Button } from "@/components/ui";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";

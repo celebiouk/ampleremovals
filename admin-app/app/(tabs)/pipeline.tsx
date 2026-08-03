@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Modal, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { upperName } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { X, MoveRight } from "lucide-react-native";
@@ -109,7 +110,7 @@ export default function PipelineScreen() {
                         <Pressable onPress={() => router.push(`/booking/${b.id}`)}>
                           <View className="mb-1.5"><ServiceBadge service={b.service_type} /></View>
                           <Text className="text-base font-extrabold text-slate-900" numberOfLines={1}>
-                            {b.customer_name}
+                            {upperName(b.customer_name)}
                           </Text>
                           <Text className="font-mono text-xs font-bold text-slate-500">{b.reference}</Text>
                           <Text className="mt-1 text-sm font-semibold text-slate-700" numberOfLines={1}>

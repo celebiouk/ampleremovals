@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, Text, Alert, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as Haptics from "expo-haptics";
 import { Download, Info, CheckCircle2, Bell } from "lucide-react-native";

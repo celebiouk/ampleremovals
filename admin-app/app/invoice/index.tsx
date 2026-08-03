@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 import { Badge, Skeleton, EmptyState, ErrorState } from "@/components/ui";
 import { useInvoices, type InvoiceRow } from "@/hooks/useInvoices";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, upperName } from "@/lib/utils";
 import { INVOICE_STATUS_LABELS, INVOICE_STATUS_COLOURS } from "@/lib/constants";
 import type { InvoiceStatus } from "@/types";
 
@@ -62,7 +62,7 @@ export default function InvoicesScreen() {
                   <Badge label={INVOICE_STATUS_LABELS[item.status]} colour={INVOICE_STATUS_COLOURS[item.status]} />
                   <Badge label={item.type === "deposit" ? "Deposit" : "Full"} colour="bg-slate-100 text-slate-600" />
                 </View>
-                <Text className="font-semibold text-slate-900 dark:text-white">{item.customer_name}</Text>
+                <Text className="font-semibold text-slate-900 dark:text-white">{upperName(item.customer_name)}</Text>
                 <Text className="font-mono text-xs text-slate-400">{item.invoice_number} · {item.booking_reference}</Text>
                 {item.due_date ? <Text className="mt-0.5 text-xs text-slate-400">Due {formatDate(item.due_date)}</Text> : null}
               </View>
