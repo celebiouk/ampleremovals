@@ -60,6 +60,15 @@ export default function JobDetailScreen() {
 
   const refetch = useCallback(() => job.refetch(), [job]);
 
+  // Only a MANUAL pull-to-refresh shows the spinner. The 20s auto-poll below
+  // refetches silently (no spinner, no content jump) so the ETA/map update
+  // smoothly in place.
+  const [manualRefreshing, setManualRefreshing] = useState(false);
+  const onManualRefresh = useCallback(async () => {
+    setManualRefreshing(true);
+    try { await job.refetch(); } finally { setManualRefreshing(false); }
+  }, [job]);
+
   // Auto-refresh every 20s while en route, so background arrival + ETA surface here.
   // Also push a foreground GPS fix each tick — this keeps the live map + ETA moving
   // even when the OS hasn't granted "Always" background location.
@@ -153,8 +162,8 @@ export default function JobDetailScreen() {
           <Share2 size={18} color={colors.primary.DEFAULT} />
         </Pressable>
       }
-      onRefresh={refetch}
-      refreshing={job.isRefetching && !busy}
+      onRefresh={onManualRefresh}
+      refreshing={manualRefreshing}
     >
       {/* Summary */}
       <View style={[{ borderRadius: radius["2xl"], overflow: "hidden", marginBottom: spacing.base }, shadows.md]}>

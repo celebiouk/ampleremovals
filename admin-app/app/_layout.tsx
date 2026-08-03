@@ -21,9 +21,11 @@ import {
 // The website is light-only. Lock the app to light so it matches exactly,
 // regardless of the device's dark-mode setting.
 nwColorScheme.set("light");
+import type { Session } from "@supabase/supabase-js";
 import { supabase, registerSupabaseAppStateRefresh } from "@/lib/supabase";
 import { assertEnv } from "@/lib/env";
 import { getUserType } from "@/lib/user-type";
+import type { UserType } from "@/types";
 import { registerForPushNotifications } from "@/lib/push";
 import { useAuthStore } from "@/store/authStore";
 import { useTheme } from "@/hooks/useTheme";
@@ -151,42 +153,73 @@ function RootNavigator() {
 export default function RootLayout() {
   const theme = useTheme();
   const { setSession, setUserType, setInitialised, setRecovering } = useAuthStore();
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold,
     PlusJakartaSans_400Regular, PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold,
   });
+  // Proceed even if a font fails to load — never leave the app on a blank splash
+  // just because the font step errored. It falls back to the system font.
+  const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
+    if (fontsReady) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsReady]);
 
   useEffect(() => {
     assertEnv();
     const stopRefresh = registerSupabaseAppStateRefresh();
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUserType(session ? await getUserType(session.user.id) : null);
-      setInitialised(true);
-    });
+    // The role check is a network call. Never let it (or any auth error) trap the
+    // app on the loading screen: race it against a 6s timeout, and since only
+    // admins have logins here, treat an inconclusive result as admin rather than
+    // bouncing a signed-in admin back to login.
+    const resolveUserType = async (session: Session | null): Promise<UserType | null> => {
+      if (!session) return null;
+      const t = await Promise.race<UserType>([
+        getUserType(session.user.id).catch(() => "unknown" as UserType),
+        new Promise<UserType>((res) => setTimeout(() => res("unknown"), 6000)),
+      ]);
+      return t === "driver" ? "driver" : "admin";
+    };
+
+    // Hard fail-safe: leave the loading screen no matter what after 8s, even if
+    // getSession itself never resolves (e.g. the auth server stalls on a cold open).
+    const failSafe = setTimeout(() => setInitialised(true), 8000);
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        setSession(session);
+        setUserType(await resolveUserType(session));
+      })
+      .catch(() => {
+        // Couldn't read the session — boot into the auth flow rather than hang.
+        setSession(null);
+        setUserType(null);
+      })
+      .finally(() => {
+        clearTimeout(failSafe);
+        setInitialised(true); // ALWAYS reached — this is the key fix.
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       setSession(session);
-      setUserType(session ? await getUserType(session.user.id) : null);
+      setUserType(await resolveUserType(session));
     });
 
     return () => {
+      clearTimeout(failSafe);
       subscription.unsubscribe();
       stopRefresh();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!fontsLoaded) return null; // splash stays up until fonts are ready
+  if (!fontsReady) return null; // splash stays up until fonts are ready (or errored)
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
