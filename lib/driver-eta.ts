@@ -215,8 +215,12 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
 // moving, which reset the countdown and hid the delay: the customer saw "10 min"
 // while the driver was 45 min away in traffic.) A Distance Matrix call is ~1¢, so
 // we recalc every few minutes, tighter near arrival where accuracy matters most.
-const ETA_REFRESH_FAR_MS = 3 * 60 * 1000;  // > 15 min away → recalc every ~3 min
-const ETA_REFRESH_NEAR_MS = 90 * 1000;     // ≤ 15 min away → recalc every ~90 s
+// Cost-conscious cadence: recalc the traffic-aware ETA every 5 minutes for the
+// whole journey. (Each recalc is a Google Distance Matrix call, so we keep it to
+// one per booking per 5 min.) Between recalcs the tracking page counts down from
+// the last real value, so the customer still sees a smoothly falling ETA.
+const ETA_REFRESH_FAR_MS = 5 * 60 * 1000;  // recalc every 5 min
+const ETA_REFRESH_NEAR_MS = 5 * 60 * 1000; // same near arrival — 5 min cadence
 const ETA_NEAR_MIN = 15;
 
 /**
