@@ -296,6 +296,23 @@ export default function BookingDetailScreen() {
         {/* Distances at a glance (office → pickup, pickup → dropoff) */}
         <DistancePanel originPostcode={origin?.postcode} destinationPostcode={destination?.postcode} />
 
+        {/* Items to move — the inventory the customer selected in the booking form */}
+        {Array.isArray(booking.inventory) && booking.inventory.length > 0 ? (
+          <Card>
+            <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">
+              Items to move ({booking.inventory.reduce((n, it) => n + (it.quantity || 0), 0)})
+            </Text>
+            <View className="gap-1.5">
+              {booking.inventory.map((it, i) => (
+                <View key={i} className="flex-row items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                  <Text className="flex-1 pr-2 text-sm text-slate-700 dark:text-slate-300">{it.label}</Text>
+                  <Text className="text-sm font-bold text-brand-purple-800">×{it.quantity}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        ) : null}
+
         {/* Money */}
         <Card>
           <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">Financials</Text>

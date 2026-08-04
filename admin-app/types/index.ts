@@ -81,6 +81,10 @@ export interface Booking {
   deposit_amount?: number | null;
   deposit_status?: "unpaid" | "claimed" | "verified" | null;
   latest_driver_status?: JobStatusUpdate | null;
+  /** Customer-supplied "what are you moving?" list (from the booking wizard). */
+  inventory?: { key: string; label: string; variant?: string; quantity: number }[] | null;
+  /** Any extra description the customer added. */
+  description?: string | null;
   created_at: string;
 }
 
