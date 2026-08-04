@@ -26,6 +26,7 @@ import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
+import { isSuperAdmin } from "@/lib/super-admin";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
@@ -79,6 +80,7 @@ export default function BookingDetailPage() {
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
   const [deleteInvoiceDialogOpen, setDeleteInvoiceDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string; type: string; amount: number } | null>(null);
@@ -116,12 +118,21 @@ export default function BookingDetailPage() {
   const [editMoveTime, setEditMoveTime] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  // Get user email on mount
+  // Get the signed-in user's email + super-admin role on mount (gates the
+  // super-admin-only invoice delete button).
   useEffect(() => {
     const getUser = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       setUserEmail(user?.email ?? null);
+      if (user) {
+        const { data: adminUser } = await supabase
+          .from("admin_users")
+          .select("role")
+          .eq("supabase_user_id", user.id)
+          .single();
+        setUserRole(adminUser?.role ?? null);
+      }
     };
     getUser();
   }, []);
@@ -657,7 +668,7 @@ export default function BookingDetailPage() {
                       <button onClick={() => setViewingInvoiceId(inv.id)} className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
                         <ExternalLink className="h-3 w-3" /> View
                       </button>
-                      {userEmail === "ampleremovals@gmail.com" && (
+                      {isSuperAdmin(userEmail, userRole) && (
                         <button
                           onClick={() => openDeleteInvoiceDialog(inv)}
                           disabled={deletingInvoiceId === inv.id}

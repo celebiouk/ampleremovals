@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 /**
  * DELETE /api/admin/invoices/[id]
@@ -21,12 +22,17 @@ export async function DELETE(
       );
     }
 
-    // Hardcoded super admin check
-    if (user.email !== "ampleremovals@gmail.com") {
+    // Super-admin check — by role (admin_users) OR a known super-admin email.
+    const { data: adminUser } = await supabaseAuth
+      .from("admin_users")
+      .select("role")
+      .eq("supabase_user_id", user.id)
+      .single();
+    if (!isSuperAdmin(user.email, adminUser?.role)) {
       return NextResponse.json(
         {
           success: false,
-          error: `Only super admin can delete invoices. Your email: ${user.email}`
+          error: `Only super admins can delete invoices. Your email: ${user.email}`,
         },
         { status: 403 }
       );
