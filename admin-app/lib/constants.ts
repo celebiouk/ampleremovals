@@ -46,6 +46,15 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_a_good_fit: "Not a Good Fit",
 };
 
+/** A confirmed job = deposit paid and locked in, plus everything after. The Job
+ *  Calendar shows only these. */
+export const CONFIRMED_JOB_STATUSES: BookingStatus[] = [
+  "deposit_paid_job_confirmed",
+  "full_invoice_sent",
+  "full_balance_paid",
+  "job_completed",
+];
+
 // Pill background + text classes (NativeWind).
 // Status badge pill colours — aligned with the row-accent scheme:
 // inquiry=orange, contacted=blue, in-progress=purple, money-in/done=green,

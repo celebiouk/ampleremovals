@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import {
   Users, Receipt, CreditCard, CalendarDays, BarChart2, Zap, Settings,
   Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3, TrendingUp,
-  TrendingDown, Landmark, Calculator, Truck, PackageCheck, CheckCheck, UserPlus, Package,
+  TrendingDown, Landmark, Calculator, Truck, PackageCheck, CheckCheck, UserPlus, Package, PhoneCall,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -35,7 +35,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Approvals", icon: CheckCheck, href: "/approvals" },
       { label: "Cleaners", icon: Sparkles, href: "/cleaners" },
       { label: "Customers", icon: Users, href: "/customer" },
-      { label: "Calendar", icon: CalendarDays, href: "/calendar" },
+      { label: "Job Calendar", icon: CalendarDays, href: "/calendar" },
+      { label: "Call back", icon: PhoneCall, href: "/call-back" },
       { label: "Pipeline", icon: Columns3, href: "/pipeline" },
     ],
   },

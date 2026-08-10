@@ -12,6 +12,7 @@ import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { formatDate, upperName } from "@/lib/utils";
+import { CONFIRMED_JOB_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
 const SERVICE_BG: Record<ServiceType, string> = {
@@ -42,6 +43,7 @@ export default function CalendarPage() {
       .from("bookings")
       .select("id,reference,service_type,status,move_date,customers!inner(full_name,phone),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)")
       .not("move_date", "is", null)
+      .in("status", CONFIRMED_JOB_STATUSES) // confirmed jobs only
       .gte("move_date", start)
       .lte("move_date", end)
       .order("move_date");

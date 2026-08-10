@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { CONFIRMED_JOB_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
 export interface CalendarBooking {
@@ -30,6 +31,7 @@ async function loadCalendar(): Promise<CalendarBooking[]> {
     `
     )
     .not("move_date", "is", null)
+    .in("status", CONFIRMED_JOB_STATUSES) // confirmed jobs only
     .gte("move_date", from.toISOString().slice(0, 10))
     .order("move_date", { ascending: true })
     .limit(500);

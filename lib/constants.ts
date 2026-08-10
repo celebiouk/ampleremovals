@@ -27,6 +27,17 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_a_good_fit:             "Not a Good Fit",
 };
 
+/**
+ * A booking counts as a CONFIRMED JOB once the deposit is paid and it's locked
+ * in — and every status after that. The Job Calendar shows only these.
+ */
+export const CONFIRMED_JOB_STATUSES: BookingStatus[] = [
+  "deposit_paid_job_confirmed",
+  "full_invoice_sent",
+  "full_balance_paid",
+  "job_completed",
+];
+
 // ── Status badge colours (Tailwind classes) ────────────────────────────────
 
 export const STATUS_COLOURS: Record<BookingStatus, string> = {

@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
-  Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package,
+  Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,8 @@ const NAV_GROUPS = [
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },
-      { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
+      { href: "/admin/calendar", label: "Job Calendar", icon: CalendarDays },
+      { href: "/admin/call-back", label: "Call back", icon: PhoneCall },
       { href: "/admin/drivers", label: "Drivers", icon: Truck },
       { href: "/admin/porters", label: "Porters", icon: Users },
       { href: "/admin/routes", label: "Route Plans", icon: Route },
