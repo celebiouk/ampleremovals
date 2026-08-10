@@ -20,7 +20,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("bookings")
       .select(
-        "id, reference, status, move_date, move_time, pickup_confirmed, delivery_confirmed, current_journey_leg, completed_at, " +
+        "id, reference, status, move_date, pickup_confirmed, delivery_confirmed, current_journey_leg, completed_at, " +
           "customer:customers(full_name, phone), " +
           "origin:addresses!origin_address_id(line_1, city, postcode), " +
           "destination:addresses!destination_address_id(line_1, city, postcode), " +
@@ -49,7 +49,6 @@ export async function GET() {
           reference: b.reference,
           status: b.status,
           move_date: b.move_date,
-          move_time: b.move_time,
           days_overdue: daysOverdue,
           pickup_confirmed: !!b.pickup_confirmed,
           delivery_confirmed: !!b.delivery_confirmed,

@@ -46,7 +46,19 @@ const NAV_GROUPS = [
       { href: "/admin/invoices", label: "Invoices", icon: Receipt },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/earnings", label: "Driver Earnings", icon: PoundSterling },
+      { href: "/admin/cleaner-earnings", label: "Cleaner Earnings", icon: PoundSterling },
       { href: "/admin/payroll", label: "Payroll", icon: PoundSterling },
+    ],
+  },
+  {
+    label: "PAYROLL",
+    items: [
+      { href: "/admin/payroll/bulk-actions", label: "Bulk Actions", icon: Zap },
+      { href: "/admin/payroll/verification", label: "Verification", icon: Shield },
+      { href: "/admin/payroll/compliance", label: "Compliance", icon: Shield },
+      { href: "/admin/payroll/reconciliation", label: "Reconciliation", icon: Shield },
+      { href: "/admin/payroll/year-end", label: "Payroll Year-End", icon: TrendingUp },
+      { href: "/admin/payroll/analytics", label: "Payroll Analytics", icon: BarChart2 },
     ],
   },
   {
