@@ -28,14 +28,12 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 };
 
 /**
- * A booking counts as a CONFIRMED JOB once the deposit is paid and it's locked
- * in — and every status after that. The Job Calendar shows only these.
+ * The Job Calendar shows ONLY confirmed jobs — nothing else. "Confirmed" means
+ * the single "Job Confirmed" status (deposit paid, locked in). No inquiries, no
+ * quotes, no in-progress, no completed — just confirmed jobs.
  */
 export const CONFIRMED_JOB_STATUSES: BookingStatus[] = [
   "deposit_paid_job_confirmed",
-  "full_invoice_sent",
-  "full_balance_paid",
-  "job_completed",
 ];
 
 // ── Status badge colours (Tailwind classes) ────────────────────────────────

@@ -46,13 +46,10 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_a_good_fit: "Not a Good Fit",
 };
 
-/** A confirmed job = deposit paid and locked in, plus everything after. The Job
- *  Calendar shows only these. */
+/** The Job Calendar shows ONLY confirmed jobs — the single "Job Confirmed"
+ *  status. No inquiries, quotes, in-progress or completed bookings. */
 export const CONFIRMED_JOB_STATUSES: BookingStatus[] = [
   "deposit_paid_job_confirmed",
-  "full_invoice_sent",
-  "full_balance_paid",
-  "job_completed",
 ];
 
 // Pill background + text classes (NativeWind).
