@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import {
   Users, Receipt, CreditCard, CalendarDays, BarChart2, Zap, Settings,
   Bell, Shield, LogOut, ChevronRight, PoundSterling, User, Sparkles, Columns3, TrendingUp,
-  TrendingDown, Landmark, Calculator, Truck, PackageCheck, CheckCheck, UserPlus, Package, PhoneCall,
+  TrendingDown, Landmark, Calculator, Truck, PackageCheck, CheckCheck, UserPlus, Package, PhoneCall, Route,
 } from "lucide-react-native";
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
@@ -34,6 +34,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Items Still Out", icon: PackageCheck, href: "/overdue" },
       { label: "Approvals", icon: CheckCheck, href: "/approvals" },
       { label: "Cleaners", icon: Sparkles, href: "/cleaners" },
+      { label: "Porters", icon: Users, href: "/porters" },
+      { label: "Route Plans", icon: Route, href: "/routes" },
       { label: "Customers", icon: Users, href: "/customer" },
       { label: "Job Calendar", icon: CalendarDays, href: "/calendar" },
       { label: "Call back", icon: PhoneCall, href: "/call-back" },
@@ -76,6 +78,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: "Intelligence",
     items: [
       { label: "Reports", icon: BarChart2, href: "/reports" },
+      { label: "Insights", icon: TrendingUp, href: "/insights" },
       { label: "Automations", icon: Zap, href: "/automations" },
     ],
   },

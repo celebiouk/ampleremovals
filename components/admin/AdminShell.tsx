@@ -9,6 +9,7 @@ import {
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
+  PackageCheck, CheckCheck, User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,9 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/leads/new", label: "New Lead", icon: UserPlus },
       { href: "/admin/catalog", label: "Item Catalog", icon: Package },
+      { href: "/admin/anyvan", label: "AnyVan Jobs", icon: Truck },
+      { href: "/admin/overdue", label: "Items Still Out", icon: PackageCheck },
+      { href: "/admin/approvals", label: "Approvals", icon: CheckCheck },
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },
@@ -59,6 +63,7 @@ const NAV_GROUPS = [
       { href: "/admin/payroll/reconciliation", label: "Reconciliation", icon: Shield },
       { href: "/admin/payroll/year-end", label: "Payroll Year-End", icon: TrendingUp },
       { href: "/admin/payroll/analytics", label: "Payroll Analytics", icon: BarChart2 },
+      { href: "/admin/payslips", label: "My Payslips", icon: PoundSterling },
     ],
   },
   {
@@ -230,6 +235,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Footer */}
       <div className="shrink-0 border-t border-purple-900/50 p-3 space-y-1">
+        <SidebarLink href="/admin/profile" label="My Profile" icon={User} collapsed={collapsed} />
         <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={collapsed} />
         <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={collapsed} />
         {!collapsed && (

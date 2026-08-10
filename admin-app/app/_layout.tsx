@@ -102,6 +102,9 @@ function RootNavigator() {
       <Stack.Screen name="calendar/index" />
       <Stack.Screen name="call-back/index" />
       <Stack.Screen name="catalog/index" />
+      <Stack.Screen name="porters/index" />
+      <Stack.Screen name="routes/index" />
+      <Stack.Screen name="insights/index" />
       <Stack.Screen name="customer/index" />
       <Stack.Screen name="customer/[id]" />
       <Stack.Screen name="driver/new" />
