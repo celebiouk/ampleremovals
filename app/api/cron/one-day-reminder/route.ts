@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
 
 /**
  * GET /api/cron/one-day-reminder
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        inventory,
         address_confirmed,
         one_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
@@ -136,6 +138,8 @@ export async function GET(req: Request) {
                 <p style="margin: 0; color: #334155;">${destinationAddress}</p>
               </div>
 
+              ${moreItemsBlockHtml(booking.inventory)}
+
               <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 24px; border-radius: 10px; margin: 32px 0; text-align: center;">
                 <p style="margin: 0 0 12px 0; font-size: 16px; color: #78350f; font-weight: bold;">📲 We'll Keep You Updated</p>
                 <p style="margin: 0; color: #92400e; font-size: 14px;">
@@ -183,7 +187,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `🚨 MOVING DAY TOMORROW!\n\nFinal checklist: Pack essentials box, clear pathways, ensure parking access, take meter readings.\n\n${!addressConfirmed ? "⚠️ Don't forget to confirm your addresses!\n\n" : ""}We'll update you as our driver heads your way.\n\nCall us: 03335772070\nRef: ${booking.reference}`;
+        const smsBody = `🚨 MOVING DAY TOMORROW!\n\nFinal checklist: Pack essentials box, clear pathways, ensure parking access, take meter readings.\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ Don't forget to confirm your addresses!\n\n" : ""}We'll update you as our driver heads your way.\n\nCall us: 03335772070\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -193,7 +197,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `🚨 *MOVING DAY TOMORROW!*\n\nHi ${customer.full_name},\n\nWe're all set! Final checklist:\n\n✅ Pack essentials box\n✅ Clear pathways\n✅ Parking ready\n✅ Meter readings\n✅ Valuables with you\n✅ Get good sleep!\n\n${!addressConfirmed ? "⚠️ *Important:* Please confirm your addresses (check your email)\n\n" : ""}We'll keep you updated tomorrow!\n\nCall us: *0333 577 2070*\nBooking: ${booking.reference}`;
+        const whatsappBody = `🚨 *MOVING DAY TOMORROW!*\n\nHi ${customer.full_name},\n\nWe're all set! Final checklist:\n\n✅ Pack essentials box\n✅ Clear pathways\n✅ Parking ready\n✅ Meter readings\n✅ Valuables with you\n✅ Get good sleep!\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ *Important:* Please confirm your addresses (check your email)\n\n" : ""}We'll keep you updated tomorrow!\n\nCall us: *0333 577 2070*\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

@@ -17,6 +17,10 @@
       "schedule": "30 9 * * *"
     },
     {
+      "path": "/api/cron/two-day-reminder",
+      "schedule": "50 9 * * *"
+    },
+    {
       "path": "/api/cron/one-day-reminder",
       "schedule": "45 9 * * *"
     },

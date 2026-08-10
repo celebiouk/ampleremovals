@@ -2,6 +2,7 @@ import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatCurrency } from "@/lib/utils";
 import { BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
+import { bookingItemsBlockHtml } from "@/lib/inventory-email";
 
 const PHONE = "0333 577 2070";
 
@@ -65,6 +66,8 @@ export interface ReserveMessageParams {
   email: string;
   phone: string;
   total: number;
+  /** Customer's selected items — shown as a simple list in the email. */
+  inventory?: unknown;
 }
 
 /**
@@ -81,6 +84,7 @@ export async function sendReserveMessages({
   email,
   phone,
   total,
+  inventory,
 }: ReserveMessageParams): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
@@ -97,6 +101,7 @@ export async function sendReserveMessages({
         <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 4px;">
           <p style="margin: 0; font-size: 22px; font-weight: bold; color: #6b21a8;">${amount}</p>
         </div>
+        ${bookingItemsBlockHtml(inventory)}
         <p style="font-size: 16px; margin: 16px 0;">Reserve your moving date to lock it in. <strong>Don't worry — you can change your date later</strong>, and you can review or tweak your quote first.</p>
         <p style="text-align: center; margin: 28px 0;">
           <a href="${link}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">

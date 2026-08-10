@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendAdminEmails } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { sendWhatsApp } from "@/lib/twilio";
 import { formatDate } from "@/lib/utils";
 
 // Admin ALERT recipient — intentionally the company mobile (0333 landline numbers cannot receive SMS/WhatsApp). Public/customer-facing number is 0333 577 2070.
@@ -144,15 +144,8 @@ export async function GET(req: Request) {
           console.error(`❌ Email failed for reminder ${reminder.id}:`, emailErr);
         }
 
-        // SMS notification
-        const smsBody = `⏰ CALL BACK REMINDER\n\n${customer.full_name} - ${booking.reference}\n📞 ${customer.phone}\n\nReason: ${reasonText}\nMove: ${moveDate}${reminder.notes ? `\n\nNotes: ${reminder.notes}` : ""}`;
-
-        try {
-          await sendSMS(ADMIN_PHONE, smsBody);
-          console.log(`✅ SMS sent for reminder ${reminder.id}`);
-        } catch (smsErr) {
-          console.error(`❌ SMS failed for reminder ${reminder.id}:`, smsErr);
-        }
+        // (Admin SMS intentionally removed — admins no longer get SMS about
+        // reminders. Email + WhatsApp still go out.)
 
         // WhatsApp notification
         const whatsappBody = `⏰ *CALL BACK REMINDER*\n\n*${customer.full_name}*\nBooking: ${booking.reference}\n📞 ${customer.phone}\n\n*Service:* ${booking.service_type.replace(/_/g, " ")}\n*Move Date:* ${moveDate}\n*Reason:* ${reasonText}${reminder.notes ? `\n\n*Notes:* ${reminder.notes}` : ""}`;

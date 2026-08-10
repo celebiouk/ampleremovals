@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
 
 /**
  * GET /api/cron/three-day-reminder
@@ -36,6 +37,7 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        inventory,
         three_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
@@ -120,6 +122,8 @@ export async function GET(req: Request) {
                 <p style="margin: 0; color: #334155;">${destinationAddress}</p>
               </div>
 
+              ${moreItemsBlockHtml(booking.inventory)}
+
               <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 24px 0; border-radius: 4px;">
                 <p style="margin: 0 0 12px 0; font-weight: bold; color: #92400e; font-size: 16px;">💡 Top Tips for a Smooth Move</p>
                 <ul style="margin: 0; padding-left: 20px; color: #78350f; line-height: 1.8;">
@@ -168,7 +172,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `📦 Your move is in 3 DAYS (${moveDate})!\n\nStart packing non-essentials, notify utilities, arrange parking permits.\n\nNeed help? Call 03335772070\n\nRef: ${booking.reference}`;
+        const smsBody = `📦 Your move is in 3 DAYS (${moveDate})!\n\n${moreItemsLine()}\n\nNeed help? Call 03335772070\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -178,7 +182,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\nNeed help? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\n${moreItemsLine()}\n\nNeed help? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

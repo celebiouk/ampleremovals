@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         email: d.email,
         phone: d.phone,
         total: quoteTotal,
+        inventory: d.inventory,
       }),
     ]);
 

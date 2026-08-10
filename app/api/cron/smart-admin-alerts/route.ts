@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendAdminEmails } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { sendWhatsApp } from "@/lib/twilio";
 
 // Admin ALERT recipient — intentionally the company mobile (0333 landline numbers cannot receive SMS/WhatsApp). Public/customer-facing number is 0333 577 2070.
 const ADMIN_PHONE = "07344683477";
@@ -226,13 +226,7 @@ async function sendAdminAlert(
     console.error("Alert email failed:", emailErr);
   }
 
-  // SMS
-  try {
-    await sendSMS(ADMIN_PHONE, `[ALERT] ${subject}\n\n${message}`);
-    console.log(`✅ Alert SMS sent: ${subject}`);
-  } catch (smsErr) {
-    console.error("Alert SMS failed:", smsErr);
-  }
+  // (Admin SMS intentionally removed — admins no longer get SMS about alerts.)
 
   // WhatsApp
   try {

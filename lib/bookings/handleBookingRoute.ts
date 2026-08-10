@@ -109,6 +109,7 @@ export async function handleBookingRoute(
         email: data.email,
         phone: data.phone,
         total: quoteTotal ?? 0,
+        inventory: (data as { inventory?: unknown }).inventory,
       }),
     ]);
   } else {

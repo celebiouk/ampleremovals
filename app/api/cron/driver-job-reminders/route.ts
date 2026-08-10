@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { sendWhatsApp } from "@/lib/twilio";
 import { ukToday } from "@/lib/dates";
 import { formatDate } from "@/lib/utils";
 import { SERVICE_LABELS } from "@/lib/constants";
@@ -109,8 +109,8 @@ export async function GET(req: Request) {
         }).catch(() => {});
       }
       if (driver.phone) {
-        const first = jobs[0];
-        await sendSMS(driver.phone, `Ample Removals: Hi ${name}, you have ${count} job${count === 1 ? "" : "s"} tomorrow (${niceDate}). First: ${first.reference} — ${first.pickup}. Full details in the driver app.`).catch(() => {});
+        // (Driver SMS intentionally removed — drivers no longer get SMS about
+        // reminders. Email + WhatsApp still go out.)
         const waList = jobs.map((j, i) => `${i + 1}. *${j.reference}* — ${j.service}\n   👤 ${j.customer}\n   📍 ${j.pickup}${j.dropoff ? ` → ${j.dropoff}` : ""}`).join("\n\n");
         await sendWhatsApp(driver.phone, `🚚 *Tomorrow's Jobs* — ${niceDate}\n\nHi ${name}, you have *${count} job${count === 1 ? "" : "s"}* tomorrow:\n\n${waList}\n\nOpen the driver app for full details & live tracking. 📲`, {
           name: "driver_jobs_tomorrow",
