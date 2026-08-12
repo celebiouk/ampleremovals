@@ -1,7 +1,7 @@
 import twilio from "twilio";
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
 import { createAdminClient } from "@/lib/supabase/server";
-import { recordMessage, type Channel } from "@/lib/message-store";
+import { recordMessage, normalisePhone, type Channel } from "@/lib/message-store";
 
 /**
  * Twilio client. Prefers API Key auth (TWILIO_API_KEY_SID + _SECRET, the
@@ -97,19 +97,22 @@ export async function sendSMS(to: string, body: string): Promise<SendResult> {
   if (!twilioClient || !twilioFrom) {
     return { success: false, error: "Twilio not configured" };
   }
+  // Twilio needs E.164 (+44…). Local "07…" or a number with stray spaces gets
+  // rejected, so normalise before sending.
+  const dest = normalisePhone(to) || to;
   const text = normaliseSmsBody(body);
   try {
     const msg = await twilioClient.messages.create({
       from: twilioFrom,
-      to,
+      to: dest,
       body: text,
       ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    const messageId = await logOutbound({ contactPhone: to, from: twilioFrom, to, body: text, channel: "sms", sid: msg.sid, status: msg.status || "queued" });
+    const messageId = await logOutbound({ contactPhone: dest, from: twilioFrom, to: dest, body: text, channel: "sms", sid: msg.sid, status: msg.status || "queued" });
     return { success: true, sid: msg.sid, messageId };
   } catch (err) {
     // Save the failed attempt so it's visible + retryable, never silently lost.
-    await logOutbound({ contactPhone: to, from: twilioFrom, to, body: text, channel: "sms", sid: null, status: "failed", error: String(err) });
+    await logOutbound({ contactPhone: dest, from: twilioFrom, to: dest, body: text, channel: "sms", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }
@@ -134,7 +137,10 @@ export async function sendWhatsApp(
   if (!twilioClient) {
     return { success: false, error: "Twilio not configured" };
   }
-  const waTo = `whatsapp:${to}`;
+  // WhatsApp only accepts E.164 (+44…). Sending to "whatsapp:07…" (or a number
+  // with stray spaces) is rejected as "failed" — normalise it first.
+  const dest = normalisePhone(to) || to;
+  const waTo = `whatsapp:${dest}`;
   // What we store as the body for the inbox (template renders to `body` text).
   const loggedBody = body || (template ? `[template: ${template.name}]` : "");
   const contentSid = template ? WHATSAPP_TEMPLATES[template.name] : undefined;
@@ -149,12 +155,12 @@ export async function sendWhatsApp(
         contentVariables: JSON.stringify(template!.variables),
         ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
       });
-      const messageId = await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
+      const messageId = await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
       return { success: true, sid: msg.sid, messageId };
     } catch (err) {
       // Template not approved yet / send failed — fall through to free text.
       if (!body) {
-        await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
+        await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
         return { success: false, error: String(err) };
       }
     }
@@ -166,10 +172,10 @@ export async function sendWhatsApp(
       body,
       ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    const messageId = await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
+    const messageId = await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
     return { success: true, sid: msg.sid, messageId };
   } catch (err) {
-    await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
+    await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }
