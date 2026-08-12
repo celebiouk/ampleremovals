@@ -6,6 +6,7 @@ import { Search, MessageSquare, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { upperName } from "@/lib/utils";
 import { ConversationView } from "@/components/admin/messages/ConversationView";
+import { AssignCustomer } from "@/components/admin/messages/AssignCustomer";
 
 interface ConvItem {
   id: string;
@@ -125,12 +126,25 @@ export default function MessagesInboxPage() {
       {/* Conversation */}
       <div className={`flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${selected ? "flex flex-col" : "hidden md:flex md:flex-col"}`}>
         {selected && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <div className="relative flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <div className="min-w-0">
               <p className="truncate font-semibold text-slate-900">{selected.customerName ? upperName(selected.customerName) : "Unknown contact"}</p>
               <p className="text-xs text-slate-400">{selected.contactPhone}{selected.customerId ? "" : " · unassigned"}</p>
             </div>
-            <button onClick={() => setSelected(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-500 hover:bg-slate-50 md:hidden">Back</button>
+            <div className="flex items-center gap-2">
+              {selected.customerId ? (
+                <a href={`/admin/customers/${selected.customerId}`} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-brand-purple-700 hover:bg-slate-50">View customer</a>
+              ) : (
+                <AssignCustomer
+                  conversationId={selected.id}
+                  onAssigned={(cid, name) => {
+                    setSelected((s) => (s ? { ...s, customerId: cid, customerName: name } : s));
+                    setItems((prev) => prev.map((x) => (x.id === selected.id ? { ...x, customerId: cid, customerName: name } : x)));
+                  }}
+                />
+              )}
+              <button onClick={() => setSelected(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-500 hover:bg-slate-50 md:hidden">Back</button>
+            </div>
           </div>
         )}
         <div className="min-h-0 flex-1">

@@ -5,11 +5,28 @@ import { ArrowLeft, Mail, Phone, ChevronRight, Calendar, MapPin } from "lucide-r
 import { Card, Button, StatusBadge, ServiceBadge, Skeleton, ErrorState, EmptyState } from "@/components/ui";
 import { useCustomerDetail } from "@/hooks/useCustomers";
 import { formatDate, upperName } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
+import { toast } from "@/components/ui/Toast";
 
 export default function CustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data, isLoading, isError, refetch, isRefetching } = useCustomerDetail(id!);
+
+  // Open (or create) this customer's conversation, then jump into the chat.
+  async function openConversation(name: string, phone: string) {
+    try {
+      const res = await apiFetch(`/api/admin/customers/${id}/conversation`);
+      const json = await res.json();
+      if (!json.success || !json.conversationId) {
+        toast.error("No conversation", json.hasPhone === false ? "This customer has no phone number." : json.error);
+        return;
+      }
+      router.push({ pathname: "/messages/[id]", params: { id: json.conversationId, name, phone: json.contactPhone ?? phone } } as never);
+    } catch {
+      toast.error("Couldn't open messages");
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={["top"]}>
@@ -47,6 +64,9 @@ export default function CustomerDetailScreen() {
             <View className="mt-4 flex-row flex-wrap gap-2">
               {data.customer.phone ? (
                 <Button label="Call" variant="outline" size="sm" onPress={() => Linking.openURL(`tel:${data.customer.phone}`)} />
+              ) : null}
+              {data.customer.phone ? (
+                <Button label="Message" size="sm" onPress={() => openConversation(upperName(data.customer.full_name), data.customer.phone!)} />
               ) : null}
               {data.customer.email ? (
                 <Button label="Email" variant="outline" size="sm" onPress={() => Linking.openURL(`mailto:${data.customer.email}`)} />
