@@ -160,7 +160,7 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
             <div className={`rounded-xl p-3 text-sm ${type === "deposit" ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-purple-50 text-purple-800 border border-purple-200"}`}>
               {type === "deposit"
                 ? "This is a deposit invoice. The customer will need to pay this to confirm their booking."
-                : "This is the final balance invoice. Send this after the job is complete."}
+                : "This is the final balance invoice. It's auto-sent when the driver starts the journey on move day — send manually here only if needed. We collect the balance before starting the job."}
             </div>
 
             {/* Quote total banner */}

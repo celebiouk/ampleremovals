@@ -10,6 +10,7 @@ import { randomUUID } from "crypto";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { startJourneyCall1 } from "@/lib/driver-eta";
+import { autoSendFullBalanceInvoice } from "@/lib/auto-full-invoice";
 import { geocodePostcode } from "@/lib/postcode";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
@@ -68,6 +69,19 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
     }
 
     const result = await startJourneyCall1(supabase, params.bookingId, leg, auth.driver, lat, lng);
+
+    // Collect the balance BEFORE we start the job: as the driver sets off on move
+    // day (the pickup leg = the journey to the customer), auto-send the final
+    // balance invoice + pay link. Idempotent (skips if already sent) and
+    // best-effort so a messaging hiccup never blocks Start Journey.
+    if (leg === "pickup") {
+      try {
+        await autoSendFullBalanceInvoice(params.bookingId);
+      } catch (e) {
+        console.error("[journey/start] balance invoice failed", e);
+      }
+    }
+
     return NextResponse.json({ success: true, ...result, destLat, destLng });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

@@ -202,11 +202,11 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
         subject: `Final Balance Invoice ${invoiceNumber} — ${booking.reference}`,
         html: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
           <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
-            <h1 style="color:#fff;margin:0;font-size:22px;">Final Balance Invoice</h1>
+            <h1 style="color:#fff;margin:0;font-size:22px;">Your balance is due today 🚚</h1>
           </div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:28px;">
             <p style="color:#1e293b;">Hi ${first},</p>
-            <p style="color:#475569;line-height:1.6;">Your delivery is complete — thank you! Please settle your <strong>final balance</strong> below. Your invoice is also attached.</p>
+            <p style="color:#475569;line-height:1.6;">It's moving day and our driver is on the way to you. Please settle your <strong>balance</strong> now — we collect the balance <strong>before we start the job</strong>. Your invoice is also attached.</p>
             <div style="border:2px solid #6b21a8;border-radius:10px;padding:16px;margin:20px 0;background:#faf5ff;">
               <table style="width:100%;font-size:14px;">
                 <tr><td style="color:#64748b;padding:4px 0;">Invoice Number</td><td style="font-weight:bold;text-align:right;">${invoiceNumber}</td></tr>
@@ -242,11 +242,11 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
     // SMS + WhatsApp (the owner's "send a message" = email + SMS + WhatsApp). Both
     // carry the SHORT pay link so the customer taps straight through to the amount,
     // reference + bank details. WhatsApp is free-text (in-window right after a move).
-    const smsBody = `Ample Removals: your balance of ${formatCurrency(total)} is due. Pay here (amount, reference & bank details): ${payLink} — Ref ${booking.reference}. Questions? ${companyPhone}`;
+    const smsBody = `Ample Removals: it's moving day and our driver is on the way. Your balance of ${formatCurrency(total)} is due now — we collect it before we start. Pay here (amount, reference & bank details): ${payLink} — Ref ${booking.reference}. Questions? ${companyPhone}`;
     await sendSMS(customer.phone, smsBody).catch(() => {});
     await sendWhatsApp(
       customer.phone,
-      `Hi ${first}! Your delivery is complete 🎉 Your *final balance* is *${formatCurrency(total)}*.\n\nTap to pay — amount, reference & bank details:\n${payLink}\n\nRef: ${booking.reference}`,
+      `Hi ${first}! It's moving day 🚚 Our driver is on the way. Please pay your *balance* of *${formatCurrency(total)}* now — we collect it before we start the job.\n\nTap to pay — amount, reference & bank details:\n${payLink}\n\nRef: ${booking.reference}`,
     ).catch(() => {});
 
     // Mark sent + advance the booking to "Full Invoice Sent".
@@ -264,7 +264,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
 
     await supabase.from("activity_log").insert({
       booking_id: bookingId,
-      action: `Full balance invoice ${invoiceNumber} auto-sent on delivery`,
+      action: `Full balance invoice ${invoiceNumber} auto-sent on move day (driver started journey)`,
       metadata: { invoiceId, invoiceNumber, total, depositPaid, quoteTotal, vatRate },
       performed_by: "system",
     });
@@ -273,7 +273,7 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
       await supabase.from("notifications").insert({
         type: "invoice_sent",
         title: "Final balance invoice sent",
-        description: `${invoiceNumber} — ${formatCurrency(total)} auto-sent to ${customer.full_name} on delivery.`,
+        description: `${invoiceNumber} — ${formatCurrency(total)} auto-sent to ${customer.full_name} on move day (journey start).`,
         booking_id: bookingId,
       });
     } catch { /* non-critical */ }

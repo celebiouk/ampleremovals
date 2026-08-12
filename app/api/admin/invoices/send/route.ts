@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         <p style="color:#64748b;font-size:12px;margin:12px 0 0 0;">⚠️ Please use your invoice number as the payment reference</p>
       </div>
       <p style="color:#64748b;font-size:13px;">Download your full invoice from the PDF attachment above.</p>
-      ${invoice.type === "deposit" ? `<p style="color:#92400e;background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;">This deposit secures your booking. The remaining balance will be invoiced after your move is complete.</p>` : ""}
+      ${invoice.type === "deposit" ? `<p style="color:#92400e;background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;">This deposit secures your booking. The remaining balance is collected on the day of your move — our driver will send it as they set off, and we take payment before we start the job.</p>` : ""}
       <p style="color:#475569;font-size:13px;">If you have any questions, please don't hesitate to contact us on ${companyPhone}.</p>
     </div>
   </body></html>`;

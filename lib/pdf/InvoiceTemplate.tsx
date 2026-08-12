@@ -161,14 +161,14 @@ export function InvoiceDocument({ data }: Props) {
           <View style={styles.depositBanner}>
             <Text style={[styles.bannerText, { color: AMBER, fontFamily: "Helvetica-Bold" }]}>DEPOSIT INVOICE</Text>
             <Text style={[styles.bannerText, { color: "#92400e" }]}>
-              This is a deposit to confirm your booking. The remaining balance will be invoiced separately.
+              This is a deposit to confirm your booking. The remaining balance is collected on the day of your move, before we start the job.
             </Text>
           </View>
         ) : (
           <View style={styles.balanceBanner}>
             <Text style={[styles.bannerText, { color: PURPLE, fontFamily: "Helvetica-Bold" }]}>FINAL BALANCE INVOICE</Text>
             <Text style={[styles.bannerText, { color: "#5b21b6" }]}>
-              This is the final balance invoice for your completed service.
+              This is the balance for your move, due on the day — our driver sends it as they set off, and we take payment before we start.
             </Text>
           </View>
         )}
