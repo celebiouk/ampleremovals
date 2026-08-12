@@ -9,7 +9,7 @@ import {
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
-  PackageCheck, CheckCheck, User,
+  PackageCheck, CheckCheck, User, MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ const NAV_GROUPS = [
       { href: "/admin/overdue", label: "Items Still Out", icon: PackageCheck },
       { href: "/admin/approvals", label: "Approvals", icon: CheckCheck },
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
+      { href: "/admin/messages", label: "Messages", icon: MessageSquare, showMsgBadge: true },
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/calendar", label: "Job Calendar", icon: CalendarDays },
@@ -170,6 +171,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     fetchUnread();
   }, []);
 
+  // Unread customer messages (SMS/WhatsApp) — badge on the Messages nav item,
+  // kept live via Realtime.
+  const [messagesUnread, setMessagesUnread] = useState(0);
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchMsg = async () => {
+      const { count } = await supabase.from("messages").select("*", { count: "exact", head: true }).eq("direction", "inbound").is("read_at", null);
+      setMessagesUnread(count ?? 0);
+    };
+    fetchMsg();
+    const ch = supabase.channel("nav-msg-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchMsg())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
   // ⌘K keyboard shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -225,7 +242,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 label={item.label}
                 icon={item.icon}
                 exact={"exact" in item ? item.exact : false}
-                badge={"showBadge" in item && item.showBadge ? inquiryCount : 0}
+                badge={"showBadge" in item && item.showBadge ? inquiryCount : ("showMsgBadge" in item && (item as { showMsgBadge?: boolean }).showMsgBadge ? messagesUnread : 0)}
                 collapsed={collapsed}
               />
             ))}

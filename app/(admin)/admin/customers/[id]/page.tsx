@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { formatDate, upperName } from "@/lib/utils";
+import { CustomerMessagesTab } from "@/components/admin/messages/CustomerMessagesTab";
 import type { BookingStatus, ServiceType } from "@/types";
 
 interface CustomerDetail {
@@ -31,6 +32,7 @@ export default function CustomerDetailPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
+  const [tab, setTab] = useState<"profile" | "messages">("profile");
 
   async function saveCustomer() {
     if (form.full_name.trim().length < 2) { toast.error("Please enter the customer's name"); return; }
@@ -111,6 +113,20 @@ export default function CustomerDetailPage() {
         </Link>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {([["profile", "Profile"], ["messages", "Messages"]] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${tab === key ? "border-brand-purple-700 text-brand-purple-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "messages" ? (
+        <CustomerMessagesTab customerId={customerId} />
+      ) : (
+      <>
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold text-slate-900">Customer Info</h3>
@@ -204,6 +220,8 @@ export default function CustomerDetailPage() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

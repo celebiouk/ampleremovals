@@ -1,5 +1,7 @@
 import twilio from "twilio";
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
+import { createAdminClient } from "@/lib/supabase/server";
+import { recordMessage, type Channel } from "@/lib/message-store";
 
 /**
  * Twilio client. Prefers API Key auth (TWILIO_API_KEY_SID + _SECRET, the
@@ -24,6 +26,42 @@ export const twilioClient =
 
 export const twilioFrom = process.env.TWILIO_PHONE_NUMBER ?? "";
 export const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_NUMBER ?? "whatsapp:+14155238886"; // Twilio sandbox default
+
+/** Twilio posts delivery status here (prod only — it can't reach localhost). */
+const STATUS_CALLBACK = process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https")
+  ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/twilio/status`
+  : undefined;
+
+export interface SendResult { success: boolean; error?: string; sid?: string; messageId?: string | null }
+
+/**
+ * Persist an outbound message to the inbox (best-effort — never blocks sending).
+ * Every SMS/WhatsApp the system sends flows through here, so the dashboard's
+ * conversation history is complete without touching each call site.
+ */
+async function logOutbound(p: {
+  contactPhone: string; from: string; to: string; body: string; channel: Channel;
+  sid: string | null; status: string; error?: string | null;
+}): Promise<string | null> {
+  try {
+    const supabase = createAdminClient();
+    const res = await recordMessage(supabase, {
+      contactPhone: p.contactPhone,
+      twilioSid: p.sid,
+      channel: p.channel,
+      direction: "outbound",
+      fromNumber: p.from,
+      toNumber: p.to,
+      body: p.body,
+      status: p.status || "queued",
+      errorMessage: p.error ?? null,
+    });
+    return res.messageId;
+  } catch (e) {
+    console.warn("[twilio] outbound log failed:", e);
+    return null;
+  }
+}
 
 /**
  * GSM-7 segment size: 160 chars for a single SMS, 153 per part when concatenated.
@@ -55,18 +93,23 @@ export function normaliseSmsBody(body: string): string {
  * to keep it in GSM-7 and minimise per-segment cost.
  * Returns { success: true } on success, { success: false, error: string } on failure.
  */
-export async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+export async function sendSMS(to: string, body: string): Promise<SendResult> {
   if (!twilioClient || !twilioFrom) {
     return { success: false, error: "Twilio not configured" };
   }
+  const text = normaliseSmsBody(body);
   try {
-    await twilioClient.messages.create({
+    const msg = await twilioClient.messages.create({
       from: twilioFrom,
       to,
-      body: normaliseSmsBody(body),
+      body: text,
+      ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    return { success: true };
+    const messageId = await logOutbound({ contactPhone: to, from: twilioFrom, to, body: text, channel: "sms", sid: msg.sid, status: msg.status || "queued" });
+    return { success: true, sid: msg.sid, messageId };
   } catch (err) {
+    // Save the failed attempt so it's visible + retryable, never silently lost.
+    await logOutbound({ contactPhone: to, from: twilioFrom, to, body: text, channel: "sms", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }
@@ -87,34 +130,46 @@ export async function sendWhatsApp(
   to: string,
   body: string,
   template?: { name: WhatsAppTemplate; variables: Record<string, string> },
-): Promise<{ success: boolean; error?: string }> {
+): Promise<SendResult> {
   if (!twilioClient) {
     return { success: false, error: "Twilio not configured" };
   }
+  const waTo = `whatsapp:${to}`;
+  // What we store as the body for the inbox (template renders to `body` text).
+  const loggedBody = body || (template ? `[template: ${template.name}]` : "");
   const contentSid = template ? WHATSAPP_TEMPLATES[template.name] : undefined;
+
   // Preferred path: send via the approved template.
   if (contentSid) {
     try {
-      await twilioClient.messages.create({
+      const msg = await twilioClient.messages.create({
         from: twilioWhatsAppFrom,
-        to: `whatsapp:${to}`,
+        to: waTo,
         contentSid,
         contentVariables: JSON.stringify(template!.variables),
+        ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
       });
-      return { success: true };
+      const messageId = await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
+      return { success: true, sid: msg.sid, messageId };
     } catch (err) {
       // Template not approved yet / send failed — fall through to free text.
-      if (!body) return { success: false, error: String(err) };
+      if (!body) {
+        await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
+        return { success: false, error: String(err) };
+      }
     }
   }
   try {
-    await twilioClient.messages.create({
+    const msg = await twilioClient.messages.create({
       from: twilioWhatsAppFrom,
-      to: `whatsapp:${to}`,
+      to: waTo,
       body,
+      ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    return { success: true };
+    const messageId = await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
+    return { success: true, sid: msg.sid, messageId };
   } catch (err) {
+    await logOutbound({ contactPhone: to, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }
