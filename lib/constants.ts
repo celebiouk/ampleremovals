@@ -119,6 +119,13 @@ export const ALL_STATUSES: BookingStatus[] = [
   "job_completed", "bad_lead", "not_a_good_fit",
 ];
 
+// Statuses hidden from the default "All statuses" booking list — a job that's
+// finished (job_completed) or dead (bad_lead / not_a_good_fit) drops out of the
+// general list and only reappears when its status is picked from the filter.
+export const HIDDEN_FROM_DEFAULT_STATUSES: BookingStatus[] = [
+  "job_completed", "bad_lead", "not_a_good_fit",
+];
+
 // ── PHASE 11: Driver Status Labels & Colors ────────────────────────────────
 
 import type { DriverStatus, JobStatusUpdate, EarningsStatus } from "@/types";

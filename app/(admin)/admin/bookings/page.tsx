@@ -10,7 +10,7 @@ import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { TableSkeleton } from "@/components/admin/AdminSkeleton";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { formatDate, upperName } from "@/lib/utils";
-import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constants";
+import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT, HIDDEN_FROM_DEFAULT_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
 const PAGE_SIZE = 20;
@@ -108,6 +108,10 @@ function BookingsListInner() {
       if (status) {
         if (status === "in_progress") q = q.in("status", IN_PROGRESS);
         else q = q.eq("status", status as BookingStatus);
+      } else {
+        // Default view hides finished/dead jobs — they only show when their
+        // status is explicitly selected from the filter.
+        q = q.not("status", "in", `(${HIDDEN_FROM_DEFAULT_STATUSES.join(",")})`);
       }
       return q;
     };

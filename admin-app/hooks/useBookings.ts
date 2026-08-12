@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Booking, BookingStatus } from "@/types";
 
+// Finished/dead jobs are hidden from the default "All Status" list — they only
+// show when their own status is picked from the filter. Mirrors the web list.
+const HIDDEN_FROM_DEFAULT_STATUSES: BookingStatus[] = ["job_completed", "bad_lead", "not_a_good_fit"];
+
 export interface BookingRow extends Booking {
   customer_name: string;
   origin_postcode: string;
@@ -30,6 +34,7 @@ async function loadBookings({ search, status, service }: Filters): Promise<Booki
     .limit(200);
 
   if (status) query = query.eq("status", status);
+  else query = query.not("status", "in", `(${HIDDEN_FROM_DEFAULT_STATUSES.join(",")})`);
   if (service) query = query.eq("service_type", service);
 
   const { data, error } = await query;

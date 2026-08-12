@@ -23,6 +23,8 @@ const STATUS_FILTERS: { label: string; value: BookingStatus | "" }[] = [
   { label: "Confirmed", value: "deposit_paid_job_confirmed" },
   { label: STATUS_LABELS.full_invoice_sent, value: "full_invoice_sent" },
   { label: "Completed", value: "job_completed" },
+  { label: STATUS_LABELS.bad_lead, value: "bad_lead" },
+  { label: STATUS_LABELS.not_a_good_fit, value: "not_a_good_fit" },
 ];
 
 const SERVICE_FILTERS: { label: string; value: string }[] = [
