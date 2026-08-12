@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Pressable, Text, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
@@ -8,6 +8,7 @@ import { LayoutGrid, ClipboardList, Sparkles, Truck, Menu } from "lucide-react-n
 import { useTheme } from "@/hooks/useTheme";
 import { colors } from "@/lib/colors";
 import { fonts } from "@/lib/typography";
+import { supabase } from "@/lib/supabase";
 
 // Fixed tab order. Any route not listed here (e.g. pipeline) is reachable but
 // not shown as a tab button.
@@ -34,6 +35,26 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [barW, setBarW] = useState(width);
+
+  // Unread customer messages (Messages lives under the More menu) → badge on the
+  // More tab so it's visible without opening the menu. Kept live via Realtime.
+  const [msgUnread, setMsgUnread] = useState(0);
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("direction", "inbound")
+        .is("read_at", null);
+      setMsgUnread(count ?? 0);
+    };
+    fetchUnread();
+    const ch = supabase
+      .channel("tabbar-msg-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const activeName = state.routes[state.index]?.name;
   const tabs = ORDER
@@ -88,12 +109,27 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
             }}
             style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 4, paddingTop: 8 }}
           >
-            <Icon
-              size={24}
-              color={color}
-              strokeWidth={focused ? 2.4 : 1.9}
-              fill={focused ? colors.primary.surfaceMid : "transparent"}
-            />
+            <View>
+              <Icon
+                size={24}
+                color={color}
+                strokeWidth={focused ? 2.4 : 1.9}
+                fill={focused ? colors.primary.surfaceMid : "transparent"}
+              />
+              {route.name === "more" && msgUnread > 0 ? (
+                <View
+                  style={{
+                    position: "absolute", top: -5, right: -9, minWidth: 17, height: 17, borderRadius: 9,
+                    backgroundColor: colors.danger.DEFAULT, alignItems: "center", justifyContent: "center",
+                    paddingHorizontal: 3, borderWidth: 1.5, borderColor: theme.tabBg,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 10, fontFamily: fonts.bodySemiBold }}>
+                    {msgUnread > 9 ? "9+" : msgUnread}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={{ fontFamily: focused ? fonts.bodySemiBold : fonts.bodyMedium, fontSize: 11, color }}>
               {LABELS[route.name]}
             </Text>

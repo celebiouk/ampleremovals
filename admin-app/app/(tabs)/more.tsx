@@ -10,6 +10,7 @@ import {
 import { signOut, getCurrentAdminRole } from "@/lib/auth";
 import { LargeHeader } from "@/components/shared/LargeHeader";
 import { useAuthStore } from "@/store/authStore";
+import { supabase } from "@/lib/supabase";
 
 type Item = {
   label: string;
@@ -96,9 +97,29 @@ export default function MoreScreen() {
   const router = useRouter();
   const { session } = useAuthStore();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [msgUnread, setMsgUnread] = useState(0);
 
   useEffect(() => {
     getCurrentAdminRole().then((role) => setIsSuperAdmin(role === "super_admin"));
+  }, []);
+
+  // Live unread count for the "Messages" menu badge — unread = inbound messages
+  // not yet read. Kept fresh via Realtime.
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("direction", "inbound")
+        .is("read_at", null);
+      setMsgUnread(count ?? 0);
+    };
+    fetchUnread();
+    const ch = supabase
+      .channel("more-msg-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   function handleItem(item: Item) {
@@ -125,7 +146,7 @@ export default function MoreScreen() {
             </Text>
             <View className="mx-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
               {group.items.map((item, i) => (
-                <Row key={item.label} item={item} first={i === 0} onPress={() => handleItem(item)} />
+                <Row key={item.label} item={item} first={i === 0} badge={item.href === "/messages" ? msgUnread : 0} onPress={() => handleItem(item)} />
               ))}
             </View>
           </View>
@@ -162,7 +183,7 @@ export default function MoreScreen() {
   );
 }
 
-function Row({ item, first, onPress }: { item: Item; first: boolean; onPress: () => void }) {
+function Row({ item, first, badge = 0, onPress }: { item: Item; first: boolean; badge?: number; onPress: () => void }) {
   const Icon = item.icon;
   return (
     <Pressable
@@ -173,6 +194,11 @@ function Row({ item, first, onPress }: { item: Item; first: boolean; onPress: ()
     >
       <Icon size={20} color="#7e22ce" />
       <Text className="flex-1 text-base text-slate-900 dark:text-white">{item.label}</Text>
+      {badge > 0 ? (
+        <View className="min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5">
+          <Text className="text-xs font-bold text-white">{badge > 99 ? "99+" : badge}</Text>
+        </View>
+      ) : null}
       {item.phase ? (
         <Text className="text-xs text-slate-400">{item.phase}</Text>
       ) : null}
