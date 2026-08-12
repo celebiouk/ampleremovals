@@ -6,8 +6,9 @@ import crypto from "crypto";
 
 /**
  * GET /api/cron/send-address-confirmations
- * Runs daily at 7:30 AM UK time
- * Sends address confirmation requests to customers whose move is TODAY
+ * Runs daily at 7:30 AM UK time.
+ * Sends address confirmation requests THE DAY BEFORE the move (targets moves
+ * happening tomorrow) so customers have time to correct an address before the day.
  */
 export async function GET(req: Request) {
   try {
@@ -22,17 +23,18 @@ export async function GET(req: Request) {
 
     const supabase = createAdminClient();
 
-    // Get today's date in UK timezone (YYYY-MM-DD)
-    const ukDate = new Date().toLocaleString("en-GB", {
+    // Get TOMORROW's date in UK timezone (YYYY-MM-DD) — we confirm addresses the
+    // day before the move.
+    const ukDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-GB", {
       timeZone: "Europe/London",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
     }).split("/").reverse().join("-");
 
-    console.log(`📅 Checking for moves on ${ukDate}`);
+    console.log(`📅 Checking for moves on ${ukDate} (tomorrow)`);
 
-    // Find bookings with move_date = today AND not already confirmed
+    // Find bookings with move_date = tomorrow AND not already confirmed
     const { data: bookings, error } = await supabase
       .from("bookings")
       .select(`
@@ -54,15 +56,15 @@ export async function GET(req: Request) {
     }
 
     if (!bookings || bookings.length === 0) {
-      console.log("No bookings found for today");
+      console.log("No bookings found for tomorrow");
       return NextResponse.json({
         success: true,
-        message: "No bookings for today",
+        message: "No bookings for tomorrow",
         count: 0,
       });
     }
 
-    console.log(`Found ${bookings.length} booking(s) for today`);
+    console.log(`Found ${bookings.length} booking(s) for tomorrow`);
 
     // Send confirmation requests
     const results = await Promise.allSettled(
@@ -94,7 +96,7 @@ export async function GET(req: Request) {
         const destinationAddress = formatAddress(destination);
 
         // EMAIL
-        const emailSubject = `🏠 Confirm Your Addresses - Moving Today! ${booking.reference}`;
+        const emailSubject = `🏠 Confirm Your Addresses — Moving Tomorrow! ${booking.reference}`;
         const emailBody = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
@@ -104,11 +106,11 @@ export async function GET(req: Request) {
               <p style="font-size: 16px; color: #1e293b; margin-bottom: 16px;">Hi ${customer.full_name},</p>
 
               <p style="font-size: 16px; color: #1e293b; margin-bottom: 24px;">
-                <strong>Today is your moving day!</strong> 🚚
+                <strong>Your move is tomorrow!</strong> 🚚
               </p>
 
               <p style="font-size: 14px; color: #475569; margin-bottom: 24px;">
-                Before we head out, please take a moment to confirm your addresses are correct:
+                Please take a moment today to confirm your addresses are correct, so we know exactly where to go tomorrow:
               </p>
 
               <div style="background: #f8fafc; border-left: 4px solid #16a34a; padding: 16px; margin: 24px 0; border-radius: 4px;">
@@ -151,7 +153,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `🏠 MOVING TODAY!\n\nHi ${customer.full_name},\n\nPlease confirm your addresses:\n📍 From: ${originAddress}\n🏁 To: ${destinationAddress}\n\nConfirm here: ${confirmUrl}\n\nRef: ${booking.reference}`;
+        const smsBody = `🏠 MOVING TOMORROW!\n\nHi ${customer.full_name},\n\nPlease confirm your addresses for tomorrow:\n📍 From: ${originAddress}\n🏁 To: ${destinationAddress}\n\nConfirm here: ${confirmUrl}\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -161,7 +163,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `🏠 *MOVING TODAY!*\n\nHi ${customer.full_name},\n\nPlease confirm your addresses:\n\n📍 *Pick-up:* ${originAddress}\n🏁 *Delivery:* ${destinationAddress}\n\nConfirm here: ${confirmUrl}\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `🏠 *MOVING TOMORROW!*\n\nHi ${customer.full_name},\n\nPlease confirm your addresses for tomorrow:\n\n📍 *Pick-up:* ${originAddress}\n🏁 *Delivery:* ${destinationAddress}\n\nConfirm here: ${confirmUrl}\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {
