@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import {
-  LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
+  LayoutDashboard, ClipboardList, Users, CalendarDays,
   BarChart2, Zap, Receipt, CreditCard, Settings, Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -19,7 +19,6 @@ interface BookingResult { id: string; reference: string; customer_name: string; 
 
 const PAGES = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Pipeline (Kanban)", href: "/admin/pipeline", icon: Kanban },
   { label: "Bookings", href: "/admin/bookings", icon: ClipboardList },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },

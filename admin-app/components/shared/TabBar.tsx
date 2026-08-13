@@ -10,8 +10,8 @@ import { colors } from "@/lib/colors";
 import { fonts } from "@/lib/typography";
 import { supabase } from "@/lib/supabase";
 
-// Fixed tab order. Any route not listed here (e.g. pipeline) is reachable but
-// not shown as a tab button.
+// Fixed tab order. Any route not listed here is reachable (e.g. via the More
+// menu) but not shown as a tab button.
 const ORDER = ["index", "bookings", "cleaners", "drivers", "more"];
 
 const ICONS: Record<string, typeof LayoutGrid> = {

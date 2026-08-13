@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Kanban, ClipboardList, Users, CalendarDays,
+  LayoutDashboard, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
@@ -23,7 +23,6 @@ const NAV_GROUPS = [
     label: "OVERVIEW",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/admin/pipeline", label: "Pipeline", icon: Kanban },
     ],
   },
   {

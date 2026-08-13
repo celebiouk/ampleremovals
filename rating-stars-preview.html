@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numbered rating stars — preview</title>
+<style>
+  :root{
+    --bg:#f5f4f8; --surface:#ffffff; --ink:#1d1a2b; --muted:#6c6782; --faint:#928da6;
+    --line:#e7e3ef; --purple:#6b21a8; --green:#16a34a; --chip:#efeaf7;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#131120; --surface:#1c1930; --ink:#ece9f6; --muted:#a49fbb; --faint:#7c7794;
+      --line:#2b2643; --purple:#a774e0; --green:#3ec07a; --chip:#241f3a; }
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--bg); }
+  .wrap{ color:var(--ink); font-family:var(--font); padding:44px 20px 80px; line-height:1.55; }
+  .inner{ max-width:920px; margin:0 auto; }
+  .kick{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--purple); font-weight:700; }
+  h1{ font-size:clamp(26px,4vw,36px); line-height:1.1; margin:.35rem 0 .5rem; letter-spacing:-.02em; }
+  .lede{ color:var(--muted); font-size:16px; max-width:60ch; }
+  h2{ font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700;
+    margin:0 0 18px; display:flex; align-items:center; gap:10px; }
+  h2::after{ content:""; flex:1; height:1px; background:var(--line); }
+  section{ margin-top:46px; }
+  .cap{ font-size:13px; color:var(--faint); margin:16px 4px 0; text-align:center; }
+
+  /* shared star */
+  .star{ position:relative; width:54px; height:54px; background:transparent; border:0; cursor:pointer; padding:0; }
+  .star svg{ width:54px; height:54px; display:block; }
+  .star svg polygon{ fill:#eef2f7; stroke:#cbd5e1; stroke-width:1.5; transition:fill .12s, stroke .12s; }
+  .star.on svg polygon{ fill:#f7b500; stroke:#f7b500; }
+  .star .num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:19px; color:#64748b; transform:translateY(2px); transition:color .12s; }
+  .star.on .num{ color:#ffffff; }
+
+  /* email card */
+  .email{ background:#fff; border:1px solid #e6e3ef; border-radius:18px; overflow:hidden; max-width:520px; margin:0 auto;
+    box-shadow:0 16px 40px -22px rgba(24,18,48,.5); }
+  .email .hd{ background:#6b21a8; padding:22px; text-align:center; }
+  .email .hd h3{ color:#fff; font-size:19px; font-family:Arial,sans-serif; }
+  .email .bd{ padding:26px 22px 28px; text-align:center; font-family:Arial,sans-serif; }
+  .email p{ color:#475569; font-size:14px; margin-bottom:6px; }
+  .email .rowstars{ display:flex; justify-content:center; gap:6px; margin:18px 0 14px; }
+  .email .estar{ position:relative; width:48px; height:48px; display:inline-block; text-decoration:none; }
+  .email .estar .g{ font-size:48px; line-height:48px; color:#f59e0b; }
+  .email .estar .n{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:bold; font-size:19px; transform:translateY(1px); }
+  .email .hint{ color:#64748b; font-size:13px; }
+  .email .ref{ color:#94a3b8; font-size:12px; margin-top:2px; }
+
+  /* survey phone */
+  .surveycard{ background:#fff; border:1px solid #ece7f5; border-radius:20px; padding:34px 26px 30px; max-width:400px;
+    margin:0 auto; text-align:center; box-shadow:0 20px 46px -24px rgba(24,18,48,.5);
+    background:linear-gradient(170deg,#f7f2ff 0%,#ffffff 55%); }
+  .surveycard h3{ font-size:22px; color:#1e293b; letter-spacing:-.01em; }
+  .surveycard .sub{ color:#475569; font-size:15px; margin:12px 4px 4px; }
+  .stars{ display:flex; justify-content:center; gap:8px; margin:26px 0 6px; }
+  .surveycard .foot{ font-size:12px; color:#94a3b8; margin-top:20px; }
+
+  .callout{ margin-top:44px; background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--purple);
+    border-radius:12px; padding:18px 20px; font-size:14px; color:var(--muted); max-width:640px; }
+  .callout b{ color:var(--ink); }
+  strong{ font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="inner">
+    <p class="kick">Review request · numbered stars</p>
+    <h1>The rating stars now show their number</h1>
+    <p class="lede">Before, five identical stars made it unclear which to tap for a 5. Now each star carries its number (1&ndash;5, left&nbsp;to&nbsp;right), so tapping the &ldquo;5&rdquo; star clearly gives five stars.</p>
+
+    <section>
+      <h2>1 &middot; In the review email</h2>
+      <div class="email">
+        <div class="hd"><h3>Thanks for choosing Ample Removals!</h3></div>
+        <div class="bd">
+          <p>We hope your removals went smoothly. How did we do?</p>
+          <div class="rowstars">
+            <span class="estar"><span class="g">&#9733;</span><span class="n">1</span></span>
+            <span class="estar"><span class="g">&#9733;</span><span class="n">2</span></span>
+            <span class="estar"><span class="g">&#9733;</span><span class="n">3</span></span>
+            <span class="estar"><span class="g">&#9733;</span><span class="n">4</span></span>
+            <span class="estar"><span class="g">&#9733;</span><span class="n">5</span></span>
+          </div>
+          <p class="hint">Tap the star with your rating &mdash; <strong>5 is the best!</strong></p>
+          <p class="ref">Booking RMV-2026-X8K4P</p>
+        </div>
+      </div>
+      <p class="cap">Each gold star has its number in white &mdash; ordered 1&rarr;5.</p>
+    </section>
+
+    <section>
+      <h2>2 &middot; On the rating page (try it &mdash; hover / tap)</h2>
+      <div class="surveycard">
+        <h3>How was your move with Ample Removals?</h3>
+        <p class="sub">Tap the star with your rating &mdash; <strong>5 is the best!</strong></p>
+        <div class="stars" id="stars">
+          <button class="star" type="button" aria-label="1 star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span class="num">1</span></button>
+          <button class="star" type="button" aria-label="2 stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span class="num">2</span></button>
+          <button class="star" type="button" aria-label="3 stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span class="num">3</span></button>
+          <button class="star" type="button" aria-label="4 stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span class="num">4</span></button>
+          <button class="star" type="button" aria-label="5 stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span class="num">5</span></button>
+        </div>
+        <p class="foot">Your feedback helps us improve and helps other families find us.</p>
+      </div>
+      <p class="cap">On touch (no hover) the numbers are still visible on the light stars, so it's always clear.</p>
+    </section>
+
+    <div class="callout">
+      <b>What happens after they tap:</b> 5&#9733; &rarr; sent to your Google review; 1&ndash;4&#9733; &rarr; kept as private internal feedback. This whole request goes out automatically by email + SMS + WhatsApp the moment the driver taps <b>Complete job</b>.
+    </div>
+  </div>
+</div>
+
+<script>
+  var box = document.getElementById('stars');
+  var stars = Array.prototype.slice.call(box.querySelectorAll('.star'));
+  var locked = -1;
+  function paint(upto){ stars.forEach(function(s,i){ s.classList.toggle('on', i < upto); }); }
+  stars.forEach(function(s,i){
+    s.addEventListener('mouseenter', function(){ paint(i+1); });
+    s.addEventListener('click', function(){ locked = i+1; paint(locked); });
+  });
+  box.addEventListener('mouseleave', function(){ paint(locked > 0 ? locked : 0); });
+</script>
+</body>
+</html>

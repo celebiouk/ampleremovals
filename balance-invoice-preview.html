@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balance invoice — customer preview</title>
+<style>
+  :root{
+    --bg:#f5f4f8; --surface:#ffffff; --ink:#1d1a2b; --muted:#6c6782; --faint:#928da6;
+    --line:#e7e3ef; --purple:#6b21a8; --green:#16a34a; --chip:#efeaf7;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --email-font: Arial, Helvetica, sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#131120; --surface:#1c1930; --ink:#ece9f6; --muted:#a49fbb; --faint:#7c7794;
+      --line:#2b2643; --purple:#a774e0; --green:#3ec07a; --chip:#241f3a; }
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--bg); }
+  .wrap{ color:var(--ink); font-family:var(--font); min-height:100%; padding:40px 20px 72px; line-height:1.55; }
+  .inner{ max-width:1080px; margin:0 auto; }
+  .kick{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--purple); font-weight:700; }
+  h1{ font-size:clamp(26px,4vw,38px); line-height:1.08; margin:.35rem 0 .5rem; letter-spacing:-.02em; }
+  .lede{ color:var(--muted); font-size:16px; max-width:60ch; }
+  h2{ font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700;
+    margin:0 0 16px; display:flex; align-items:center; gap:10px; }
+  h2::after{ content:""; flex:1; height:1px; background:var(--line); }
+  section{ margin-top:48px; }
+  .cap{ font-size:13px; color:var(--faint); margin:12px 4px 0; }
+  .devices{ display:grid; grid-template-columns:1.35fr 1fr 1fr; gap:22px; align-items:start; }
+  @media (max-width:860px){ .devices{ grid-template-columns:1fr; max-width:440px; margin-inline:auto; } }
+  .device{ background:var(--surface); border:1px solid var(--line); border-radius:20px; overflow:hidden;
+    box-shadow:0 12px 34px -18px rgba(24,18,48,.5); }
+  .device-top{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--faint);
+    padding:9px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:7px; background:var(--chip); }
+  .dot{ width:8px;height:8px;border-radius:50%; }
+  .email{ font-family:var(--email-font); background:#fff; color:#1e293b; }
+  .email .hd{ background:#6b21a8; padding:22px; text-align:center; }
+  .email .hd h3{ color:#fff; font-size:20px; }
+  .email .bd{ padding:22px; }
+  .email p{ margin:0 0 12px; font-size:14px; color:#475569; }
+  .email .greet{ color:#1e293b; }
+  .email .figbox{ border:2px solid #6b21a8; border-radius:10px; padding:14px; margin:16px 0; background:#faf5ff; }
+  .email table{ width:100%; font-size:13.5px; border-collapse:collapse; }
+  .email td{ padding:4px 0; color:#64748b; }
+  .email td.r{ text-align:right; color:#1e293b; }
+  .email .due td{ font-weight:bold; }
+  .email .due td.r{ color:#6b21a8; }
+  .email .btn{ text-align:center; margin:18px 0; }
+  .email .btn a{ background:#16a34a; color:#fff; text-decoration:none; padding:12px 26px; border-radius:9px;
+    font-weight:bold; font-size:15px; display:inline-block; }
+  .email .bank{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin:16px 0; }
+  .email .bank h4{ margin:0 0 10px; color:#1e293b; font-size:14px; }
+  .email .bank td.r{ font-weight:600; }
+  .email .bank .ref td.r{ color:#6b21a8; }
+  .email .warn{ color:#64748b; font-size:11.5px; margin:10px 0 0; }
+  .email .sign{ color:#475569; font-size:12.5px; }
+  .chat{ padding:14px; min-height:230px; }
+  .sms-app{ background:#ffffff; }
+  .sms .bubble{ background:#e9e9eb; color:#111; border-radius:18px 18px 18px 5px; padding:10px 13px; font-size:13.5px; }
+  .wa-app{ background:#e6ddd4; }
+  .wa .bubble{ background:#fff; color:#111b21; border-radius:9px 9px 9px 0; padding:8px 11px 6px; font-size:13.5px;
+    box-shadow:0 1px 1px rgba(0,0,0,.14); }
+  .wa .time{ font-size:10px; color:#8696a0; text-align:right; margin-top:3px; }
+  .chat .lnk{ color:#2563eb; word-break:break-all; }
+  .wa .lnk{ color:#027eb5; }
+  .sender{ font-size:11px; color:var(--faint); margin:0 0 8px 2px; font-weight:600; }
+  .phones{ display:grid; grid-template-columns:1fr 1fr; gap:26px; max-width:760px; }
+  @media (max-width:720px){ .phones{ grid-template-columns:1fr; max-width:360px; margin-inline:auto; } }
+  .phone{ border-radius:34px; border:9px solid #1f1c2b; background:#000; overflow:hidden;
+    box-shadow:0 22px 50px -20px rgba(24,18,48,.6); }
+  .screen{ background:linear-gradient(160deg,#f5f0ff 0%,#ffffff 45%,#effaf3 100%); padding:30px 20px 26px;
+    min-height:520px; text-align:center; color:#334155; font-family:var(--font); display:flex; flex-direction:column; }
+  .badge{ width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    margin:6px auto 14px; font-size:24px; }
+  .badge.p{ background:#f3e8ff; }
+  .badge.g{ background:#dcfce7; }
+  .screen h3{ font-size:26px; color:#3b0764; letter-spacing:-.02em; }
+  .screen .sub{ font-size:14px; color:#64748b; margin:8px 4px 18px; }
+  .card{ background:#fff; border:1px solid #ece7f5; border-radius:16px; padding:14px 16px; text-align:left;
+    box-shadow:0 14px 30px -20px rgba(24,18,48,.4); }
+  .row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #f1eef8; }
+  .row:last-child{ border-bottom:0; }
+  .row .k{ font-size:13px; color:#64748b; }
+  .row .v{ font-size:15px; font-weight:700; color:#3b0764; font-variant-numeric:tabular-nums; }
+  .row.amt .v{ font-size:19px; }
+  .rt{ display:flex; align-items:center; gap:8px; }
+  .cp{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:7px;
+    border:1px solid #e6e3ef; color:#9aa0ac; background:#fff; flex:none; }
+  .note{ background:#fef3c7; color:#92400e; border-radius:11px; padding:11px 13px; font-size:12.5px; text-align:left; margin-top:12px; }
+  .cta{ margin-top:16px; background:#6b21a8; color:#fff; border-radius:12px; padding:14px; font-weight:800; font-size:15px; }
+  .cta.g{ background:#16a34a; }
+  .tiny{ font-size:11.5px; color:#94a3b8; margin-top:10px; }
+  .grow{ flex:1; }
+  .callout{ margin-top:40px; background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--purple);
+    border-radius:12px; padding:18px 20px; font-size:14px; color:var(--muted); }
+  .callout b{ color:var(--ink); }
+  .callout ul{ margin:10px 0 0; padding-left:18px; }
+  .callout li{ margin:5px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="inner">
+    <p class="kick">Customer preview · balance invoice</p>
+    <h1>What the customer gets — and where the link takes them</h1>
+    <p class="lede">Fired automatically the moment the driver confirms delivery. Example below: a customer who paid a 25% deposit, so it bills the remaining balance.</p>
+
+    <section>
+      <h2>1 &middot; The message (email &middot; SMS &middot; WhatsApp)</h2>
+      <div class="devices">
+        <div class="device">
+          <div class="device-top"><span class="dot" style="background:#ea4335"></span> Email</div>
+          <div class="email">
+            <div class="hd"><h3>Final Balance Invoice</h3></div>
+            <div class="bd">
+              <p class="greet">Hi Daniel,</p>
+              <p>Your delivery is complete &mdash; thank you! Please settle your <strong>final balance</strong> below. Your invoice is also attached.</p>
+              <div class="figbox">
+                <table>
+                  <tr><td>Invoice Number</td><td class="r"><strong>INV-2026-7K3PQ</strong></td></tr>
+                  <tr><td>Quote Total</td><td class="r">&pound;550.00</td></tr>
+                  <tr><td>Deposit Paid</td><td class="r">&minus; &pound;137.50</td></tr>
+                  <tr class="due"><td>Balance Due</td><td class="r">&pound;412.50</td></tr>
+                </table>
+              </div>
+              <div class="btn"><a href="#">Pay my balance</a></div>
+              <div class="bank">
+                <h4>Bank Transfer Details</h4>
+                <table>
+                  <tr><td>Account Name</td><td class="r">AMPLE LOGISTICS LIMITED</td></tr>
+                  <tr><td>Sort Code</td><td class="r">30-54-66</td></tr>
+                  <tr><td>Account Number</td><td class="r">12963462</td></tr>
+                  <tr class="ref"><td>Reference</td><td class="r">INV-2026-7K3PQ</td></tr>
+                </table>
+                <p class="warn">&#9888;&#65039; Please use your invoice number as the payment reference</p>
+              </div>
+              <p class="sign">Any questions? Call us on 0333 577 2070.</p>
+            </div>
+          </div>
+        </div>
+        <div class="device">
+          <div class="device-top"><span class="dot" style="background:#34c759"></span> SMS</div>
+          <div class="chat sms-app sms">
+            <p class="sender">Ample Removals</p>
+            <div class="bubble">Ample Removals: your balance of &pound;412.50 is due. Pay here (amount, reference &amp; bank details): <span class="lnk">https://www.ampleremovals.com/pay/K7M2P9QX</span> &mdash; Ref RMV-2026-X8K4P. Questions? 0333&nbsp;577&nbsp;2070</div>
+          </div>
+        </div>
+        <div class="device">
+          <div class="device-top"><span class="dot" style="background:#25d366"></span> WhatsApp</div>
+          <div class="chat wa-app wa">
+            <p class="sender">Ample Removals</p>
+            <div class="bubble">
+              Hi Daniel! Your delivery is complete &#127881; Your <strong>final balance</strong> is <strong>&pound;412.50</strong>.<br><br>
+              Tap to pay &mdash; amount, reference &amp; bank details:<br>
+              <span class="lnk">https://www.ampleremovals.com/pay/K7M2P9QX</span><br><br>
+              Ref: RMV-2026-X8K4P
+              <div class="time">14:38 &check;&check;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">The link is short on purpose &mdash; <b style="color:var(--purple)">ampleremovals.com/pay/K7M2P9QX</b> &mdash; so it reads cleanly in an SMS. A full PDF invoice is also attached to the email.</p>
+    </section>
+
+    <section>
+      <h2>2 &middot; When they tap the link &mdash; the pay page</h2>
+      <div class="phones">
+        <div class="phone">
+          <div class="screen">
+            <div class="badge p">&#127963;&#65039;</div>
+            <h3>Pay your balance</h3>
+            <p class="sub">Hi Daniel, your balance is <strong style="color:#3b0764">&pound;412.50</strong>. Please pay by bank transfer:</p>
+            <div class="card">
+              <div class="row amt"><span class="k">Amount</span><span class="rt"><span class="v">&pound;412.50</span><span class="cp"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></span></div>
+              <div class="row"><span class="k">Account name</span><span class="rt"><span class="v">Ample Logistics Limited</span><span class="cp"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></span></div>
+              <div class="row"><span class="k">Sort code</span><span class="rt"><span class="v">30-54-66</span><span class="cp"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></span></div>
+              <div class="row"><span class="k">Account number</span><span class="rt"><span class="v">12963462</span><span class="cp"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></span></div>
+              <div class="row"><span class="k">Reference</span><span class="rt"><span class="v">INV-2026-7K3PQ</span><span class="cp"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></span></div>
+            </div>
+            <div class="note">Use <strong>INV-2026-7K3PQ</strong> as your payment reference so we can match your transfer.</div>
+            <div class="cta">I've made the payment</div>
+            <p class="tiny">We'll confirm your payment once it lands.</p>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="grow" style="max-height:60px"></div>
+            <div class="badge g" style="width:64px;height:64px;border-radius:50%;font-size:30px">&#9989;</div>
+            <h3>Thank you!</h3>
+            <p class="sub" style="max-width:26ch;margin-inline:auto">We've noted your payment and a team member will confirm it once it lands. Need us? Call 0333&nbsp;577&nbsp;2070.</p>
+            <div class="cta g" style="margin-inline:auto;max-width:180px">&#128222; Call us</div>
+            <div class="grow"></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">Tapping <b>&ldquo;I've made the payment&rdquo;</b> logs the claim and alerts your team to verify the bank transfer &mdash; it never marks itself paid.</p>
+    </section>
+
+    <div class="callout">
+      <b>Two scenarios, one flow:</b>
+      <ul>
+        <li><b>Deposit was paid</b> (shown) &rarr; bills the remaining balance (quote &minus; deposit), with the Quote Total / Deposit Paid rows visible.</li>
+        <li><b>No deposit paid</b> &rarr; bills the <b>full quote</b>; those two rows are hidden and &ldquo;Balance Due&rdquo; is the whole amount.</li>
+      </ul>
+      <p style="margin:12px 0 0">Note: the pay page &amp; email use the <b>invoice number</b> as the bank payment reference, while the SMS/WhatsApp also show the <b>booking</b> ref (RMV-&hellip;) as a friendly identifier. Say the word if you'd like those unified.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
