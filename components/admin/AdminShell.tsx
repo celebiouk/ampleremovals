@@ -23,6 +23,7 @@ const NAV_GROUPS = [
     label: "OVERVIEW",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/admin/messages", label: "Messages", icon: MessageSquare, showMsgBadge: true },
     ],
   },
   {
@@ -34,7 +35,6 @@ const NAV_GROUPS = [
       { href: "/admin/overdue", label: "Items Still Out", icon: PackageCheck },
       { href: "/admin/approvals", label: "Approvals", icon: CheckCheck },
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
-      { href: "/admin/messages", label: "Messages", icon: MessageSquare, showMsgBadge: true },
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/calendar", label: "Job Calendar", icon: CalendarDays },
