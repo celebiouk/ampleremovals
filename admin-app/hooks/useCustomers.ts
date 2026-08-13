@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Customer, Booking } from "@/types";
 
@@ -7,12 +8,29 @@ export interface CustomerRow extends Customer {
   booking_count: number;
 }
 
-async function loadCustomers(): Promise<CustomerRow[]> {
-  const { data, error } = await supabase
+/** Debounce a fast-changing value (e.g. a search box) so we don't hit the DB on every keystroke. */
+function useDebouncedValue<T>(value: T, ms = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
+async function loadCustomers(search: string): Promise<CustomerRow[]> {
+  let query = supabase
     .from("customers")
     .select("*, bookings(id)")
     .order("created_at", { ascending: false })
     .limit(500);
+
+  // Search the WHOLE table server-side (name/email/phone), not just the fetched
+  // window. Strip characters that would break the PostgREST or() filter.
+  const s = search.replace(/[,%()]/g, " ").trim();
+  if (s) query = query.or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).map((c: any) => ({
     ...(c as Customer),
@@ -21,19 +39,11 @@ async function loadCustomers(): Promise<CustomerRow[]> {
 }
 
 export function useCustomers(search: string) {
+  const debounced = useDebouncedValue(search);
   return useQuery({
-    queryKey: ["customers"],
-    queryFn: loadCustomers,
-    select: (rows) => {
-      if (!search) return rows;
-      const q = search.toLowerCase();
-      return rows.filter(
-        (c) =>
-          c.full_name?.toLowerCase().includes(q) ||
-          c.email?.toLowerCase().includes(q) ||
-          c.phone?.includes(q)
-      );
-    },
+    queryKey: ["customers", debounced],
+    queryFn: () => loadCustomers(debounced),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,11 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Booking, BookingStatus } from "@/types";
 
 // Finished/dead jobs are hidden from the default "All Status" list — they only
 // show when their own status is picked from the filter. Mirrors the web list.
 const HIDDEN_FROM_DEFAULT_STATUSES: BookingStatus[] = ["job_completed", "bad_lead", "not_a_good_fit"];
+
+/** Debounce a fast-changing value so search doesn't hit the DB on every keystroke. */
+function useDebouncedValue<T>(value: T, ms = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
 
 export interface BookingRow extends Booking {
   customer_name: string;
@@ -20,6 +31,18 @@ interface Filters {
 }
 
 async function loadBookings({ search, status, service }: Filters): Promise<BookingRow[]> {
+  // For a search, resolve matching customers server-side — the name lives on the
+  // joined table, so we find their bookings by customer_id.
+  const s = search ? search.replace(/[,%()]/g, " ").trim() : "";
+  let searchCustIds: string[] = [];
+  if (s) {
+    const { data: custs } = await supabase
+      .from("customers").select("id")
+      .or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`)
+      .limit(100);
+    searchCustIds = (custs ?? []).map((c: any) => c.id as string);
+  }
+
   let query = supabase
     .from("bookings")
     .select(
@@ -34,8 +57,15 @@ async function loadBookings({ search, status, service }: Filters): Promise<Booki
     .limit(200);
 
   if (status) query = query.eq("status", status);
-  else query = query.not("status", "in", `(${HIDDEN_FROM_DEFAULT_STATUSES.join(",")})`);
+  else if (!s) query = query.not("status", "in", `(${HIDDEN_FROM_DEFAULT_STATUSES.join(",")})`);
   if (service) query = query.eq("service_type", service);
+
+  // Search the WHOLE table by reference or matched customer — not just the window.
+  if (s) {
+    const parts = [`reference.ilike.%${s}%`];
+    if (searchCustIds.length) parts.push(`customer_id.in.(${searchCustIds.join(",")})`);
+    query = query.or(parts.join(","));
+  }
 
   const { data, error } = await query;
   if (error) throw error;
@@ -51,19 +81,10 @@ async function loadBookings({ search, status, service }: Filters): Promise<Booki
 }
 
 export function useBookings(filters: Filters) {
+  const debounced = useDebouncedValue(filters.search);
   return useQuery({
-    queryKey: ["bookings", filters.status],
-    // Fetch the full set per status; search filters the cached set client-side.
-    queryFn: () => loadBookings({ search: "", status: filters.status }),
-    select: (rows) => {
-      if (!filters.search) return rows;
-      const q = filters.search.toLowerCase();
-      return rows.filter(
-        (b) =>
-          b.reference?.toLowerCase().includes(q) ||
-          b.customer_name.toLowerCase().includes(q) ||
-          b.origin_postcode.toLowerCase().includes(q)
-      );
-    },
+    queryKey: ["bookings", filters.status, filters.service ?? "", debounced],
+    queryFn: () => loadBookings({ search: debounced, status: filters.status, service: filters.service }),
+    placeholderData: keepPreviousData,
   });
 }
