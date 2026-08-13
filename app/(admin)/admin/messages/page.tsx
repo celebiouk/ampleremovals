@@ -148,7 +148,7 @@ export default function MessagesInboxPage() {
           </div>
         )}
         <div className="min-h-0 flex-1">
-          <ConversationView conversationId={selected?.id ?? null} contactPhone={selected?.contactPhone} />
+          <ConversationView conversationId={selected?.id ?? null} contactPhone={selected?.contactPhone} customerId={selected?.customerId} />
         </div>
       </div>
     </div>

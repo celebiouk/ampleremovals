@@ -2,20 +2,44 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { Loader2, Send, Search, MessageSquare, AlertTriangle, RefreshCw, Check, CheckCheck, ChevronUp, Paperclip } from "lucide-react";
+import { Loader2, Send, Search, MessageSquare, AlertTriangle, RefreshCw, Check, CheckCheck, ChevronUp, Paperclip, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
 export interface ChatMessage {
   id: string;
   twilio_sid: string | null;
-  channel: "sms" | "whatsapp";
+  channel: "sms" | "whatsapp" | "email";
   direction: "inbound" | "outbound";
   body: string;
+  subject?: string | null;      // email subject line (email channel only)
   status: string | null;
   error_message: string | null;
   media_urls: string[] | null;
   created_at: string;
+}
+
+/** Shape returned by the web-only /emails endpoint. */
+interface EmailRow {
+  id: string; to_email: string; from_email: string | null; subject: string | null;
+  preview: string | null; status: string | null; error_message: string | null; created_at: string;
+}
+
+/** Map a logged email into the unified chat-message shape (always outbound). */
+function emailToMessage(e: EmailRow): ChatMessage {
+  return {
+    id: `email-${e.id}`, twilio_sid: null, channel: "email", direction: "outbound",
+    body: e.preview ?? "", subject: e.subject, status: e.status, error_message: e.error_message,
+    media_urls: null, created_at: e.created_at,
+  };
+}
+
+/** Merge/sort a message set chronologically (oldest → newest), de-duped by id. */
+function sortByCreated(list: ChatMessage[]): ChatMessage[] {
+  const seen = new Set<string>();
+  return list
+    .filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)))
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 
 function dayLabel(iso: string): string {
@@ -36,18 +60,24 @@ function statusView(m: ChatMessage) {
   return { label: s || "Sent", tone: "text-slate-400", icon: <Check className="h-3 w-3" /> };
 }
 
-const ChannelTag = ({ channel }: { channel: "sms" | "whatsapp" }) => (
-  <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${channel === "whatsapp" ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>
-    {channel === "whatsapp" ? "WhatsApp" : "SMS"}
-  </span>
-);
+const ChannelTag = ({ channel }: { channel: "sms" | "whatsapp" | "email" }) => {
+  const map = {
+    whatsapp: { label: "WhatsApp", cls: "bg-green-100 text-green-700" },
+    email: { label: "Email", cls: "bg-blue-100 text-blue-700" },
+    sms: { label: "SMS", cls: "bg-slate-200 text-slate-600" },
+  } as const;
+  const t = map[channel];
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.cls}`}>{t.label}</span>;
+};
 
 export function ConversationView({
   conversationId,
   contactPhone,
+  customerId,
 }: {
   conversationId: string | null;
   contactPhone?: string | null;
+  customerId?: string | null;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,10 +102,19 @@ export function ConversationView({
     setLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/admin/conversations/${conversationId}/messages?limit=50`, { cache: "no-store" });
-        const json = await res.json();
+        // Messages (SMS/WhatsApp) + any emails we've sent this customer, merged.
+        // Skip the email fetch for unassigned (no-customer) conversations.
+        const [msgRes, emailRes] = await Promise.all([
+          fetch(`/api/admin/conversations/${conversationId}/messages?limit=50`, { cache: "no-store" }),
+          customerId
+            ? fetch(`/api/admin/conversations/${conversationId}/emails`, { cache: "no-store" }).catch(() => null)
+            : Promise.resolve(null),
+        ]);
+        const json = await msgRes.json();
         if (cancelled || !json.success) return;
-        setMessages(json.messages as ChatMessage[]);
+        const emailJson = emailRes ? await emailRes.json().catch(() => null) : null;
+        const emails = emailJson?.success ? (emailJson.emails as EmailRow[]).map(emailToMessage) : [];
+        setMessages(sortByCreated([...(json.messages as ChatMessage[]), ...emails]));
         setHasMore(json.hasMore); setNextBefore(json.nextBefore);
         scrollToBottom();
         // Mark read — only because the admin actually opened it.
@@ -83,7 +122,7 @@ export function ConversationView({
       } finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
-  }, [conversationId, scrollToBottom]);
+  }, [conversationId, customerId, scrollToBottom]);
 
   // Realtime: new/updated messages in this conversation, no refresh needed.
   useEffect(() => {
@@ -93,7 +132,7 @@ export function ConversationView({
       .channel(`conv-${conversationId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         const m = payload.new as ChatMessage;
-        setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+        setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : sortByCreated([...prev, m])));
         scrollToBottom(true);
         // Keep it read while the thread is open.
         fetch(`/api/admin/conversations/${conversationId}/read`, { method: "POST" }).catch(() => {});
@@ -101,6 +140,12 @@ export function ConversationView({
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         const m = payload.new as ChatMessage;
         setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, ...m } : x)));
+      })
+      // Emails sent to this customer land live too (web-only table).
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "customer_emails", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+        const em = emailToMessage(payload.new as EmailRow);
+        setMessages((prev) => (prev.some((x) => x.id === em.id) ? prev : sortByCreated([...prev, em])));
+        scrollToBottom(true);
       })
       .subscribe();
     return () => { supabase.removeChannel(channelSub); };
@@ -115,7 +160,7 @@ export function ConversationView({
       const res = await fetch(`/api/admin/conversations/${conversationId}/messages?limit=50&before=${encodeURIComponent(nextBefore)}`, { cache: "no-store" });
       const json = await res.json();
       if (json.success) {
-        setMessages((prev) => [...(json.messages as ChatMessage[]), ...prev]);
+        setMessages((prev) => sortByCreated([...(json.messages as ChatMessage[]), ...prev]));
         setHasMore(json.hasMore); setNextBefore(json.nextBefore);
         requestAnimationFrame(() => { if (el) el.scrollTop = el.scrollHeight - prevHeight; });
       }
@@ -163,7 +208,9 @@ export function ConversationView({
   }
 
   const q = search.trim().toLowerCase();
-  const shown = q ? messages.filter((m) => (m.body ?? "").toLowerCase().includes(q)) : messages;
+  const shown = q
+    ? messages.filter((m) => `${m.subject ?? ""} ${m.body ?? ""}`.toLowerCase().includes(q))
+    : messages;
 
   // Group by day for separators.
   const groups: { day: string; items: ChatMessage[] }[] = [];
@@ -210,23 +257,35 @@ export function ConversationView({
                 </div>
                 {g.items.map((m) => {
                   const out = m.direction === "outbound";
+                  const isEmail = m.channel === "email";
                   const st = out ? statusView(m) : null;
                   const failed = st?.label === "Failed";
                   return (
                     <div key={m.id} className={`mb-2.5 flex ${out ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] ${out ? "items-end" : "items-start"} flex flex-col`}>
-                        <div className={`rounded-2xl px-3.5 py-2 text-sm shadow-sm ${out ? (failed ? "bg-red-50 text-red-900 border border-red-200" : "bg-brand-purple-700 text-white") : "bg-white text-slate-800 border border-slate-100"}`}>
-                          {m.body ? <p className="whitespace-pre-wrap break-words">{m.body}</p> : null}
-                          {m.media_urls?.length ? (
-                            <div className="mt-1 space-y-1">
-                              {m.media_urls.map((u, i) => (
-                                <a key={i} href={u} target="_blank" rel="noreferrer" className={`flex items-center gap-1 text-xs underline ${out ? "text-white/90" : "text-brand-purple-600"}`}>
-                                  <Paperclip className="h-3 w-3" /> Attachment {i + 1}
-                                </a>
-                              ))}
+                        {isEmail ? (
+                          // Email: a light card with the subject headline + preview.
+                          <div className={`rounded-2xl border px-3.5 py-2 text-sm shadow-sm ${failed ? "border-red-200 bg-red-50 text-red-900" : "border-blue-200 bg-blue-50 text-slate-800"}`}>
+                            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-blue-700">
+                              <Mail className="h-3 w-3" /> Email
                             </div>
-                          ) : null}
-                        </div>
+                            {m.subject ? <p className="font-semibold text-slate-900 break-words">{m.subject}</p> : null}
+                            {m.body ? <p className="mt-0.5 whitespace-pre-wrap break-words text-slate-600">{m.body}</p> : null}
+                          </div>
+                        ) : (
+                          <div className={`rounded-2xl px-3.5 py-2 text-sm shadow-sm ${out ? (failed ? "bg-red-50 text-red-900 border border-red-200" : "bg-brand-purple-700 text-white") : "bg-white text-slate-800 border border-slate-100"}`}>
+                            {m.body ? <p className="whitespace-pre-wrap break-words">{m.body}</p> : null}
+                            {m.media_urls?.length ? (
+                              <div className="mt-1 space-y-1">
+                                {m.media_urls.map((u, i) => (
+                                  <a key={i} href={u} target="_blank" rel="noreferrer" className={`flex items-center gap-1 text-xs underline ${out ? "text-white/90" : "text-brand-purple-600"}`}>
+                                    <Paperclip className="h-3 w-3" /> Attachment {i + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
                         <div className={`mt-0.5 flex items-center gap-1.5 px-1 ${out ? "flex-row-reverse" : ""}`}>
                           <span className="text-[10px] text-slate-400">{timeLabel(m.created_at)}</span>
                           <ChannelTag channel={m.channel} />
@@ -235,7 +294,7 @@ export function ConversationView({
                           ) : (
                             <span className="text-[10px] text-slate-400">Received</span>
                           )}
-                          {failed && (
+                          {failed && !isEmail && (
                             <button onClick={() => retry(m.id)} className="flex items-center gap-0.5 text-[10px] font-semibold text-brand-purple-600 hover:underline">
                               <RefreshCw className="h-2.5 w-2.5" /> Retry
                             </button>

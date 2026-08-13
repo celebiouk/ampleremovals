@@ -26,7 +26,7 @@ export function CustomerMessagesTab({ customerId }: { customerId: string }) {
   }
   return (
     <div className="h-[calc(100vh-18rem)] min-h-[420px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <ConversationView conversationId={state.conversationId} contactPhone={state.contactPhone} />
+      <ConversationView conversationId={state.conversationId} contactPhone={state.contactPhone} customerId={customerId} />
     </div>
   );
 }
