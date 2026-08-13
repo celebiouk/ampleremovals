@@ -96,6 +96,18 @@ function BookingsListInner() {
     const supabase = createClient();
     const from = (page - 1) * PAGE_SIZE;
 
+    // For a search, resolve matching customers server-side — the customer name
+    // lives on the joined table, so we find their bookings by customer_id.
+    const s = search ? search.replace(/[,%()]/g, " ").trim() : "";
+    let searchCustIds: string[] = [];
+    if (s) {
+      const { data: custs } = await supabase
+        .from("customers").select("id")
+        .or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`)
+        .limit(100);
+      searchCustIds = (custs ?? []).map((c: { id: string }) => c.id);
+    }
+
     // Build the query for a given column set, applying the active filters.
     const baseCols = "id,reference,service_type,status,move_date,is_flexible_date,created_at,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)";
     const buildQuery = (cols: string) => {
@@ -108,10 +120,17 @@ function BookingsListInner() {
       if (status) {
         if (status === "in_progress") q = q.in("status", IN_PROGRESS);
         else q = q.eq("status", status as BookingStatus);
-      } else {
-        // Default view hides finished/dead jobs — they only show when their
-        // status is explicitly selected from the filter.
+      } else if (!s) {
+        // Default view (no search) hides finished/dead jobs — they only show
+        // when their status is explicitly selected, or when you search.
         q = q.not("status", "in", `(${HIDDEN_FROM_DEFAULT_STATUSES.join(",")})`);
+      }
+      // Search the WHOLE table by reference or matched customer — not just the
+      // current page.
+      if (s) {
+        const parts = [`reference.ilike.%${s}%`];
+        if (searchCustIds.length) parts.push(`customer_id.in.(${searchCustIds.join(",")})`);
+        q = q.or(parts.join(","));
       }
       return q;
     };
@@ -123,7 +142,7 @@ function BookingsListInner() {
       ({ data, count } = await buildQuery(baseCols));
     }
 
-    let rows: BookingRow[] = (data ?? []).map((b: Record<string, unknown>) => ({
+    const rows: BookingRow[] = (data ?? []).map((b: Record<string, unknown>) => ({
       id: b.id as string, reference: b.reference as string,
       service_type: b.service_type as ServiceType, status: b.status as BookingStatus,
       move_date: b.move_date as string | null, is_flexible_date: b.is_flexible_date as boolean,
@@ -134,15 +153,6 @@ function BookingsListInner() {
       lead_band: (b.lead_band as string | null) ?? null,
       lead_score: (b.lead_score as number | null) ?? null,
     }));
-
-    if (search) {
-      const s = search.toLowerCase();
-      rows = rows.filter(b =>
-        b.reference.toLowerCase().includes(s) ||
-        b.customer_name.toLowerCase().includes(s) ||
-        b.origin_postcode.toLowerCase().includes(s)
-      );
-    }
 
     setBookings(rows);
     setTotal(count ?? 0);

@@ -39,11 +39,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     if (!q.trim()) { setBookings([]); return; }
     setIsSearching(true);
     const supabase = createClient();
+    const s = q.replace(/[,%()]/g, " ").trim();
+    // Match customers by name/email/phone, then find their bookings — plus any
+    // booking whose reference matches. (Reference-only search missed names.)
+    const { data: custs } = await supabase
+      .from("customers").select("id")
+      .or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`)
+      .limit(20);
+    const custIds = (custs ?? []).map((c: { id: string }) => c.id);
+    const parts = [`reference.ilike.%${s}%`];
+    if (custIds.length) parts.push(`customer_id.in.(${custIds.join(",")})`);
     const { data } = await supabase
       .from("bookings")
       .select("id, reference, service_type, customers!inner(full_name)")
-      .or(`reference.ilike.%${q}%`)
-      .limit(5);
+      .or(parts.join(","))
+      .limit(8);
     setBookings((data ?? []).map((b: Record<string, unknown>) => ({
       id: b.id as string,
       reference: b.reference as string,
@@ -70,7 +80,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh]">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <Command className="[&_[cmdk-input-wrapper]]:border-b [&_[cmdk-input-wrapper]]:border-slate-200">
+        <Command shouldFilter={false} className="[&_[cmdk-input-wrapper]]:border-b [&_[cmdk-input-wrapper]]:border-slate-200">
           <div className="flex items-center gap-3 px-4 py-3">
             <Search className="h-4 w-4 shrink-0 text-slate-400" />
             <Command.Input

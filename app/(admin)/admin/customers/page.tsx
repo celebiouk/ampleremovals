@@ -32,11 +32,19 @@ function CustomersListInner() {
     const supabase = createClient();
     const from = (page - 1) * PAGE_SIZE;
 
-    const { data, count } = await supabase
+    let query = supabase
       .from("customers")
       .select("id, full_name, email, phone, created_at", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+      .order("created_at", { ascending: false });
+
+    // Search the WHOLE table server-side (name, email or phone) — not just the
+    // current page. Strip characters that would break the PostgREST or() filter.
+    if (search) {
+      const s = search.replace(/[,%()]/g, " ").trim();
+      if (s) query = query.or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+    }
+
+    const { data, count } = await query.range(from, from + PAGE_SIZE - 1);
 
     const ids = (data ?? []).map((c: { id: string }) => c.id);
     const bookingCounts: Record<string, number> = {};
@@ -56,20 +64,11 @@ function CustomersListInner() {
       });
     }
 
-    let rows: CustomerRow[] = (data ?? []).map((c: { id: string; full_name: string; email: string; phone: string; created_at: string }) => ({
+    const rows: CustomerRow[] = (data ?? []).map((c: { id: string; full_name: string; email: string; phone: string; created_at: string }) => ({
       ...c,
       booking_count: bookingCounts[c.id] ?? 0,
       last_booking_date: lastDates[c.id] ?? null,
     }));
-
-    if (search) {
-      const s = search.toLowerCase();
-      rows = rows.filter(c =>
-        c.full_name.toLowerCase().includes(s) ||
-        c.email.toLowerCase().includes(s) ||
-        c.phone.includes(s)
-      );
-    }
 
     setCustomers(rows);
     setTotal(count ?? 0);
