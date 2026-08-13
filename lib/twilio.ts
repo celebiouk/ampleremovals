@@ -1,7 +1,7 @@
 import twilio from "twilio";
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
 import { createAdminClient } from "@/lib/supabase/server";
-import { recordMessage, normalisePhone, type Channel } from "@/lib/message-store";
+import { recordMessage, normalisePhone, matchCustomerId, channelFromAddress, type Channel } from "@/lib/message-store";
 
 /**
  * Twilio client. Prefers API Key auth (TWILIO_API_KEY_SID + _SECRET, the
@@ -45,6 +45,14 @@ async function logOutbound(p: {
 }): Promise<string | null> {
   try {
     const supabase = createAdminClient();
+    const e164 = normalisePhone(p.contactPhone);
+    if (!e164) return null;
+    // Only surface real client threads. If there's no conversation for this
+    // number and it doesn't match a customer, it's an admin/driver/one-off
+    // recipient — skip it so the inbox stays customer-focused.
+    const { data: convo } = await supabase.from("conversations").select("id").eq("contact_phone", e164).maybeSingle();
+    if (!convo && !(await matchCustomerId(supabase, e164))) return null;
+
     const res = await recordMessage(supabase, {
       contactPhone: p.contactPhone,
       twilioSid: p.sid,
@@ -61,6 +69,50 @@ async function logOutbound(p: {
     console.warn("[twilio] outbound log failed:", e);
     return null;
   }
+}
+
+/** Look up the inbox row id for a Twilio SID (the create-patch logs it first). */
+async function messageIdBySid(sid: string | null | undefined): Promise<string | null> {
+  if (!sid) return null;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase.from("messages").select("id").eq("twilio_sid", sid).maybeSingle();
+    return data?.id ?? null;
+  } catch { return null; }
+}
+
+/**
+ * Centralised outbound logging. EVERY SMS/WhatsApp sent through this Twilio
+ * account — including the many automated flows that call `messages.create`
+ * directly (confirmations, reminders, invoices, driver updates…) — is recorded
+ * in the inbox here, so a customer's thread shows every attempted message,
+ * delivered or not. Template (contentSid) sends are logged by sendWhatsApp
+ * itself (it holds the rendered text); everything else is logged here once.
+ */
+if (twilioClient) {
+  const messagesApi = twilioClient.messages;
+  const originalCreate = messagesApi.create.bind(messagesApi);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (messagesApi as any).create = async (opts: any) => {
+    let created: { sid?: string; status?: string } | undefined;
+    let sendErr: unknown;
+    try { created = await originalCreate(opts); }
+    catch (e) { sendErr = e; }
+    if (opts && !opts.contentSid) {
+      await logOutbound({
+        contactPhone: String(opts.to ?? ""),
+        from: String(opts.from ?? ""),
+        to: String(opts.to ?? ""),
+        body: String(opts.body ?? ""),
+        channel: channelFromAddress(String(opts.from ?? "")),
+        sid: created?.sid ?? null,
+        status: sendErr ? "failed" : (created?.status ?? "queued"),
+        error: sendErr ? String(sendErr) : null,
+      }).catch(() => {});
+    }
+    if (sendErr) throw sendErr;
+    return created;
+  };
 }
 
 /**
@@ -108,11 +160,10 @@ export async function sendSMS(to: string, body: string): Promise<SendResult> {
       body: text,
       ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    const messageId = await logOutbound({ contactPhone: dest, from: twilioFrom, to: dest, body: text, channel: "sms", sid: msg.sid, status: msg.status || "queued" });
+    // The create patch already logged it (and failures) — just grab the row id.
+    const messageId = await messageIdBySid(msg.sid);
     return { success: true, sid: msg.sid, messageId };
   } catch (err) {
-    // Save the failed attempt so it's visible + retryable, never silently lost.
-    await logOutbound({ contactPhone: dest, from: twilioFrom, to: dest, body: text, channel: "sms", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }
@@ -145,7 +196,8 @@ export async function sendWhatsApp(
   const loggedBody = body || (template ? `[template: ${template.name}]` : "");
   const contentSid = template ? WHATSAPP_TEMPLATES[template.name] : undefined;
 
-  // Preferred path: send via the approved template.
+  // Preferred path: send via the approved template. The create patch skips
+  // contentSid sends, so we log these explicitly with the rendered text.
   if (contentSid) {
     try {
       const msg = await twilioClient.messages.create({
@@ -172,10 +224,10 @@ export async function sendWhatsApp(
       body,
       ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
     });
-    const messageId = await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
+    // Free-text send: the create patch already logged it — grab the row id.
+    const messageId = await messageIdBySid(msg.sid);
     return { success: true, sid: msg.sid, messageId };
   } catch (err) {
-    await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
     return { success: false, error: String(err) };
   }
 }

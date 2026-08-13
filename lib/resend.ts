@@ -68,8 +68,36 @@ async function logCustomerEmail(p: {
 }
 
 /**
- * Send an email using Resend. Emails to a known customer are also logged to the
- * customer_emails table so they appear in the web conversation inbox.
+ * Patch resend.emails.send ONCE so EVERY email — including the dozens of
+ * automated flows that call resend.emails.send() directly (confirmations,
+ * quotes, invoices, receipts, reminders…) — is logged to the customer inbox.
+ * logCustomerEmail skips recipients that aren't customers (admin/driver mail).
+ * Guarded so repeated module evaluation never double-wraps.
+ */
+{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const emailsApi = resend.emails as any;
+  if (!emailsApi.__ampleLogged) {
+    const originalSend = resend.emails.send.bind(resend.emails);
+    emailsApi.send = async (payload: Record<string, unknown>, options?: unknown) => {
+      const result = await originalSend(payload as never, options as never);
+      await logCustomerEmail({
+        to: payload.to as string | string[],
+        subject: (payload.subject as string) ?? "",
+        html: (payload.html as string) ?? (payload.text as string) ?? "",
+        from: (payload.from as string) ?? resendFrom,
+        result: result as { data?: { id?: string } | null; error?: unknown },
+      }).catch(() => {});
+      return result;
+    };
+    emailsApi.__ampleLogged = true;
+  }
+}
+
+/**
+ * Send an email using Resend. Logging is handled centrally by the patch above,
+ * so every email (via this helper or a direct resend.emails.send call) is
+ * recorded against the customer and shown in the web conversation inbox.
  */
 export async function sendEmail(params: {
   to: string | string[];
@@ -78,12 +106,5 @@ export async function sendEmail(params: {
   from?: string;
 }) {
   const { to, subject, html, from = resendFrom } = params;
-
-  const result = await resend.emails.send({ from, to, subject, html });
-
-  // Persist before returning so it survives serverless freeze (awaited, but
-  // wrapped so a logging error can never break the actual email send).
-  await logCustomerEmail({ to, subject, html, from, result });
-
-  return result;
+  return await resend.emails.send({ from, to, subject, html });
 }
