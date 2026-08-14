@@ -24,6 +24,7 @@ import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal"
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
+import { InventoryEditor } from "@/components/admin/InventoryEditor";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { isSuperAdmin } from "@/lib/super-admin";
@@ -559,18 +560,9 @@ export default function BookingDetailPage() {
             </dl>
           </Card>
 
-          {Array.isArray(booking.inventory) && booking.inventory.length > 0 && (
-            <Card title="Items to Move">
-              <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
-                {booking.inventory.map((it, i) => (
-                  <li key={i} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5">
-                    <span className="text-slate-700">{it.label}</span>
-                    <span className="font-semibold text-brand-purple-800">×{it.quantity}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
+          <Card title="Items to Move">
+            <InventoryEditor bookingId={booking.id} initial={Array.isArray(booking.inventory) ? booking.inventory : []} />
+          </Card>
 
           {additionalServices && (
             <Card title="Additional Services">
