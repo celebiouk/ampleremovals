@@ -44,6 +44,19 @@ export async function POST(
     await supabase.from("bookings").update({ deposit_status: "verified" }).eq("id", bookingId);
   } catch { /* deposit_status column may not be migrated yet */ }
 
+  // Mark the deposit invoice(s) PAID. This is what makes the move-day full
+  // balance deduct the deposit (balance = quote total − paid deposit). Without
+  // it the deposit was "verified" on the booking but never recorded as paid, so
+  // the balance billed the full quote.
+  try {
+    await supabase
+      .from("invoices")
+      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .eq("booking_id", bookingId)
+      .eq("type", "deposit")
+      .not("status", "in", "(paid,cancelled)");
+  } catch { /* best-effort — never block confirmation */ }
+
   await Promise.allSettled([
     supabase.from("status_history").insert({
       booking_id: bookingId,

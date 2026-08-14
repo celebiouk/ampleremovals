@@ -326,6 +326,15 @@ export default function BookingDetailPage() {
     houseCleaningDetails, endOfTenancyDetails, additionalServices,
     notes, statusHistory, activityLog, invoices, reminders } = data;
 
+  // Deposit figures derived from the ACTUAL invoices, not the (often stale)
+  // booking.deposit_amount field. The active deposit invoice is the source of
+  // truth for what was billed; paid deposits reduce the outstanding balance.
+  const activeDepositInvoice = invoices.find(i => i.type === "deposit" && i.status !== "cancelled");
+  const depositPaid = invoices
+    .filter(i => i.type === "deposit" && i.status === "paid")
+    .reduce((a, i) => a + i.total, 0);
+  const bannerDepositAmount = activeDepositInvoice?.total ?? booking.deposit_amount ?? null;
+
   const visibleHistory = showAllHistory ? statusHistory : statusHistory.slice(0, 5);
 
   async function handleConfirmDeposit() {
@@ -410,7 +419,7 @@ export default function BookingDetailPage() {
             <span className="text-2xl">🏦</span>
             <div>
               <p className="font-bold text-slate-800">
-                Deposit invoice sent{booking.deposit_amount != null ? ` — ${formatCurrency(booking.deposit_amount)}` : ""}
+                Deposit invoice sent{bannerDepositAmount != null ? ` — ${formatCurrency(bannerDepositAmount)}` : ""}
               </p>
               <p className="text-sm text-slate-500">Waiting on their bank transfer. As soon as it lands, confirm to lock in the job and notify them.</p>
             </div>
@@ -1019,6 +1028,7 @@ export default function BookingDetailPage() {
           serviceType={data.booking.service_type as ServiceType}
           additionalServices={data.additionalServices}
           quoteTotal={data.booking.quote_total}
+          depositPaid={depositPaid}
           onSuccess={() => { refresh(); setGenerateInvoiceType(null); notifyEmbedDone(); }}
         />
       )}

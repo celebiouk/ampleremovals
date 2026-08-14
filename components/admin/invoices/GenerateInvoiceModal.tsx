@@ -27,6 +27,7 @@ interface Props {
   serviceType: ServiceType;
   additionalServices?: AdditionalServices | null;
   quoteTotal?: number | null; // Quote total from booking
+  depositPaid?: number; // Deposit already paid/confirmed — deducted from the full balance
   onSuccess: (invoice: { id: string; invoiceNumber: string; total: number; pdfUrl: string; stripePaymentLink: string }) => void;
 }
 
@@ -35,7 +36,7 @@ const defaultDueDate = () => {
   return d.toISOString().slice(0, 10);
 };
 
-export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, additionalServices, quoteTotal, onSuccess }: Props) {
+export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, bookingReference, customerName, serviceType, additionalServices, quoteTotal, depositPaid = 0, onSuccess }: Props) {
   const serviceLabel = SERVICE_LABELS_SHORT[serviceType];
   const typeLabel = type === "deposit" ? "Deposit" : "Full Balance";
 
@@ -58,21 +59,35 @@ export function GenerateInvoiceModal({ isOpen, onClose, bookingId, type, booking
       setVatEnabled(false); setDueDate(defaultDueDate()); setNotes("");
       setPreview(null); setError(""); setFullJobValue(0); setDepositPercent(25);
     } else {
-      // If quote total exists, pre-fill it as the full job value
+      // If quote total exists, pre-fill it as the full job value (deposit calc).
       if (quoteTotal && quoteTotal > 0) {
         setFullJobValue(quoteTotal);
       }
-      // Pre-populate additional services as line items
-      const extras: LineItem[] = [];
-      if (additionalServices?.packing_services) extras.push({ description: "Packing Services", quantity: 1, unitPrice: 0 });
-      if (additionalServices?.packing_materials) extras.push({ description: "Packing Materials", quantity: 1, unitPrice: 0 });
-      if (additionalServices?.disassemble_furniture) extras.push({ description: "Furniture Disassembly", quantity: 1, unitPrice: 0 });
-      if (additionalServices?.assemble_furniture) extras.push({ description: "Furniture Assembly", quantity: 1, unitPrice: 0 });
-      if (extras.length > 0) {
-        setLineItems([{ description: `${typeLabel} — ${serviceLabel} Service`, quantity: 1, unitPrice: 0 }, ...extras]);
+
+      if (type === "full_balance" && quoteTotal && quoteTotal > 0) {
+        // Full balance = quote total − any deposit already paid, so admin bills
+        // the ACTUAL remaining balance rather than the whole quote again.
+        const balance = Math.max(0, Math.round((quoteTotal - depositPaid) * 100) / 100);
+        setLineItems([{
+          description: depositPaid > 0
+            ? `Final balance (after ${formatCurrency(depositPaid)} deposit) — ${serviceLabel} Service`
+            : `Final balance — ${serviceLabel} Service`,
+          quantity: 1,
+          unitPrice: balance,
+        }]);
+      } else {
+        // Deposit path (or no quote total): pre-populate additional services.
+        const extras: LineItem[] = [];
+        if (additionalServices?.packing_services) extras.push({ description: "Packing Services", quantity: 1, unitPrice: 0 });
+        if (additionalServices?.packing_materials) extras.push({ description: "Packing Materials", quantity: 1, unitPrice: 0 });
+        if (additionalServices?.disassemble_furniture) extras.push({ description: "Furniture Disassembly", quantity: 1, unitPrice: 0 });
+        if (additionalServices?.assemble_furniture) extras.push({ description: "Furniture Assembly", quantity: 1, unitPrice: 0 });
+        if (extras.length > 0) {
+          setLineItems([{ description: `${typeLabel} — ${serviceLabel} Service`, quantity: 1, unitPrice: 0 }, ...extras]);
+        }
       }
     }
-  }, [isOpen, typeLabel, serviceLabel, additionalServices, quoteTotal]);
+  }, [isOpen, type, typeLabel, serviceLabel, additionalServices, quoteTotal, depositPaid]);
 
   // For deposit: auto-calculate deposit amount from full job value + %
   const isDeposit = type === "deposit";
