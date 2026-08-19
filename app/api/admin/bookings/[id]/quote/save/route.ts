@@ -21,6 +21,10 @@ export async function PATCH(
       valid_until: string;
       notes?: string;
       deposit_required?: boolean;
+      crew_men?: number | null;
+      van_count?: number | null;
+      van_size?: string | null;
+      crew_blurb?: string | null;
     };
 
     const supabase = await createClient();
@@ -51,6 +55,10 @@ export async function PATCH(
         quote_valid_until: body.valid_until,
         quote_notes: body.notes || null,
         quote_deposit_required: body.deposit_required !== undefined ? body.deposit_required : true,
+        quote_crew_men: body.crew_men ?? null,
+        quote_van_count: body.van_count ?? null,
+        quote_van_size: body.van_size ?? null,
+        quote_crew_blurb: body.crew_blurb ?? null,
       })
       .eq("id", bookingId);
 

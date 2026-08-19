@@ -124,6 +124,10 @@ export interface Booking {
   quote_total: number | null;
   quote_valid_until: string | null;
   quote_notes: string | null;
+  quote_crew_men: number | null;
+  quote_van_count: number | null;
+  quote_van_size: string | null;
+  quote_crew_blurb: string | null;
   quote_pdf_url: string | null;
   quote_sent_at: string | null;
   created_at: string;

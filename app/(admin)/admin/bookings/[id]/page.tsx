@@ -25,6 +25,7 @@ import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
 import { InventoryEditor } from "@/components/admin/InventoryEditor";
+import { vanSizeLabel } from "@/lib/crew";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { isSuperAdmin } from "@/lib/super-admin";
@@ -633,6 +634,14 @@ export default function BookingDetailPage() {
                     </div>
                   ))}
                 </div>
+                {(booking.quote_crew_men || booking.quote_van_count) && (
+                  <div className="rounded-xl border border-brand-purple-100 bg-brand-purple-50/50 p-3 text-xs">
+                    <p className="font-semibold text-brand-purple-900">
+                      {booking.quote_crew_men ?? 2}-man team · {booking.quote_van_count ?? 1} × {vanSizeLabel(booking.quote_van_size)}
+                    </p>
+                    {booking.quote_crew_blurb && <p className="mt-1 text-slate-600">{booking.quote_crew_blurb}</p>}
+                  </div>
+                )}
                 {booking.quote_pdf_url && (
                   <a href={booking.quote_pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
                     <ExternalLink className="h-3 w-3" /> View Quote PDF
@@ -1061,6 +1070,10 @@ export default function BookingDetailPage() {
                   total: data.booking.quote_total || 0,
                   valid_until: data.booking.quote_valid_until,
                   notes: data.booking.quote_notes,
+                  crew_men: data.booking.quote_crew_men,
+                  van_count: data.booking.quote_van_count,
+                  van_size: data.booking.quote_van_size,
+                  crew_blurb: data.booking.quote_crew_blurb,
                 }
               : undefined
           }

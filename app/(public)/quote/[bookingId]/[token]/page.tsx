@@ -26,6 +26,14 @@ interface QuoteLine {
   removable: boolean;
 }
 
+interface QuoteCrew {
+  men: number;
+  vanCount: number;
+  vanSize: string;
+  vanSizeLabel: string;
+  blurb: string;
+}
+
 interface QuoteData {
   reference: string;
   firstName: string;
@@ -35,6 +43,7 @@ interface QuoteData {
   depositStatus: string;
   status: string;
   hasQuote: boolean;
+  crew?: QuoteCrew;
 }
 
 type Stage = "loading" | "reveal" | "reserving" | "deposit" | "claiming" | "done" | "error";
@@ -311,6 +320,21 @@ function RevealView({
           </div>
         </div>
       </div>
+
+      {quote.crew && (
+        <div className="mt-5 rounded-2xl border border-brand-purple-200 bg-brand-purple-50/60 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-purple-800 text-white">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <p className="font-display font-bold text-brand-purple-950">What you get</p>
+          </div>
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-brand-purple-800 shadow-sm">
+            {quote.crew.men}-man team · {quote.crew.vanCount} × {quote.crew.vanSizeLabel}
+          </p>
+          <p className="text-sm leading-relaxed text-slate-600">{quote.crew.blurb}</p>
+        </div>
+      )}
 
       <Button
         onClick={onReserve}

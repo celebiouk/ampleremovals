@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, Loader2 } from "lucide-react";
+import { X, Plus, Trash2, Loader2, Users, Truck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { QuoteLineItem } from "@/types";
+import { VAN_SIZES, DEFAULT_CREW, defaultCrewBlurb } from "@/lib/crew";
 
 interface QuoteBuilderModalProps {
   bookingId: string;
@@ -16,6 +17,10 @@ interface QuoteBuilderModalProps {
     total: number;
     valid_until: string | null;
     notes: string | null;
+    crew_men?: number | null;
+    van_count?: number | null;
+    van_size?: string | null;
+    crew_blurb?: string | null;
   };
   serviceData?: {
     service_type: string;
@@ -142,6 +147,16 @@ export function QuoteBuilderModal({
     existingQuote?.valid_until || getDefaultValidUntil()
   );
   const [notes, setNotes] = useState(existingQuote?.notes || "");
+  // Team & vehicle shown on the quote (Phase C).
+  const [crewMen, setCrewMen] = useState<number>(existingQuote?.crew_men ?? DEFAULT_CREW.men);
+  const [vanCount, setVanCount] = useState<number>(existingQuote?.van_count ?? DEFAULT_CREW.vanCount);
+  const [vanSize, setVanSize] = useState<string>(existingQuote?.van_size ?? DEFAULT_CREW.vanSize);
+  const [crewBlurb, setCrewBlurb] = useState<string>(
+    existingQuote?.crew_blurb || defaultCrewBlurb(existingQuote?.crew_men ?? DEFAULT_CREW.men, existingQuote?.van_count ?? DEFAULT_CREW.vanCount, existingQuote?.van_size ?? DEFAULT_CREW.vanSize)
+  );
+  // Track whether admin hand-edited the blurb, so regenerating the default on a
+  // crew/van change never clobbers their wording.
+  const [blurbEdited, setBlurbEdited] = useState<boolean>(!!existingQuote?.crew_blurb);
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
@@ -309,6 +324,12 @@ export function QuoteBuilderModal({
 
   const canSave = lineItems.every((item) => item.description.trim() && item.quantity > 0 && item.unit_price >= 0);
 
+  // Keep the reassurance blurb in sync with the crew/van choices — unless admin
+  // has hand-edited it, in which case we leave their wording alone.
+  useEffect(() => {
+    if (!blurbEdited) setCrewBlurb(defaultCrewBlurb(crewMen, vanCount, vanSize));
+  }, [crewMen, vanCount, vanSize, blurbEdited]);
+
   const handleSave = async () => {
     if (!canSave) {
       toast.error("Please fill in all line items");
@@ -328,6 +349,10 @@ export function QuoteBuilderModal({
         valid_until: validUntil,
         notes: notes.trim() || null,
         deposit_required: depositRequired,
+        crew_men: crewMen,
+        van_count: vanCount,
+        van_size: vanSize,
+        crew_blurb: crewBlurb.trim() || null,
       }),
     });
 
@@ -364,6 +389,10 @@ export function QuoteBuilderModal({
         total,
         valid_until: validUntil,
         notes: notes.trim() || null,
+        crew_men: crewMen,
+        van_count: vanCount,
+        van_size: vanSize,
+        crew_blurb: crewBlurb.trim() || null,
       }),
     });
 
@@ -423,6 +452,47 @@ export function QuoteBuilderModal({
 
         {/* Body */}
         <div className="p-6 space-y-6">
+          {/* Team & vehicle — shown on the quote so the customer knows what they get */}
+          <div className="rounded-xl border-2 border-brand-purple-200 bg-brand-purple-50/50 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-brand-purple-700" />
+              <label className="text-sm font-semibold text-brand-purple-900">Team &amp; vehicle (shown on the quote)</label>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><Users className="mr-1 inline h-3 w-3" /> Movers</label>
+                <select value={crewMen} onChange={(e) => setCrewMen(Number(e.target.value))} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus:border-brand-purple-400">
+                  {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} {n === 1 ? "man" : "men"}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><Truck className="mr-1 inline h-3 w-3" /> Vans</label>
+                <select value={vanCount} onChange={(e) => setVanCount(Number(e.target.value))} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus:border-brand-purple-400">
+                  {[1, 2, 3].map((n) => <option key={n} value={n}>{n} van{n === 1 ? "" : "s"}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Van size</label>
+                <select value={vanSize} onChange={(e) => setVanSize(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus:border-brand-purple-400">
+                  {VAN_SIZES.map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">What the customer reads</label>
+                <button type="button" onClick={() => { setBlurbEdited(false); setCrewBlurb(defaultCrewBlurb(crewMen, vanCount, vanSize)); }} className="text-xs font-semibold text-brand-purple-700 hover:underline">Reset to default</button>
+              </div>
+              <textarea
+                value={crewBlurb}
+                onChange={(e) => { setCrewBlurb(e.target.value); setBlurbEdited(true); }}
+                rows={4}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-purple-400"
+              />
+              <p className="mt-1 text-xs text-slate-400">Edit freely — this reassurance text appears on the customer&apos;s quote.</p>
+            </div>
+          </div>
+
           {/* Line Items */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-3">
