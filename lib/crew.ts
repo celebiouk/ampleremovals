@@ -26,6 +26,28 @@ export function vanSizeLabel(key: string | null | undefined): string {
   return VAN_SIZES.find((v) => v.key === key)?.label ?? "van";
 }
 
+/**
+ * Resolve the crew/vehicle for a booking's quote, applying the house default
+ * (2 men, one 3.5t Luton) and generated blurb when nothing is set — so the team
+ * copy appears on EVERY quote (PDF + email), whoever filled the form.
+ */
+export function resolveCrew(b: {
+  quote_crew_men?: number | null;
+  quote_van_count?: number | null;
+  quote_van_size?: string | null;
+  quote_crew_blurb?: string | null;
+}): { men: number; vanCount: number; vanSize: string; vanLabel: string; line: string; blurb: string } {
+  const men = b.quote_crew_men ?? DEFAULT_CREW.men;
+  const vanCount = b.quote_van_count ?? DEFAULT_CREW.vanCount;
+  const vanSize = b.quote_van_size ?? DEFAULT_CREW.vanSize;
+  const vanLabel = vanSizeLabel(vanSize);
+  return {
+    men, vanCount, vanSize, vanLabel,
+    line: `${men}-man team · ${vanCount} × ${vanLabel}`,
+    blurb: b.quote_crew_blurb || defaultCrewBlurb(men, vanCount, vanSize),
+  };
+}
+
 /** Rough "combined years of experience" for the blurb — ~3.5 yrs per mover
  *  (so a 2-man team reads "a combined 7 years", matching the house style). */
 function combinedYears(men: number): number {

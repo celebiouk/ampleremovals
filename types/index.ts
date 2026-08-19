@@ -328,6 +328,8 @@ export interface QuotePDFData {
   vat_amount: number;
   total: number;
   notes?: string;
+  crew_line?: string;   // e.g. "2-man team · 1 × 3.5 tonne Luton van"
+  crew_blurb?: string;  // reassurance copy (experience, protection, load/unload)
 }
 
 // ── Composite / view models ───────────────────────────────

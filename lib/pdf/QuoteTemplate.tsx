@@ -53,6 +53,12 @@ const styles = StyleSheet.create({
   notesSection: { marginTop: 14 },
   notesBox: { backgroundColor: LIGHT_GREY, borderRadius: 4, padding: 8 },
   notesText: { fontSize: 9, color: GREY, lineHeight: 1.5 },
+  // What you get (team & vehicle)
+  crewSection: { marginTop: 14 },
+  crewBox: { backgroundColor: "#faf5ff", borderRadius: 4, padding: 10, borderLeftWidth: 3, borderLeftColor: PURPLE },
+  crewHeading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 3 },
+  crewLine: { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#5b21b6", marginBottom: 4 },
+  crewText: { fontSize: 9, color: GREY, lineHeight: 1.5 },
   // Next steps
   nextSteps: { marginTop: 14 },
   nextHeading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 6 },
@@ -152,6 +158,17 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
             <Text style={styles.totalValue}>£{data.total.toFixed(2)}</Text>
           </View>
         </View>
+
+        {/* WHAT YOU GET — team & vehicle */}
+        {(data.crew_line || data.crew_blurb) && (
+          <View style={styles.crewSection}>
+            <Text style={styles.crewHeading}>What you get</Text>
+            <View style={styles.crewBox}>
+              {data.crew_line ? <Text style={styles.crewLine}>{data.crew_line}</Text> : null}
+              {data.crew_blurb ? <Text style={styles.crewText}>{data.crew_blurb}</Text> : null}
+            </View>
+          </View>
+        )}
 
         {/* NOTES */}
         {data.notes && (

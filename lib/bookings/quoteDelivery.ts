@@ -3,6 +3,29 @@ import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatCurrency } from "@/lib/utils";
 import { BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
 import { bookingItemsBlockHtml } from "@/lib/inventory-email";
+import { createAdminClient } from "@/lib/supabase/server";
+import { resolveCrew } from "@/lib/crew";
+
+/** The "what you get" crew block for a booking's quote emails (default-filled). */
+async function crewBlockHtml(bookingId: string): Promise<string> {
+  let crew;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("bookings")
+      .select("quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb")
+      .eq("id", bookingId)
+      .single();
+    crew = resolveCrew(data ?? {});
+  } catch {
+    crew = resolveCrew({});
+  }
+  return `
+    <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 16px; margin: 20px 0; border-radius: 8px;">
+      <p style="margin: 0 0 6px 0; font-size: 15px; color: #6b21a8;"><strong>What you get:</strong> ${crew.line}</p>
+      <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">${crew.blurb}</p>
+    </div>`;
+}
 
 const PHONE = "0333 577 2070";
 
@@ -89,6 +112,7 @@ export async function sendReserveMessages({
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
   const amount = formatCurrency(total);
+  const crewHtml = await crewBlockHtml(bookingId);
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
@@ -101,6 +125,7 @@ export async function sendReserveMessages({
         <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 4px;">
           <p style="margin: 0; font-size: 22px; font-weight: bold; color: #6b21a8;">${amount}</p>
         </div>
+        ${crewHtml}
         ${bookingItemsBlockHtml(inventory)}
         <p style="font-size: 16px; margin: 16px 0;">Reserve your moving date to lock it in. <strong>Don't worry — you can change your date later</strong>, and you can review or tweak your quote first.</p>
         <p style="text-align: center; margin: 28px 0;">

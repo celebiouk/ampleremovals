@@ -7,6 +7,7 @@ import { uploadQuotePDF, getQuoteSignedURL } from "@/lib/storage";
 import { formatCurrency } from "@/lib/utils";
 import { COMPANY_PHONE } from "@/lib/constants";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
+import { resolveCrew } from "@/lib/crew";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -42,6 +43,7 @@ export async function POST(
         quote_valid_until,
         quote_notes,
         quote_deposit_required,
+        quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb,
         customer:customers(full_name, email, phone),
         origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
         destination_address:addresses!destination_address_id(line_1, line_2, city, postcode)
@@ -80,6 +82,10 @@ export async function POST(
       return [addr.line_1, addr.line_2, addr.city, addr.postcode].filter(Boolean).join(", ");
     };
 
+    // Team & vehicle for the quote — falls back to the house default (2 men,
+    // 3.5t Luton) + generated copy so it shows on every quote, admin or self-serve.
+    const crew = resolveCrew(booking);
+
     // Prepare PDF data
     const pdfData: QuotePDFData = {
       quote_number: `QUOTE-${booking.reference}`,
@@ -97,6 +103,8 @@ export async function POST(
       vat_amount: Number(booking.quote_vat_amount),
       total: Number(booking.quote_total),
       notes: booking.quote_notes || undefined,
+      crew_line: crew.line,
+      crew_blurb: crew.blurb,
     };
 
     // Generate PDF
@@ -154,6 +162,11 @@ export async function POST(
         <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 4px;">
           <p style="margin: 0; font-size: 14px;"><strong>Quote Total:</strong> ${formatCurrency(Number(booking.quote_total))}</p>
           <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>Valid Until:</strong> ${pdfData.valid_until}</p>
+        </div>
+
+        <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 16px; margin: 20px 0; border-radius: 8px;">
+          <p style="margin: 0 0 6px 0; font-size: 15px; color: #6b21a8;"><strong>What you get:</strong> ${crew.line}</p>
+          <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">${crew.blurb}</p>
         </div>
 
         <p><strong>Quote Summary:</strong></p>
