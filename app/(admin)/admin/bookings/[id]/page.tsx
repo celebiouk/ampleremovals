@@ -25,6 +25,7 @@ import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
 import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
 import { InventoryEditor } from "@/components/admin/InventoryEditor";
+import { BookingLocationsEditor } from "@/components/admin/BookingLocationsEditor";
 import { vanSizeLabel } from "@/lib/crew";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
@@ -568,6 +569,10 @@ export default function BookingDetailPage() {
               {booking.parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.parking_within_20m ? "Yes" : "No"}</dd></div>}
               {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Special Instructions</dt><dd className="font-medium">{booking.special_instructions}</dd></div>}
             </dl>
+          </Card>
+
+          <Card title="Pickup & Drop-off Locations">
+            <BookingLocationsEditor bookingId={booking.id} />
           </Card>
 
           <Card title="Items to Move">
