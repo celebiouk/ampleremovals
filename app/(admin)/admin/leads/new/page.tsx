@@ -12,6 +12,7 @@ import { parseLeadMessage } from "@/lib/parseLeadMessage";
 interface LeadResult {
   reference: string;
   link: string;
+  invited: boolean;
 }
 
 interface PendingLead {
@@ -76,15 +77,14 @@ export default function NewLeadPage() {
     toast.success("Prefilled — check the details, then send.");
   }
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (sendInvite: boolean) => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/leads/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, phone }),
+        body: JSON.stringify({ fullName, email, phone, sendInvite }),
       });
       const data = await res.json();
       if (res.status === 409 && data.alreadyExists) {
@@ -93,9 +93,11 @@ export default function NewLeadPage() {
         return;
       }
       if (!res.ok || !data.success) throw new Error(data.error || "Couldn't create the lead.");
-      setResult({ reference: data.reference, link: data.link });
+      setResult({ reference: data.reference, link: data.link, invited: !!data.invited });
       setFullName(""); setEmail(""); setPhone("");
-      toast.success("Lead created — invite sent by email, SMS & WhatsApp.");
+      toast.success(data.invited
+        ? "Lead created — invite sent by email, SMS & WhatsApp."
+        : "Lead created — no message sent. Fill it in for them below.");
       loadLeads();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -135,15 +137,21 @@ export default function NewLeadPage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-8 w-8 text-brand-green-600" />
             <div>
-              <p className="font-display text-lg font-bold text-brand-purple-950">Invite sent!</p>
+              <p className="font-display text-lg font-bold text-brand-purple-950">{result.invited ? "Invite sent!" : "Lead created"}</p>
               <p className="text-sm text-slate-500">Reference {result.reference}</p>
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><Mail className="h-4 w-4" /> Email</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><MessageSquare className="h-4 w-4" /> SMS</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><Phone className="h-4 w-4" /> WhatsApp</span>
-          </div>
+          {result.invited ? (
+            <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><Mail className="h-4 w-4" /> Email</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><MessageSquare className="h-4 w-4" /> SMS</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1"><Phone className="h-4 w-4" /> WhatsApp</span>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+              No message was sent to the customer. Open the form below to fill it in for them.
+            </div>
+          )}
           <div className="mt-4">
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Completion link</label>
             <div className="flex items-center gap-2">
@@ -164,7 +172,7 @@ export default function NewLeadPage() {
           <Button onClick={() => setResult(null)} className="mt-3 w-full bg-brand-purple-800 hover:bg-brand-purple-900">Add another lead</Button>
         </div>
       ) : (
-        <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form onSubmit={(e) => { e.preventDefault(); submit(true); }} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           {/* Paste-to-prefill */}
           <button
             type="button"
@@ -192,10 +200,17 @@ export default function NewLeadPage() {
           <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="jane@example.com" />
           <Field label="Phone" type="tel" value={phone} onChange={setPhone} placeholder="07123 456789" />
 
-          <Button type="submit" disabled={!canSubmit} className="mt-2 h-12 w-full bg-brand-green-600 text-base font-bold hover:bg-brand-green-500 disabled:opacity-50">
-            {submitting ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creating…</>) : "Complete & send invite"}
-          </Button>
-          <p className="mt-3 text-center text-xs text-slate-400">They&apos;ll get an email, SMS and WhatsApp with a link to finish their quote.</p>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button type="submit" disabled={!canSubmit} className="h-12 w-full bg-brand-green-600 text-base font-bold hover:bg-brand-green-500 disabled:opacity-50">
+              {submitting ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Working…</>) : (<><Send className="mr-2 h-5 w-5" /> Send to customer</>)}
+            </Button>
+            <Button type="button" variant="outline" disabled={!canSubmit} onClick={() => submit(false)} className="h-12 w-full border-2 border-amber-300 bg-amber-50 text-base font-bold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+              <PencilLine className="mr-2 h-5 w-5" /> Fill it for them
+            </Button>
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-400">
+            <b>Send to customer</b> messages them (email, SMS &amp; WhatsApp) to finish their quote. <b>Fill it for them</b> sends nothing — you get the link to complete it yourself.
+          </p>
         </form>
       )}
 

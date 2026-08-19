@@ -17,13 +17,16 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
-  let body: { fullName?: string; email?: string; phone?: string };
+  let body: { fullName?: string; email?: string; phone?: string; sendInvite?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
   }
 
+  // Admin chooses: "Send to customer" (fire the invite) vs "Fill it for them"
+  // (no email/SMS/WhatsApp at all — admin just gets the link to fill it in).
+  const sendInvite = body.sendInvite !== false; // default true (back-compat)
   const fullName = body.fullName?.trim();
   const email = body.email?.trim().toLowerCase();
   const phoneRaw = body.phone?.trim();
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
       booking_id: bookingId,
       customer_id: customer.id,
       action: "lead_created",
-      metadata: { reference, source: "admin_lead" },
+      metadata: { reference, source: "admin_lead", invited: sendInvite },
       performed_by: "admin",
     }),
   ]);
@@ -116,7 +119,11 @@ export async function POST(req: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/complete/${bookingId}/${token}`;
 
-  await sendLeadInvite({ firstName: fullName.split(" ")[0], email, phone, link });
+  // Only message the customer when admin chose "Send to customer". For
+  // "Fill it for them" we stay silent and just hand the link back to admin.
+  if (sendInvite) {
+    await sendLeadInvite({ firstName: fullName.split(" ")[0], email, phone, link });
+  }
 
-  return NextResponse.json({ success: true, bookingId, reference, link });
+  return NextResponse.json({ success: true, bookingId, reference, link, invited: sendInvite });
 }

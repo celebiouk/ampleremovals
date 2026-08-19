@@ -119,14 +119,36 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
               </button>
             </div>
             <dl className="space-y-1.5">
-              {section.rows.map((row) => (
-                <div key={row.key} className="flex gap-3 text-sm">
-                  <dt className="w-40 shrink-0 text-slate-500">{row.label}</dt>
-                  <dd className="font-medium text-slate-800">
-                    {formatValue(row.key, values?.[row.key])}
-                  </dd>
-                </div>
-              ))}
+              {section.rows.map((row) => {
+                const val = values?.[row.key];
+                // Inventory renders as a numbered list, one item per line, with a
+                // total count — much easier to check off than a comma run-on.
+                if (row.key === "inventory" && Array.isArray(val) && val.length > 0) {
+                  const items = val as { label: string; quantity: number }[];
+                  const totalQty = items.reduce((n, s) => n + (Number(s.quantity) || 0), 0);
+                  return (
+                    <div key={row.key} className="text-sm">
+                      <div className="mb-1 flex items-center justify-between">
+                        <dt className="text-slate-500">{row.label}</dt>
+                        <span className="rounded-full bg-brand-purple-100 px-2 py-0.5 text-xs font-semibold text-brand-purple-800">
+                          {items.length} item{items.length === 1 ? "" : "s"} · {totalQty} total
+                        </span>
+                      </div>
+                      <ol className="list-decimal space-y-0.5 pl-5 font-medium text-slate-800">
+                        {items.map((s, i) => (
+                          <li key={i}>{s.label}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={row.key} className="flex gap-3 text-sm">
+                    <dt className="w-40 shrink-0 text-slate-500">{row.label}</dt>
+                    <dd className="font-medium text-slate-800">{formatValue(row.key, val)}</dd>
+                  </div>
+                );
+              })}
             </dl>
           </div>
         ))}
