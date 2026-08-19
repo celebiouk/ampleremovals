@@ -11,17 +11,14 @@ export const SOCIAL_LINKS = {
   tiktok: "https://www.tiktok.com/@ampleremovals",
 } as const;
 
-/** Human-readable opening hours (shown in the footer). */
+/** Human-readable opening hours (shown in the footer). Open 7 days a week. */
 export const OPENING_HOURS: { days: string; time: string }[] = [
-  { days: "Monday – Friday", time: "8:00am – 6:00pm" },
-  { days: "Saturday", time: "8:00am – 5:00pm" },
-  { days: "Sunday", time: "Closed" },
+  { days: "Monday – Sunday", time: "8:00am – 6:00pm" },
 ];
 
 /** schema.org openingHoursSpecification (must mirror OPENING_HOURS). */
 export const OPENING_HOURS_SPEC = [
-  { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "08:00", closes: "18:00" },
-  { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "08:00", closes: "17:00" },
+  { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "08:00", closes: "18:00" },
 ];
 
 /** Primary SEO service keywords (also used in page metadata). */
