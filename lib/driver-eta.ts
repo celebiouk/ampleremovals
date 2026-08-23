@@ -42,13 +42,14 @@ function legDest(booking: any, leg: Leg) {
   return { lat: a?.lat ?? null, lng: a?.lng ?? null, postcode: a?.postcode ?? "", dest };
 }
 
-function ctxOf(booking: any, leg: Leg, dName: string, postcode: string, etaTime?: string): NotifyContext {
+function ctxOf(booking: any, leg: Leg, dName: string, dPhone: string | null, postcode: string, etaTime?: string): NotifyContext {
   return {
     customerName: booking.customer?.full_name ?? "Customer",
     customerEmail: booking.customer?.email ?? null,
     customerPhone: booking.customer?.phone ?? null,
     reference: booking.reference,
     driverName: dName,
+    driverPhone: dPhone,
     leg,
     destinationPostcode: postcode,
     trackingToken: booking.live_tracking_token ?? null,
@@ -59,12 +60,20 @@ function ctxOf(booking: any, leg: Leg, dName: string, postcode: string, etaTime?
 async function leadDriver(supabase: any, bookingId: string) {
   const { data } = await supabase
     .from("booking_driver_assignments")
-    .select("driver_id, is_lead_driver, drivers(id, first_name, preferred_name)")
+    .select("driver_id, is_lead_driver, drivers(id, first_name, preferred_name, phone)")
     .eq("booking_id", bookingId)
     .order("is_lead_driver", { ascending: false })
     .limit(1)
     .maybeSingle();
   return data?.drivers ?? null;
+}
+
+/** Fetch a driver's phone (auth.driver doesn't carry it). */
+async function driverPhoneOf(supabase: any, driverId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.from("drivers").select("phone").eq("id", driverId).maybeSingle();
+    return data?.phone ?? null;
+  } catch { return null; }
 }
 
 async function driverGps(supabase: any, driverId: string) {
@@ -136,7 +145,8 @@ export async function startJourneyCall1(
     }).eq("id", bookingId);
   }
 
-  const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
+  const dPhone = await driverPhoneOf(supabase, driver.id);
+  const ctx = ctxOf(booking, leg, driverName(driver), dPhone, dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
   await notifyCustomer("journey_started", ctx);
   await notifyAdmin(supabase, bookingId, "journey_started", ctx);
   await logCall(supabase, {
@@ -167,7 +177,7 @@ async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2
   try { dm = await distanceMatrix(Number(gps.lat), Number(gps.lng), dest.dest); }
   catch (e) { console.error("[eta] distance matrix failed", e); return; }
   const dur = dm.durationSeconds;
-  const ctxBase = (etaTime?: string) => ctxOf(booking, leg, driverName(driver), dest.postcode, etaTime);
+  const ctxBase = (etaTime?: string) => ctxOf(booking, leg, driverName(driver), driver?.phone ?? null, dest.postcode, etaTime);
 
   if (callNo === 2) {
     if (dur > 1320) {
@@ -311,7 +321,7 @@ export async function recordArrived(supabase: any, bookingId: string, leg: Leg, 
   if (leg === "delivery") update.delivery_arrived_at = now;
   await supabase.from("bookings").update(update).eq("id", bookingId);
 
-  const ctx = ctxOf(booking, leg, driverName(driver), dest.postcode);
+  const ctx = ctxOf(booking, leg, driverName(driver), driver?.phone ?? null, dest.postcode);
   await notifyCustomer("arrived", ctx);
   await notifyAdmin(supabase, bookingId, "arrived", ctx);
   await logCall(supabase, { bookingId, driverId: driver?.id ?? null, leg, call: "arrived", dLat: driverLat, dLng: driverLng, destLat: dest.lat, destLng: dest.lng, dur: null, eta: null, fired: true, type: "arrived", nextAt: null });

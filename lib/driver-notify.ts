@@ -20,6 +20,7 @@ export interface NotifyContext {
   customerPhone: string | null;
   reference: string;
   driverName: string;
+  driverPhone: string | null; // shown on the "driver is on the way" notification
   leg: "pickup" | "delivery";
   destinationPostcode: string;
   trackingToken: string | null;
@@ -34,15 +35,17 @@ function bodies(ev: JourneyEvent, c: NotifyContext): { email: { subject: string;
   const first = c.customerName.split(" ")[0] || "there";
   const link = trackLink(c.trackingToken);
   const place = c.leg === "pickup" ? "you" : "the delivery address";
+  // Driver contact for the "on the way" notification — name, and phone when known.
+  const driverContact = c.driverPhone ? `${c.driverName} (${c.driverPhone})` : c.driverName;
   switch (ev) {
     case "journey_started":
       return {
         email: {
-          subject: "Your Ample Removals driver is on the way",
-          html: `<p>Hi ${first},</p><p>Your Ample Removals driver has started their journey to ${place}. Estimated arrival: <strong>${c.etaTime ?? "shortly"}</strong>.</p><p><a href="${link}">Track your driver live →</a></p><p>Job ref: ${c.reference}</p>`,
+          subject: `Your Ample Removals driver ${c.driverName} is on the way`,
+          html: `<p>Hi ${first},</p><p>Your Ample Removals driver, <strong>${c.driverName}</strong>, has started their journey to ${place}. Estimated arrival: <strong>${c.etaTime ?? "shortly"}</strong>.</p>${c.driverPhone ? `<p>If you need to reach them, call <strong>${c.driverName}</strong> on <a href="tel:${c.driverPhone}">${c.driverPhone}</a>.</p>` : ""}<p><a href="${link}">Track your driver live →</a></p><p>Job ref: ${c.reference}</p>`,
         },
-        sms: `Ample Removals: Driver ${c.driverName} has started their journey. ETA ${c.etaTime ?? "soon"}. Job ${c.reference}. Track: ${link}`,
-        whatsapp: `🚚 *Your Ample Removals driver is on the way!*\n\nETA: *${c.etaTime ?? "soon"}*\nJob: ${c.reference}\n\nTrack live: ${link}`,
+        sms: `Ample Removals: Your driver ${driverContact} has started their journey. ETA ${c.etaTime ?? "soon"}. Job ${c.reference}. Track: ${link}`,
+        whatsapp: `🚚 *Your Ample Removals driver is on the way!*\n\nDriver: *${c.driverName}*${c.driverPhone ? `\nContact: ${c.driverPhone}` : ""}\nETA: *${c.etaTime ?? "soon"}*\nJob: ${c.reference}\n\nTrack live: ${link}`,
       };
     case "20min":
       return {
@@ -82,7 +85,7 @@ function waTemplate(ev: JourneyEvent, c: NotifyContext): {
   const link = trackLink(c.trackingToken);
   switch (ev) {
     case "journey_started":
-      return { name: "driver_on_the_way", variables: { "1": c.driverName, "2": c.etaTime ?? "soon", "3": c.reference, "4": link } };
+      return { name: "driver_on_the_way", variables: { "1": c.driverPhone ? `${c.driverName} (${c.driverPhone})` : c.driverName, "2": c.etaTime ?? "soon", "3": c.reference, "4": link } };
     case "20min":
       return { name: "driver_20_mins_away", variables: { "1": c.reference, "2": link } };
     case "10min":
