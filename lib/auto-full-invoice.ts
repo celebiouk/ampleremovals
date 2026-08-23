@@ -284,3 +284,36 @@ export async function autoSendFullBalanceInvoice(bookingId: string): Promise<Res
     return { sent: false, reason: e instanceof Error ? e.message : "unknown error" };
   }
 }
+
+/** Minutes after "Start Journey" before the balance invoice is sent. */
+export const BALANCE_INVOICE_DELAY_MIN = 20;
+
+/**
+ * Send any move-day balance invoices whose delay has elapsed. Called every
+ * minute by the eta-engine cron: once a booking's balance_invoice_due_at is
+ * reached (set when the driver started the journey), we bill the balance and
+ * clear the marker. autoSendFullBalanceInvoice is idempotent, so a re-run is safe.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function runDueBalanceInvoices(supabase: any): Promise<{ balanceInvoicesSent: number }> {
+  const nowIso = new Date().toISOString();
+  const { data: due } = await supabase
+    .from("bookings")
+    .select("id")
+    .not("balance_invoice_due_at", "is", null)
+    .lte("balance_invoice_due_at", nowIso)
+    .limit(50);
+
+  let sent = 0;
+  for (const b of (due ?? []) as { id: string }[]) {
+    try {
+      const res = await autoSendFullBalanceInvoice(b.id);
+      if (res.sent) sent++;
+    } catch (e) {
+      console.error("[balance-cron] send failed", b.id, e);
+    }
+    // Clear the marker either way so we don't retry a settled/failed booking forever.
+    await supabase.from("bookings").update({ balance_invoice_due_at: null }).eq("id", b.id);
+  }
+  return { balanceInvoicesSent: sent };
+}

@@ -10,7 +10,7 @@ import { randomUUID } from "crypto";
 import { requireDriver, driverAssignedTo } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { startJourneyCall1 } from "@/lib/driver-eta";
-import { autoSendFullBalanceInvoice } from "@/lib/auto-full-invoice";
+import { BALANCE_INVOICE_DELAY_MIN } from "@/lib/auto-full-invoice";
 import { geocodePostcode } from "@/lib/postcode";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
@@ -70,15 +70,28 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
 
     const result = await startJourneyCall1(supabase, params.bookingId, leg, auth.driver, lat, lng);
 
-    // Collect the balance BEFORE we start the job: as the driver sets off on move
-    // day (the pickup leg = the journey to the customer), auto-send the final
-    // balance invoice + pay link. Idempotent (skips if already sent) and
-    // best-effort so a messaging hiccup never blocks Start Journey.
+    // Collect the balance shortly after the driver sets off: on the pickup leg
+    // (the journey to the customer), schedule the final balance invoice + pay
+    // link for ~20 min from now. The eta-engine cron sends it once due. Only set
+    // it if not already scheduled/sent, so a re-tap doesn't push the time back.
     if (leg === "pickup") {
       try {
-        await autoSendFullBalanceInvoice(params.bookingId);
+        const { data: cur } = await supabase
+          .from("bookings")
+          .select("balance_invoice_due_at, invoices:invoices(id, type, status)")
+          .eq("id", params.bookingId)
+          .single();
+        const alreadyBilled = (cur?.invoices ?? []).some(
+          (i: { type: string; status: string }) => i.type === "full_balance" && i.status !== "cancelled"
+        );
+        if (!cur?.balance_invoice_due_at && !alreadyBilled) {
+          await supabase
+            .from("bookings")
+            .update({ balance_invoice_due_at: new Date(Date.now() + BALANCE_INVOICE_DELAY_MIN * 60_000).toISOString() })
+            .eq("id", params.bookingId);
+        }
       } catch (e) {
-        console.error("[journey/start] balance invoice failed", e);
+        console.error("[journey/start] scheduling balance invoice failed", e);
       }
     }
 

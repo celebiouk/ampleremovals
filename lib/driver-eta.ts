@@ -15,6 +15,7 @@
 
 import { distanceMatrix } from "./google-maps";
 import { notifyCustomer, notifyAdmin, type NotifyContext, type JourneyEvent } from "./driver-notify";
+import { autoSendFullBalanceInvoice } from "./auto-full-invoice";
 
 export type Leg = "pickup" | "delivery";
 
@@ -324,5 +325,13 @@ export async function recordArrived(supabase: any, bookingId: string, leg: Leg, 
   const ctx = ctxOf(booking, leg, driverName(driver), driver?.phone ?? null, dest.postcode);
   await notifyCustomer("arrived", ctx);
   await notifyAdmin(supabase, bookingId, "arrived", ctx);
+
+  // Safety net: on a short pickup journey the driver can arrive before the
+  // ~20-min balance timer fires. We collect the balance BEFORE starting the job,
+  // so send it now (idempotent) and clear the scheduled marker.
+  if (leg === "pickup" && booking?.balance_invoice_due_at) {
+    try { await autoSendFullBalanceInvoice(bookingId); } catch (e) { console.error("[arrived] balance invoice failed", e); }
+    await supabase.from("bookings").update({ balance_invoice_due_at: null }).eq("id", bookingId);
+  }
   await logCall(supabase, { bookingId, driverId: driver?.id ?? null, leg, call: "arrived", dLat: driverLat, dLng: driverLng, destLat: dest.lat, destLng: dest.lng, dur: null, eta: null, fired: true, type: "arrived", nextAt: null });
 }
