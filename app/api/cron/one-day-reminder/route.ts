@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
+import { preMovePrepTipsHtml } from "@/lib/pre-move-tips";
 
 /**
  * GET /api/cron/one-day-reminder
@@ -43,7 +44,8 @@ export async function GET(req: Request) {
         one_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
-        destination:addresses!destination_address_id(line_1, line_2, city, postcode)
+        destination:addresses!destination_address_id(line_1, line_2, city, postcode),
+        extras:additional_services(packing_services, disassemble_furniture)
       `)
       .eq("move_date", targetDate)
       .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
@@ -82,6 +84,9 @@ export async function GET(req: Request) {
         const originAddress = formatAddress(origin);
         const destinationAddress = formatAddress(destination);
         const addressConfirmed = booking.address_confirmed;
+        // Conditional "please prepare" tips (EMAIL only) based on what wasn't booked.
+        const extras = Array.isArray(booking.extras) ? booking.extras[0] : booking.extras as { packing_services?: boolean; disassemble_furniture?: boolean } | null;
+        const prepTipsHtml = preMovePrepTipsHtml(extras);
 
         // EMAIL
         const emailSubject = `🚨 Moving Day Tomorrow! Final Checklist - ${booking.reference}`;
@@ -137,6 +142,8 @@ export async function GET(req: Request) {
                 <p style="margin: 8px 0 4px 0; color: #1e3a8a; font-size: 14px;"><strong>To:</strong></p>
                 <p style="margin: 0; color: #334155;">${destinationAddress}</p>
               </div>
+
+              ${prepTipsHtml}
 
               ${moreItemsBlockHtml(booking.inventory)}
 

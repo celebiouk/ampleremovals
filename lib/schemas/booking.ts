@@ -33,7 +33,12 @@ export const AdditionalServicesSchema = z.object({
   packing_materials: z.boolean(),
   disassemble_furniture: z.boolean(),
   assemble_furniture: z.boolean(),
-});
+}).transform((v) => ({
+  // Packing materials only make sense with packing services — we bring materials
+  // on the day when we're doing the packing. Never store materials on their own.
+  ...v,
+  packing_materials: v.packing_services ? v.packing_materials : false,
+}));
 
 const propertyTypeSchema = z.enum(["flat", "house", "bungalow"], {
   message: "Select a property type",

@@ -108,12 +108,14 @@ export function ToggleCard({
   icon: Icon,
   title,
   description,
+  className,
 }: {
   selected: boolean;
   onClick: () => void;
   icon?: LucideIcon;
   title: string;
   description?: string;
+  className?: string;
 }) {
   return (
     <button
@@ -127,7 +129,8 @@ export function ToggleCard({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple-600 focus-visible:ring-offset-2",
         selected
           ? "border-brand-purple-600 bg-brand-purple-50 shadow-md"
-          : "border-slate-200"
+          : "border-slate-200",
+        className
       )}
     >
       <span className="flex items-center justify-between">
