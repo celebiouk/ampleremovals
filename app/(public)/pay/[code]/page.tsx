@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Loader2, Landmark, CheckCircle2, Phone, XCircle } from "lucide-react";
+import { Loader2, Landmark, CheckCircle2, Phone, XCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyRow } from "@/components/shared/CopyRow";
 
@@ -28,9 +28,13 @@ export default function PayPage() {
   const [stage, setStage] = useState<Stage>("loading");
   const [data, setData] = useState<PayData | null>(null);
   const [error, setError] = useState("");
+  const [cardLoading, setCardLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    // Returning from a successful Stripe Checkout → show a thank-you while the
+    // webhook confirms the payment in the background.
+    const cardSuccess = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("status") === "card_success";
     (async () => {
       try {
         const res = await fetch(`/api/pay/${code}`);
@@ -38,12 +42,26 @@ export default function PayPage() {
         if (cancelled) return;
         if (!res.ok || !body.success) { setError(body.error || "We couldn't find that payment link."); setStage("error"); return; }
         setData(body);
-        setStage(body.paid ? "paid" : "ready");
+        setStage(body.paid ? "paid" : cardSuccess ? "done" : "ready");
       } catch {
         if (!cancelled) { setError("Network error. Please try again."); setStage("error"); }
       }
     })();
     return () => { cancelled = true; };
+  }, [code]);
+
+  const payByCard = useCallback(async () => {
+    setCardLoading(true);
+    try {
+      const res = await fetch(`/api/pay/${code}/checkout`, { method: "POST" });
+      const body = await res.json();
+      if (!res.ok || !body.success || !body.url) { setError(body.error || "Couldn't start card payment."); setStage("error"); return; }
+      window.location.href = body.url as string; // → Stripe hosted checkout
+    } catch {
+      setError("Network error. Please try again."); setStage("error");
+    } finally {
+      setCardLoading(false);
+    }
   }, [code]);
 
   const claim = useCallback(async () => {
@@ -78,11 +96,39 @@ export default function PayPage() {
                 Pay your balance
               </h1>
               <p className="mt-2 text-slate-500">
-                Hi {data.firstName}, your balance is <strong className="text-brand-purple-900">{gbp(data.amount)}</strong>. Please pay by bank transfer:
+                Hi {data.firstName}, your balance is <strong className="text-brand-purple-900">{gbp(data.amount)}</strong>. Choose how you&apos;d like to pay:
               </p>
             </div>
 
+            {/* Option 1 — Pay by card (instant) */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-brand-purple-700" />
+                <h2 className="font-display text-lg font-bold text-brand-purple-950">Pay by card</h2>
+                <span className="ml-auto rounded-full bg-brand-green-100 px-2 py-0.5 text-xs font-semibold text-brand-green-700">Instant</span>
+              </div>
+              <p className="mb-4 text-sm text-slate-500">Secure card payment via Stripe. Your booking is confirmed the moment it clears.</p>
+              <Button
+                onClick={payByCard}
+                size="lg"
+                disabled={cardLoading}
+                className="h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:opacity-60"
+              >
+                {cardLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Opening secure checkout…</> : <>Pay {gbp(data.amount)} by card</>}
+              </Button>
+            </div>
+
+            {/* Divider */}
+            <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" /> or pay by bank transfer <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            {/* Option 2 — Bank transfer */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-brand-purple-700" />
+                <h2 className="font-display text-lg font-bold text-brand-purple-950">Bank transfer</h2>
+              </div>
               {data.bank ? (
                 <dl className="divide-y divide-slate-100">
                   <CopyRow label="Amount" value={gbp(data.amount)} strong />
@@ -99,17 +145,17 @@ export default function PayPage() {
               <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 Use <strong>{data.reference}</strong> as your payment reference so we can match your transfer.
               </div>
+              <Button
+                onClick={claim}
+                size="lg"
+                disabled={stage === "claiming"}
+                variant="outline"
+                className="mt-4 h-12 w-full rounded-xl border-2 border-brand-purple-200 text-base font-bold text-brand-purple-800 hover:bg-brand-purple-50 disabled:opacity-60"
+              >
+                {stage === "claiming" ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting…</> : "I've made the bank transfer"}
+              </Button>
+              <p className="mt-2 text-center text-xs text-slate-400">We&apos;ll confirm your transfer once it lands.</p>
             </div>
-
-            <Button
-              onClick={claim}
-              size="lg"
-              disabled={stage === "claiming"}
-              className="mt-5 h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900 disabled:opacity-60"
-            >
-              {stage === "claiming" ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting…</> : "I've made the payment"}
-            </Button>
-            <p className="mt-3 text-center text-xs text-slate-400">We'll confirm your payment once it lands.</p>
           </motion.div>
         )}
 
