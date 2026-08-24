@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { depositFor } from "@/lib/deposit";
 import { sendDepositMessages } from "@/lib/bookings/quoteDelivery";
+import { premiumTotalFor } from "@/lib/tiers";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  */
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, token, removedKeys } = await req.json();
+    const { bookingId, token, removedKeys, tier } = await req.json();
     if (!bookingId || !token) {
       return NextResponse.json({ success: false, error: "Missing booking or token" }, { status: 400 });
     }
@@ -46,9 +47,17 @@ export async function POST(req: NextRequest) {
       (l: { key?: string; removable?: boolean }) =>
         !(l.removable && l.key && removed.includes(l.key))
     );
-    const total = round2(
+    const standardTotal = round2(
       keptLines.reduce((sum: number, l: { total?: number }) => sum + (Number(l.total) || 0), 0)
     );
+
+    // Tier choice: Premium switches the quote to a fixed multiple of Standard and
+    // bundles in the done-for-you services (packing/materials/dismantle/reassemble).
+    const isPremium = tier === "premium";
+    const total = isPremium ? premiumTotalFor(standardTotal) : standardTotal;
+    const finalLines = isPremium
+      ? [{ key: "premium", description: "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)", quantity: 1, unit_price: total, total, removable: false }]
+      : keptLines;
     const deposit = depositFor(total);
 
     // Reserving sends the deposit request → move to "Deposit Invoice Sent". Core
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
     const { error: updErr } = await supabase
       .from("bookings")
       .update({
-        quote_line_items: keptLines,
+        quote_line_items: finalLines,
         quote_subtotal: total,
         quote_total: total,
         status: "deposit_invoice_sent",
@@ -69,6 +78,16 @@ export async function POST(req: NextRequest) {
       await supabase.from("bookings").update({ deposit_amount: deposit }).eq("id", bookingId);
     } catch { /* deposit_amount column may not be migrated yet */ }
 
+    // Premium includes the done-for-you services — record them on the booking.
+    if (isPremium) {
+      try {
+        const services = { packing_services: true, packing_materials: true, disassemble_furniture: true, assemble_furniture: true };
+        const { data: existingSvc } = await supabase.from("additional_services").select("id").eq("booking_id", bookingId).maybeSingle();
+        if (existingSvc) await supabase.from("additional_services").update(services).eq("booking_id", bookingId);
+        else await supabase.from("additional_services").insert({ booking_id: bookingId, ...services });
+      } catch { /* best-effort — never block the reserve */ }
+    }
+
     // Audit trail (best-effort).
     await Promise.allSettled([
       supabase.from("status_history").insert({
@@ -79,8 +98,8 @@ export async function POST(req: NextRequest) {
       }),
       supabase.from("activity_log").insert({
         booking_id: bookingId,
-        action: "Customer reserved their date — deposit invoice sent",
-        metadata: { total, deposit, removed_lines: removed },
+        action: `Customer reserved their date (${isPremium ? "Premium" : "Standard"}) — deposit invoice sent`,
+        metadata: { tier: isPremium ? "premium" : "standard", total, deposit, removed_lines: removed },
         performed_by: "customer",
       }),
     ]);

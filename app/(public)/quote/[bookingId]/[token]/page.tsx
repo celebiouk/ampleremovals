@@ -5,11 +5,14 @@ import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, CheckCircle2, X, Plus, Phone, ShieldCheck,
-  CalendarCheck, Truck, Sparkles, Landmark, XCircle,
+  CalendarCheck, Truck, Sparkles, Landmark, XCircle, Check, Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyRow } from "@/components/shared/CopyRow";
 import { DEPOSIT_PERCENTAGE, BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
+import { premiumTotalFor, PREMIUM_INCLUDES, TIER_COPY } from "@/lib/tiers";
+
+const gbp0 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n || 0);
 
 const PHONE_DISPLAY = "0333 577 2070";
 const PHONE_TEL = "03335772070";
@@ -134,13 +137,13 @@ export default function QuotePage() {
     return { liveTotal: t, liveDeposit: Math.round(t * (DEPOSIT_PERCENTAGE / 100) * 100) / 100 };
   }, [quote, removed]);
 
-  const reserve = async () => {
+  const reserve = async (tier: "standard" | "premium" = "standard") => {
     setStage("reserving");
     try {
       const res = await fetch("/api/quote/reserve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, token, removedKeys: Array.from(removed) }),
+        body: JSON.stringify({ bookingId, token, removedKeys: Array.from(removed), tier }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) { setError(data.error || "Couldn't reserve your date."); setStage("error"); return; }
@@ -243,8 +246,9 @@ function RevealView({
   onToggle: (key: string) => void;
   liveTotal: number;
   liveDeposit: number;
-  onReserve: () => void;
+  onReserve: (tier: "standard" | "premium") => void;
 }) {
+  const premiumTotal = premiumTotalFor(liveTotal);
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -263,7 +267,14 @@ function RevealView({
         <p className="mt-2 text-slate-500">Fixed price, no hidden fees. Tailor it below.</p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
+      <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-slate-400">Choose your package</p>
+      {/* ── Standard ── */}
+      <div className="rounded-2xl border-2 border-brand-purple-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
+        <div className="mb-3 flex items-center gap-2">
+          <Truck className="h-5 w-5 text-brand-purple-700" />
+          <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{TIER_COPY.standard.name}</h2>
+        </div>
+        <p className="mb-3 text-sm text-slate-500">{TIER_COPY.standard.tagline}</p>
         <div className="space-y-2.5">
           {quote.lines.map((line) => {
             const isRemoved = removed.has(line.key);
@@ -321,6 +332,27 @@ function RevealView({
         </div>
       </div>
 
+      {/* ── Premium ── */}
+      <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-brand-purple-600 bg-white p-5 shadow-xl shadow-brand-purple-200/50 sm:p-6">
+        <span className="absolute right-0 top-0 flex items-center gap-1 rounded-bl-xl bg-brand-purple-800 px-3 py-1 text-xs font-bold text-white">
+          <Star className="h-3.5 w-3.5" /> RECOMMENDED
+        </span>
+        <div className="mb-3 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-brand-purple-700" />
+          <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{TIER_COPY.premium.name}</h2>
+        </div>
+        <p className="mb-3 text-sm text-slate-500">{TIER_COPY.premium.tagline}</p>
+        <p className="mb-3 font-display text-3xl font-extrabold tabular-nums text-brand-purple-900">{gbp0(premiumTotal)}</p>
+        <ul className="space-y-1.5">
+          {PREMIUM_INCLUDES.map((f, i) => (
+            <li key={i} className={`flex items-start gap-2 text-sm ${i === 0 ? "font-semibold text-slate-700" : "text-slate-600"}`}>
+              {i === 0 ? <span className="w-4" /> : <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-green-600" />}
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {quote.crew && (
         <div className="mt-5 rounded-2xl border border-brand-purple-200 bg-brand-purple-50/60 p-5">
           <div className="mb-2 flex items-center gap-2">
@@ -336,13 +368,22 @@ function RevealView({
         </div>
       )}
 
-      <Button
-        onClick={onReserve}
-        size="lg"
-        className="mt-5 h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500"
-      >
-        Reserve My Moving Date
-      </Button>
+      <div className="mt-5 space-y-2.5">
+        <Button
+          onClick={() => onReserve("standard")}
+          size="lg"
+          className="h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500"
+        >
+          Reserve Standard — {gbp0(liveTotal)}
+        </Button>
+        <Button
+          onClick={() => onReserve("premium")}
+          size="lg"
+          className="h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
+        >
+          Reserve Premium — {gbp0(premiumTotal)}
+        </Button>
+      </div>
       <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
         <ShieldCheck className="h-4 w-4" /> No card needed now · Free to reserve · Pay the deposit by bank transfer
       </p>
