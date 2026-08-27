@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
@@ -38,6 +39,18 @@ export async function POST(request: NextRequest) {
 
   const booking = invoice.bookings as { id: string; reference: string; service_type: string; status: string; customer_id: string; customers: { full_name: string; email: string; phone: string } };
   const customer = booking.customers;
+
+  // Ensure a pay-code so the email can offer "Pay online" (card + bank transfer).
+  let payCode = invoice.pay_code as string | null;
+  if (!payCode) {
+    for (let i = 0; i < 10; i++) {
+      const candidate = randomBytes(5).toString("hex");
+      const { data: clash } = await supabase.from("invoices").select("id").eq("pay_code", candidate).maybeSingle();
+      if (!clash) { payCode = candidate; break; }
+    }
+    if (payCode) await supabase.from("invoices").update({ pay_code: payCode }).eq("id", invoiceId);
+  }
+  const payLink = payCode ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ampleremovals.com"}/pay/${payCode}` : null;
 
   // Fetch full booking details for PDF regeneration
   const { data: fullBooking } = await supabase
@@ -128,6 +141,12 @@ export async function POST(request: NextRequest) {
           <tr><td style="color:#64748b;padding:4px 0;">Due Date</td><td style="font-weight:bold;text-align:right;">${invoice.due_date ? formatDate(invoice.due_date) : "—"}</td></tr>
         </table>
       </div>
+      ${payLink ? `
+      <p style="text-align:center;margin:24px 0 8px 0;">
+        <a href="${payLink}" style="background:#16a34a;color:#fff;text-decoration:none;padding:14px 30px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block;">Pay online now →</a>
+      </p>
+      <p style="text-align:center;color:#94a3b8;font-size:12px;margin:0 0 12px 0;">Pay securely by card, or use the bank transfer details below.</p>
+      ` : ""}
       <div style="background:#f8fafc;border-radius:10px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;">
         <h3 style="margin:0 0 12px 0;color:#1e293b;font-size:15px;">Bank Transfer Details</h3>
         <table style="width:100%;font-size:14px;">
@@ -178,7 +197,9 @@ export async function POST(request: NextRequest) {
   // Send SMS
   try {
     if (twilioClient && customer.phone) {
-      const msg = `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay by bank transfer - details in email.`;
+      const msg = payLink
+        ? `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) is ready. Pay online (card or bank): ${payLink}`
+        : `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay by bank transfer - details in email.`;
       await twilioClient.messages.create({ from: twilioFrom, to: normaliseUKPhone(customer.phone), body: normaliseSmsBody(msg) });
     }
   } catch (err) {
