@@ -103,19 +103,8 @@ export async function POST(
       }
     }
 
-    // Send SMS if enabled and phone number exists
-    if (worker.notifications_sms && worker.phone) {
-      try {
-        await twilioClient.messages.create({
-          body: normaliseSmsBody(`Hi ${worker.first_name}, your payslip for ${(payslip.pay_runs as any)?.reference} is ready. Amount: £${(payslip.net_pay / 100).toFixed(2)}. Log in to view details.`),
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: worker.phone,
-        });
-        notificationsSent.sms = true;
-      } catch (smsError) {
-        console.error(`SMS send failed:`, smsError);
-      }
-    }
+    // Worker payslip SMS removed to cut Twilio cost — payslips go by email + in
+    // the worker's account.
 
     // Log notification
     await supabase.from("activity_log").insert({

@@ -209,10 +209,7 @@ export async function PATCH(
         // Don't fail the update if email fails
       }
 
-      // SMS the driver too (unmissable).
-      if (driver.phone) {
-        await sendSMS(driver.phone, `Ample Removals: Congratulations ${driver.first_name}! Your driver application is APPROVED ✅ You can now log in and accept jobs: ${process.env.NEXT_PUBLIC_SITE_URL}/drivers/login`).catch(() => {});
-      }
+      // Driver SMS removed to cut Twilio cost — approval goes by email above.
     }
 
     return NextResponse.json({

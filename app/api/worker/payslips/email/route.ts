@@ -180,10 +180,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // SMS the worker too (unmissable).
-    if (worker.phone) {
-      await sendSMS(worker.phone, `Ample Removals: Hi ${worker.first_name}, your payslip for ${payslip.pay_runs.reference} is ready (net £${(payslip.net_pay / 100).toFixed(2)}). Full details emailed + in your account.`).catch(() => {});
-    }
+    // Worker payslip SMS removed to cut Twilio cost — emailed + in their account.
 
     // Log to activity log
     await supabase.from("activity_log").insert({

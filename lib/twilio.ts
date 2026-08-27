@@ -32,7 +32,22 @@ const STATUS_CALLBACK = process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https")
   ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/twilio/status`
   : undefined;
 
-export interface SendResult { success: boolean; error?: string; sid?: string; messageId?: string | null }
+export interface SendResult { success: boolean; error?: string; sid?: string; messageId?: string | null; skipped?: boolean }
+
+// Admin notifications no longer go over Twilio (they use the dashboard + push) —
+// this cuts a big chunk of SMS/WhatsApp cost. Any message addressed to the admin
+// line is silently skipped. (Driver/worker notifications are removed at their
+// call sites.)
+const ADMIN_NOTIFY_PHONES: ReadonlySet<string> = new Set(
+  ["07344683477", process.env.NEXT_PUBLIC_ADMIN_PHONE, process.env.ADMIN_PHONE]
+    .filter((p): p is string => !!p)
+    .map((p) => normalisePhone(p))
+    .filter(Boolean)
+);
+function isAdminNotify(to: string): boolean {
+  const e = normalisePhone(to);
+  return !!e && ADMIN_NOTIFY_PHONES.has(e);
+}
 
 /**
  * Persist an outbound message to the inbox (best-effort — never blocks sending).
@@ -152,6 +167,7 @@ export async function sendSMS(to: string, body: string): Promise<SendResult> {
   // Twilio needs E.164 (+44…). Local "07…" or a number with stray spaces gets
   // rejected, so normalise before sending.
   const dest = normalisePhone(to) || to;
+  if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
   const text = normaliseSmsBody(body);
   try {
     const msg = await twilioClient.messages.create({
@@ -191,6 +207,7 @@ export async function sendWhatsApp(
   // WhatsApp only accepts E.164 (+44…). Sending to "whatsapp:07…" (or a number
   // with stray spaces) is rejected as "failed" — normalise it first.
   const dest = normalisePhone(to) || to;
+  if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
   const waTo = `whatsapp:${dest}`;
   // What we store as the body for the inbox (template renders to `body` text).
   const loggedBody = body || (template ? `[template: ${template.name}]` : "");

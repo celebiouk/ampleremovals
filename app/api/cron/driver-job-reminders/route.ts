@@ -108,15 +108,8 @@ export async function GET(req: Request) {
           </div>`,
         }).catch(() => {});
       }
-      if (driver.phone) {
-        // (Driver SMS intentionally removed — drivers no longer get SMS about
-        // reminders. Email + WhatsApp still go out.)
-        const waList = jobs.map((j, i) => `${i + 1}. *${j.reference}* — ${j.service}\n   👤 ${j.customer}\n   📍 ${j.pickup}${j.dropoff ? ` → ${j.dropoff}` : ""}`).join("\n\n");
-        await sendWhatsApp(driver.phone, `🚚 *Tomorrow's Jobs* — ${niceDate}\n\nHi ${name}, you have *${count} job${count === 1 ? "" : "s"}* tomorrow:\n\n${waList}\n\nOpen the driver app for full details & live tracking. 📲`, {
-          name: "driver_jobs_tomorrow",
-          variables: { "1": name, "2": String(count), "3": niceDate },
-        }).catch(() => {});
-      }
+      // Driver SMS/WhatsApp intentionally removed to cut Twilio cost — drivers
+      // see tomorrow's jobs in the driver app (+ push) and the email above.
 
       // Mark each job reminded.
       await supabase.from("activity_log").insert(

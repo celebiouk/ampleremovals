@@ -204,23 +204,8 @@ async function notifyDriverAssigned(
       }
     }
 
-    // SMS + WhatsApp
-    if (driver.phone) {
-      const msg = `Hi ${name}, you've been assigned a ${service} job on ${dateStr} (${route}). Ref ${booking.reference}. View details & accept/decline: ${respondUrl}`;
-      try {
-        await sendSMS(driver.phone, msg);
-      } catch (e) {
-        console.error("Driver assignment SMS failed:", e);
-      }
-      try {
-        await sendWhatsApp(driver.phone, msg, {
-          name: "driver_job_assigned",
-          variables: { "1": name, "2": booking.reference, "3": dateStr, "4": respondUrl },
-        });
-      } catch (e) {
-        console.error("Driver assignment WhatsApp failed:", e);
-      }
-    }
+    // Driver SMS/WhatsApp intentionally removed to cut Twilio cost — drivers get
+    // this in the driver app (+ push) and by email above.
   } catch (error) {
     console.error("notifyDriverAssigned error:", error);
   }

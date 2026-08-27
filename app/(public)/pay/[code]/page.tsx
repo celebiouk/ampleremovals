@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Loader2, Landmark, CheckCircle2, Phone, XCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyRow } from "@/components/shared/CopyRow";
+import { cardTotalForNet } from "@/lib/stripe-fees";
 
 const PHONE_DISPLAY = "0333 577 2070";
 const PHONE_TEL = "03335772070";
@@ -114,8 +115,13 @@ export default function PayPage() {
                 disabled={cardLoading}
                 className="h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:opacity-60"
               >
-                {cardLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Opening secure checkout…</> : <>Pay {gbp(data.amount)} by card</>}
+                {cardLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Opening secure checkout…</> : <>Pay {gbp(cardTotalForNet(data.amount).total)} by card</>}
               </Button>
+              {cardTotalForNet(data.amount).fee > 0 && (
+                <p className="mt-2 text-center text-xs text-slate-400">
+                  Includes a {gbp(cardTotalForNet(data.amount).fee)} card processing fee so your full {gbp(data.amount)} reaches us. Prefer no fee? Use bank transfer below.
+                </p>
+              )}
             </div>
 
             {/* Divider */}

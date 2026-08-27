@@ -89,10 +89,7 @@ export async function POST(
       }
     }
 
-    // SMS the driver too (unmissable).
-    if (earning.driver?.phone) {
-      await sendSMS(earning.driver.phone, `Ample Removals: Hi ${earning.driver.first_name}, your earnings of £${earning.total_earnings.toFixed(2)} for job ${earning.booking?.reference ?? ""} have been approved. Payment to follow.`).catch(() => {});
-    }
+    // Driver SMS removed to cut Twilio cost — visible in the driver app + email.
 
     return NextResponse.json({
       success: true,
