@@ -337,6 +337,20 @@ export default function BookingDetailPage() {
     .reduce((a, i) => a + i.total, 0);
   const bannerDepositAmount = activeDepositInvoice?.total ?? booking.deposit_amount ?? null;
 
+  // Copy a card+bank pay link for an invoice (attaches a pay-code if it's an
+  // older invoice without one), so it can be sent to the customer.
+  async function copyPayLink(invoiceId: string) {
+    try {
+      const res = await fetch(`/api/admin/invoices/${invoiceId}/pay-link`, { method: "POST" });
+      const j = await res.json();
+      if (!res.ok || !j.success) throw new Error(j.error || "Couldn't create the link");
+      await navigator.clipboard?.writeText(j.payLink);
+      toast.success("Pay link copied", { description: j.payLink });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't create the pay link");
+    }
+  }
+
   const visibleHistory = showAllHistory ? statusHistory : statusHistory.slice(0, 5);
 
   async function handleConfirmDeposit() {
@@ -682,6 +696,11 @@ export default function BookingDetailPage() {
                       <button onClick={() => setViewingInvoiceId(inv.id)} className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
                         <ExternalLink className="h-3 w-3" /> View
                       </button>
+                      {!["paid", "cancelled"].includes(inv.status) && (
+                        <button onClick={() => copyPayLink(inv.id)} className="flex items-center gap-1 text-xs font-medium text-brand-green-700 hover:underline" title="Copy a card + bank transfer pay link to send the customer">
+                          <ExternalLink className="h-3 w-3" /> Copy pay link
+                        </button>
+                      )}
                       {isSuperAdmin(userEmail, userRole) && (
                         <button
                           onClick={() => openDeleteInvoiceDialog(inv)}

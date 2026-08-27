@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { generateInvoiceNumber, formatDate } from "@/lib/utils";
@@ -90,6 +91,16 @@ export async function POST(request: NextRequest) {
     }
     if (!invoiceNumber) throw new Error("Failed to generate unique invoice number");
 
+    // Short pay-code → /pay/<code> shows the amount, reference, bank details AND a
+    // "Pay by card" button. Every generated invoice gets one so a card/bank link
+    // always exists to send to the customer.
+    let payCode = "";
+    for (let i = 0; i < 10; i++) {
+      const candidate = randomBytes(5).toString("hex");
+      const { data: clash } = await supabase.from("invoices").select("id").eq("pay_code", candidate).maybeSingle();
+      if (!clash) { payCode = candidate; break; }
+    }
+
     // Build formatted line items
     const formattedLineItems = lineItems.map(i => ({
       description: i.description,
@@ -129,6 +140,7 @@ export async function POST(request: NextRequest) {
         stripe_payment_link: paymentLink,
         stripe_price_id: priceId,
         stripe_product_id: productId,
+        pay_code: payCode || null,
         notes: notes ?? null,
         full_job_value: fullJobValue ?? null,
         deposit_percentage: depositPercentage ?? null,
@@ -210,7 +222,8 @@ export async function POST(request: NextRequest) {
       performed_by: "admin",
     });
 
-    return NextResponse.json({ success: true, invoiceId, invoiceNumber, total, stripePaymentLink: paymentLink, pdfUrl });
+    const payLink = payCode ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ampleremovals.com"}/pay/${payCode}` : null;
+    return NextResponse.json({ success: true, invoiceId, invoiceNumber, total, stripePaymentLink: paymentLink, pdfUrl, payCode: payCode || null, payLink });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;
