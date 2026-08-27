@@ -5,7 +5,7 @@
  *
  * Change PREMIUM_MULTIPLIER here to tune the Premium price (e.g. 2.2 = +120%).
  */
-export const PREMIUM_MULTIPLIER = 2.2;
+export const PREMIUM_MULTIPLIER = 2.25;
 
 export const premiumTotalFor = (standardTotal: number): number =>
   Math.round((Number(standardTotal) || 0) * PREMIUM_MULTIPLIER * 100) / 100;
