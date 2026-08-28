@@ -49,6 +49,21 @@ function isAdminNotify(to: string): boolean {
   return !!e && ADMIN_NOTIFY_PHONES.has(e);
 }
 
+// Customer channels can be turned off in Settings to control Twilio cost. Cached
+// briefly so we don't hit the DB on every send.
+let channelCache: { at: number; sms: boolean; whatsapp: boolean } | null = null;
+async function channelsEnabled(): Promise<{ sms: boolean; whatsapp: boolean }> {
+  if (channelCache && Date.now() - channelCache.at < 60_000) return channelCache;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase.from("settings").select("customer_sms_enabled, customer_whatsapp_enabled").eq("id", 1).maybeSingle();
+    channelCache = { at: Date.now(), sms: data?.customer_sms_enabled !== false, whatsapp: data?.customer_whatsapp_enabled !== false };
+  } catch {
+    channelCache = { at: Date.now(), sms: true, whatsapp: true };
+  }
+  return channelCache;
+}
+
 /**
  * Persist an outbound message to the inbox (best-effort — never blocks sending).
  * Every SMS/WhatsApp the system sends flows through here, so the dashboard's
@@ -168,6 +183,7 @@ export async function sendSMS(to: string, body: string): Promise<SendResult> {
   // rejected, so normalise before sending.
   const dest = normalisePhone(to) || to;
   if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
+  if (!(await channelsEnabled()).sms) return { success: true, skipped: true }; // SMS channel off
   const text = normaliseSmsBody(body);
   try {
     const msg = await twilioClient.messages.create({
@@ -208,6 +224,7 @@ export async function sendWhatsApp(
   // with stray spaces) is rejected as "failed" — normalise it first.
   const dest = normalisePhone(to) || to;
   if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
+  if (!(await channelsEnabled()).whatsapp) return { success: true, skipped: true }; // WhatsApp channel off
   const waTo = `whatsapp:${dest}`;
   // What we store as the body for the inbox (template renders to `body` text).
   const loggedBody = body || (template ? `[template: ${template.name}]` : "");

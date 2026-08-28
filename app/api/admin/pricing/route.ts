@@ -18,9 +18,10 @@ export async function GET() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
   const supabase = createAdminClient();
-  const [{ data: cfg }, { data: rows }] = await Promise.all([
+  const [{ data: cfg }, { data: rows }, { data: settings }] = await Promise.all([
     supabase.from("pricing_config").select("*").eq("id", 1).maybeSingle(),
     supabase.from("item_prices").select("item_key, price"),
+    supabase.from("settings").select("customer_sms_enabled, customer_whatsapp_enabled").eq("id", 1).maybeSingle(),
   ]);
   const priceMap = new Map((rows ?? []).map((r: { item_key: string; price: number }) => [r.item_key, Number(r.price)]));
   const items: { key: string; label: string; category: string; price: number }[] = [];
@@ -35,7 +36,11 @@ export async function GET() {
     per_mile: Number(cfg?.per_mile ?? DEFAULT_PRICING_CONFIG.per_mile),
     premium_multiplier: Number(cfg?.premium_multiplier ?? DEFAULT_PRICING_CONFIG.premium_multiplier),
   };
-  return NextResponse.json({ success: true, config, items });
+  const channels = {
+    sms: settings?.customer_sms_enabled !== false,
+    whatsapp: settings?.customer_whatsapp_enabled !== false,
+  };
+  return NextResponse.json({ success: true, config, items, channels });
 }
 
 const schema = z.object({
@@ -46,6 +51,7 @@ const schema = z.object({
     premium_multiplier: z.number().min(1).max(10),
   }),
   items: z.array(z.object({ key: z.string().min(1).max(120), price: z.number().min(0).max(100000) })).max(500),
+  channels: z.object({ sms: z.boolean(), whatsapp: z.boolean() }).optional(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -57,6 +63,12 @@ export async function PUT(req: NextRequest) {
   const supabase = createAdminClient();
   const now = new Date().toISOString();
   await supabase.from("pricing_config").upsert({ id: 1, ...parsed.data.config, updated_at: now }, { onConflict: "id" });
+  if (parsed.data.channels) {
+    await supabase.from("settings").update({
+      customer_sms_enabled: parsed.data.channels.sms,
+      customer_whatsapp_enabled: parsed.data.channels.whatsapp,
+    }).eq("id", 1);
+  }
   if (parsed.data.items.length) {
     await supabase.from("item_prices").upsert(
       parsed.data.items.map((i) => ({ item_key: i.key, price: i.price, updated_at: now })),

@@ -6,10 +6,12 @@ import { toast } from "sonner";
 
 interface Cfg { base_callout: number; free_miles: number; per_mile: number; premium_multiplier: number }
 interface Item { key: string; label: string; category: string; price: number }
+interface Channels { sms: boolean; whatsapp: boolean }
 
 export default function PricingPage() {
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [channels, setChannels] = useState<Channels>({ sms: true, whatsapp: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
@@ -19,7 +21,7 @@ export default function PricingPage() {
       try {
         const res = await fetch("/api/admin/pricing", { cache: "no-store" });
         const j = await res.json();
-        if (j.success) { setCfg(j.config); setItems(j.items); }
+        if (j.success) { setCfg(j.config); setItems(j.items); if (j.channels) setChannels(j.channels); }
       } finally { setLoading(false); }
     })();
   }, []);
@@ -42,7 +44,7 @@ export default function PricingPage() {
     try {
       const res = await fetch("/api/admin/pricing", {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg, items: items.map((i) => ({ key: i.key, price: i.price })) }),
+        body: JSON.stringify({ config: cfg, items: items.map((i) => ({ key: i.key, price: i.price })), channels }),
       });
       const j = await res.json();
       if (!res.ok || !j.success) throw new Error(j.error || "Couldn't save");
@@ -69,6 +71,16 @@ export default function PricingPage() {
           <NumField label="Free miles" value={cfg.free_miles} onChange={(v) => setCfg({ ...cfg, free_miles: v })} />
           <NumField label="£ per mile" step={0.1} value={cfg.per_mile} onChange={(v) => setCfg({ ...cfg, per_mile: v })} />
           <NumField label="Premium ×" step={0.05} value={cfg.premium_multiplier} onChange={(v) => setCfg({ ...cfg, premium_multiplier: v })} icon={<Sparkles className="h-3 w-3" />} />
+        </div>
+      </div>
+
+      {/* Customer messaging channels (Twilio cost control) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-1 flex items-center gap-2"><PoundSterling className="h-4 w-4 text-brand-purple-700" /><h2 className="font-semibold text-slate-900">Customer messaging</h2></div>
+        <p className="mb-3 text-xs text-slate-500">Turn a channel off to cut Twilio cost. Email always sends. (Admin &amp; driver texts are already off.)</p>
+        <div className="flex flex-wrap gap-2">
+          <Toggle label="Customer SMS" on={channels.sms} onClick={() => setChannels({ ...channels, sms: !channels.sms })} />
+          <Toggle label="Customer WhatsApp" on={channels.whatsapp} onClick={() => setChannels({ ...channels, whatsapp: !channels.whatsapp })} />
         </div>
       </div>
 
@@ -109,6 +121,16 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${on ? "border-brand-green-300 bg-brand-green-50 text-brand-green-800" : "border-slate-200 bg-slate-50 text-slate-400"}`}>
+      <span className={`h-2.5 w-2.5 rounded-full ${on ? "bg-brand-green-500" : "bg-slate-300"}`} />
+      {label}: {on ? "On" : "Off"}
+    </button>
   );
 }
 
