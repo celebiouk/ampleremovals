@@ -11,22 +11,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = request.headers.get("stripe-signature");
   const body = await request.text();
 
-  if (!webhookSecret || webhookSecret.startsWith("your_") || !signature) {
+  // Accept BOTH live and test events — verify the signature against each secret
+  // so test-mode payments (test cards) drive the same flow as live.
+  const secrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_WEBHOOK_SECRET_TEST]
+    .filter((s): s is string => !!s && !s.startsWith("your_"));
+  if (!secrets.length || !signature) {
     return NextResponse.json({ received: true, configured: false });
   }
 
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    return NextResponse.json(
-      { error: `Webhook signature verification failed: ${err instanceof Error ? err.message : "Invalid"}` },
-      { status: 400 }
-    );
+  let event: Stripe.Event | null = null;
+  for (const secret of secrets) {
+    try { event = stripe.webhooks.constructEvent(body, signature, secret); break; } catch { /* try next secret */ }
+  }
+  if (!event) {
+    return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
   }
 
   const supabase = createAdminClient();

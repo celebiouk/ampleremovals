@@ -15,3 +15,9 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   typescript: true,
   appInfo: { name: "Ample Removals" },
 });
+
+/** Test-mode client (sk_test_…). Present only when the test key is set. Lets us
+ *  run the full card flow with test cards without touching live money. */
+export const stripeTest = process.env.STRIPE_SECRET_KEY_TEST
+  ? new Stripe(process.env.STRIPE_SECRET_KEY_TEST, { apiVersion, typescript: true, appInfo: { name: "Ample Removals (test)" } })
+  : null;

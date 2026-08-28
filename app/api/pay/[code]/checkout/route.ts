@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, stripeTest } from "@/lib/stripe";
 import { cardTotalForNet } from "@/lib/stripe-fees";
 
 export const runtime = "nodejs";
@@ -11,9 +11,13 @@ export const runtime = "nodejs";
  * `invoice_id` in its metadata, which the Stripe webhook uses to mark the invoice
  * paid. Returns the hosted Checkout URL to redirect to.
  */
-export async function POST(_req: Request, { params }: { params: { code: string } }) {
+export async function POST(req: Request, { params }: { params: { code: string } }) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    // Test mode (?test=1) uses the Stripe test client so you can pay with test
+    // card 4242… — no real money. Live is the default.
+    const useTest = new URL(req.url).searchParams.get("test") === "1" && !!stripeTest;
+    const client = useTest ? stripeTest! : stripe;
+    if (!useTest && !process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json({ success: false, error: "Card payments aren't set up yet." }, { status: 503 });
     }
     const supabase = createAdminClient();
@@ -57,7 +61,7 @@ export async function POST(_req: Request, { params }: { params: { code: string }
       });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await client.checkout.sessions.create({
       mode: "payment",
       line_items,
       // The webhook keys off invoice_id on the PaymentIntent to mark it paid.
