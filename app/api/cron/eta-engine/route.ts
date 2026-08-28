@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { runDueEtaCalls, refreshActiveEtas } from "@/lib/driver-eta";
 import { runDueBalanceInvoices } from "@/lib/auto-full-invoice";
+import { runDueLateStartChecks } from "@/lib/late-start";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -22,7 +23,9 @@ export async function GET(req: Request) {
     const live = await refreshActiveEtas(supabase);
     // Send any move-day balance invoices whose ~20-min delay has elapsed.
     const balance = await runDueBalanceInvoices(supabase);
-    return NextResponse.json({ success: true, ...result, ...live, ...balance });
+    // Warn customers whose driver hasn't set off in time to reach the pickup.
+    const late = await runDueLateStartChecks(supabase);
+    return NextResponse.json({ success: true, ...result, ...live, ...balance, ...late });
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 });
   }

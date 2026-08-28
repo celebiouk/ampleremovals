@@ -22,6 +22,10 @@ export type Leg = "pickup" | "delivery";
 // Format in UK time — the server runs in UTC, so without this the ETA prints an
 // hour behind during BST (e.g. a 12:55 ETA shows as "11:55", looking like the past).
 const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
+// A small buffer added to the raw ETA before we tell the customer, so we quote a
+// realistic arrival time (parking, walking to the door, traffic wobble).
+const ARRIVAL_BUFFER_MIN = 10;
+const fmtEta = (iso: string) => fmt(new Date(Date.parse(iso) + ARRIVAL_BUFFER_MIN * 60_000).toISOString());
 const driverName = (d: any) => d?.preferred_name || d?.first_name || "Your driver";
 
 async function loadBooking(supabase: any, bookingId: string) {
@@ -147,7 +151,7 @@ export async function startJourneyCall1(
   }
 
   const dPhone = await driverPhoneOf(supabase, driver.id);
-  const ctx = ctxOf(booking, leg, driverName(driver), dPhone, dest.postcode, dm ? fmt(dm.etaTimestamp) : undefined);
+  const ctx = ctxOf(booking, leg, driverName(driver), dPhone, dest.postcode, dm ? fmtEta(dm.etaTimestamp) : undefined);
   await notifyCustomer("journey_started", ctx);
   await notifyAdmin(supabase, bookingId, "journey_started", ctx);
   await logCall(supabase, {
