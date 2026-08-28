@@ -22,10 +22,17 @@ export type Leg = "pickup" | "delivery";
 // Format in UK time — the server runs in UTC, so without this the ETA prints an
 // hour behind during BST (e.g. a 12:55 ETA shows as "11:55", looking like the past).
 const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
-// A small buffer added to the raw ETA before we tell the customer, so we quote a
-// realistic arrival time (parking, walking to the door, traffic wobble).
-const ARRIVAL_BUFFER_MIN = 10;
-const fmtEta = (iso: string) => fmt(new Date(Date.parse(iso) + ARRIVAL_BUFFER_MIN * 60_000).toISOString());
+// We quote the customer an arrival WINDOW, not a single minute — the raw ETA plus
+// a small buffer either side (parking, walking to the door, traffic wobble). e.g.
+// a 1:00 ETA becomes "1:05–1:15".
+const ARRIVAL_WINDOW_LOW_MIN = 5;
+const ARRIVAL_WINDOW_HIGH_MIN = 15;
+const fmtEta = (iso: string): string => {
+  const base = Date.parse(iso);
+  const lo = fmt(new Date(base + ARRIVAL_WINDOW_LOW_MIN * 60_000).toISOString());
+  const hi = fmt(new Date(base + ARRIVAL_WINDOW_HIGH_MIN * 60_000).toISOString());
+  return `${lo}–${hi}`;
+};
 const driverName = (d: any) => d?.preferred_name || d?.first_name || "Your driver";
 
 async function loadBooking(supabase: any, bookingId: string) {
