@@ -50,6 +50,18 @@ export interface QuoteEngineInput {
   assembleCount?: number;
   /** End-of-tenancy cleaning add-on (priced by bedroom band). */
   eotCleaning?: boolean;
+  // ── Item-based pricing (preferred). When itemsSubtotal is provided the quote
+  //    is built from call-out + your items + distance instead of the bedroom band.
+  /** Minimum call-out (crew + van). */
+  baseCallout?: number;
+  /** Sum of the priced inventory items (£). */
+  itemsSubtotal?: number;
+  /** Number of item lines (for the "N items" label). */
+  itemCount?: number;
+  /** Road miles between pickup and drop-off (for the label). */
+  mileageMiles?: number;
+  /** Charge for distance beyond the free radius (£). */
+  mileageCost?: number;
 }
 
 export interface QuoteEngineResult {
@@ -111,17 +123,25 @@ const bedroomLabel = (bedrooms: string): string =>
 export function buildQuote(input: QuoteEngineInput): QuoteEngineResult {
   const lines: QuoteLine[] = [];
 
-  // 1. Base move price (not removable). White-goods uplift folded in silently.
-  const bedrooms = input.bedrooms && input.bedrooms in REMOVALS_BASE ? input.bedrooms : "1";
-  const base = REMOVALS_BASE[bedrooms] + (input.hasWhiteGoods ? WHITE_GOODS_UPLIFT : 0);
-  lines.push({
-    key: "base",
-    description: `Removals — ${bedroomLabel(bedrooms)}`,
-    quantity: 1,
-    unit_price: base,
-    total: base,
-    removable: false,
-  });
+  // 1. Base price (not removable). Item-based pricing = call-out + your items +
+  //    distance. Falls back to the legacy bedroom band only if no itemsSubtotal.
+  if (typeof input.itemsSubtotal === "number") {
+    const baseCallout = round2(input.baseCallout ?? 0);
+    lines.push({ key: "base", description: "Removal — crew, van & call-out", quantity: 1, unit_price: baseCallout, total: baseCallout, removable: false });
+
+    const itemsSubtotal = round2(input.itemsSubtotal);
+    const n = Math.max(0, Math.floor(input.itemCount ?? 0));
+    lines.push({ key: "items", description: `Your items${n ? ` (${n} item${n === 1 ? "" : "s"})` : ""}`, quantity: 1, unit_price: itemsSubtotal, total: itemsSubtotal, removable: false });
+
+    const mCost = round2(input.mileageCost ?? 0);
+    if (mCost > 0) {
+      lines.push({ key: "mileage", description: `Distance${input.mileageMiles ? ` (${input.mileageMiles} miles)` : ""}`, quantity: 1, unit_price: mCost, total: mCost, removable: false });
+    }
+  } else {
+    const bedrooms = input.bedrooms && input.bedrooms in REMOVALS_BASE ? input.bedrooms : "1";
+    const base = REMOVALS_BASE[bedrooms] + (input.hasWhiteGoods ? WHITE_GOODS_UPLIFT : 0);
+    lines.push({ key: "base", description: `Removals — ${bedroomLabel(bedrooms)}`, quantity: 1, unit_price: base, total: base, removable: false });
+  }
 
   // 2. Packing help (£35/hr) — removable.
   const packingHours = Math.max(0, Math.floor(input.packingHours ?? 0));

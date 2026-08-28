@@ -6,6 +6,7 @@ import { computeLeadScore } from "@/lib/lead-scoring";
 import { detectIntent } from "@/lib/lead-signals";
 import { ukDateString } from "@/lib/dates";
 import { buildQuote } from "@/lib/quote-engine";
+import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import type { ServiceType, AddressOption } from "@/types";
@@ -245,14 +246,21 @@ export async function createBooking(
     const d = data as RemovalsForm;
     const inventory = Array.isArray(d.inventory) ? d.inventory : [];
     const whiteGoods = hasWhiteGoods(inventory);
+    const { config: pricingCfg, items: itemPrices } = await loadPricing(supabase);
+    const itemsSubtotal = priceInventory(inventory, itemPrices);
+    const miles = await milesBetweenPostcodes(d.originAddress?.postcode, d.destinationAddress?.postcode);
     const quote = buildQuote({
       bedrooms: d.bedrooms,
-      hasWhiteGoods: whiteGoods,
       packingHours: d.packingHours ?? 0,
       packingMen: d.packingMen ?? 1,
       dismantleCount: d.dismantleCount ?? 0,
       assembleCount: d.assembleCount ?? 0,
       eotCleaning: Boolean(d.wantsEotCleaning),
+      baseCallout: pricingCfg.base_callout,
+      itemsSubtotal,
+      itemCount: inventory.length,
+      mileageMiles: miles,
+      mileageCost: mileageCost(miles, pricingCfg),
     });
     quoteTotal = quote.total;
 

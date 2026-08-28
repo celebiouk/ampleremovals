@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { insertAddress } from "@/lib/bookings/createBooking";
 import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import { buildQuote } from "@/lib/quote-engine";
+import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
 import { depositFor } from "@/lib/deposit";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import { ukDateString } from "@/lib/dates";
@@ -70,17 +71,25 @@ export async function completeLead(
   const flexFrom = isFlexible ? toDateString(data.flexibleDateFrom) : null;
   const flexTo = isFlexible ? toDateString(data.flexibleDateTo) : null;
 
-  // 5. Inventory + quote.
+  // 5. Inventory + quote (item-based pricing: call-out + your items + distance).
   const inventory = Array.isArray(data.inventory) ? data.inventory : [];
   const whiteGoods = hasWhiteGoods(inventory);
+  const { config: pricingCfg, items: itemPrices } = await loadPricing(supabase);
+  const itemsSubtotal = priceInventory(inventory, itemPrices);
+  const miles = await milesBetweenPostcodes(data.originAddress?.postcode, data.destinationAddress?.postcode);
+  const mCost = mileageCost(miles, pricingCfg);
   const quote = buildQuote({
     bedrooms: data.bedrooms,
-    hasWhiteGoods: whiteGoods,
     packingHours: data.packingHours ?? 0,
     packingMen: data.packingMen ?? 1,
     dismantleCount: data.dismantleCount ?? 0,
     assembleCount: data.assembleCount ?? 0,
     eotCleaning: Boolean(data.wantsEotCleaning),
+    baseCallout: pricingCfg.base_callout,
+    itemsSubtotal,
+    itemCount: inventory.length,
+    mileageMiles: miles,
+    mileageCost: mCost,
   });
 
   // Manual price (admin on a call) wins over the auto-estimate. Stored as one

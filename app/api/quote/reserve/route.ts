@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { depositFor } from "@/lib/deposit";
 import { sendDepositMessages } from "@/lib/bookings/quoteDelivery";
-import { premiumTotalFor } from "@/lib/tiers";
+import { loadPricing } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
     // Tier choice: Premium switches the quote to a fixed multiple of Standard and
     // bundles in the done-for-you services (packing/materials/dismantle/reassemble).
     const isPremium = tier === "premium";
-    const total = isPremium ? premiumTotalFor(standardTotal) : standardTotal;
+    const { config: pricingCfg } = await loadPricing(supabase);
+    const total = isPremium ? round2(standardTotal * pricingCfg.premium_multiplier) : standardTotal;
     const finalLines = isPremium
       ? [{ key: "premium", description: "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)", quantity: 1, unit_price: total, total, removable: false }]
       : keptLines;

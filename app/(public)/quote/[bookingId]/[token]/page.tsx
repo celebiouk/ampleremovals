@@ -47,6 +47,7 @@ interface QuoteData {
   status: string;
   hasQuote: boolean;
   crew?: QuoteCrew;
+  premiumMultiplier?: number;
 }
 
 type Stage = "loading" | "reveal" | "reserving" | "deposit" | "claiming" | "done" | "error";
@@ -248,7 +249,9 @@ function RevealView({
   liveDeposit: number;
   onReserve: (tier: "standard" | "premium") => void;
 }) {
-  const premiumTotal = premiumTotalFor(liveTotal);
+  const premiumTotal = quote.premiumMultiplier
+    ? Math.round(liveTotal * quote.premiumMultiplier * 100) / 100
+    : premiumTotalFor(liveTotal);
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}

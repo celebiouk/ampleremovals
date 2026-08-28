@@ -47,6 +47,7 @@ const NAV_GROUPS = [
   {
     label: "FINANCE",
     items: [
+      { href: "/admin/pricing", label: "Pricing", icon: PoundSterling },
       { href: "/admin/invoices", label: "Invoices", icon: Receipt },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/earnings", label: "Driver Earnings", icon: PoundSterling },
