@@ -59,6 +59,13 @@ const styles = StyleSheet.create({
   crewHeading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 3 },
   crewLine: { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#5b21b6", marginBottom: 4 },
   crewText: { fontSize: 9, color: GREY, lineHeight: 1.5 },
+  // Premium upgrade tier
+  premiumSection: { marginTop: 14 },
+  premiumBox: { backgroundColor: "#faf5ff", borderRadius: 4, padding: 10, borderWidth: 1, borderColor: PURPLE },
+  premiumTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  premiumHeading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: PURPLE },
+  premiumPrice: { fontSize: 12, fontFamily: "Helvetica-Bold", color: PURPLE },
+  premiumItem: { fontSize: 8.5, color: GREY, lineHeight: 1.5 },
   // Next steps
   nextSteps: { marginTop: 14 },
   nextHeading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: PURPLE, marginBottom: 6 },
@@ -169,6 +176,21 @@ export function QuoteDocument({ data }: { data: QuotePDFData }) {
             </View>
           </View>
         )}
+
+        {/* PREMIUM UPGRADE */}
+        {data.premium_total && data.premium_includes?.length ? (
+          <View style={styles.premiumSection}>
+            <View style={styles.premiumBox}>
+              <View style={styles.premiumTop}>
+                <Text style={styles.premiumHeading}>Upgrade to Premium — Full Pack &amp; Move</Text>
+                <Text style={styles.premiumPrice}>£{data.premium_total.toFixed(2)}</Text>
+              </View>
+              {data.premium_includes.map((f, i) => (
+                <Text key={i} style={styles.premiumItem}>{i === 0 ? f : `•  ${f}`}</Text>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {/* NOTES */}
         {data.notes && (

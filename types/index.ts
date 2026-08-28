@@ -330,6 +330,8 @@ export interface QuotePDFData {
   notes?: string;
   crew_line?: string;   // e.g. "2-man team · 1 × 3.5 tonne Luton van"
   crew_blurb?: string;  // reassurance copy (experience, protection, load/unload)
+  premium_total?: number;      // Premium tier price (Standard × multiplier)
+  premium_includes?: string[]; // Premium inclusions list
 }
 
 // ── Composite / view models ───────────────────────────────

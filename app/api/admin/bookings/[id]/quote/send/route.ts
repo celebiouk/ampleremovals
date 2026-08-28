@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/utils";
 import { COMPANY_PHONE } from "@/lib/constants";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { resolveCrew } from "@/lib/crew";
+import { loadPricing } from "@/lib/pricing";
+import { PREMIUM_INCLUDES } from "@/lib/tiers";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -86,6 +88,10 @@ export async function POST(
     // 3.5t Luton) + generated copy so it shows on every quote, admin or self-serve.
     const crew = resolveCrew(booking);
 
+    // Premium tier (Standard × multiplier) for the comparison in the PDF + email.
+    const { config: pricingCfg } = await loadPricing(supabase);
+    const premiumTotal = Math.round(Number(booking.quote_total) * pricingCfg.premium_multiplier * 100) / 100;
+
     // Prepare PDF data
     const pdfData: QuotePDFData = {
       quote_number: `QUOTE-${booking.reference}`,
@@ -105,6 +111,8 @@ export async function POST(
       notes: booking.quote_notes || undefined,
       crew_line: crew.line,
       crew_blurb: crew.blurb,
+      premium_total: premiumTotal,
+      premium_includes: PREMIUM_INCLUDES,
     };
 
     // Generate PDF
@@ -167,6 +175,17 @@ export async function POST(
         <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 16px; margin: 20px 0; border-radius: 8px;">
           <p style="margin: 0 0 6px 0; font-size: 15px; color: #6b21a8;"><strong>What you get:</strong> ${crew.line}</p>
           <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">${crew.blurb}</p>
+        </div>
+
+        <div style="border: 2px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 10px;">
+          <table style="width:100%;"><tr>
+            <td style="font-size: 15px; color: #6b21a8;"><strong>Upgrade to Premium — Full Pack &amp; Move</strong></td>
+            <td style="text-align:right; font-size: 18px; font-weight: bold; color: #6b21a8;">${formatCurrency(premiumTotal)}</td>
+          </tr></table>
+          <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">
+            ${PREMIUM_INCLUDES.slice(1).map((f) => `<li>${f}</li>`).join("")}
+          </ul>
+          <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">Prefer the full done-for-you service? Just reply or call us to choose Premium.</p>
         </div>
 
         <p><strong>Quote Summary:</strong></p>
