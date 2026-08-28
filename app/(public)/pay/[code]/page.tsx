@@ -54,7 +54,9 @@ export default function PayPage() {
   const payByCard = useCallback(async () => {
     setCardLoading(true);
     try {
-      const res = await fetch(`/api/pay/${code}/checkout`, { method: "POST" });
+      // Pass ?test=1 through to run the Stripe test flow (test card 4242…).
+      const isTest = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("test") === "1";
+      const res = await fetch(`/api/pay/${code}/checkout${isTest ? "?test=1" : ""}`, { method: "POST" });
       const body = await res.json();
       if (!res.ok || !body.success || !body.url) { setError(body.error || "Couldn't start card payment."); setStage("error"); return; }
       window.location.href = body.url as string; // → Stripe hosted checkout
