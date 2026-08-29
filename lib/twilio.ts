@@ -124,6 +124,17 @@ if (twilioClient) {
   const originalCreate = messagesApi.create.bind(messagesApi);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (messagesApi as any).create = async (opts: any) => {
+    // Gate EVERY send at the true layer — including direct messages.create calls
+    // that bypass sendSMS/sendWhatsApp. Never message the admin line, and honour
+    // the customer SMS/WhatsApp channel toggles.
+    const toDest = normalisePhone(String(opts?.to ?? ""));
+    if (isAdminNotify(toDest)) return { sid: undefined, status: "skipped_admin" };
+    const ch = channelFromAddress(String(opts?.from ?? ""));
+    const enabled = await channelsEnabled();
+    if ((ch === "sms" && !enabled.sms) || (ch === "whatsapp" && !enabled.whatsapp)) {
+      return { sid: undefined, status: "skipped_channel" };
+    }
+
     let created: { sid?: string; status?: string } | undefined;
     let sendErr: unknown;
     try { created = await originalCreate(opts); }
