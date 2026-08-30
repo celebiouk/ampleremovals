@@ -62,6 +62,7 @@ export default function BookingDetailScreen() {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
 
   function invalidateAll() {
     qc.invalidateQueries({ queryKey: ["booking", id] });
@@ -170,7 +171,6 @@ export default function BookingDetailScreen() {
 
   // Fetch a fresh Stripe/bank pay link for an invoice and hand it to the OS share
   // sheet so the admin can send it to the customer via any app (SMS/WhatsApp/email).
-  const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
   async function sharePayLink(invoiceId: string, invoiceNumber: string) {
     if (sharingInvoiceId) return;
     setSharingInvoiceId(invoiceId);
