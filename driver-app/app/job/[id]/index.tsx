@@ -168,12 +168,22 @@ export default function JobDetailScreen() {
       {/* Summary */}
       <View style={[{ borderRadius: radius["2xl"], overflow: "hidden", marginBottom: spacing.base }, shadows.md]}>
         <View style={{ backgroundColor: colors.primary.DEFAULT, padding: spacing.lg }}>
-          <Text style={[type.label, { color: colors.primary.surfaceMid }]}>{serviceLabel(j.service_type)}</Text>
-          <Text style={[type.h1, { color: colors.white, marginTop: 4 }]}>{customerShortName(j.customer?.full_name)}</Text>
-          <Text style={[type.mono, { color: "rgba(255,255,255,0.85)", marginTop: 2 }]}>{j.reference}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.md }}>
+            <View style={{ flex: 1 }}>
+              <Text style={[type.label, { color: colors.primary.surfaceMid }]}>{serviceLabel(j.service_type)}</Text>
+              <Text style={[type.h1, { color: colors.white, marginTop: 4 }]}>{customerShortName(j.customer?.full_name)}</Text>
+              <Text style={[type.mono, { color: "rgba(255,255,255,0.85)", marginTop: 2 }]}>{j.reference}</Text>
+            </View>
+            {j.move_time ? (
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={[type.label, { color: colors.primary.surfaceMid }]}>TIME</Text>
+                <Text style={[type.h1, { color: colors.white, fontFamily: type.h1.fontFamily }]}>{j.move_time}</Text>
+              </View>
+            ) : null}
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md }}>
             <Calendar size={16} color={colors.white} />
-            <Text style={[type.bodySemiBold, { color: colors.white }]}>{formatDate(j.move_date)}{j.move_time ? ` · ${j.move_time}` : ""}</Text>
+            <Text style={[type.bodySemiBold, { color: colors.white }]}>{formatDate(j.move_date)}</Text>
           </View>
         </View>
       </View>
@@ -259,13 +269,18 @@ export default function JobDetailScreen() {
       <AddressCard kind="pickup" address={j.origin} />
       <AddressCard kind="delivery" address={j.destination} />
 
-      {/* Instructions */}
-      {(j.special_instructions || j.description) ? (
+      {/* Instructions — show the customer's description AND any special instructions */}
+      {(j.description || j.special_instructions) ? (
         <Card style={{ marginTop: spacing.base }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
             <Info size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Job notes</Text>
           </View>
-          <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{j.special_instructions || j.description}</Text>
+          {j.description ? (
+            <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{j.description}</Text>
+          ) : null}
+          {j.special_instructions ? (
+            <Text style={[type.bodyLarge, { color: colors.slate[700], marginTop: j.description ? spacing.sm : 0 }]}>{j.special_instructions}</Text>
+          ) : null}
         </Card>
       ) : null}
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import {
-  ScrollView, View, Text, Pressable, Modal, Alert, RefreshControl, Linking, Platform, TextInput,
+  ScrollView, View, Text, Pressable, Modal, Alert, RefreshControl, Linking, Platform, TextInput, Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
@@ -168,6 +168,24 @@ export default function BookingDetailScreen() {
     }
   }
 
+  // Fetch a fresh Stripe/bank pay link for an invoice and hand it to the OS share
+  // sheet so the admin can send it to the customer via any app (SMS/WhatsApp/email).
+  const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
+  async function sharePayLink(invoiceId: string, invoiceNumber: string) {
+    if (sharingInvoiceId) return;
+    setSharingInvoiceId(invoiceId);
+    try {
+      const res = await apiFetch(`/api/admin/invoices/${invoiceId}/pay-link`, { method: "POST" });
+      const j = (await res.json()) as { payLink?: string };
+      if (!j.payLink) throw new Error("No pay link returned");
+      await Share.share({ message: `Pay invoice ${invoiceNumber}: ${j.payLink}` });
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to get pay link");
+    } finally {
+      setSharingInvoiceId(null);
+    }
+  }
+
   return (
     <Shell onBack={() => router.back()} title={booking.reference}>
       <ScrollView
@@ -296,6 +314,14 @@ export default function BookingDetailScreen() {
         {/* Distances at a glance (office → pickup, pickup → dropoff) */}
         <DistancePanel originPostcode={origin?.postcode} destinationPostcode={destination?.postcode} />
 
+        {/* Customer's description from the booking form */}
+        {booking.description ? (
+          <Card>
+            <Text className="mb-2 text-base font-semibold text-slate-900 dark:text-white">Customer&apos;s description</Text>
+            <Text className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{booking.description}</Text>
+          </Card>
+        ) : null}
+
         {/* Items to move — the inventory the customer selected in the booking form */}
         {Array.isArray(booking.inventory) && booking.inventory.length > 0 ? (
           <Card>
@@ -322,17 +348,34 @@ export default function BookingDetailScreen() {
           {invoices.length === 0 ? (
             <Text className="mt-2 text-sm text-slate-500">No invoices yet.</Text>
           ) : (
-            invoices.map((inv) => (
-              <View key={inv.id} className="mt-2 flex-row items-center gap-2">
-                <Receipt size={16} color="#94a3b8" />
-                <Text className="flex-1 text-sm text-slate-700 dark:text-slate-300">
-                  {inv.invoice_number} · {inv.status}
-                </Text>
-                <Text className="text-sm font-semibold text-slate-900 dark:text-white">
-                  {formatCurrency(inv.total)}
-                </Text>
-              </View>
-            ))
+            invoices.map((inv) => {
+              const unpaid = inv.status !== "paid" && inv.status !== "void";
+              return (
+                <View key={inv.id} className="mt-2">
+                  <View className="flex-row items-center gap-2">
+                    <Receipt size={16} color="#94a3b8" />
+                    <Text className="flex-1 text-sm text-slate-700 dark:text-slate-300">
+                      {inv.invoice_number} · {inv.status}
+                    </Text>
+                    <Text className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(inv.total)}
+                    </Text>
+                  </View>
+                  {unpaid ? (
+                    <Pressable
+                      onPress={() => sharePayLink(inv.id, inv.invoice_number)}
+                      disabled={sharingInvoiceId === inv.id}
+                      className="mt-2 flex-row items-center justify-center gap-2 rounded-xl border border-brand-purple-200 bg-brand-purple-50 px-3 py-2"
+                    >
+                      <MessageSquare size={15} color="#6b21a8" />
+                      <Text className="text-sm font-semibold text-brand-purple-800">
+                        {sharingInvoiceId === inv.id ? "Getting link…" : "Send pay link"}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              );
+            })
           )}
           {/* Payment receipt — issue a receipt for money already received */}
           <Pressable
