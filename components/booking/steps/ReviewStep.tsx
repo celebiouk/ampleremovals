@@ -1,13 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormContext, useWatch, useController } from "react-hook-form";
-import { Pencil, Check } from "lucide-react";
+import { Pencil, Check, Sparkles, Loader2, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { StepHeading } from "@/components/booking/primitives";
 import { useWizard } from "@/components/booking/WizardContext";
 import { DistancePanel } from "@/components/admin/DistancePanel";
+import { TIER_COPY } from "@/lib/tiers";
 import type { AddressOption } from "@/types";
+
+const gbp0 = (n: number) =>
+  new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n || 0);
+
+interface QuotePreview {
+  standardTotal: number;
+  premiumTotal: number;
+  standardDeposit: number;
+  premiumDeposit: number;
+  miles: number;
+}
 
 export interface ReviewSection {
   title: string;
@@ -91,6 +104,61 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
   const { goToStep, admin } = useWizard();
   const confirm = useController({ name: "confirmed", control });
   const adminPrice = useController({ name: "adminPrice", control, defaultValue: "" });
+  // Which package the admin is charging for — recorded on completion so the
+  // customer gets Standard vs Premium (Premium bundles packing/dismantle/assemble).
+  const adminTier = useController({ name: "adminTier", control, defaultValue: "standard" });
+
+  // Live system-suggested quote (Standard + Premium), shown to the admin as
+  // guidance only. The fee they actually charge is whatever they type below.
+  const [preview, setPreview] = useState<QuotePreview | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+
+  const originPostcode = (values?.originAddress as AddressOption | undefined)?.postcode ?? null;
+  const destinationPostcode = (values?.destinationAddress as AddressOption | undefined)?.postcode ?? null;
+  // Stable signature of the inputs that move the price — refetch when any change.
+  const previewKey = admin
+    ? JSON.stringify({
+        bedrooms: values?.bedrooms ?? null,
+        inventory: values?.inventory ?? [],
+        packingHours: values?.packingHours ?? 0,
+        packingMen: values?.packingMen ?? 1,
+        dismantleCount: values?.dismantleCount ?? 0,
+        assembleCount: values?.assembleCount ?? 0,
+        wantsEotCleaning: Boolean(values?.wantsEotCleaning),
+        originPostcode,
+        destinationPostcode,
+      })
+    : "";
+
+  useEffect(() => {
+    if (!admin || !previewKey) return;
+    let cancelled = false;
+    setPreviewing(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/admin/quote/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: previewKey, // already the exact JSON payload
+        });
+        const data = await res.json();
+        if (!cancelled && data.success) {
+          setPreview({
+            standardTotal: data.standardTotal,
+            premiumTotal: data.premiumTotal,
+            standardDeposit: data.standardDeposit,
+            premiumDeposit: data.premiumDeposit,
+            miles: data.miles,
+          });
+        }
+      } catch {
+        /* non-fatal — the manual price box still works without a suggestion */
+      } finally {
+        if (!cancelled) setPreviewing(false);
+      }
+    }, 500);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [admin, previewKey]);
 
   return (
     <div>
@@ -154,33 +222,98 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
         ))}
       </div>
 
-      {/* Admin-only: distances first (office → pickup, pickup → dropoff) so you can
-          judge the job, then set the quote price by hand. This exact figure is what
-          gets emailed to the customer as their quote — no auto-estimate. */}
+      {/* Admin-only: distances to judge the job, the system-suggested quote (exactly
+          what the customer would see — Standard & Premium) as guidance, then pick a
+          package and set the fee by hand. The fee you type is what the customer is
+          charged — not the suggestion. */}
       {admin && (
         <div className="mt-6 space-y-3">
           <DistancePanel
-            originPostcode={(values?.originAddress as AddressOption | undefined)?.postcode}
-            destinationPostcode={(values?.destinationAddress as AddressOption | undefined)?.postcode}
+            originPostcode={originPostcode ?? undefined}
+            destinationPostcode={destinationPostcode ?? undefined}
           />
-          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
-          <label className="block text-sm font-bold text-amber-900">Set the quote price (admin)</label>
-          <p className="mt-0.5 text-xs text-amber-700">
-            Whatever you enter here is emailed to the customer as their quote. Leave blank to use the auto-estimate.
-          </p>
-          <div className="relative mt-3 max-w-[200px]">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              inputMode="decimal"
-              value={(adminPrice.field.value as string) ?? ""}
-              onChange={(e) => adminPrice.field.onChange(e.target.value)}
-              placeholder="0.00"
-              className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
-            />
+
+          {/* System-suggested quote (guidance only) */}
+          <div className="rounded-xl border-2 border-brand-purple-200 bg-brand-purple-50/60 p-4">
+            <div className="mb-1 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-brand-purple-700" />
+              <p className="text-sm font-bold text-brand-purple-900">System-suggested quote</p>
+              {previewing && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-purple-400" />}
+            </div>
+            <p className="mb-3 text-xs text-brand-purple-700">
+              This is what the customer would be quoted automatically. Use it to decide what to charge — you can match it or reduce it.
+            </p>
+            {preview ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Suggestion
+                  label={TIER_COPY.standard.name}
+                  total={preview.standardTotal}
+                  deposit={preview.standardDeposit}
+                  onUse={() => {
+                    adminTier.field.onChange("standard");
+                    adminPrice.field.onChange(String(preview.standardTotal));
+                  }}
+                />
+                <Suggestion
+                  label={TIER_COPY.premium.name}
+                  total={preview.premiumTotal}
+                  deposit={preview.premiumDeposit}
+                  onUse={() => {
+                    adminTier.field.onChange("premium");
+                    adminPrice.field.onChange(String(preview.premiumTotal));
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-brand-purple-400">{previewing ? "Calculating…" : "Add the items & addresses to see a suggestion."}</p>
+            )}
           </div>
+
+          {/* Which package the customer is getting */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <label className="block text-sm font-bold text-slate-800">Package the customer is getting</label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(["standard", "premium"] as const).map((t) => {
+                const active = adminTier.field.value === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => adminTier.field.onChange(t)}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all",
+                      active
+                        ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-900"
+                        : "border-slate-200 text-slate-600 hover:border-brand-purple-300"
+                    )}
+                  >
+                    {t === "premium" ? <Sparkles className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+                    {t === "premium" ? "Premium" : "Standard"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* The fee actually charged */}
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+            <label className="block text-sm font-bold text-amber-900">Set the quote price (admin)</label>
+            <p className="mt-0.5 text-xs text-amber-700">
+              Whatever you enter here is what the customer is charged. Leave blank to use the suggested {adminTier.field.value === "premium" ? "Premium" : "Standard"} price.
+            </p>
+            <div className="relative mt-3 max-w-[200px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                inputMode="decimal"
+                value={(adminPrice.field.value as string) ?? ""}
+                onChange={(e) => adminPrice.field.onChange(e.target.value)}
+                placeholder="0.00"
+                className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -209,6 +342,32 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
         <span className="text-sm font-medium text-slate-700">
           I confirm the details above are correct.
         </span>
+      </button>
+    </div>
+  );
+}
+
+/** One suggested-tier card in the admin quote panel. "Use this" copies the figure
+ *  into the fee box (and selects the tier) — the admin can then keep or reduce it. */
+function Suggestion({
+  label, total, deposit, onUse,
+}: {
+  label: string;
+  total: number;
+  deposit: number;
+  onUse: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-brand-purple-200 bg-white p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand-purple-500">{label}</p>
+      <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-brand-purple-900">{gbp0(total)}</p>
+      <p className="text-xs text-slate-400">25% deposit {gbp0(deposit)}</p>
+      <button
+        type="button"
+        onClick={onUse}
+        className="mt-2 w-full rounded-lg border border-brand-purple-300 bg-brand-purple-50 px-2 py-1.5 text-xs font-semibold text-brand-purple-800 hover:bg-brand-purple-100"
+      >
+        Use this price
       </button>
     </div>
   );

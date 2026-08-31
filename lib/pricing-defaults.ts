@@ -15,30 +15,31 @@ export const DEFAULT_PRICING_CONFIG = {
 };
 
 /** Fallback price for a customer-typed "custom:" item with no catalogue price. */
-export const DEFAULT_CUSTOM_ITEM_PRICE = 20;
+export const DEFAULT_CUSTOM_ITEM_PRICE = 17;
 
-/** Default £ price per catalogue item key (edit in the admin Pricing page). */
+/** Default £ price per catalogue item key (edit in the admin Pricing page).
+ *  Reduced 15% from the original launch table (Aug 2026) — see item_prices in DB. */
 export const DEFAULT_ITEM_PRICES: Record<string, number> = {
   // White goods
-  fridge_freezer: 40, american_fridge_freezer: 55, fridge: 25, freezer: 25, chest_freezer: 40,
-  washing_machine: 35, washer_dryer: 40, tumble_dryer: 30, dishwasher: 30, oven: 30, cooker: 40, range_cooker: 55,
+  fridge_freezer: 34, american_fridge_freezer: 47, fridge: 21, freezer: 21, chest_freezer: 34,
+  washing_machine: 30, washer_dryer: 34, tumble_dryer: 26, dishwasher: 26, oven: 26, cooker: 34, range_cooker: 47,
   // Kitchen appliances
-  microwave: 8, air_fryer: 6, toaster: 4, kettle: 3, coffee_machine: 8, food_mixer: 8, vacuum_cleaner: 8, small_appliances_box: 10,
+  microwave: 7, air_fryer: 5, toaster: 3, kettle: 3, coffee_machine: 7, food_mixer: 7, vacuum_cleaner: 7, small_appliances_box: 9,
   // Bedroom
-  single_bed: 20, double_bed: 30, king_bed: 35, super_king_bed: 45, bunk_bed: 40, cot_bed: 15, mattress: 20,
-  wardrobe: 35, chest_of_drawers: 20, bedside_table: 8, dressing_table: 20, clothes_rail: 8, mirror: 10,
+  single_bed: 17, double_bed: 26, king_bed: 30, super_king_bed: 38, bunk_bed: 34, cot_bed: 13, mattress: 17,
+  wardrobe: 30, chest_of_drawers: 17, bedside_table: 7, dressing_table: 17, clothes_rail: 7, mirror: 9,
   // Living room
-  sofa: 45, sofa_bed: 50, footstool: 8, tv: 25, tv_stand: 15, tv_console: 20, coffee_table: 12, side_table: 8,
-  lamp: 6, rug: 8, bookcase: 20, display_cabinet: 30,
+  sofa: 38, sofa_bed: 43, footstool: 7, tv: 21, tv_stand: 13, tv_console: 17, coffee_table: 10, side_table: 7,
+  lamp: 5, rug: 7, bookcase: 17, display_cabinet: 26,
   // Dining
-  dining_table: 30, dining_chair: 6, sideboard: 30, bar_stool: 8, drinks_cabinet: 25,
+  dining_table: 26, dining_chair: 5, sideboard: 26, bar_stool: 7, drinks_cabinet: 21,
   // Office & electronics
-  office_desk: 25, office_chair: 12, monitor: 8, computer_tower: 10, printer: 8, filing_cabinet: 20, soundbar: 8,
+  office_desk: 21, office_chair: 10, monitor: 7, computer_tower: 9, printer: 7, filing_cabinet: 17, soundbar: 7,
   // Boxes & storage
-  boxes: 5, bags: 4, suitcase: 5, plastic_crate: 5, shoe_rack: 8, shelving_unit: 20, storage_ottoman: 15,
+  boxes: 4, bags: 3, suitcase: 4, plastic_crate: 4, shoe_rack: 7, shelving_unit: 17, storage_ottoman: 13,
   // Garden & outdoor
-  garden_table: 20, garden_chair: 6, garden_bench: 20, bbq: 20, plant_pots: 4, garden_storage_box: 15,
-  lawn_mower: 20, ladder: 10, shed_contents: 60,
+  garden_table: 17, garden_chair: 5, garden_bench: 17, bbq: 17, plant_pots: 3, garden_storage_box: 13,
+  lawn_mower: 17, ladder: 9, shed_contents: 51,
   // Fitness & leisure
-  treadmill: 45, exercise_bike: 30, gym_equipment: 40, bicycle: 15, piano: 120, guitar: 10, pool_table: 90, fish_tank: 25,
+  treadmill: 38, exercise_bike: 26, gym_equipment: 34, bicycle: 13, piano: 102, guitar: 9, pool_table: 77, fish_tank: 21,
 };

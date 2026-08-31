@@ -20,6 +20,13 @@ export interface CompleteLeadOptions {
    * deposit all stay consistent with the agreed figure.
    */
   priceOverride?: number;
+  /**
+   * Which package the admin is selling. Premium is the full pack-&-move service:
+   * it bundles packing, materials and dismantle/reassemble, is labelled as such on
+   * the quote, and — when no manual price is given — defaults to the Premium
+   * multiple of the Standard estimate (matching the customer-facing reserve flow).
+   */
+  tier?: "standard" | "premium";
 }
 
 export interface CompleteLeadResult {
@@ -94,13 +101,26 @@ export async function completeLead(
 
   // Manual price (admin on a call) wins over the auto-estimate. Stored as one
   // non-removable line so total = reserve total = the agreed figure everywhere.
+  // Premium: when no manual price is set, default to the Premium multiple of the
+  // Standard estimate (mirrors the customer reserve flow), and always label it as
+  // the full pack-&-move package.
+  const isPremium = opts?.tier === "premium";
   const override = opts?.priceOverride;
   const useOverride = typeof override === "number" && Number.isFinite(override) && override > 0;
-  const finalTotal = useOverride ? round2(override) : quote.total;
-  const finalLines = useOverride
+  const finalTotal = useOverride
+    ? round2(override)
+    : isPremium
+    ? round2(quote.total * pricingCfg.premium_multiplier)
+    : quote.total;
+  // A single non-removable line whenever the admin fixed the figure or chose
+  // Premium; otherwise the customer keeps the itemised Standard breakdown.
+  const premiumLabel = "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)";
+  const finalLines = isPremium
+    ? [{ key: "premium", description: premiumLabel, quantity: 1, unit_price: finalTotal, total: finalTotal, removable: false }]
+    : useOverride
     ? [{ key: "base", description: "Removals service", quantity: 1, unit_price: finalTotal, total: finalTotal, removable: false }]
     : quote.lines;
-  const finalDeposit = useOverride ? depositFor(finalTotal) : quote.depositAmount;
+  const finalDeposit = depositFor(finalTotal);
 
   // 6. Core booking update — addresses, date, description, quote. These columns
   // have always existed, so this must succeed for the completion to count.
@@ -151,9 +171,15 @@ export async function completeLead(
   });
 
   await supabase.from("additional_services").delete().eq("booking_id", bookingId);
+  // Premium is a done-for-you package — force the bundled services on regardless
+  // of what was ticked in the form.
+  const premiumServices = isPremium
+    ? { packing_services: true, packing_materials: true, disassemble_furniture: true, assemble_furniture: true }
+    : {};
   await supabase.from("additional_services").insert({
     booking_id: bookingId,
     ...data.additionalServices,
+    ...premiumServices,
   });
   // Add-on quantities (best-effort — new columns).
   try {
@@ -175,7 +201,7 @@ export async function completeLead(
     booking_id: bookingId,
     customer_id: customerId,
     action: "lead_completed",
-    metadata: { reference: booking.reference, quote_total: finalTotal, manual_price: useOverride },
+    metadata: { reference: booking.reference, quote_total: finalTotal, manual_price: useOverride, tier: isPremium ? "premium" : "standard" },
     performed_by: useOverride ? "admin" : "customer",
   });
 

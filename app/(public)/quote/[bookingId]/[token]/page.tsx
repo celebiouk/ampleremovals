@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, CheckCircle2, X, Plus, Phone, ShieldCheck,
+  Loader2, CheckCircle2, Phone, ShieldCheck,
   CalendarCheck, Truck, Sparkles, Landmark, XCircle, Check, Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyRow } from "@/components/shared/CopyRow";
 import { DEPOSIT_PERCENTAGE, BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
-import { premiumTotalFor, PREMIUM_INCLUDES, TIER_COPY } from "@/lib/tiers";
+import { premiumTotalFor, PREMIUM_INCLUDES, STANDARD_INCLUDES, TIER_COPY } from "@/lib/tiers";
 
 const gbp0 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n || 0);
 
@@ -68,7 +68,9 @@ export default function QuotePage() {
 
   const [stage, setStage] = useState<Stage>("loading");
   const [quote, setQuote] = useState<QuoteData | null>(null);
-  const [removed, setRemoved] = useState<Set<string>>(new Set());
+  // The customer sees only the total (no per-line breakdown), so there is nothing
+  // to remove — kept as a stable empty set for the reserve payload + total calc.
+  const removed = useMemo(() => new Set<string>(), []);
   const [error, setError] = useState("");
   const [loadingMsg, setLoadingMsg] = useState(0);
 
@@ -120,16 +122,8 @@ export default function QuotePage() {
     return () => { cancelled = true; };
   }, [bookingId, token]);
 
-  const toggleLine = useCallback((key: string) => {
-    setRemoved((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  }, []);
-
-  // Live totals as the customer edits (base + white-goods uplift stay hidden inside
-  // the base line, which is never removable).
+  // Total the customer sees (base + items + distance + any add-ons), with the
+  // breakdown deliberately hidden — a single fixed price, no line-by-line prices.
   const { liveTotal, liveDeposit } = useMemo(() => {
     if (!quote) return { liveTotal: 0, liveDeposit: 0 };
     const t = quote.lines
@@ -182,8 +176,6 @@ export default function QuotePage() {
             <RevealView
               key="reveal"
               quote={quote}
-              removed={removed}
-              onToggle={toggleLine}
               liveTotal={liveTotal}
               liveDeposit={liveDeposit}
               onReserve={reserve}
@@ -240,11 +232,9 @@ function LoadingView({ message }: { message: string }) {
 
 /* ── Quote reveal (editable) ──────────────────────────────── */
 function RevealView({
-  quote, removed, onToggle, liveTotal, liveDeposit, onReserve,
+  quote, liveTotal, liveDeposit, onReserve,
 }: {
   quote: QuoteData;
-  removed: Set<string>;
-  onToggle: (key: string) => void;
   liveTotal: number;
   liveDeposit: number;
   onReserve: (tier: "standard" | "premium") => void;
@@ -278,42 +268,16 @@ function RevealView({
           <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{TIER_COPY.standard.name}</h2>
         </div>
         <p className="mb-3 text-sm text-slate-500">{TIER_COPY.standard.tagline}</p>
-        <div className="space-y-2.5">
-          {quote.lines.map((line) => {
-            const isRemoved = removed.has(line.key);
-            return (
-              <div
-                key={line.key}
-                className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                  isRemoved ? "bg-slate-50" : "bg-white"
-                }`}
-              >
-                <span className={`text-sm ${isRemoved ? "text-slate-400 line-through" : "font-medium text-slate-800"}`}>
-                  {line.description}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm tabular-nums ${isRemoved ? "text-slate-400 line-through" : "font-semibold text-slate-900"}`}>
-                    {gbp(line.total)}
-                  </span>
-                  {line.removable && (
-                    <button
-                      type="button"
-                      onClick={() => onToggle(line.key)}
-                      aria-label={isRemoved ? `Add ${line.description}` : `Remove ${line.description}`}
-                      className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${
-                        isRemoved
-                          ? "border-brand-green-300 text-brand-green-600 hover:bg-brand-green-50"
-                          : "border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500"
-                      }`}
-                    >
-                      {isRemoved ? <Plus className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {/* One fixed price — the breakdown (crew & van, your items, distance) is
+            deliberately hidden; the customer sees only what's included and the total. */}
+        <ul className="space-y-1.5">
+          {STANDARD_INCLUDES.map((f, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-green-600" />
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
 
         <div className="mt-5 border-t border-dashed border-slate-200 pt-5">
           <div className="flex items-end justify-between">

@@ -28,10 +28,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  const { bookingId, token, adminPrice } = (body as {
+  const { bookingId, token, adminPrice, adminTier } = (body as {
     bookingId?: string;
     token?: string;
     adminPrice?: number | string;
+    adminTier?: string;
   }) ?? {};
   if (!bookingId) {
     return NextResponse.json({ success: false, error: "Missing booking." }, { status: 400 });
@@ -42,12 +43,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Please check the details and try again." }, { status: 400 });
   }
 
-  // The admin-typed price (optional — blank means fall back to the auto-estimate).
+  // The admin-typed price (optional — blank means fall back to the suggested price).
   const priceNum = typeof adminPrice === "string" ? Number(adminPrice) : adminPrice;
   const priceOverride = typeof priceNum === "number" && Number.isFinite(priceNum) && priceNum > 0 ? priceNum : undefined;
+  const tier = adminTier === "premium" ? "premium" : "standard";
 
   try {
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { priceOverride });
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { priceOverride, tier });
     const d = parsed.data;
 
     // Record who did this and whether the price was set by hand.
