@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 
 /**
  * POST /api/admin/bookings/[id]/update-addresses
@@ -140,27 +139,7 @@ export async function POST(
     } catch (emailErr) {
       console.error("Customer notification failed:", emailErr);
     }
-
-    // SMS
-    try {
-      await sendSMS(
-        customer.phone,
-        `📍 Addresses updated!\n\nOrigin: ${originFormatted}\nDestination: ${destinationFormatted}\n\nRef: ${booking.reference}`
-      );
-    } catch (smsErr) {
-      console.error("SMS failed:", smsErr);
-    }
-
-      // WhatsApp
-      try {
-        await sendWhatsApp(
-          customer.phone,
-          `📍 *Addresses Updated*\n\nHi ${customer.full_name},\n\n*Origin:* ${originFormatted}\n\n*Destination:* ${destinationFormatted}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`,
-          { name: "booking_details_updated", variables: { "1": customer.full_name.split(" ")[0], "2": "addresses", "3": booking.reference } }
-        );
-      } catch (whatsappErr) {
-        console.error("WhatsApp failed:", whatsappErr);
-      }
+    // Booking changes are notified by EMAIL ONLY (no SMS/WhatsApp).
     }
 
     return NextResponse.json({

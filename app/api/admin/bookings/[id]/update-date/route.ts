@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 
 /**
  * POST /api/admin/bookings/[id]/update-date
@@ -120,6 +119,7 @@ export async function POST(
       </div>
     `;
 
+    // Booking changes are notified by EMAIL ONLY (no SMS/WhatsApp).
     try {
       await resend.emails.send({
         from: resendFrom,
@@ -130,27 +130,6 @@ export async function POST(
     } catch (emailErr) {
       console.error("Customer notification failed:", emailErr);
     }
-
-    // SMS
-    try {
-      await sendSMS(
-        customer.phone,
-        `📅 Move date updated!\n\nNew date: ${newDateFormatted}${moveTime ? ` at ${moveTime}` : ""}\n\nQuestions? Call 03335772070\n\nRef: ${booking.reference}`
-      );
-    } catch (smsErr) {
-      console.error("SMS failed:", smsErr);
-    }
-
-      // WhatsApp
-      try {
-        await sendWhatsApp(
-          customer.phone,
-          `📅 *Move Date Updated*\n\nHi ${customer.full_name},\n\nYour move date has been updated:\n\n*New Date:* ${newDateFormatted}${moveTime ? `\n*Time:* ${moveTime}` : ""}\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`,
-          { name: "booking_details_updated", variables: { "1": customer.full_name.split(" ")[0], "2": "move date", "3": booking.reference } }
-        );
-      } catch (whatsappErr) {
-        console.error("WhatsApp failed:", whatsappErr);
-      }
     }
 
     return NextResponse.json({

@@ -19,8 +19,9 @@ export const VAN_SIZES: VanSize[] = [
   { key: "lorry", label: "Lorry", short: "Lorry" },
 ];
 
-/** What the customer is told they get — never a tonnage, just the vehicle type. */
-export const CUSTOMER_VEHICLE = "Lorry or Luton van";
+/** Default vehicle shown to the customer (no tonnage). Admin can change a booking
+ *  to a Lorry (and add vans) in the crew editor — that then shows + is emailed. */
+export const CUSTOMER_VEHICLE = "Luton van";
 
 /** The self-serve / instant-quote default: a 2-man team with one van. */
 export const DEFAULT_CREW = { men: 2, vanCount: 1, vanSize: "luton" } as const;
@@ -55,12 +56,19 @@ export interface CrewSummary {
  * `vanCountFor`. This is the single source of truth for the customer-facing crew
  * copy across the quote page, emails and PDF.
  */
-export function crewSummary(tier: "standard" | "premium", itemQty: number, hasWhiteGoods: boolean, autoVans = true): CrewSummary {
+export function crewSummary(
+  tier: "standard" | "premium",
+  itemQty: number,
+  hasWhiteGoods: boolean,
+  opts: { autoVans?: boolean; vehicle?: string; vans?: number } = {},
+): CrewSummary {
   const men = tier === "premium" ? 4 : 2;
   const years = tier === "premium" ? 11 : 7;
-  const vans = vanCountFor(itemQty, hasWhiteGoods, autoVans);
-  const vanPhrase = vans === 1 ? `a ${CUSTOMER_VEHICLE}` : `${vans} vans (${CUSTOMER_VEHICLE})`;
-  const line = `${men} professional movers (combined ${years} years) · ${vans} × ${CUSTOMER_VEHICLE}`;
+  // Admin overrides (vehicle / van count) win over the automatic sizing.
+  const vans = opts.vans ?? vanCountFor(itemQty, hasWhiteGoods, opts.autoVans ?? true);
+  const vehicle = opts.vehicle || CUSTOMER_VEHICLE;
+  const vanPhrase = vans === 1 ? `a ${vehicle}` : `${vans} ${vehicle}s`;
+  const line = `${men} professional movers (combined ${years} years) · ${vans} × ${vehicle}`;
   const blurb =
     `You get ${men} professional movers with a combined ${years} years' experience, and ${vanPhrase} for the job. ` +
     `We treat your belongings like our own: every piece of furniture is protected, and everything is secured with ` +
@@ -87,10 +95,11 @@ export function resolveCrew(b: {
   const men = b.quote_crew_men ?? DEFAULT_CREW.men;
   const vanCount = b.quote_van_count ?? DEFAULT_CREW.vanCount;
   const vanSize = b.quote_van_size ?? DEFAULT_CREW.vanSize;
+  const vanLabel = vanSizeLabel(vanSize); // "Luton van" by default; "Lorry" if admin changed it
   const years = men >= 4 ? 11 : 7;
   return {
-    men, vanCount, vanSize, vanLabel: CUSTOMER_VEHICLE,
-    line: `${men} professional movers (combined ${years} years) · ${vanCount} × ${CUSTOMER_VEHICLE}`,
+    men, vanCount, vanSize, vanLabel,
+    line: `${men} professional movers (combined ${years} years) · ${vanCount} × ${vanLabel}`,
     blurb: b.quote_crew_blurb || defaultCrewBlurb(men, vanCount, vanSize),
   };
 }
@@ -99,11 +108,12 @@ export function resolveCrew(b: {
  * The default reassurance blurb for a given crew/vehicle. Admin can edit the
  * result; this is only the starting point. Never mentions tonnage or shrink-wrap.
  */
-export function defaultCrewBlurb(men: number, vanCount: number, _vanSizeKey?: string): string {
+export function defaultCrewBlurb(men: number, vanCount: number, vanSizeKey?: string): string {
   const menSafe = Math.max(1, men || 1);
   const vans = Math.max(1, vanCount || 1);
   const years = menSafe >= 4 ? 11 : 7;
-  const vanPhrase = vans === 1 ? `a ${CUSTOMER_VEHICLE}` : `${vans} vans (${CUSTOMER_VEHICLE})`;
+  const vehicle = vanSizeLabel(vanSizeKey);
+  const vanPhrase = vans === 1 ? `a ${vehicle}` : `${vans} ${vehicle}s`;
   return (
     `You get a ${menSafe}-strong professional removals team with a combined ${years} years' experience, ` +
     `and ${vanPhrase} for the job. ` +

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { depositFor, DEPOSIT_PERCENTAGE } from "@/lib/deposit";
-import { crewSummary } from "@/lib/crew";
+import { crewSummary, vanSizeLabel } from "@/lib/crew";
 import { loadPricing } from "@/lib/pricing";
 
 export const runtime = "nodejs";
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       .select(`
         reference, service_type, status, quote_line_items, quote_total,
         deposit_amount, deposit_status, move_date, inventory, has_white_goods,
-        quote_crew_blurb,
+        quote_crew_blurb, quote_van_size, quote_van_count,
         customer:customers!inner(full_name)
       `)
       .eq("id", bookingId)
@@ -56,8 +56,11 @@ export async function POST(req: NextRequest) {
     // Admin can turn the automatic 2-van sizing on/off in Settings.
     const { data: settings } = await supabase.from("settings").select("auto_van_count").eq("id", 1).maybeSingle();
     const autoVans = settings?.auto_van_count !== false;
-    const std = crewSummary("standard", itemQty, hasWG, autoVans);
-    const prem = crewSummary("premium", itemQty, hasWG, autoVans);
+    // Admin per-booking overrides (vehicle changed to Lorry / extra vans added).
+    const vehicle = booking.quote_van_size ? vanSizeLabel(booking.quote_van_size) : undefined;
+    const vans = booking.quote_van_count != null ? Number(booking.quote_van_count) : undefined;
+    const std = crewSummary("standard", itemQty, hasWG, { autoVans, vehicle, vans });
+    const prem = crewSummary("premium", itemQty, hasWG, { autoVans, vehicle, vans });
     const crew = {
       men: std.men,
       vanCount: std.vans,
