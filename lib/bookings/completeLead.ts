@@ -155,6 +155,7 @@ export async function completeLead(
         dest_has_lift: data.destHasLift ?? false, // "no lift" unless the customer says yes
         dest_parking_within_20m: data.destParkingWithin20m ?? null,
         dest_access_notes: data.destAccessNotes ?? null,
+        quote_tier: isPremium ? "premium" : "standard",
         inventory,
         has_white_goods: whiteGoods,
         deposit_amount: finalDeposit,

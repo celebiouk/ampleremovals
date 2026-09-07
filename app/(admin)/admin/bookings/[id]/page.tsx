@@ -405,6 +405,23 @@ export default function BookingDetailPage() {
         </Link>
       </div>
 
+      {/* Job type + time — the key at-a-glance facts, highlighted at the top. */}
+      {(booking.quote_tier || booking.move_time) && (
+        <div className={`flex flex-wrap items-center gap-3 rounded-xl border-2 px-4 py-3 ${booking.quote_tier === "premium" ? "border-amber-300 bg-amber-50" : "border-brand-purple-200 bg-brand-purple-50"}`}>
+          {booking.quote_tier && (
+            <span className={`rounded-full px-3 py-1 text-sm font-extrabold ${booking.quote_tier === "premium" ? "bg-amber-400 text-amber-900" : "bg-brand-purple-800 text-white"}`}>
+              {booking.quote_tier === "premium" ? "★ PREMIUM MOVE" : "STANDARD MOVE"}
+            </span>
+          )}
+          {booking.move_time && (
+            <span className="text-sm font-bold text-slate-800">⏰ {booking.move_time}</span>
+          )}
+          {booking.move_date && (
+            <span className="text-sm font-medium text-slate-600">{formatDate(booking.move_date)}</span>
+          )}
+        </div>
+      )}
+
       {/* Customer clicked "I've made the payment" — awaiting the team's confirmation */}
       {booking.deposit_status === "claimed" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">

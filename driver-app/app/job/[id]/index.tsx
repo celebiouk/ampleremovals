@@ -173,6 +173,14 @@ export default function JobDetailScreen() {
               <Text style={[type.label, { color: colors.primary.surfaceMid }]}>{serviceLabel(j.service_type)}</Text>
               <Text style={[type.h1, { color: colors.white, marginTop: 4 }]}>{customerShortName(j.customer?.full_name)}</Text>
               <Text style={[type.mono, { color: "rgba(255,255,255,0.85)", marginTop: 2 }]}>{j.reference}</Text>
+              {/* Job type — the most important thing to know at a glance. */}
+              {j.quote_tier ? (
+                <View style={{ marginTop: 8, alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: j.quote_tier === "premium" ? "#facc15" : colors.white }}>
+                  <Text style={[type.bodySemiBold, { color: j.quote_tier === "premium" ? "#713f12" : colors.primary.DEFAULT }]}>
+                    {j.quote_tier === "premium" ? "★ PREMIUM MOVE" : "STANDARD MOVE"}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             {j.move_time ? (
               <View style={{ alignItems: "flex-end" }}>
@@ -269,13 +277,21 @@ export default function JobDetailScreen() {
       <AddressCard kind="pickup" address={j.origin} />
       <AddressCard kind="delivery" address={j.destination} />
 
-      {/* Instructions — the customer's general description of the move */}
-      {j.description ? (
+      {/* Job notes — a system line (job type) then " — " then the customer's own
+          description, so the crew know what's going on at a glance. */}
+      {(j.quote_tier || j.description) ? (
         <Card style={{ marginTop: spacing.base }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
             <Info size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Job notes</Text>
           </View>
-          <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{j.description}</Text>
+          <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>
+            {j.quote_tier ? (
+              <Text style={{ fontFamily: type.bodySemiBold.fontFamily, color: colors.primary.DEFAULT }}>
+                {j.quote_tier === "premium" ? "PREMIUM — full pack & move" : "STANDARD move"}{j.description ? " — " : ""}
+              </Text>
+            ) : null}
+            {j.description ?? (j.quote_tier ? "no extra notes from the customer" : "")}
+          </Text>
         </Card>
       ) : null}
 

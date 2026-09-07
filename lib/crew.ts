@@ -32,7 +32,8 @@ export const DEFAULT_CREW = { men: 2, vanCount: 1, vanSize: "luton" } as const;
  *   • no white goods:     2 vans once you're over 70 items
  * otherwise a single van.
  */
-export function vanCountFor(itemQty: number, hasWhiteGoods: boolean): number {
+export function vanCountFor(itemQty: number, hasWhiteGoods: boolean, enabled = true): number {
+  if (!enabled) return 1; // admin turned off automatic 2-van sizing
   const n = Math.max(0, Math.floor(itemQty || 0));
   if (hasWhiteGoods && n > 65) return 2;
   if (!hasWhiteGoods && n > 70) return 2;
@@ -54,10 +55,10 @@ export interface CrewSummary {
  * `vanCountFor`. This is the single source of truth for the customer-facing crew
  * copy across the quote page, emails and PDF.
  */
-export function crewSummary(tier: "standard" | "premium", itemQty: number, hasWhiteGoods: boolean): CrewSummary {
+export function crewSummary(tier: "standard" | "premium", itemQty: number, hasWhiteGoods: boolean, autoVans = true): CrewSummary {
   const men = tier === "premium" ? 4 : 2;
   const years = tier === "premium" ? 11 : 7;
-  const vans = vanCountFor(itemQty, hasWhiteGoods);
+  const vans = vanCountFor(itemQty, hasWhiteGoods, autoVans);
   const vanPhrase = vans === 1 ? `a ${CUSTOMER_VEHICLE}` : `${vans} vans (${CUSTOMER_VEHICLE})`;
   const line = `${men} professional movers (combined ${years} years) · ${vans} × ${CUSTOMER_VEHICLE}`;
   const blurb =

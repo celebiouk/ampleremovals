@@ -53,8 +53,11 @@ export async function POST(req: NextRequest) {
     const inv = Array.isArray(booking.inventory) ? booking.inventory : [];
     const itemQty = inv.reduce((n: number, i: { quantity?: number }) => n + (Number(i?.quantity) || 0), 0);
     const hasWG = Boolean(booking.has_white_goods);
-    const std = crewSummary("standard", itemQty, hasWG);
-    const prem = crewSummary("premium", itemQty, hasWG);
+    // Admin can turn the automatic 2-van sizing on/off in Settings.
+    const { data: settings } = await supabase.from("settings").select("auto_van_count").eq("id", 1).maybeSingle();
+    const autoVans = settings?.auto_van_count !== false;
+    const std = crewSummary("standard", itemQty, hasWG, autoVans);
+    const prem = crewSummary("premium", itemQty, hasWG, autoVans);
     const crew = {
       men: std.men,
       vanCount: std.vans,

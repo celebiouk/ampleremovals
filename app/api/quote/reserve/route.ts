@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         quote_line_items: finalLines,
         quote_subtotal: total,
         quote_total: total,
+        quote_tier: isPremium ? "premium" : "standard",
         status: "deposit_invoice_sent",
       })
       .eq("id", bookingId);

@@ -27,6 +27,7 @@ export interface Job {
   status: string;
   move_date: string | null;
   move_time?: string | null;
+  quote_tier?: string | null;
   latest_driver_status?: string | null;
   description?: string | null;
   special_instructions?: string | null;

@@ -110,6 +110,9 @@ export interface Booking {
   has_lift?: boolean | null;
   parking_within_20m?: boolean | null;
   special_instructions?: string | null;
+  // Which package the customer booked (set at reserve/completion)
+  quote_tier?: string | null;
+  move_time?: string | null;
   // Access at the DROP-OFF address (asked separately in the wizard)
   dest_floor?: string | null;
   dest_has_lift?: boolean | null;

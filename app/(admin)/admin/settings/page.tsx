@@ -11,6 +11,8 @@ interface Settings {
   notify_new_booking: boolean; notify_invoice_paid: boolean;
   notify_invoice_overdue: boolean; overdue_days: number;
   notify_move_date_tomorrow: boolean;
+  // Quoting
+  auto_van_count: boolean;
   // Tax & filing
   company_number: string; company_utr: string; financial_year_end: string;
   confirmation_statement_due: string; incorporation_date: string;
@@ -22,6 +24,7 @@ const defaultSettings: Settings = {
   company_email: "", company_address: "", google_review_link: "", office_postcode: "RG18 3EB",
   notify_new_booking: true, notify_invoice_paid: true,
   notify_invoice_overdue: true, overdue_days: 7, notify_move_date_tomorrow: true,
+  auto_van_count: true,
   company_number: "", company_utr: "", financial_year_end: "03-31",
   confirmation_statement_due: "", incorporation_date: "",
   vat_registered: false, vat_number: "",
@@ -145,6 +148,17 @@ export default function SettingsPage() {
             <div>
               <InputField label="Office postcode" value={settings.office_postcode} onChange={set("office_postcode")} placeholder="RG18 3EB" />
               <p className="mt-1 text-xs text-slate-500">Distances (office → first pickup) are measured from here. Change it anytime.</p>
+            </div>
+
+            <div className="border-t border-slate-200 pt-4">
+              <h3 className="font-semibold text-slate-900">Quoting</h3>
+              <div className="mt-3 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Automatic 2-van sizing</p>
+                  <p className="mt-0.5 text-xs text-slate-500">When on, big moves quote 2 vans automatically (over 65 items with a white good, or over 70 without). Turn off to always quote a single van.</p>
+                </div>
+                <Toggle checked={settings.auto_van_count} onChange={set("auto_van_count") as (v: boolean) => void} />
+              </div>
             </div>
 
             <div className="border-t border-slate-200 pt-4">
