@@ -105,11 +105,16 @@ export interface Booking {
   lead_score?: number | null;
   lead_band?: string | null;
   wants_eot_cleaning?: boolean | null;
-  // Instant-quote + lead flow (Removals)
+  // Instant-quote + lead flow (Removals) — access at the PICKUP address
   floor?: string | null;
   has_lift?: boolean | null;
   parking_within_20m?: boolean | null;
   special_instructions?: string | null;
+  // Access at the DROP-OFF address (asked separately in the wizard)
+  dest_floor?: string | null;
+  dest_has_lift?: boolean | null;
+  dest_parking_within_20m?: boolean | null;
+  dest_access_notes?: string | null;
   inventory?: { key: string; label: string; variant?: string; quantity: number }[] | null;
   has_white_goods?: boolean | null;
   deposit_amount?: number | null;

@@ -6,6 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminClient } from "@/lib/supabase/server";
 import { geocodePostcode } from "@/lib/postcode";
+import { drivingDistanceMiles } from "@/lib/google-maps";
 import { DEFAULT_PRICING_CONFIG, DEFAULT_ITEM_PRICES, DEFAULT_CUSTOM_ITEM_PRICE } from "@/lib/pricing-defaults";
 
 export interface PricingConfig {
@@ -72,11 +73,15 @@ export function mileageCost(miles: number, config: PricingConfig): number {
   return round2(extra * config.per_mile);
 }
 
-/** Approximate road miles between two UK postcodes (straight-line × 1.3). Best
- *  effort — returns 0 if either postcode can't be geocoded. */
+/** Road miles between two UK postcodes. Uses Google driving distance first (the
+ *  same real road distance the admin distance panel shows, so the quote and the
+ *  panel agree); falls back to a straight-line × 1.3 estimate if Google is
+ *  unavailable. Best effort — returns 0 if neither works. */
 export async function milesBetweenPostcodes(a?: string | null, b?: string | null): Promise<number> {
   try {
     if (!a || !b) return 0;
+    const road = await drivingDistanceMiles(a, b).catch(() => null);
+    if (road != null && road > 0) return road;
     const [pa, pb] = await Promise.all([geocodePostcode(a), geocodePostcode(b)]);
     if (!pa || !pb) return 0;
     const R = 3958.8; // Earth radius in miles

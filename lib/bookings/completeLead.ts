@@ -94,7 +94,7 @@ export async function completeLead(
     eotCleaning: Boolean(data.wantsEotCleaning),
     baseCallout: pricingCfg.base_callout,
     itemsSubtotal,
-    itemCount: inventory.length,
+    itemCount: inventory.reduce((n: number, i: { quantity?: number }) => n + (Number(i?.quantity) || 0), 0),
     mileageMiles: miles,
     mileageCost: mCost,
   });
@@ -148,11 +148,11 @@ export async function completeLead(
       .from("bookings")
       .update({
         floor: data.floor ?? null,
-        has_lift: data.hasLift ?? null,
+        has_lift: data.hasLift ?? false, // "no lift" unless the customer says yes
         parking_within_20m: data.parkingWithin20m ?? null,
         special_instructions: data.specialInstructions ?? null,
         dest_floor: data.destFloor ?? null,
-        dest_has_lift: data.destHasLift ?? null,
+        dest_has_lift: data.destHasLift ?? false, // "no lift" unless the customer says yes
         dest_parking_within_20m: data.destParkingWithin20m ?? null,
         dest_access_notes: data.destAccessNotes ?? null,
         inventory,

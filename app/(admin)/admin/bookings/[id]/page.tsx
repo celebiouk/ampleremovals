@@ -577,11 +577,21 @@ export default function BookingDetailPage() {
                 {endOfTenancyDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="font-medium">{endOfTenancyDetails.access_instructions}</dd></div>}
               </>)}
 
-              {/* Access details captured in the wizard (removals) */}
-              {booking.floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.floor === "ground" ? "Ground floor" : `Floor ${booking.floor}`}</dd></div>}
-              {booking.has_lift != null && <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.has_lift ? "Yes" : "No"}</dd></div>}
-              {booking.parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.parking_within_20m ? "Yes" : "No"}</dd></div>}
-              {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Special Instructions</dt><dd className="font-medium">{booking.special_instructions}</dd></div>}
+              {/* Access details captured in the wizard (removals) — BOTH addresses */}
+              {(booking.floor || booking.has_lift != null || booking.parking_within_20m != null || booking.special_instructions) && (<>
+                <div className="pt-1"><dt className="text-xs font-bold uppercase tracking-wide text-brand-purple-700">Pickup access</dt></div>
+                {booking.floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.floor === "ground" ? "Ground floor" : `${booking.floor} flight(s) of stairs`}</dd></div>}
+                <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.has_lift ? "Yes" : "No"}</dd></div>
+                {booking.parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.parking_within_20m ? "Yes" : "No"}</dd></div>}
+                {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="font-medium">{booking.special_instructions}</dd></div>}
+              </>)}
+              {(booking.dest_floor || booking.dest_has_lift != null || booking.dest_parking_within_20m != null || booking.dest_access_notes) && (<>
+                <div className="pt-1"><dt className="text-xs font-bold uppercase tracking-wide text-brand-purple-700">Drop-off access</dt></div>
+                {booking.dest_floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.dest_floor === "ground" ? "Ground floor" : `${booking.dest_floor} flight(s) of stairs`}</dd></div>}
+                <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.dest_has_lift ? "Yes" : "No"}</dd></div>
+                {booking.dest_parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.dest_parking_within_20m ? "Yes" : "No"}</dd></div>}
+                {booking.dest_access_notes && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="font-medium">{booking.dest_access_notes}</dd></div>}
+              </>)}
             </dl>
           </Card>
 

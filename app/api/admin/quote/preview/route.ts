@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       eotCleaning: Boolean(body.wantsEotCleaning),
       baseCallout: pricingCfg.base_callout,
       itemsSubtotal,
-      itemCount: inventory.length,
+      itemCount: inventory.reduce((n: number, i: { quantity?: number }) => n + (Number(i?.quantity) || 0), 0),
       mileageMiles: miles,
       mileageCost: mCost,
     });

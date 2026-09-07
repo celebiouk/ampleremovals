@@ -258,7 +258,7 @@ export async function createBooking(
       eotCleaning: Boolean(d.wantsEotCleaning),
       baseCallout: pricingCfg.base_callout,
       itemsSubtotal,
-      itemCount: inventory.length,
+      itemCount: inventory.reduce((n: number, i: { quantity?: number }) => n + (Number(i?.quantity) || 0), 0),
       mileageMiles: miles,
       mileageCost: mileageCost(miles, pricingCfg),
     });
@@ -288,11 +288,11 @@ export async function createBooking(
         .from("bookings")
         .update({
           floor: d.floor ?? null,
-          has_lift: d.hasLift ?? null,
+          has_lift: d.hasLift ?? false, // "no lift" unless the customer says yes
           parking_within_20m: d.parkingWithin20m ?? null,
           special_instructions: d.specialInstructions ?? null,
           dest_floor: d.destFloor ?? null,
-          dest_has_lift: d.destHasLift ?? null,
+          dest_has_lift: d.destHasLift ?? false, // "no lift" unless the customer says yes
           dest_parking_within_20m: d.destParkingWithin20m ?? null,
           dest_access_notes: d.destAccessNotes ?? null,
           inventory,

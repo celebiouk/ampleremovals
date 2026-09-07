@@ -33,8 +33,7 @@ interface QuoteLine {
 interface QuoteCrew {
   men: number;
   vanCount: number;
-  vanSize: string;
-  vanSizeLabel: string;
+  line: string;
   blurb: string;
 }
 
@@ -48,6 +47,7 @@ interface QuoteData {
   status: string;
   hasQuote: boolean;
   crew?: QuoteCrew;
+  premiumCrewLine?: string;
   premiumMultiplier?: number;
 }
 
@@ -77,6 +77,15 @@ export default function QuotePage() {
   // The reserved figures (server-computed for the chosen tier) — drive the deposit
   // (card/bank) and full (Klarna) payment amounts.
   const [reserved, setReserved] = useState<{ total: number; deposit: number }>({ total: 0, deposit: 0 });
+  // Why the customer arrived — so the loading screen says what they're actually
+  // waiting for (a fresh quote vs. a payment they clicked from an email/text).
+  const [entryContext] = useState<"quote" | "tier" | "paid">(() => {
+    if (typeof window === "undefined") return "quote";
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("paid") === "1") return "paid";
+    if (p.get("tier")) return "tier";
+    return "quote";
+  });
 
   // Rotate the reassuring loading messages.
   useEffect(() => {
@@ -109,11 +118,16 @@ export default function QuotePage() {
         setQuote(data);
         // Just came back from a successful card/Klarna checkout → thank them
         // immediately (the webhook confirms in the background).
-        const justPaid = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("paid") === "1";
-        // Resume where they left off: already paid/claimed → done; already
-        // reserved (deposit invoice sent) → straight to the deposit screen.
+        const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+        const justPaid = params.get("paid") === "1";
+        const tierParam = params.get("tier");
+        // Resume where they left off: already paid/claimed → done; a tier link
+        // from the quote email → reserve that tier and go to payment; already
+        // reserved → the deposit screen.
         if (justPaid || data.depositStatus === "claimed" || data.depositStatus === "verified" || data.status === "deposit_paid_job_confirmed" || data.status === "full_balance_paid") {
           setStage("done");
+        } else if ((tierParam === "standard" || tierParam === "premium") && data.hasQuote) {
+          reserve(tierParam);
         } else if (data.status === "deposit_invoice_sent") {
           setStage("deposit");
         } else if (!data.hasQuote) {
@@ -177,7 +191,23 @@ export default function QuotePage() {
       <div className="mx-auto w-full max-w-xl">
         <AnimatePresence mode="wait">
           {(stage === "loading" || stage === "reserving" || stage === "claiming") && (
-            <LoadingView key="loading" message={stage === "loading" ? LOADING_MESSAGES[loadingMsg] : stage === "reserving" ? "Reserving your date…" : "Confirming your payment…"} />
+            <LoadingView
+              key="loading"
+              heading={
+                stage === "reserving" ? "Reserving your date"
+                : stage === "claiming" ? "Confirming your payment"
+                : entryContext === "paid" ? "Confirming your payment"
+                : entryContext === "tier" ? "Setting up your booking"
+                : "Getting you the best quote"
+              }
+              message={
+                stage === "reserving" ? "Locking in your date…"
+                : stage === "claiming" ? "Just a moment…"
+                : entryContext === "paid" ? "Finishing up your payment…"
+                : entryContext === "tier" ? "Preparing your booking…"
+                : LOADING_MESSAGES[loadingMsg]
+              }
+            />
           )}
 
           {stage === "reveal" && quote && (
@@ -215,7 +245,7 @@ export default function QuotePage() {
 }
 
 /* ── Loading ──────────────────────────────────────────────── */
-function LoadingView({ message }: { message: string }) {
+function LoadingView({ heading, message }: { heading: string; message: string }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -232,7 +262,7 @@ function LoadingView({ message }: { message: string }) {
         />
       </div>
       <h1 className="font-display text-2xl font-extrabold text-brand-purple-950">
-        Getting you the best quote
+        {heading}
       </h1>
       <AnimatePresence mode="wait">
         <motion.p
@@ -300,7 +330,7 @@ function RevealView({
         {quote.crew && (
           <div className="mt-3 rounded-xl bg-brand-purple-50/70 px-4 py-3">
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-purple-800">
-              <ShieldCheck className="h-4 w-4" /> {quote.crew.men}-man team · {quote.crew.vanCount} × {quote.crew.vanSizeLabel}
+              <ShieldCheck className="h-4 w-4" /> {quote.crew.line}
             </p>
             <p className="mt-1 text-sm leading-relaxed text-slate-600">{quote.crew.blurb}</p>
           </div>
@@ -337,6 +367,11 @@ function RevealView({
         </div>
         <p className="mb-3 text-sm text-slate-500">{TIER_COPY.premium.tagline}</p>
         <p className="mb-3 font-display text-3xl font-extrabold tabular-nums text-brand-purple-900">{gbp0(premiumTotal)}</p>
+        {quote.premiumCrewLine && (
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-purple-100/70 px-3 py-1.5 text-sm font-semibold text-brand-purple-800">
+            <ShieldCheck className="h-4 w-4" /> {quote.premiumCrewLine}
+          </p>
+        )}
         <ul className="space-y-1.5">
           {PREMIUM_INCLUDES.map((f, i) => (
             <li key={i} className={`flex items-start gap-2 text-sm ${i === 0 ? "font-semibold text-slate-700" : "text-slate-600"}`}>

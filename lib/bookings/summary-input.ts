@@ -79,11 +79,11 @@ export function buildSummaryFromBookingRow(
 
   const from: AddressInfo = {
     address: fmtAddress(origin),
-    access: { floor: row.floor, hasLift: row.has_lift, parking: row.parking_within_20m, notes: row.special_instructions },
+    access: { floor: row.floor, hasLift: row.has_lift ?? false, parking: row.parking_within_20m, notes: row.special_instructions },
   };
   const to: AddressInfo = {
     address: fmtAddress(destination),
-    access: { floor: row.dest_floor, hasLift: row.dest_has_lift, parking: row.dest_parking_within_20m, notes: row.dest_access_notes },
+    access: { floor: row.dest_floor, hasLift: row.dest_has_lift ?? false, parking: row.dest_parking_within_20m, notes: row.dest_access_notes },
   };
   return {
     reference: row.reference,
@@ -123,11 +123,11 @@ export function buildRemovalsSummary(
 ): BookingSummaryInput {
   const from: AddressInfo = {
     address: fmtAddress(data.originAddress),
-    access: { floor: data.floor, hasLift: data.hasLift, parking: data.parkingWithin20m, notes: data.specialInstructions },
+    access: { floor: data.floor, hasLift: data.hasLift ?? false, parking: data.parkingWithin20m, notes: data.specialInstructions },
   };
   const to: AddressInfo = {
     address: fmtAddress(data.destinationAddress),
-    access: { floor: data.destFloor, hasLift: data.destHasLift, parking: data.destParkingWithin20m, notes: data.destAccessNotes },
+    access: { floor: data.destFloor, hasLift: data.destHasLift ?? false, parking: data.destParkingWithin20m, notes: data.destAccessNotes },
   };
   return {
     reference,

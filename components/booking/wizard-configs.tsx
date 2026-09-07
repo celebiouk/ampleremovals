@@ -76,11 +76,11 @@ const removals: Builder = (initialPostcode) => ({
     destinationAddress: undefined,
     inventory: [],
     floor: undefined,
-    hasLift: undefined,
+    hasLift: false, // records "no lift" unless the customer selects Yes
     parkingWithin20m: undefined,
     specialInstructions: "",
     destFloor: undefined,
-    destHasLift: undefined,
+    destHasLift: false, // records "no lift" unless the customer selects Yes
     destParkingWithin20m: undefined,
     destAccessNotes: "",
     additionalServices: NO_EXTRAS,

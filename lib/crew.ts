@@ -12,24 +12,70 @@ export interface VanSize {
   short: string;
 }
 
+// Internal only (admin can record the actual vehicle). Customers are never shown
+// tonnage — they always see the CUSTOMER_VEHICLE phrase below.
 export const VAN_SIZES: VanSize[] = [
-  { key: "3.5t_luton", label: "3.5 tonne Luton van", short: "3.5t Luton" },
-  { key: "7.5t_lorry", label: "7.5 tonne lorry", short: "7.5t lorry" },
-  { key: "transit", label: "Transit van", short: "Transit" },
-  { key: "large_transit", label: "Large / LWB Transit van", short: "LWB Transit" },
+  { key: "luton", label: "Luton van", short: "Luton" },
+  { key: "lorry", label: "Lorry", short: "Lorry" },
 ];
 
-/** The self-serve / instant-quote default: a 2-man team with one 3.5t Luton. */
-export const DEFAULT_CREW = { men: 2, vanCount: 1, vanSize: "3.5t_luton" } as const;
+/** What the customer is told they get — never a tonnage, just the vehicle type. */
+export const CUSTOMER_VEHICLE = "Lorry or Luton van";
 
-export function vanSizeLabel(key: string | null | undefined): string {
-  return VAN_SIZES.find((v) => v.key === key)?.label ?? "van";
+/** The self-serve / instant-quote default: a 2-man team with one van. */
+export const DEFAULT_CREW = { men: 2, vanCount: 1, vanSize: "luton" } as const;
+
+/**
+ * Number of vans a move needs, from the total item quantity + whether it includes
+ * any white goods (heavy appliances take space):
+ *   • with a white good:  2 vans once you're over 65 items
+ *   • no white goods:     2 vans once you're over 70 items
+ * otherwise a single van.
+ */
+export function vanCountFor(itemQty: number, hasWhiteGoods: boolean): number {
+  const n = Math.max(0, Math.floor(itemQty || 0));
+  if (hasWhiteGoods && n > 65) return 2;
+  if (!hasWhiteGoods && n > 70) return 2;
+  return 1;
+}
+
+export interface CrewSummary {
+  men: number;
+  years: number;
+  vans: number;
+  vehicle: string;
+  line: string;
+  blurb: string;
 }
 
 /**
- * Resolve the crew/vehicle for a booking's quote, applying the house default
- * (2 men, one 3.5t Luton) and generated blurb when nothing is set — so the team
- * copy appears on EVERY quote (PDF + email), whoever filled the form.
+ * The team & vehicle for a move, by tier + size. Standard = 2 movers (combined
+ * 7 years); Premium = 4 movers (combined 11 years). Van count follows
+ * `vanCountFor`. This is the single source of truth for the customer-facing crew
+ * copy across the quote page, emails and PDF.
+ */
+export function crewSummary(tier: "standard" | "premium", itemQty: number, hasWhiteGoods: boolean): CrewSummary {
+  const men = tier === "premium" ? 4 : 2;
+  const years = tier === "premium" ? 11 : 7;
+  const vans = vanCountFor(itemQty, hasWhiteGoods);
+  const vanPhrase = vans === 1 ? `a ${CUSTOMER_VEHICLE}` : `${vans} vans (${CUSTOMER_VEHICLE})`;
+  const line = `${men} professional movers (combined ${years} years) · ${vans} × ${CUSTOMER_VEHICLE}`;
+  const blurb =
+    `You get ${men} professional movers with a combined ${years} years' experience, and ${vanPhrase} for the job. ` +
+    `We treat your belongings like our own: every piece of furniture is protected, and everything is secured with ` +
+    `straps in the van so nothing shifts in transit. Our team carefully loads at pickup and, at the drop-off, ` +
+    `unloads and places each item exactly where you want it — ready for you to settle straight in.`;
+  return { men, years, vans, vehicle: CUSTOMER_VEHICLE, line, blurb };
+}
+
+export function vanSizeLabel(key: string | null | undefined): string {
+  return VAN_SIZES.find((v) => v.key === key)?.label ?? CUSTOMER_VEHICLE;
+}
+
+/**
+ * Resolve the crew/vehicle for a booking's quote. Prefers admin-set figures, else
+ * the standard house crew. The customer always sees "Lorry or Luton van" (never a
+ * tonnage). Blurb falls back to the standard-tier default.
  */
 export function resolveCrew(b: {
   quote_crew_men?: number | null;
@@ -40,35 +86,28 @@ export function resolveCrew(b: {
   const men = b.quote_crew_men ?? DEFAULT_CREW.men;
   const vanCount = b.quote_van_count ?? DEFAULT_CREW.vanCount;
   const vanSize = b.quote_van_size ?? DEFAULT_CREW.vanSize;
-  const vanLabel = vanSizeLabel(vanSize);
+  const years = men >= 4 ? 11 : 7;
   return {
-    men, vanCount, vanSize, vanLabel,
-    line: `${men}-man team · ${vanCount} × ${vanLabel}`,
+    men, vanCount, vanSize, vanLabel: CUSTOMER_VEHICLE,
+    line: `${men} professional movers (combined ${years} years) · ${vanCount} × ${CUSTOMER_VEHICLE}`,
     blurb: b.quote_crew_blurb || defaultCrewBlurb(men, vanCount, vanSize),
   };
 }
 
-/** Rough "combined years of experience" for the blurb — ~3.5 yrs per mover
- *  (so a 2-man team reads "a combined 7 years", matching the house style). */
-function combinedYears(men: number): number {
-  return Math.max(2, Math.round(men * 3.5));
-}
-
 /**
  * The default reassurance blurb for a given crew/vehicle. Admin can edit the
- * result; this is only the starting point.
+ * result; this is only the starting point. Never mentions tonnage or shrink-wrap.
  */
-export function defaultCrewBlurb(men: number, vanCount: number, vanSizeKey: string): string {
+export function defaultCrewBlurb(men: number, vanCount: number, _vanSizeKey?: string): string {
   const menSafe = Math.max(1, men || 1);
   const vans = Math.max(1, vanCount || 1);
-  const size = vanSizeLabel(vanSizeKey);
-  const years = combinedYears(menSafe);
-  const vanPhrase = `${vans} ${size}${vans > 1 ? "s" : ""}`;
+  const years = menSafe >= 4 ? 11 : 7;
+  const vanPhrase = vans === 1 ? `a ${CUSTOMER_VEHICLE}` : `${vans} vans (${CUSTOMER_VEHICLE})`;
   return (
-    `You get a ${menSafe}-man professional removals team with a combined ${years} years' experience, ` +
+    `You get a ${menSafe}-strong professional removals team with a combined ${years} years' experience, ` +
     `and ${vanPhrase} for the job. ` +
-    `We treat your belongings like our own: every item is wrapped and padded with moving blankets, ` +
-    `furniture is protected with shrink-wrap and corner guards, and everything is secured with straps in the van so nothing shifts in transit. ` +
-    `Our team carefully loads and, at the drop-off, unloads and places each item exactly where you want it — ready for you to settle straight in.`
+    `We treat your belongings like our own: every piece of furniture is protected, and everything is secured with ` +
+    `straps in the van so nothing shifts in transit. ` +
+    `Our team carefully loads at pickup and, at the drop-off, unloads and places each item exactly where you want it — ready for you to settle straight in.`
   );
 }
