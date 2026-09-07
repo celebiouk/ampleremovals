@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Truck, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Check, Sparkles,
-  Phone, Mail, User, MapPin, Home, CalendarDays, CalendarRange, Plus, Minus, Building2,
+  Truck, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Check, Search,
+  Phone, Mail, User, MapPin, Home, CalendarDays, CalendarRange, Plus, Minus, Building2, Pencil,
 } from "lucide-react";
-import { STANDARD_INCLUDES, PREMIUM_INCLUDES, TIER_COPY } from "@/lib/tiers";
 import { INVENTORY_CATALOG, type InventoryCategory, type InventorySelection } from "@/lib/inventory-catalog";
+import type { AddressOption } from "@/types";
 
 /* ── Config ───────────────────────────────────────────────── */
-
-const gbp0 = (n: number) =>
-  new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n || 0);
 
 const BEDROOMS = [
   { key: "studio", label: "Studio" }, { key: "1", label: "1 bed" }, { key: "2", label: "2 bed" },
@@ -29,27 +26,32 @@ const POSTCODE_RE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(?:\+44|0)\d{9,10}$/;
 
-interface Estimate { standardTotal: number; premiumTotal: number; deposit: number }
 interface Access { parking: boolean | null; stairs: boolean | null; flights: number }
 const emptyAccess = (): Access => ({ parking: null, stairs: null, flights: 1 });
+const fmtAddress = (a: AddressOption | null) => (a ? [a.line_1, a.line_2, a.city, a.postcode].filter(Boolean).join(", ") : "");
 
-const compositeKey = (key: string, variant?: string) => `${key}|${variant ?? ""}`;
+const REVIEW_STEP = 8;
 
 /* ── Root wizard ──────────────────────────────────────────── */
 
 export function LandingBooking() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // Contact
+  // Contact + the enquiry it creates
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  // Addresses (postcode only) + per-address details
+  const [enquiry, setEnquiry] = useState<{ bookingId: string; quoteToken: string } | null>(null);
+
+  // Addresses
   const [fromPostcode, setFromPostcode] = useState("");
+  const [fromAddr, setFromAddr] = useState<AddressOption | null>(null);
   const [toPostcode, setToPostcode] = useState("");
+  const [toAddr, setToAddr] = useState<AddressOption | null>(null);
+  // Property + access
   const [propertyType, setPropertyType] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [fromAccess, setFromAccess] = useState<Access>(emptyAccess());
@@ -64,14 +66,10 @@ export function LandingBooking() {
   const [moveDate, setMoveDate] = useState("");
   const [flexFrom, setFlexFrom] = useState("");
   const [flexTo, setFlexTo] = useState("");
-  // Quote
-  const [estimate, setEstimate] = useState<Estimate | null>(null);
-  const [estimating, setEstimating] = useState(false);
 
-  const QUOTE_STEP = 8;
   const today = new Date().toISOString().split("T")[0];
 
-  // Load the same catalogue the main wizard uses (admin-hidden items removed).
+  // Same catalogue the main wizard uses (admin-hidden items removed).
   useEffect(() => {
     let cancelled = false;
     fetch("/api/catalog")
@@ -94,14 +92,12 @@ export function LandingBooking() {
   }, []);
 
   // Item helpers
-  const qtyOf = (key: string, variant?: string) =>
-    selections.find((s) => s.key === key && s.variant === variant)?.quantity ?? 0;
-  const setQty = (key: string, label: string, variant: string | undefined, quantity: number) => {
+  const qtyOf = (key: string, variant?: string) => selections.find((s) => s.key === key && s.variant === variant)?.quantity ?? 0;
+  const setQty = (key: string, label: string, variant: string | undefined, quantity: number) =>
     setSelections((prev) => {
       const rest = prev.filter((s) => !(s.key === key && s.variant === variant));
       return quantity > 0 ? [...rest, { key, label, variant, quantity }] : rest;
     });
-  };
   const addCustom = () => {
     const name = customText.trim();
     if (!name) return;
@@ -110,34 +106,13 @@ export function LandingBooking() {
   };
   const totalItems = selections.reduce((n, s) => n + (s.quantity || 0), 0);
 
-  // Live estimate on the quote step (refreshes when they go back and edit).
-  const estimateKey = `${bedrooms}|${fromPostcode}|${toPostcode}|${JSON.stringify(selections)}`;
-  useEffect(() => {
-    if (step !== QUOTE_STEP) return;
-    let cancelled = false;
-    setEstimating(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/quote/estimate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bedrooms, inventory: selections, originPostcode: fromPostcode, destinationPostcode: toPostcode }),
-        });
-        const data = await res.json();
-        if (!cancelled && data.success) setEstimate({ standardTotal: data.standardTotal, premiumTotal: data.premiumTotal, deposit: data.deposit });
-      } catch { /* keep previous */ } finally { if (!cancelled) setEstimating(false); }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, estimateKey]);
-
   const accessDone = (a: Access) => a.parking !== null && a.stairs !== null && (!a.stairs || a.flights >= 1);
   const canProceed = (): boolean => {
     switch (step) {
       case 0: return fullName.trim().length >= 2 && EMAIL_RE.test(email.trim()) && PHONE_RE.test(phone.replace(/[\s()-]/g, ""));
-      case 1: return POSTCODE_RE.test(fromPostcode.trim());
+      case 1: return POSTCODE_RE.test(fromPostcode.trim()) && Boolean(fromAddr?.line_1);
       case 2: return Boolean(propertyType && bedrooms) && accessDone(fromAccess);
-      case 3: return POSTCODE_RE.test(toPostcode.trim());
+      case 3: return POSTCODE_RE.test(toPostcode.trim()) && Boolean(toAddr?.line_1);
       case 4: return accessDone(toAccess);
       case 5: return true;
       case 6: return description.trim().length >= 10;
@@ -146,21 +121,43 @@ export function LandingBooking() {
     }
   };
 
-  const next = () => { setError(""); if (canProceed()) setStep((s) => Math.min(s + 1, QUOTE_STEP)); };
+  // Save the enquiry the moment we have name/phone/email (abandonment capture).
+  const startEnquiry = async () => {
+    if (enquiry) return true;
+    try {
+      const res = await fetch("/api/booking/landing/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, phone }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.bookingId && data.quoteToken) {
+        setEnquiry({ bookingId: data.bookingId, quoteToken: data.quoteToken });
+      }
+    } catch { /* non-fatal — we can still create the booking at submit */ }
+    return true;
+  };
+
+  const next = async () => {
+    setError("");
+    if (!canProceed()) return;
+    if (step === 0) { setBusy(true); await startEnquiry(); setBusy(false); }
+    setStep((s) => Math.min(s + 1, REVIEW_STEP));
+  };
   const back = () => { setError(""); setStep((s) => Math.max(s - 1, 0)); };
 
-  // Reserve on the chosen tier: create the booking, reserve that tier, then hand
-  // off to the quote page's payment step (card / Klarna / bank).
-  const reserve = async (tier: "standard" | "premium") => {
-    setSubmitting(true);
+  const submit = async () => {
+    setBusy(true);
     setError("");
     try {
-      const createRes = await fetch("/api/booking/landing", {
+      const res = await fetch("/api/booking/landing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          bookingId: enquiry?.bookingId, token: enquiry?.quoteToken,
           fullName, email, phone,
           originPostcode: fromPostcode, destinationPostcode: toPostcode,
+          originAddress: fromAddr ?? undefined, destinationAddress: toAddr ?? undefined,
           propertyType, bedrooms,
           floor: fromAccess.stairs ? String(fromAccess.flights) : "ground",
           parkingWithin20m: fromAccess.parking,
@@ -174,21 +171,12 @@ export function LandingBooking() {
           flexibleDateTo: isFlexible ? flexTo : undefined,
         }),
       });
-      const created = await createRes.json();
-      if (!createRes.ok || !created.success || !created.bookingId || !created.quoteToken) {
-        throw new Error(created.error || "Something went wrong. Please try again.");
-      }
-      const { bookingId, quoteToken } = created;
-      // Reserve the chosen tier so the quote page opens straight on payment.
-      await fetch("/api/quote/reserve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, token: quoteToken, removedKeys: [], tier }),
-      });
-      router.push(`/quote/${bookingId}/${quoteToken}`);
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.bookingId || !data.quoteToken) throw new Error(data.error || "Something went wrong. Please try again.");
+      router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
-      setSubmitting(false);
+      setBusy(false);
     }
   };
 
@@ -207,15 +195,13 @@ export function LandingBooking() {
         </div>
 
         {/* Progress */}
-        {step < QUOTE_STEP && (
-          <div className="mb-6">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-brand-purple-100">
-              <motion.div className="h-full rounded-full bg-brand-green-500" initial={false}
-                animate={{ width: `${((step + 1) / QUOTE_STEP) * 100}%` }} transition={{ duration: 0.35 }} />
-            </div>
-            <p className="mt-2 text-xs font-medium text-slate-400">Step {step + 1} of {QUOTE_STEP} · fixed price, no obligation</p>
+        <div className="mb-6">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-brand-purple-100">
+            <motion.div className="h-full rounded-full bg-brand-green-500" initial={false}
+              animate={{ width: `${((step + 1) / (REVIEW_STEP + 1)) * 100}%` }} transition={{ duration: 0.35 }} />
           </div>
-        )}
+          <p className="mt-2 text-xs font-medium text-slate-400">Step {step + 1} of {REVIEW_STEP + 1} · fixed price, no obligation</p>
+        </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
           <AnimatePresence mode="wait">
@@ -230,8 +216,8 @@ export function LandingBooking() {
               )}
 
               {step === 1 && (
-                <StepShell title="Where are you moving from?" subtitle="Just the postcode — that's all we need to price it.">
-                  <PostcodeField value={fromPostcode} onChange={setFromPostcode} placeholder="e.g. RG18 3EB" autoFocus onEnter={next} />
+                <StepShell title="Where are you moving from?" subtitle="Enter your postcode, then pick your address.">
+                  <AddressPicker postcode={fromPostcode} setPostcode={setFromPostcode} address={fromAddr} setAddress={setFromAddr} />
                 </StepShell>
               )}
 
@@ -239,23 +225,19 @@ export function LandingBooking() {
                 <StepShell title="About the place you're leaving" subtitle="A few quick details so our crew arrive ready.">
                   <Label>Property type</Label>
                   <div className="mb-4 grid grid-cols-3 gap-2">
-                    {PROPERTY_TYPES.map((p) => (
-                      <ChoiceCard key={p.key} icon={p.icon} label={p.label} selected={propertyType === p.key} onClick={() => setPropertyType(p.key)} />
-                    ))}
+                    {PROPERTY_TYPES.map((p) => (<ChoiceCard key={p.key} icon={p.icon} label={p.label} selected={propertyType === p.key} onClick={() => setPropertyType(p.key)} />))}
                   </div>
                   <Label>How many bedrooms?</Label>
                   <div className="mb-4 grid grid-cols-3 gap-2">
-                    {BEDROOMS.map((b) => (
-                      <PillButton key={b.key} label={b.label} selected={bedrooms === b.key} onClick={() => setBedrooms(b.key)} />
-                    ))}
+                    {BEDROOMS.map((b) => (<PillButton key={b.key} label={b.label} selected={bedrooms === b.key} onClick={() => setBedrooms(b.key)} />))}
                   </div>
                   <AccessFields access={fromAccess} setAccess={setFromAccess} />
                 </StepShell>
               )}
 
               {step === 3 && (
-                <StepShell title="And where are you moving to?" subtitle="Postcode only — no need for the full address.">
-                  <PostcodeField value={toPostcode} onChange={setToPostcode} placeholder="e.g. SL6 1AA" autoFocus onEnter={next} />
+                <StepShell title="And where are you moving to?" subtitle="Enter the postcode, then pick the address.">
+                  <AddressPicker postcode={toPostcode} setPostcode={setToPostcode} address={toAddr} setAddress={setToAddr} />
                 </StepShell>
               )}
 
@@ -288,7 +270,7 @@ export function LandingBooking() {
                                 ))}
                               </div>
                             ) : (
-                              <div key={compositeKey(item.key)} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                              <div key={item.key} className="flex items-center justify-between gap-3 px-4 py-2.5">
                                 <span className="text-sm font-medium text-brand-purple-950">{item.label}</span>
                                 <Stepper value={qtyOf(item.key)} onChange={(n) => setQty(item.key, item.label, undefined, n)} />
                               </div>
@@ -297,7 +279,6 @@ export function LandingBooking() {
                         </div>
                       </section>
                     ))}
-                    {/* Custom items */}
                     {selections.filter((s) => s.key.startsWith("custom:")).length > 0 && (
                       <section>
                         <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-slate-400">Your own items</h3>
@@ -326,7 +307,7 @@ export function LandingBooking() {
               {step === 6 && (
                 <StepShell title="Anything else we should know?" subtitle="Tell us about your move — fragile items, tricky access, timings, anything at all.">
                   <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={5}
-                    placeholder="e.g. 2 flights of stairs at the flat, need to be done before 1pm, a few fragile paintings…"
+                    placeholder="e.g. narrow staircase at the flat, need to finish before 1pm, a few fragile paintings…"
                     className="min-h-[120px] w-full resize-y rounded-xl border-2 border-slate-200 px-4 py-3 text-base leading-relaxed outline-none focus:border-brand-purple-600" />
                   <p className="mt-2 text-xs text-slate-400">{description.trim().length < 10 ? "A sentence or two helps us quote accurately." : "Great, thank you."}</p>
                 </StepShell>
@@ -349,28 +330,43 @@ export function LandingBooking() {
                 </StepShell>
               )}
 
-              {step === QUOTE_STEP && (
-                <QuoteView firstName={fullName.split(" ")[0] || "there"} estimate={estimate} estimating={estimating}
-                  onEdit={() => setStep(2)} onReserve={reserve} submitting={submitting} />
+              {step === REVIEW_STEP && (
+                <StepShell title="Quick review before your quote" subtitle="Check everything's right — tap any section to change it.">
+                  <div className="space-y-2.5">
+                    <ReviewRow label="Your details" value={`${fullName} · ${phone} · ${email}`} onEdit={() => setStep(0)} />
+                    <ReviewRow label="Moving from" value={fmtAddress(fromAddr)} onEdit={() => setStep(1)} />
+                    <ReviewRow label="From — property & access" value={`${propertyType || "—"}, ${bedrooms || "—"} bed · parking ${fromAccess.parking ? "yes" : "no"} · ${fromAccess.stairs ? `${fromAccess.flights} flight(s)` : "ground floor"}`} onEdit={() => setStep(2)} />
+                    <ReviewRow label="Moving to" value={fmtAddress(toAddr)} onEdit={() => setStep(3)} />
+                    <ReviewRow label="To — access" value={`parking ${toAccess.parking ? "yes" : "no"} · ${toAccess.stairs ? `${toAccess.flights} flight(s)` : "ground floor"}`} onEdit={() => setStep(4)} />
+                    <ReviewRow label="Items" value={totalItems ? `${totalItems} item${totalItems === 1 ? "" : "s"}` : "None added"} onEdit={() => setStep(5)} />
+                    <ReviewRow label="About your move" value={description || "—"} onEdit={() => setStep(6)} />
+                    <ReviewRow label="Move date" value={isFlexible ? `Flexible: ${flexFrom} – ${flexTo}` : moveDate} onEdit={() => setStep(7)} />
+                  </div>
+                </StepShell>
               )}
             </motion.div>
           </AnimatePresence>
 
           {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>}
 
-          {step < QUOTE_STEP && (
-            <div className="mt-6 flex items-center gap-3">
-              {step > 0 && (
-                <button type="button" onClick={back} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-4 text-sm font-semibold text-slate-600 hover:border-slate-300">
-                  <ArrowLeft className="h-4 w-4" /> Back
-                </button>
-              )}
-              <button type="button" onClick={next} disabled={!canProceed()}
-                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:cursor-not-allowed disabled:opacity-40">
-                {step === 7 ? "See my price" : "Continue"} <ArrowRight className="h-5 w-5" />
+          <div className="mt-6 flex items-center gap-3">
+            {step > 0 && (
+              <button type="button" onClick={back} disabled={busy} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-4 text-sm font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50">
+                <ArrowLeft className="h-4 w-4" /> Back
               </button>
-            </div>
-          )}
+            )}
+            {step < REVIEW_STEP ? (
+              <button type="button" onClick={next} disabled={!canProceed() || busy}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:cursor-not-allowed disabled:opacity-40">
+                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Continue <ArrowRight className="h-5 w-5" /></>}
+              </button>
+            ) : (
+              <button type="button" onClick={submit} disabled={busy}
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:opacity-50">
+                {busy ? <><Loader2 className="h-5 w-5 animate-spin" /> Getting your quote…</> : <>See my quote <ArrowRight className="h-5 w-5" /></>}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500">
@@ -412,16 +408,76 @@ function Field({ icon: Icon, placeholder, value, onChange, type = "text", autoFo
   );
 }
 
-function PostcodeField({ value, onChange, placeholder, autoFocus, onEnter }: {
-  value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void;
+/** Postcode → "Find address" → pick from the list, or enter it manually. */
+function AddressPicker({ postcode, setPostcode, address, setAddress }: {
+  postcode: string; setPostcode: (v: string) => void; address: AddressOption | null; setAddress: (a: AddressOption | null) => void;
 }) {
+  const [list, setList] = useState<AddressOption[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [manual, setManual] = useState(false);
+
+  const find = async () => {
+    if (!POSTCODE_RE.test(postcode.trim())) return;
+    setLoading(true); setList(null); setAddress(null); setManual(false);
+    try {
+      const res = await fetch(`/api/postcode/lookup?postcode=${encodeURIComponent(postcode.trim())}`);
+      const data = await res.json();
+      const found = (data.addresses ?? []).filter((a: AddressOption) => a.line_1);
+      setList(found);
+      if (!found.length) setManual(true);
+    } catch { setManual(true); } finally { setLoading(false); }
+  };
+
+  const pc = postcode.trim().toUpperCase();
   return (
-    <div className="relative">
-      <MapPin className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-      {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-      <input autoFocus={autoFocus} value={value} onChange={(e) => onChange(e.target.value.toUpperCase())}
-        onKeyDown={(e) => { if (e.key === "Enter") onEnter?.(); }} placeholder={placeholder} autoCapitalize="characters"
-        className="h-14 w-full rounded-xl border-2 border-slate-200 bg-white pl-11 pr-3 text-lg font-semibold uppercase tracking-wide outline-none focus:border-brand-purple-600" />
+    <div>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <MapPin className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <input value={postcode} onChange={(e) => { setPostcode(e.target.value.toUpperCase()); setList(null); setAddress(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); find(); } }} placeholder="e.g. RG18 3EB" autoCapitalize="characters"
+            className="h-14 w-full rounded-xl border-2 border-slate-200 bg-white pl-11 pr-3 text-lg font-semibold uppercase tracking-wide outline-none focus:border-brand-purple-600" />
+        </div>
+        <button type="button" onClick={find} disabled={!POSTCODE_RE.test(postcode.trim()) || loading}
+          className="flex h-14 items-center gap-1.5 rounded-xl bg-brand-purple-800 px-4 text-sm font-bold text-white hover:bg-brand-purple-900 disabled:opacity-40">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Find
+        </button>
+      </div>
+
+      {/* Address list */}
+      {list && list.length > 0 && !manual && (
+        <div className="mt-3 max-h-56 space-y-1.5 overflow-y-auto">
+          {list.map((a, i) => {
+            const selected = address?.line_1 === a.line_1 && address?.city === a.city;
+            return (
+              <button key={i} type="button" onClick={() => setAddress({ ...a, postcode: pc })}
+                className={`flex w-full items-center justify-between gap-2 rounded-xl border-2 px-3 py-2.5 text-left text-sm transition-colors ${
+                  selected ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-900" : "border-slate-200 text-slate-700 hover:border-brand-purple-300"}`}>
+                <span>{[a.line_1, a.line_2, a.city].filter(Boolean).join(", ")}</span>
+                {selected && <Check className="h-4 w-4 shrink-0 text-brand-purple-700" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {list && !manual && (
+        <button type="button" onClick={() => { setManual(true); setAddress({ line_1: "", postcode: pc }); }} className="mt-3 text-sm font-semibold text-brand-purple-700 hover:underline">
+          Can&apos;t see it? Enter address manually
+        </button>
+      )}
+
+      {/* Manual entry */}
+      {manual && (
+        <div className="mt-3 space-y-2">
+          <input value={address?.line_1 ?? ""} onChange={(e) => setAddress({ line_1: e.target.value, line_2: address?.line_2, city: address?.city, postcode: pc })}
+            placeholder="Address line 1 (building & street)" className="h-12 w-full rounded-xl border-2 border-slate-200 px-3 text-base outline-none focus:border-brand-purple-600" />
+          <input value={address?.line_2 ?? ""} onChange={(e) => setAddress({ line_1: address?.line_1 ?? "", line_2: e.target.value, city: address?.city, postcode: pc })}
+            placeholder="Address line 2 (optional)" className="h-12 w-full rounded-xl border-2 border-slate-200 px-3 text-base outline-none focus:border-brand-purple-600" />
+          <input value={address?.city ?? ""} onChange={(e) => setAddress({ line_1: address?.line_1 ?? "", line_2: address?.line_2, city: e.target.value, postcode: pc })}
+            placeholder="Town / city" className="h-12 w-full rounded-xl border-2 border-slate-200 px-3 text-base outline-none focus:border-brand-purple-600" />
+        </div>
+      )}
     </div>
   );
 }
@@ -525,67 +581,16 @@ function DateInput({ label, value, min, onChange }: { label: string; value: stri
   );
 }
 
-function QuoteView({ firstName, estimate, estimating, onEdit, onReserve, submitting }: {
-  firstName: string; estimate: Estimate | null; estimating: boolean; onEdit: () => void;
-  onReserve: (tier: "standard" | "premium") => void; submitting: boolean;
-}) {
-  const premiumInstalment = useMemo(() => estimate ? Math.round((estimate.premiumTotal / 3) * 100) / 100 : 0, [estimate]);
+function ReviewRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
-    <div>
-      <div className="mb-5 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-green-100"><Sparkles className="h-6 w-6 text-brand-green-600" /></div>
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-brand-purple-950">{firstName}, here&apos;s your price</h1>
-        <p className="mt-1 text-sm text-slate-500">Fixed price. No hidden fees. Free to reserve.</p>
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="mt-0.5 break-words text-sm font-medium text-slate-800">{value || "—"}</p>
       </div>
-
-      {estimating && !estimate ? (
-        <div className="flex flex-col items-center py-12 text-slate-400"><Loader2 className="mb-3 h-6 w-6 animate-spin" /> Working out your best price…</div>
-      ) : estimate ? (
-        <>
-          {/* Standard — "what you get" inside the card */}
-          <div className="rounded-2xl border-2 border-brand-purple-200 bg-white p-5 shadow-lg shadow-slate-200/60">
-            <div className="mb-1 flex items-center gap-2"><Truck className="h-5 w-5 text-brand-purple-700" />
-              <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{TIER_COPY.standard.name}</h2></div>
-            <p className="mb-3 text-sm text-slate-500">{TIER_COPY.standard.tagline}</p>
-            <ul className="mb-4 space-y-1.5">
-              {STANDARD_INCLUDES.map((f, i) => (<li key={i} className="flex items-start gap-2 text-sm text-slate-600"><Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-green-600" /><span>{f}</span></li>))}
-            </ul>
-            <div className="flex items-end justify-between border-t border-dashed border-slate-200 pt-4">
-              <span className="font-display text-base font-bold text-brand-purple-950">Total</span>
-              <span className="font-display text-3xl font-extrabold tabular-nums text-brand-purple-900">{gbp0(estimate.standardTotal)}</span>
-            </div>
-            <button type="button" onClick={() => onReserve("standard")} disabled={submitting}
-              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:opacity-50">
-              {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>I&apos;m booking Standard — {gbp0(estimate.standardTotal)}</>}
-            </button>
-          </div>
-
-          {/* Premium — everything in standard, plus… */}
-          <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-brand-purple-600 bg-white p-5 shadow-lg shadow-brand-purple-200/50">
-            <span className="absolute right-0 top-0 flex items-center gap-1 rounded-bl-xl bg-brand-purple-800 px-3 py-1 text-xs font-bold text-white"><Star className="h-3.5 w-3.5" /> RECOMMENDED</span>
-            <div className="mb-1 flex items-center gap-2"><Sparkles className="h-5 w-5 text-brand-purple-700" />
-              <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{TIER_COPY.premium.name}</h2></div>
-            <p className="mb-3 font-display text-2xl font-extrabold tabular-nums text-brand-purple-900">{gbp0(estimate.premiumTotal)}</p>
-            <ul className="mb-4 space-y-1.5">
-              {PREMIUM_INCLUDES.map((f, i) => (<li key={i} className={`flex items-start gap-2 text-sm ${i === 0 ? "font-semibold text-slate-700" : "text-slate-600"}`}>{i === 0 ? <span className="w-4" /> : <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-green-600" />}<span>{f}</span></li>))}
-            </ul>
-            <button type="button" onClick={() => onReserve("premium")} disabled={submitting}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900 disabled:opacity-50">
-              {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>I&apos;m booking Premium — {gbp0(estimate.premiumTotal)}</>}
-            </button>
-            <p className="mt-2 text-center text-xs text-slate-400">or 3× {gbp0(premiumInstalment)} with Klarna</p>
-          </div>
-
-          <button type="button" onClick={onEdit} disabled={submitting}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:border-brand-purple-300 disabled:opacity-50">
-            <ArrowLeft className="h-4 w-4" /> Go back &amp; change my details
-          </button>
-          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400"><ShieldCheck className="h-4 w-4" /> No card needed now · Free to reserve · Pay by card, Klarna or bank</p>
-        </>
-      ) : (
-        <div className="py-10 text-center text-sm text-slate-500">We couldn&apos;t work out your price just now.{" "}
-          <button type="button" onClick={onEdit} className="font-semibold text-brand-purple-700 underline">Go back and try again</button>.</div>
-      )}
+      <button type="button" onClick={onEdit} className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-purple-700 hover:underline">
+        <Pencil className="h-3.5 w-3.5" /> Edit
+      </button>
     </div>
   );
 }

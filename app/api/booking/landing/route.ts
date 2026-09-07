@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
-import { generateQuoteConfirmToken } from "@/lib/tokens";
+import { completeLead } from "@/lib/bookings/completeLead";
+import { generateQuoteConfirmToken, verifyQuoteConfirmToken } from "@/lib/tokens";
 import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
 import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
-import { RemovalsFormSchema, InventorySelectionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
+import { RemovalsFormSchema, InventorySelectionSchema, AddressOptionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
 import { logError } from "@/lib/log-error";
 import type { RemovalsForm } from "@/lib/schemas/booking";
+
+const TOKEN_EXPIRY_HOURS = 24 * 30;
 
 export const runtime = "nodejs";
 
@@ -20,11 +23,18 @@ export const runtime = "nodejs";
  * reserve + pay.
  */
 const LandingSchema = z.object({
+  // When present, we COMPLETE the enquiry created by /start (status → quote sent)
+  // rather than creating a fresh booking.
+  bookingId: z.string().uuid().optional(),
+  token: z.string().optional(),
   fullName: z.string().trim().min(2, "Please enter your full name"),
   email: z.string().trim().email("Enter a valid email"),
   phone: ukPhoneSchema,
   originPostcode: postcodeSchema,
   destinationPostcode: postcodeSchema,
+  // Full addresses when the customer picked from the list (else postcode-only).
+  originAddress: AddressOptionSchema.optional(),
+  destinationAddress: AddressOptionSchema.optional(),
   propertyType: z.enum(["house", "flat", "bungalow"]).optional().default("house"),
   bedrooms: z.enum(["studio", "1", "2", "3", "4", "5+"]),
   // Per-address access (floor is "ground" or a number of flights).
@@ -65,14 +75,18 @@ export async function POST(req: NextRequest) {
   const synth = `House move (${bedroomsLabel}) from ${d.originPostcode} to ${d.destinationPostcode}, booked online.`;
   const description = userDesc.length >= 20 ? userDesc : userDesc ? `${userDesc} — ${synth}` : synth;
 
+  // Use the picked address if we have a real street line; else postcode-only.
+  const originAddress = d.originAddress?.line_1 ? d.originAddress : { line_1: d.originPostcode, postcode: d.originPostcode };
+  const destinationAddress = d.destinationAddress?.line_1 ? d.destinationAddress : { line_1: d.destinationPostcode, postcode: d.destinationPostcode };
+
   const form: RemovalsForm = RemovalsFormSchema.parse({
     removalType: "domestic",
     originPostcode: d.originPostcode,
-    originAddress: { line_1: d.originPostcode, postcode: d.originPostcode },
+    originAddress,
     propertyType: d.propertyType,
     bedrooms: d.bedrooms,
     destinationPostcode: d.destinationPostcode,
-    destinationAddress: { line_1: d.destinationPostcode, postcode: d.destinationPostcode },
+    destinationAddress,
     additionalServices: { packing_services: false, packing_materials: false, disassemble_furniture: false, assemble_furniture: false },
     description,
     inventory: d.inventory,
@@ -89,9 +103,17 @@ export async function POST(req: NextRequest) {
     phone: d.phone,
   });
 
+  // Complete the pre-created enquiry (status → quote sent) when we have its id +
+  // a valid token; otherwise create a fresh booking (fallback).
+  const completing = Boolean(d.bookingId && d.token && verifyQuoteConfirmToken(d.bookingId, d.token, TOKEN_EXPIRY_HOURS));
   let reference: string, bookingId: string, customerId: string, quoteTotal: number | null | undefined;
   try {
-    ({ reference, bookingId, customerId, quoteTotal } = await createBooking("removals", form, rawAttribution));
+    if (completing) {
+      const r = await completeLead(d.bookingId!, form);
+      ({ reference, bookingId, customerId, quoteTotal } = r);
+    } else {
+      ({ reference, bookingId, customerId, quoteTotal } = await createBooking("removals", form, rawAttribution));
+    }
   } catch (err) {
     await logError({ message: `landing booking failed: ${err instanceof Error ? err.message : "unknown"}`, metadata: {} });
     return NextResponse.json(
@@ -100,7 +122,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const quoteToken = generateQuoteConfirmToken(bookingId);
+  const quoteToken = d.token && completing ? d.token : generateQuoteConfirmToken(bookingId);
 
   // Notifications — never block the response.
   const notifPayload: NotificationPayload = {
