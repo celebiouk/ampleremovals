@@ -125,10 +125,16 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       } else if (config.slug === "removals" && data.bookingId && data.quoteToken) {
         router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
       } else {
+        // bookingId + quoteToken (when we have both) let the confirmation page
+        // trigger the customer's confirmation email/SMS itself after a short
+        // delay, instead of it firing the instant they submit.
+        const notifyQs = data.bookingId && data.quoteToken
+          ? `&bid=${encodeURIComponent(data.bookingId)}&t=${encodeURIComponent(data.quoteToken)}`
+          : "";
         router.push(
           `/confirmation?ref=${encodeURIComponent(
             data.reference
-          )}&service=${config.slug}`
+          )}&service=${config.slug}${notifyQs}`
         );
       }
     } catch (err) {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Home, RotateCcw } from "lucide-react";
 import { SuccessCheck } from "@/components/booking/SuccessCheck";
+import { ConfirmationNotifyTrigger } from "@/components/booking/ConfirmationNotifyTrigger";
 import { SERVICE_BY_SLUG } from "@/lib/services";
 
 export const metadata = { title: "Booking Request Received" };
@@ -14,7 +15,7 @@ const NEXT_STEPS = [
 export default function ConfirmationPage({
   searchParams,
 }: {
-  searchParams: { ref?: string; service?: string };
+  searchParams: { ref?: string; service?: string; bid?: string; t?: string };
 }) {
   const reference = searchParams.ref;
   const serviceMeta = searchParams.service
@@ -26,6 +27,7 @@ export default function ConfirmationPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-5 py-24">
+      <ConfirmationNotifyTrigger bookingId={searchParams.bid} token={searchParams.t} />
       <div className="w-full max-w-[600px] rounded-3xl bg-white p-8 text-center shadow-xl shadow-brand-purple-900/10 sm:p-12">
         <SuccessCheck />
 

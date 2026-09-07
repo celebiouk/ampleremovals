@@ -9,6 +9,7 @@ import {
   CreditCard, Wallet, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDelayedBookingNotify } from "@/hooks/useDelayedBookingNotify";
 import { CopyRow } from "@/components/shared/CopyRow";
 import { DEPOSIT_PERCENTAGE, BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
 import { premiumTotalFor, PREMIUM_INCLUDES, STANDARD_INCLUDES, TIER_COPY } from "@/lib/tiers";
@@ -66,6 +67,10 @@ export default function QuotePage() {
   const params = useParams();
   const bookingId = params.bookingId as string;
   const token = params.token as string;
+  // The customer's quote/confirmation email+SMS fires from THIS page, ~60s
+  // after they land here (or sooner if they navigate away) — not the instant
+  // they submitted the booking. Safe on every visit (idempotent server-side).
+  useDelayedBookingNotify(bookingId, token);
 
   const [stage, setStage] = useState<Stage>("loading");
   const [quote, setQuote] = useState<QuoteData | null>(null);

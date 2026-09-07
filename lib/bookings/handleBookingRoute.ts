@@ -2,19 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
-import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { logError } from "@/lib/log-error";
-import {
-  sendCustomerConfirmationEmail,
-  sendAdminNewBookingEmail,
-  sendCustomerConfirmationSMS,
-  type NotificationPayload,
-} from "@/lib/notifications";
-import { sendBookingSummaryEmail, type BookingSummaryInput } from "@/lib/booking-summary-email";
-import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
-import { scheduleCustomerNotification } from "@/lib/bookings/schedule-notify";
+import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import type { ServiceType } from "@/types";
-import type { AnyBookingForm, RemovalsForm } from "@/lib/schemas/booking";
+import type { AnyBookingForm } from "@/lib/schemas/booking";
 
 /**
  * Shared booking-submission handler: validates, persists, fires notifications,
@@ -52,10 +43,9 @@ export async function handleBookingRoute(
   let reference: string;
   let bookingId: string;
   let customerId: string;
-  let quoteTotal: number | null | undefined;
 
   try {
-    ({ reference, bookingId, customerId, quoteTotal } = await createBooking(serviceType, data, rawAttribution));
+    ({ reference, bookingId, customerId } = await createBooking(serviceType, data, rawAttribution));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await logError({
@@ -97,35 +87,12 @@ export async function handleBookingRoute(
   // client then falls back to the plain confirmation page.
   const quoteToken = generateQuoteConfirmToken(bookingId);
 
-  // Admin alert fires immediately (never delayed). The CUSTOMER-facing
-  // confirmation is delayed ~60s (see schedule-notify.ts) so it lands after
-  // they've had a moment to read the rest of the booking screen, not the
-  // instant they hit submit — falls back to sending right away if scheduling
-  // itself fails, so a booking never loses its confirmation.
+  // Admin alert fires immediately. The CUSTOMER-facing confirmation is NOT sent
+  // here at all — the quote/confirmation page the browser is redirected to
+  // triggers it itself via /api/booking/notify after ~60s (or sooner via a
+  // page-unload beacon), so it lands after they've had a moment to read the
+  // rest of the booking screen, not the instant they hit submit.
   await sendAdminNewBookingEmail(notifPayload);
-
-  if (serviceType === "removals" && quoteToken) {
-    const summary: BookingSummaryInput = buildRemovalsSummary(data as RemovalsForm, reference, quoteTotal ?? null);
-    const reserve = {
-      bookingId,
-      token: quoteToken,
-      reference,
-      firstName: data.fullName.split(" ")[0],
-      email: data.email,
-      phone: data.phone,
-      total: quoteTotal ?? 0,
-      inventory: (data as { inventory?: unknown }).inventory,
-    };
-    const scheduled = await scheduleCustomerNotification(bookingId, { kind: "removals_reserve", summary, reserve });
-    if (!scheduled) {
-      await Promise.allSettled([sendBookingSummaryEmail(summary), sendReserveMessages(reserve)]);
-    }
-  } else {
-    const scheduled = await scheduleCustomerNotification(bookingId, { kind: "generic_confirmation", notif: notifPayload });
-    if (!scheduled) {
-      await Promise.allSettled([sendCustomerConfirmationEmail(notifPayload), sendCustomerConfirmationSMS(notifPayload)]);
-    }
-  }
 
   return NextResponse.json({ success: true, reference, bookingId, quoteToken });
 }
