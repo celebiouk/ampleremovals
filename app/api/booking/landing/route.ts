@@ -7,6 +7,7 @@ import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
 import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
+import { scheduleCustomerNotification } from "@/lib/bookings/schedule-notify";
 import { RemovalsFormSchema, InventorySelectionSchema, AddressOptionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
 import { logError } from "@/lib/log-error";
 import type { RemovalsForm } from "@/lib/schemas/booking";
@@ -136,17 +137,24 @@ export async function POST(req: NextRequest) {
     description: form.description,
     additionalServices: null,
   };
-  await Promise.allSettled([
-    sendAdminNewBookingEmail(notifPayload),
-    sendBookingSummaryEmail(buildRemovalsSummary(form, reference, quoteTotal ?? null)),
-    quoteToken
-      ? sendReserveMessages({
-          bookingId, token: quoteToken, reference,
-          firstName: d.fullName.split(" ")[0], email: d.email, phone: d.phone,
-          total: quoteTotal ?? 0, inventory: d.inventory,
-        })
-      : Promise.resolve(),
-  ]);
+  // Admin alert fires immediately; the customer's summary + reserve messages are
+  // delayed ~60s so they land after the customer's had a moment on the quote
+  // page, not the instant they submit (see schedule-notify.ts).
+  await sendAdminNewBookingEmail(notifPayload);
+  const summary = buildRemovalsSummary(form, reference, quoteTotal ?? null);
+  if (quoteToken) {
+    const reserve = {
+      bookingId, token: quoteToken, reference,
+      firstName: d.fullName.split(" ")[0], email: d.email, phone: d.phone,
+      total: quoteTotal ?? 0, inventory: d.inventory,
+    };
+    const scheduled = await scheduleCustomerNotification(bookingId, { kind: "removals_reserve", summary, reserve });
+    if (!scheduled) {
+      await Promise.allSettled([sendBookingSummaryEmail(summary), sendReserveMessages(reserve)]);
+    }
+  } else {
+    await sendBookingSummaryEmail(summary);
+  }
 
   return NextResponse.json({ success: true, reference, bookingId, quoteToken });
 }

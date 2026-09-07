@@ -27,6 +27,7 @@ import { EditableCustomerCard } from "@/components/admin/EditableCustomerCard";
 import { InventoryEditor } from "@/components/admin/InventoryEditor";
 import { BookingLocationsEditor } from "@/components/admin/BookingLocationsEditor";
 import { CrewEditor } from "@/components/admin/CrewEditor";
+import { WhatsAppQueueList } from "@/components/admin/WhatsAppQueueList";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { isSuperAdmin } from "@/lib/super-admin";
@@ -805,6 +806,11 @@ export default function BookingDetailPage() {
                 Build Quote
               </button>
             </div>
+          </Card>
+
+          {/* Pending WhatsApp messages for this booking — send manually from your own number */}
+          <Card title="WhatsApp Queue">
+            <WhatsAppQueueList bookingId={bookingId} />
           </Card>
 
           {/* Call-back reminders — expandable, one open at a time */}

@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { WHATSAPP_TEMPLATES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
+import { WHATSAPP_TEMPLATE_TITLES, type WhatsAppTemplate } from "@/lib/whatsapp-templates";
 import { createAdminClient } from "@/lib/supabase/server";
 import { recordMessage, normalisePhone, matchCustomerId, channelFromAddress, type Channel } from "@/lib/message-store";
 
@@ -32,7 +32,7 @@ const STATUS_CALLBACK = process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https")
   ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/twilio/status`
   : undefined;
 
-export interface SendResult { success: boolean; error?: string; sid?: string; messageId?: string | null; skipped?: boolean }
+export interface SendResult { success: boolean; error?: string; sid?: string; messageId?: string | null; skipped?: boolean; queued?: boolean }
 
 // Admin notifications no longer go over Twilio (they use the dashboard + push) —
 // this cuts a big chunk of SMS/WhatsApp cost. Any message addressed to the admin
@@ -212,14 +212,13 @@ export async function sendSMS(to: string, body: string): Promise<SendResult> {
 }
 
 /**
- * Send a WhatsApp message via Twilio.
- *
- * WhatsApp blocks business-initiated free-form text outside the 24h customer
- * window (error 63016) — those must use a pre-approved template. So when a
- * `template` is supplied we send via its Content SID + variables; if that send
- * fails (e.g. the template isn't approved by Meta yet) we fall back to the
- * free-text `body`, which still delivers inside the 24h window. Calls without a
- * template (e.g. admin alerts / session replies) just send free text.
+ * WhatsApp is NEVER auto-sent via Twilio to customers any more (that API cost
+ * added up fast). Instead every customer-facing WhatsApp message is QUEUED —
+ * `whatsapp_queue` — for the admin to send manually from their own business
+ * WhatsApp number: the admin UI shows the title, a "Copy message" button, and a
+ * wa.me link pre-filled with the customer's number + this exact text, so sending
+ * it for real is one tap. `template` is kept only to derive a friendly title;
+ * its Content SID is no longer used (no Twilio API call happens here at all).
  *
  * The 'to' number must be in E.164 format, e.g., "+447700900000".
  */
@@ -227,51 +226,51 @@ export async function sendWhatsApp(
   to: string,
   body: string,
   template?: { name: WhatsAppTemplate; variables: Record<string, string> },
+  opts?: { bookingId?: string; title?: string },
 ): Promise<SendResult> {
-  if (!twilioClient) {
-    return { success: false, error: "Twilio not configured" };
-  }
-  // WhatsApp only accepts E.164 (+44…). Sending to "whatsapp:07…" (or a number
-  // with stray spaces) is rejected as "failed" — normalise it first.
   const dest = normalisePhone(to) || to;
   if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
   if (!(await channelsEnabled()).whatsapp) return { success: true, skipped: true }; // WhatsApp channel off
-  const waTo = `whatsapp:${dest}`;
-  // What we store as the body for the inbox (template renders to `body` text).
-  const loggedBody = body || (template ? `[template: ${template.name}]` : "");
-  const contentSid = template ? WHATSAPP_TEMPLATES[template.name] : undefined;
+  if (!body) return { success: true, skipped: true }; // nothing to queue
 
-  // Preferred path: send via the approved template. The create patch skips
-  // contentSid sends, so we log these explicitly with the rendered text.
-  if (contentSid) {
-    try {
-      const msg = await twilioClient.messages.create({
-        from: twilioWhatsAppFrom,
-        to: waTo,
-        contentSid,
-        contentVariables: JSON.stringify(template!.variables),
-        ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
-      });
-      const messageId = await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: msg.sid, status: msg.status || "queued" });
-      return { success: true, sid: msg.sid, messageId };
-    } catch (err) {
-      // Template not approved yet / send failed — fall through to free text.
-      if (!body) {
-        await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: waTo, body: loggedBody, channel: "whatsapp", sid: null, status: "failed", error: String(err) });
-        return { success: false, error: String(err) };
+  try {
+    const supabase = createAdminClient();
+    let bookingId = opts?.bookingId ?? null;
+    let customerName: string | null = null;
+
+    // Best-effort: resolve the customer (for the display name) and, if the
+    // caller didn't pass one, their most recent booking — so the message still
+    // surfaces on a booking page even from a generic call site.
+    const customerId = await matchCustomerId(supabase, dest);
+    if (customerId) {
+      const { data: cust } = await supabase.from("customers").select("full_name").eq("id", customerId).maybeSingle();
+      customerName = cust?.full_name ?? null;
+      if (!bookingId) {
+        const { data: b } = await supabase
+          .from("bookings")
+          .select("id")
+          .eq("customer_id", customerId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        bookingId = b?.id ?? null;
       }
     }
-  }
-  try {
-    const msg = await twilioClient.messages.create({
-      from: twilioWhatsAppFrom,
-      to: waTo,
-      body,
-      ...(STATUS_CALLBACK ? { statusCallback: STATUS_CALLBACK } : {}),
-    });
-    // Free-text send: the create patch already logged it — grab the row id.
-    const messageId = await messageIdBySid(msg.sid);
-    return { success: true, sid: msg.sid, messageId };
+
+    const title = opts?.title ?? (template ? WHATSAPP_TEMPLATE_TITLES[template.name] : "WhatsApp message");
+
+    const { data: row, error } = await supabase
+      .from("whatsapp_queue")
+      .insert({ booking_id: bookingId, customer_phone: dest, customer_name: customerName, title, message: body })
+      .select("id")
+      .single();
+    if (error) throw error;
+
+    // Mirrors into the inbox thread too, so the conversation history is complete
+    // even though this particular message goes out from the admin's own phone.
+    await logOutbound({ contactPhone: dest, from: twilioWhatsAppFrom, to: `whatsapp:${dest}`, body, channel: "whatsapp", sid: null, status: "queued_manual" }).catch(() => {});
+
+    return { success: true, queued: true, messageId: row?.id ?? null };
   } catch (err) {
     return { success: false, error: String(err) };
   }

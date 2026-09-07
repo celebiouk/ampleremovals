@@ -8,6 +8,7 @@ import { resolveCrew } from "@/lib/crew";
 import { loadPricing } from "@/lib/pricing";
 import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
 import { PREMIUM_INCLUDES, STANDARD_INCLUDES, premiumTotalFor } from "@/lib/tiers";
+import { shortenUrl } from "@/lib/short-links";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 /** Build the quote PDF + Standard/Premium figures for a booking. Best-effort:
@@ -231,8 +232,9 @@ export async function sendReserveMessages({
       </div>
     </div>`;
 
+  const smsLink = await shortenUrl(link);
   const smsText =
-    `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Book your package (change your date later): ${link} — Ref ${reference}`;
+    `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Book your package (change your date later): ${smsLink} — Ref ${reference}`;
 
   const whatsappText =
     `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount}\n*Premium (full pack & move):* ${premiumAmount}\n\nPick your package to book (you can change the date later):\n${link}\n\nRef: ${reference}`;
@@ -315,8 +317,9 @@ export async function sendDepositMessages({
       </div>
     </div>`;
 
+  const smsLink = await shortenUrl(link);
   const smsText =
-    `Ample Removals: your date is reserved! Lock it in on your booking page — pay the ${amount} deposit by card or bank transfer, or spread your whole move over 3 with Klarna: ${link} (Ref ${reference}). You can still change your date later.`;
+    `Ample Removals: your date is reserved! Lock it in on your booking page — pay the ${amount} deposit by card or bank transfer, or spread your whole move over 3 with Klarna: ${smsLink} (Ref ${reference}). You can still change your date later.`;
 
   const whatsappText =
     `Hi ${firstName}, your date is reserved! 🎉\n\nTo lock it in, choose how to pay on your booking page:\n\n💳 ${amount} deposit by card\n🅺 Pay in 3 with Klarna (whole move)\n🏦 ${amount} deposit by bank transfer\n\n${link}\n\nRef: ${reference}. Don't worry — you can still change your date later.`;

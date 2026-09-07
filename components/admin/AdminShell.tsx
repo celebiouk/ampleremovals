@@ -9,7 +9,7 @@ import {
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
-  PackageCheck, CheckCheck, User, MessageSquare,
+  PackageCheck, CheckCheck, User, MessageSquare, MessageCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare, showMsgBadge: true },
+      { href: "/admin/whatsapp-queue", label: "WhatsApp Queue", icon: MessageCircle },
     ],
   },
   {

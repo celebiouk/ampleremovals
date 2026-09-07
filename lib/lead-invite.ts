@@ -1,5 +1,6 @@
 import { sendEmail } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { shortenUrl } from "@/lib/short-links";
 
 export interface LeadInvite {
   firstName: string;
@@ -28,9 +29,10 @@ export async function sendLeadInvite({ firstName, email, phone, link, reminder =
     ? "Reminder: finish your quote — Ample Removals"
     : "We need a few more details for your quote — Ample Removals";
 
+  const smsLink = await shortenUrl(link);
   const smsText =
     `Hi ${firstName}, ${reminder ? "just a reminder" : "we received your request for a quote from Ample Removals"} — we need a few more details. ` +
-    `Add them here to get your instant quote: ${link}\n\nThank you, Daniel`;
+    `Add them here to get your instant quote: ${smsLink}\n\nThank you, Daniel`;
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

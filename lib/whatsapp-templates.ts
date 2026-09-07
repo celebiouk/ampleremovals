@@ -46,3 +46,33 @@ export const WHATSAPP_TEMPLATES = {
 } as const;
 
 export type WhatsAppTemplate = keyof typeof WHATSAPP_TEMPLATES;
+
+/** Friendly title shown on the manual WhatsApp queue for each template. */
+export const WHATSAPP_TEMPLATE_TITLES: Record<WhatsAppTemplate, string> = {
+  lead_details_request: "Lead — details request",
+  quote_ready: "Quote ready",
+  quote_followup: "Quote follow-up",
+  booking_confirmed: "Booking confirmed",
+  final_invoice_sent: "Final invoice sent",
+  review_request: "Review request",
+  address_confirmation_request: "Address confirmation",
+  booking_details_updated: "Booking details updated",
+  reschedule_confirmed: "Reschedule confirmed",
+  driver_on_the_way: "Driver on the way",
+  driver_20_mins_away: "Driver ~20 mins away",
+  driver_10_mins_away: "Driver ~10 mins away",
+  driver_15_mins_to_delivery: "Driver ~15 mins to delivery",
+  driver_arrived: "Driver arrived",
+  driver_running_late: "Driver running late",
+  move_reminder_7_day: "7-day move reminder",
+  move_reminder_5_day: "5-day move reminder",
+  move_reminder_3_day: "3-day move reminder",
+  move_reminder_1_day: "1-day move reminder",
+  weather_alert: "Weather alert",
+  driver_job_assigned: "Driver — job assigned",
+  driver_jobs_tomorrow: "Driver — jobs tomorrow",
+  anniversary_offer: "Anniversary offer",
+  loyalty_offer_3_month: "Loyalty offer",
+  referral_invite: "Referral invite",
+  seasonal_campaign: "Seasonal campaign",
+};

@@ -12,6 +12,7 @@ import {
 } from "@/lib/notifications";
 import { sendBookingSummaryEmail, type BookingSummaryInput } from "@/lib/booking-summary-email";
 import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
+import { scheduleCustomerNotification } from "@/lib/bookings/schedule-notify";
 import type { ServiceType } from "@/types";
 import type { AnyBookingForm, RemovalsForm } from "@/lib/schemas/booking";
 
@@ -96,34 +97,34 @@ export async function handleBookingRoute(
   // client then falls back to the plain confirmation page.
   const quoteToken = generateQuoteConfirmToken(bookingId);
 
-  // Notifications (never block the response). Removals ships an instant quote, so
-  // the customer gets the quote + a reserve link (covers an abandoned browser);
-  // the admin still gets the new-booking alert. Other services keep the generic
-  // confirmation trio.
+  // Admin alert fires immediately (never delayed). The CUSTOMER-facing
+  // confirmation is delayed ~60s (see schedule-notify.ts) so it lands after
+  // they've had a moment to read the rest of the booking screen, not the
+  // instant they hit submit — falls back to sending right away if scheduling
+  // itself fails, so a booking never loses its confirmation.
+  await sendAdminNewBookingEmail(notifPayload);
+
   if (serviceType === "removals" && quoteToken) {
-    // A full "here's everything you gave us" summary email (incl. per-address
-    // access) goes out immediately alongside the quote/reserve messages.
     const summary: BookingSummaryInput = buildRemovalsSummary(data as RemovalsForm, reference, quoteTotal ?? null);
-    await Promise.allSettled([
-      sendAdminNewBookingEmail(notifPayload),
-      sendBookingSummaryEmail(summary),
-      sendReserveMessages({
-        bookingId,
-        token: quoteToken,
-        reference,
-        firstName: data.fullName.split(" ")[0],
-        email: data.email,
-        phone: data.phone,
-        total: quoteTotal ?? 0,
-        inventory: (data as { inventory?: unknown }).inventory,
-      }),
-    ]);
+    const reserve = {
+      bookingId,
+      token: quoteToken,
+      reference,
+      firstName: data.fullName.split(" ")[0],
+      email: data.email,
+      phone: data.phone,
+      total: quoteTotal ?? 0,
+      inventory: (data as { inventory?: unknown }).inventory,
+    };
+    const scheduled = await scheduleCustomerNotification(bookingId, { kind: "removals_reserve", summary, reserve });
+    if (!scheduled) {
+      await Promise.allSettled([sendBookingSummaryEmail(summary), sendReserveMessages(reserve)]);
+    }
   } else {
-    await Promise.allSettled([
-      sendCustomerConfirmationEmail(notifPayload),
-      sendAdminNewBookingEmail(notifPayload),
-      sendCustomerConfirmationSMS(notifPayload),
-    ]);
+    const scheduled = await scheduleCustomerNotification(bookingId, { kind: "generic_confirmation", notif: notifPayload });
+    if (!scheduled) {
+      await Promise.allSettled([sendCustomerConfirmationEmail(notifPayload), sendCustomerConfirmationSMS(notifPayload)]);
+    }
   }
 
   return NextResponse.json({ success: true, reference, bookingId, quoteToken });

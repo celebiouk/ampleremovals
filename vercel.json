@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/dispatch-scheduled",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/anyvan-rating-requests",
       "schedule": "0 13 * * *"
     },
