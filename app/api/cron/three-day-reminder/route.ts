@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
+import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
+import { buildSummaryFromBookingRow } from "@/lib/bookings/summary-input";
 
 /**
  * GET /api/cron/three-day-reminder
@@ -37,11 +39,26 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        is_flexible_date,
+        flexible_date_from,
+        flexible_date_to,
+        description,
         inventory,
+        quote_total,
+        floor,
+        has_lift,
+        parking_within_20m,
+        special_instructions,
+        dest_floor,
+        dest_has_lift,
+        dest_parking_within_20m,
+        dest_access_notes,
         three_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
-        destination:addresses!destination_address_id(line_1, line_2, city, postcode)
+        destination:addresses!destination_address_id(line_1, line_2, city, postcode),
+        removals_details(property_type, bedrooms),
+        additional_services(packing_services, packing_materials, disassemble_furniture, assemble_furniture, packing_hours, packing_men, dismantle_count, assemble_count)
       `)
       .eq("move_date", targetDate)
       .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
@@ -192,6 +209,19 @@ export async function GET(req: Request) {
           console.log(`✅ WhatsApp sent to ${customer.phone}`);
         } catch (whatsappErr) {
           console.error(`❌ WhatsApp failed:`, whatsappErr);
+        }
+
+        // Full "everything you supplied" summary (incl. per-address access) — the
+        // same email sent at submit, so they can re-check details 3 days out.
+        // Removals only (the flow that captures both addresses + access).
+        if (booking.service_type === "removals") {
+          await sendBookingSummaryEmail(
+            buildSummaryFromBookingRow(booking, {
+              heading: "Your move is in 3 days — please check these details",
+              intro:
+                "Your move is coming up in 3 days. Here is everything we have on file for it — please check it over carefully, especially the access details for each address, and call us on 0333 577 2070 straight away if anything needs correcting.",
+            })
+          );
         }
 
         // Mark as sent

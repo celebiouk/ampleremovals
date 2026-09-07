@@ -47,16 +47,32 @@ function YesNo({
 }
 
 /**
- * Access details for the move: which floor, lift availability, parking within
- * 20m, and any special instructions. All optional — the crew uses these to plan
- * and price accurately.
+ * Access details for ONE address: which floor, lift availability, parking within
+ * 20m, and any special instructions. Asked once for the pickup and again for the
+ * drop-off — the field names are passed in so the same UI serves both. All
+ * optional — the crew uses these to plan the move and to flag anything that
+ * doesn't match on the day.
  */
-export function AccessStep() {
+export function AccessStep({
+  title = "Getting in & out",
+  subtitle = "A few access details so our crew can plan the move. All optional.",
+  floorField = "floor",
+  liftField = "hasLift",
+  parkingField = "parkingWithin20m",
+  notesField = "specialInstructions",
+}: {
+  title?: string;
+  subtitle?: string;
+  floorField?: string;
+  liftField?: string;
+  parkingField?: string;
+  notesField?: string;
+} = {}) {
   const { control } = useFormContext();
-  const floor = useController({ name: "floor", control });
-  const lift = useController({ name: "hasLift", control });
-  const parking = useController({ name: "parkingWithin20m", control });
-  const instructions = useController({ name: "specialInstructions", control });
+  const floor = useController({ name: floorField, control });
+  const lift = useController({ name: liftField, control });
+  const parking = useController({ name: parkingField, control });
+  const instructions = useController({ name: notesField, control });
 
   const floorValue: string | undefined = floor.field.value || undefined;
   const isGround = floorValue === "ground";
@@ -64,10 +80,7 @@ export function AccessStep() {
 
   return (
     <div>
-      <StepHeading
-        title="Getting in & out"
-        subtitle="A few access details so our crew can plan the move. All optional."
-      />
+      <StepHeading title={title} subtitle={subtitle} />
 
       {/* Floor */}
       <label className="mb-2 block text-sm font-semibold text-slate-700">

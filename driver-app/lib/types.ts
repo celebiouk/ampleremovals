@@ -34,6 +34,11 @@ export interface Job {
   floor?: string | null;
   has_lift?: boolean | null;
   parking_within_20m?: boolean | null;
+  // Access at the drop-off address (asked separately in the wizard).
+  dest_floor?: string | null;
+  dest_has_lift?: boolean | null;
+  dest_parking_within_20m?: boolean | null;
+  dest_access_notes?: string | null;
   inventory?: { key: string; label: string; variant?: string; quantity: number }[] | null;
   customer?: Customer | null;
   origin?: Address | null;

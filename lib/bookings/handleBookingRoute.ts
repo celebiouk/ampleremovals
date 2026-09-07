@@ -10,8 +10,10 @@ import {
   sendCustomerConfirmationSMS,
   type NotificationPayload,
 } from "@/lib/notifications";
+import { sendBookingSummaryEmail, type BookingSummaryInput } from "@/lib/booking-summary-email";
+import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
 import type { ServiceType } from "@/types";
-import type { AnyBookingForm } from "@/lib/schemas/booking";
+import type { AnyBookingForm, RemovalsForm } from "@/lib/schemas/booking";
 
 /**
  * Shared booking-submission handler: validates, persists, fires notifications,
@@ -99,8 +101,12 @@ export async function handleBookingRoute(
   // the admin still gets the new-booking alert. Other services keep the generic
   // confirmation trio.
   if (serviceType === "removals" && quoteToken) {
+    // A full "here's everything you gave us" summary email (incl. per-address
+    // access) goes out immediately alongside the quote/reserve messages.
+    const summary: BookingSummaryInput = buildRemovalsSummary(data as RemovalsForm, reference, quoteTotal ?? null);
     await Promise.allSettled([
       sendAdminNewBookingEmail(notifPayload),
+      sendBookingSummaryEmail(summary),
       sendReserveMessages({
         bookingId,
         token: quoteToken,

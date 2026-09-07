@@ -75,10 +75,16 @@ export const InventorySelectionSchema = z.object({
  */
 const logisticsFields = {
   inventory: z.array(InventorySelectionSchema).optional().default([]),
+  // Access at the PICKUP (current) address.
   floor: z.string().trim().max(20).optional(),
   hasLift: z.boolean().optional(),
   parkingWithin20m: z.boolean().optional(),
   specialInstructions: z.string().trim().max(1000).optional(),
+  // Access at the DROP-OFF (destination) address — same questions, asked again.
+  destFloor: z.string().trim().max(20).optional(),
+  destHasLift: z.boolean().optional(),
+  destParkingWithin20m: z.boolean().optional(),
+  destAccessNotes: z.string().trim().max(1000).optional(),
   packingHours: z.coerce.number().int().min(0).max(40).optional().default(0),
   packingMen: z.coerce.number().int().min(1).max(2).optional().default(1),
   dismantleCount: z.coerce.number().int().min(0).max(99).optional().default(0),

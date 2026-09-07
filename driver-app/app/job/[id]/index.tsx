@@ -269,47 +269,32 @@ export default function JobDetailScreen() {
       <AddressCard kind="pickup" address={j.origin} />
       <AddressCard kind="delivery" address={j.destination} />
 
-      {/* Instructions — show the customer's description AND any special instructions */}
-      {(j.description || j.special_instructions) ? (
+      {/* Instructions — the customer's general description of the move */}
+      {j.description ? (
         <Card style={{ marginTop: spacing.base }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
             <Info size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Job notes</Text>
           </View>
-          {j.description ? (
-            <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{j.description}</Text>
-          ) : null}
-          {j.special_instructions ? (
-            <Text style={[type.bodyLarge, { color: colors.slate[700], marginTop: j.description ? spacing.sm : 0 }]}>{j.special_instructions}</Text>
-          ) : null}
+          <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{j.description}</Text>
         </Card>
       ) : null}
 
-      {/* Access — floor / lift / parking the customer told us about */}
-      {(j.floor || j.has_lift != null || j.parking_within_20m != null) ? (
-        <Card style={{ marginTop: spacing.base }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
-            <Home size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Access</Text>
-          </View>
-          {j.floor ? (
-            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
-              <Text style={[type.body, { color: colors.slate[500] }]}>Floor</Text>
-              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.floor === "ground" ? "Ground floor" : `Floor ${j.floor}`}</Text>
-            </View>
-          ) : null}
-          {j.has_lift != null ? (
-            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
-              <Text style={[type.body, { color: colors.slate[500] }]}>Lift</Text>
-              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.has_lift ? "Yes" : "No"}</Text>
-            </View>
-          ) : null}
-          {j.parking_within_20m != null ? (
-            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
-              <Text style={[type.body, { color: colors.slate[500] }]}>Parking within 20m</Text>
-              <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{j.parking_within_20m ? "Yes" : "No"}</Text>
-            </View>
-          ) : null}
-        </Card>
-      ) : null}
+      {/* Access at EACH address — the customer told us these; if what you find on
+          the day is different, flag it with them before you start. */}
+      <AccessCard
+        title="Pickup access"
+        floor={j.floor}
+        hasLift={j.has_lift}
+        parking={j.parking_within_20m}
+        notes={j.special_instructions}
+      />
+      <AccessCard
+        title="Drop-off access"
+        floor={j.dest_floor}
+        hasLift={j.dest_has_lift}
+        parking={j.dest_parking_within_20m}
+        notes={j.dest_access_notes}
+      />
 
       {/* What you're moving — the customer's item list */}
       {Array.isArray(j.inventory) && j.inventory.length > 0 ? (
@@ -362,6 +347,42 @@ function AddressCard({ kind, address }: { kind: "pickup" | "delivery"; address?:
       <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{fullAddress(address)}</Text>
       <Text style={[type.h2, { color: colors.slate[900], marginTop: 4, marginBottom: spacing.md, fontFamily: type.mono.fontFamily }]}>{address.postcode ?? "—"}</Text>
       <Button label="Get directions" variant={isPickup ? "primary" : "accent"} icon={<Navigation size={18} color={colors.white} />} onPress={() => openDirections(address)} fullWidth />
+    </Card>
+  );
+}
+
+/** Access details for one address (pickup or drop-off). Renders nothing if the
+ *  customer gave no access info for that address. */
+function AccessCard({
+  title, floor, hasLift, parking, notes,
+}: {
+  title: string;
+  floor?: string | null;
+  hasLift?: boolean | null;
+  parking?: boolean | null;
+  notes?: string | null;
+}) {
+  if (!floor && hasLift == null && parking == null && !notes) return null;
+  const Line = ({ label, value }: { label: string; value: string }) => (
+    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
+      <Text style={[type.body, { color: colors.slate[500] }]}>{label}</Text>
+      <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>{value}</Text>
+    </View>
+  );
+  return (
+    <Card style={{ marginTop: spacing.base }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm }}>
+        <Home size={16} color={colors.primary.DEFAULT} /><Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>{title}</Text>
+      </View>
+      {floor ? <Line label="Floor" value={floor === "ground" ? "Ground floor" : `Floor ${floor}`} /> : null}
+      {hasLift != null ? <Line label="Lift" value={hasLift ? "Yes" : "No"} /> : null}
+      {parking != null ? <Line label="Parking within 20m" value={parking ? "Yes" : "No"} /> : null}
+      {notes ? (
+        <View style={{ marginTop: spacing.sm }}>
+          <Text style={[type.body, { color: colors.slate[500], marginBottom: 2 }]}>Notes</Text>
+          <Text style={[type.bodyLarge, { color: colors.slate[700] }]}>{notes}</Text>
+        </View>
+      ) : null}
     </Card>
   );
 }
