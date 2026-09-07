@@ -1,28 +1,23 @@
-## Task: Per-address access questions + full "everything you supplied" emails
+## Task: Meta-ad landing page /booking + Klarna/card/bank payment options
 
-### Plan
-**A. Wizard — ask access right after EACH address**
-- [ ] Schema: add dest access fields (`destFloor`, `destHasLift`, `destParkingWithin20m`, `destAccessNotes`). Origin keeps existing `floor`/`hasLift`/`parkingWithin20m`/`specialInstructions`.
-- [ ] `AccessStep` → parameterised (title/subtitle + field names) so it serves both addresses.
-- [ ] Removals steps reorder: removalType → originAddress → **originAccess** → property → destAddress → **destAccess** → inventory → extras → description → date → cleaning → contact → review. Fix all editStep indices; add Pickup/Drop-off access review sections.
+Decisions (confirmed): flow = contact → FROM postcode → TO postcode → bedrooms → items → date → editable quote.
+Card & bank = 25% deposit; Klarna = FULL move ÷3. Klarna already enabled in Stripe.
 
-**B. Persist**
-- [ ] DB: add `dest_floor`, `dest_has_lift`, `dest_parking_within_20m`, `dest_access_notes` to `bookings`.
-- [ ] `createBooking` + `completeLead`: write dest access (best-effort block, alongside origin).
+### Phase 1 — the landing page + editable-quote wizard  (this build)
+- [ ] `app/(landing)/layout.tsx` — no navbar/footer; keep Pixels + AttributionCapture (Meta pixel + ad attribution).
+- [ ] `app/(landing)/booking/page.tsx` — renders the wizard; distraction-free.
+- [ ] `components/landing/LandingBooking.tsx` — compelling, minimal wizard:
+      contact (name/phone/email) → FROM postcode → TO postcode → bedrooms → key items → date
+      → editable quote step (Standard with "what you get" INSIDE it; Premium = "everything in Standard, plus…"; Back to edit → price updates).
+      Assumes a domestic house move (no domestic/business choice). Postcode-only (no address lookup).
+- [ ] `app/api/quote/estimate/route.ts` — public live quote (standard + premium + deposit) from bedrooms/items/postcodes.
+- [ ] `app/api/booking/landing/route.ts` — create customer + booking (postcode-only addresses) + quote + token; send "everything you supplied" email; return {bookingId, token} → go to /quote/[id]/[token] to reserve + pay.
+- [ ] Strong ad copy throughout.
 
-**C. Driver app (must see both so they can challenge discrepancies)**
-- [ ] `driver-app/lib/types.ts`: add dest access fields.
-- [ ] Job screen: relabel Access → "Pickup access"; add "Drop-off access" card (floor/lift/parking + notes).
-- [ ] EAS build → TestFlight.
-
-**D. Emails — everything the customer supplied**
-- [ ] New `lib/booking-summary-email.ts`: reusable full summary (both addresses + access, property, inventory, extras, description, date, contact, quote).
-- [ ] On submit (removals): email the summary to the customer immediately.
-- [ ] 3-day cron: append the same full summary to the existing 3-days-before email.
+### Phase 2 — payment options on the quote/pay screen  (next build)
+- [ ] Quote/pay screen: single Pay → 3 options: Pay by card (deposit), Pay in 3 with Klarna (full), Pay by bank transfer (deposit).
+- [ ] Stripe Checkout: card (deposit) + klarna (full ÷3); reuse invoice + webhook.
+- [ ] Confirmation/deposit emails reflect all 3 payment options.
 
 ### Review
-- **Wizard:** `AccessStep` parameterised; removals now has an `originAccess` step (right after the pickup address) and a `destAccess` step (right after the drop-off address) — 13 steps. Review page shows Pickup access + Drop-off access sections; all editStep indices updated.
-- **Data:** added `dest_floor/dest_has_lift/dest_parking_within_20m/dest_access_notes` to `bookings`; written from both `createBooking` (customer submit) and `completeLead` (admin fill). Origin access still maps to the existing floor/has_lift/parking_within_20m/special_instructions columns (no consumer broke).
-- **Driver app:** separate "Pickup access" and "Drop-off access" cards (floor/lift/parking + notes) via a shared `AccessCard`; general description stays in "Job notes". Needs the TestFlight build to reach devices.
-- **Emails:** new `lib/booking-summary-email.ts` renders everything supplied (both addresses + access, property, items, extras, description, date, contact, quote). Sent immediately on customer removals submit, and appended in the 3-day cron (removals only). Admin-completed leads get it via the 3-day cron.
-- **Watch out for:** all changes are removals-only (the flow with two addresses). Man&van etc keep their existing single flow. Web deploys via push; driver app requires the EAS build. Pre-existing repo-wide tsc errors are unrelated (build has ignoreBuildErrors); all touched files typecheck clean (web + driver-app).
+(to be filled in on completion)
