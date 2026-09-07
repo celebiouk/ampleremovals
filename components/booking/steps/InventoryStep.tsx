@@ -28,10 +28,15 @@ export function InventoryStep() {
     let cancelled = false;
     fetch("/api/catalog")
       .then((r) => r.json())
-      .then((d: { success?: boolean; items?: { key: string; label: string; category: string }[] }) => {
-        if (cancelled || !d.success || !d.items?.length) return;
-        const merged: InventoryCategory[] = INVENTORY_CATALOG.map((c) => ({ ...c, items: [...c.items] }));
-        for (const it of d.items) {
+      .then((d: { success?: boolean; items?: { key: string; label: string; category: string }[]; hiddenKeys?: string[] }) => {
+        if (cancelled || !d.success) return;
+        // Drop any built-in items the admin has hidden from customers, then merge
+        // in the admin's custom items.
+        const hidden = new Set(d.hiddenKeys ?? []);
+        const merged: InventoryCategory[] = INVENTORY_CATALOG
+          .map((c) => ({ ...c, items: c.items.filter((i) => !hidden.has(i.key)) }))
+          .filter((c) => c.items.length > 0);
+        for (const it of d.items ?? []) {
           const cat = merged.find((c) => c.category === it.category);
           if (cat) cat.items.push({ key: it.key, label: it.label });
           else merged.push({ category: it.category, items: [{ key: it.key, label: it.label }] });

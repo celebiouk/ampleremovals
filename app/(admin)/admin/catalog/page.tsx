@@ -23,6 +23,7 @@ const BASE_CATEGORIES = INVENTORY_CATALOG.map((c) => c.category);
  */
 export default function CatalogPage() {
   const [items, setItems] = useState<CatalogItem[]>([]);
+  const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState("More items");
@@ -33,7 +34,7 @@ export default function CatalogPage() {
     try {
       const res = await fetch("/api/admin/catalog");
       const data = await res.json();
-      if (data.success) setItems(data.items as CatalogItem[]);
+      if (data.success) { setItems(data.items as CatalogItem[]); setHiddenKeys((data.hiddenKeys as string[]) ?? []); }
     } catch {
       /* non-fatal */
     } finally {
@@ -77,6 +78,23 @@ export default function CatalogPage() {
     await fetch(`/api/admin/catalog/${it.id}`, { method: "DELETE" });
     toast.success(`Removed "${it.label}"`);
     load();
+  };
+
+  // Show/hide a BUILT-IN item for customers (applies to every booking flow).
+  const toggleBase = async (key: string) => {
+    const next = hiddenKeys.includes(key) ? hiddenKeys.filter((k) => k !== key) : [...hiddenKeys, key];
+    setHiddenKeys(next); // optimistic
+    try {
+      const res = await fetch("/api/admin/catalog", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hiddenKeys: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      toast.error("Couldn't save — reverting.");
+      load();
+    }
   };
 
   // Group admin items by category for display.
@@ -164,13 +182,30 @@ export default function CatalogPage() {
         </div>
       )}
 
-      {/* Built-in reference */}
-      <h2 className="mb-3 mt-8 text-xs font-semibold uppercase tracking-wide text-slate-400">Built-in items (always shown)</h2>
+      {/* Built-in items — tap the eye to show/hide each one from customers. */}
+      <h2 className="mb-1 mt-8 text-xs font-semibold uppercase tracking-wide text-slate-400">Built-in items</h2>
+      <p className="mb-3 text-sm text-slate-500">Choose what customers see. Hidden items ({hiddenKeys.length}) won&apos;t appear in any booking form.</p>
       <div className="space-y-3">
         {INVENTORY_CATALOG.map((c) => (
-          <div key={c.category} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-            <p className="mb-1 text-sm font-bold text-slate-500">{c.category}</p>
-            <p className="text-sm text-slate-500">{c.items.map((i) => i.label).join(", ")}</p>
+          <div key={c.category} className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="mb-1.5 text-sm font-bold text-brand-purple-800">{c.category}</p>
+            <div className="divide-y divide-slate-100">
+              {c.items.map((i) => {
+                const hidden = hiddenKeys.includes(i.key);
+                return (
+                  <div key={i.key} className="flex items-center justify-between gap-3 py-2">
+                    <span className={`text-sm ${hidden ? "text-slate-400 line-through" : "text-slate-800"}`}>{i.label}</span>
+                    <button
+                      onClick={() => toggleBase(i.key)}
+                      title={hidden ? "Show to customers" : "Hide from customers"}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 ${hidden ? "text-slate-400" : "text-brand-green-600"}`}
+                    >
+                      {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>

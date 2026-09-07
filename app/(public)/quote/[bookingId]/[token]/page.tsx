@@ -296,6 +296,16 @@ function RevealView({
           ))}
         </ul>
 
+        {/* Crew & van — "what you get", shown INSIDE the Standard package. */}
+        {quote.crew && (
+          <div className="mt-3 rounded-xl bg-brand-purple-50/70 px-4 py-3">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-purple-800">
+              <ShieldCheck className="h-4 w-4" /> {quote.crew.men}-man team · {quote.crew.vanCount} × {quote.crew.vanSizeLabel}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">{quote.crew.blurb}</p>
+          </div>
+        )}
+
         <div className="mt-5 border-t border-dashed border-slate-200 pt-5">
           <div className="flex items-end justify-between">
             <span className="font-display text-lg font-bold text-brand-purple-950">Total</span>
@@ -337,35 +347,20 @@ function RevealView({
         </ul>
       </div>
 
-      {quote.crew && (
-        <div className="mt-5 rounded-2xl border border-brand-purple-200 bg-brand-purple-50/60 p-5">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-purple-800 text-white">
-              <ShieldCheck className="h-4 w-4" />
-            </span>
-            <p className="font-display font-bold text-brand-purple-950">What you get</p>
-          </div>
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-brand-purple-800 shadow-sm">
-            {quote.crew.men}-man team · {quote.crew.vanCount} × {quote.crew.vanSizeLabel}
-          </p>
-          <p className="text-sm leading-relaxed text-slate-600">{quote.crew.blurb}</p>
-        </div>
-      )}
-
       <div className="mt-5 space-y-2.5">
         <Button
           onClick={() => onReserve("standard")}
           size="lg"
           className="h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500"
         >
-          Reserve Standard — {gbp0(liveTotal)}
+          I&apos;m booking Standard — {gbp0(liveTotal)}
         </Button>
         <Button
           onClick={() => onReserve("premium")}
           size="lg"
           className="h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
         >
-          Reserve Premium — {gbp0(premiumTotal)}
+          I&apos;m booking Premium — {gbp0(premiumTotal)}
         </Button>
       </div>
       <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">

@@ -15,16 +15,21 @@ export const fetchCache = "force-no-store";
 export async function GET() {
   try {
     const supabase = createAdminClient();
-    const { data } = await supabase
-      .from("catalog_items")
-      .select("id, label, category")
-      .eq("active", true)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+    const [{ data }, { data: settings }] = await Promise.all([
+      supabase
+        .from("catalog_items")
+        .select("id, label, category")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase.from("settings").select("hidden_item_keys").eq("id", 1).maybeSingle(),
+    ]);
     const items = (data ?? []).map((i) => ({ key: `catalog:${i.id}`, label: i.label, category: i.category }));
-    return NextResponse.json({ success: true, items });
+    // Base-catalogue item keys the admin has chosen to hide from customers.
+    const hiddenKeys = Array.isArray(settings?.hidden_item_keys) ? (settings!.hidden_item_keys as string[]) : [];
+    return NextResponse.json({ success: true, items, hiddenKeys });
   } catch {
     // Never break the wizard over a catalog read.
-    return NextResponse.json({ success: true, items: [] });
+    return NextResponse.json({ success: true, items: [], hiddenKeys: [] });
   }
 }

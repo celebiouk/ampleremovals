@@ -19,9 +19,9 @@ export const STANDARD_INCLUDES: string[] = [
 
 export const PREMIUM_INCLUDES: string[] = [
   "Everything in Standard, plus:",
-  "Full packing service — we pack everything for you",
-  "All packing materials supplied",
-  "Dismantle & reassemble your furniture",
+  "Unlimited packing — we pack every room, however much you have",
+  "All packing materials supplied (boxes, tape, wrap)",
+  "Unlimited dismantling & reassembly of your furniture",
   "Priority coordinator for your move",
   "Extended protection cover",
   "Longer wait time included",

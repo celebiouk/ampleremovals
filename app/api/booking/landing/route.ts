@@ -25,7 +25,14 @@ const LandingSchema = z.object({
   phone: ukPhoneSchema,
   originPostcode: postcodeSchema,
   destinationPostcode: postcodeSchema,
+  propertyType: z.enum(["house", "flat", "bungalow"]).optional().default("house"),
   bedrooms: z.enum(["studio", "1", "2", "3", "4", "5+"]),
+  // Per-address access (floor is "ground" or a number of flights).
+  floor: z.string().trim().max(20).optional(),
+  parkingWithin20m: z.boolean().optional(),
+  destFloor: z.string().trim().max(20).optional(),
+  destParkingWithin20m: z.boolean().optional(),
+  description: z.string().trim().max(1000).optional(),
   inventory: z.array(InventorySelectionSchema).optional().default([]),
   isFlexibleDate: z.boolean().optional().default(false),
   moveDate: z.coerce.date().optional(),
@@ -52,17 +59,27 @@ export async function POST(req: NextRequest) {
   // address line (no paid address lookup). Description is synthesised so it meets
   // the shared schema and reads sensibly in the admin CRM.
   const bedroomsLabel = d.bedrooms === "studio" ? "studio" : `${d.bedrooms}-bedroom`;
+  // Description: use the customer's words; if too short for the shared schema
+  // (min 20), append a synthesised sentence so it always validates + reads well.
+  const userDesc = (d.description ?? "").trim();
+  const synth = `House move (${bedroomsLabel}) from ${d.originPostcode} to ${d.destinationPostcode}, booked online.`;
+  const description = userDesc.length >= 20 ? userDesc : userDesc ? `${userDesc} — ${synth}` : synth;
+
   const form: RemovalsForm = RemovalsFormSchema.parse({
     removalType: "domestic",
     originPostcode: d.originPostcode,
     originAddress: { line_1: d.originPostcode, postcode: d.originPostcode },
-    propertyType: "house",
+    propertyType: d.propertyType,
     bedrooms: d.bedrooms,
     destinationPostcode: d.destinationPostcode,
     destinationAddress: { line_1: d.destinationPostcode, postcode: d.destinationPostcode },
     additionalServices: { packing_services: false, packing_materials: false, disassemble_furniture: false, assemble_furniture: false },
-    description: `House move (${bedroomsLabel}) from ${d.originPostcode} to ${d.destinationPostcode}, booked online.`,
+    description,
     inventory: d.inventory,
+    floor: d.floor,
+    parkingWithin20m: d.parkingWithin20m,
+    destFloor: d.destFloor,
+    destParkingWithin20m: d.destParkingWithin20m,
     isFlexibleDate: d.isFlexibleDate,
     moveDate: d.moveDate,
     flexibleDateFrom: d.flexibleDateFrom,
