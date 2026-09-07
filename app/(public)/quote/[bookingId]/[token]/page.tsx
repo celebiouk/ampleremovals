@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, CheckCircle2, Phone, ShieldCheck,
   CalendarCheck, Truck, Sparkles, Landmark, XCircle, Check, Star,
+  CreditCard, Wallet, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyRow } from "@/components/shared/CopyRow";
@@ -73,6 +74,9 @@ export default function QuotePage() {
   const removed = useMemo(() => new Set<string>(), []);
   const [error, setError] = useState("");
   const [loadingMsg, setLoadingMsg] = useState(0);
+  // The reserved figures (server-computed for the chosen tier) — drive the deposit
+  // (card/bank) and full (Klarna) payment amounts.
+  const [reserved, setReserved] = useState<{ total: number; deposit: number }>({ total: 0, deposit: 0 });
 
   // Rotate the reassuring loading messages.
   useEffect(() => {
@@ -103,9 +107,12 @@ export default function QuotePage() {
           return;
         }
         setQuote(data);
+        // Just came back from a successful card/Klarna checkout → thank them
+        // immediately (the webhook confirms in the background).
+        const justPaid = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("paid") === "1";
         // Resume where they left off: already paid/claimed → done; already
         // reserved (deposit invoice sent) → straight to the deposit screen.
-        if (data.depositStatus === "claimed" || data.depositStatus === "verified" || data.status === "deposit_paid_job_confirmed") {
+        if (justPaid || data.depositStatus === "claimed" || data.depositStatus === "verified" || data.status === "deposit_paid_job_confirmed" || data.status === "full_balance_paid") {
           setStage("done");
         } else if (data.status === "deposit_invoice_sent") {
           setStage("deposit");
@@ -142,6 +149,7 @@ export default function QuotePage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) { setError(data.error || "Couldn't reserve your date."); setStage("error"); return; }
+      setReserved({ total: Number(data.total) || liveTotal, deposit: Number(data.deposit) || liveDeposit });
       setStage("deposit");
     } catch {
       setError("Network error. Please try again."); setStage("error");
@@ -183,7 +191,16 @@ export default function QuotePage() {
           )}
 
           {stage === "deposit" && quote && (
-            <DepositView key="deposit" reference={quote.reference} deposit={liveDeposit || quote.deposit} onClaim={claimDeposit} />
+            <DepositView
+              key="deposit"
+              bookingId={bookingId}
+              token={token}
+              reference={quote.reference}
+              deposit={reserved.deposit || liveDeposit || quote.deposit}
+              fullTotal={reserved.total || liveTotal || quote.total}
+              onClaim={claimDeposit}
+              onError={(m) => { setError(m); setStage("error"); }}
+            />
           )}
 
           {stage === "done" && quote && <DoneView key="done" firstName={quote.firstName} reference={quote.reference} />}
@@ -358,14 +375,47 @@ function RevealView({
   );
 }
 
-/* ── Deposit (bank transfer) ──────────────────────────────── */
-function DepositView({ reference, deposit, onClaim }: { reference: string; deposit: number; onClaim: () => void }) {
+/* ── Deposit / payment (card · Klarna · bank) ─────────────── */
+function DepositView({
+  bookingId, token, reference, deposit, fullTotal, onClaim, onError,
+}: {
+  bookingId: string;
+  token: string;
+  reference: string;
+  deposit: number;
+  fullTotal: number;
+  onClaim: () => void;
+  onError: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState<"card" | "klarna" | null>(null);
+  const [showBank, setShowBank] = useState(false);
+  const klarnaInstalment = Math.round((fullTotal / 3) * 100) / 100;
+
   const rows = [
     { label: "Account name", value: BANK_DETAILS.accountName },
     { label: "Sort code", value: BANK_DETAILS.sortCode },
     { label: "Account number", value: BANK_DETAILS.accountNumber },
     { label: "Payment reference", value: reference },
   ];
+
+  // Kick off a Stripe Checkout for card (deposit) or Klarna (full ÷3).
+  const startCheckout = async (method: "card" | "klarna") => {
+    setBusy(method);
+    try {
+      const res = await fetch(`/api/quote/${bookingId}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, method }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.url) throw new Error(data.error || "Couldn't start payment.");
+      window.location.href = data.url as string;
+    } catch (e) {
+      setBusy(null);
+      onError(e instanceof Error ? e.message : "Couldn't start payment.");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -373,42 +423,102 @@ function DepositView({ reference, deposit, onClaim }: { reference: string; depos
     >
       <div className="mb-6 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-purple-100">
-          <Landmark className="h-7 w-7 text-brand-purple-800" />
+          <ShieldCheck className="h-7 w-7 text-brand-purple-800" />
         </div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-brand-purple-950">
           Lock in your date
         </h1>
-        <p className="mt-2 text-slate-500">
-          Send your <strong className="text-brand-purple-900">{gbp(deposit)}</strong> deposit by bank transfer to secure your move.
-        </p>
+        <p className="mt-2 text-slate-500">Choose how you&apos;d like to pay — your date is held as soon as you do.</p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
-        {BANK_DETAILS_CONFIGURED ? (
-          <dl className="divide-y divide-slate-100">
-            {rows.map((r) => (
-              <CopyRow key={r.label} label={r.label} value={r.value} />
-            ))}
-          </dl>
-        ) : (
-          <p className="text-sm text-slate-500">
-            Please call us on <a href={`tel:${PHONE_TEL}`} className="font-semibold text-brand-purple-800">{PHONE_DISPLAY}</a> to pay your deposit and lock in your date.
-          </p>
+      <div className="space-y-3">
+        {/* Card — deposit */}
+        <button
+          type="button"
+          onClick={() => startCheckout("card")}
+          disabled={busy !== null}
+          className="flex w-full items-center gap-3 rounded-2xl border-2 border-brand-purple-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-brand-purple-400 disabled:opacity-60"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-purple-100 text-brand-purple-800">
+            {busy === "card" ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5" />}
+          </span>
+          <span className="flex-1">
+            <span className="block font-display text-base font-bold text-brand-purple-950">Pay deposit by card</span>
+            <span className="block text-sm text-slate-500">Reserve now with {gbp(deposit)} — balance due on moving day.</span>
+          </span>
+          <span className="font-display text-lg font-extrabold tabular-nums text-brand-purple-900">{gbp0(deposit)}</span>
+        </button>
+
+        {/* Klarna — full in 3 */}
+        <button
+          type="button"
+          onClick={() => startCheckout("klarna")}
+          disabled={busy !== null}
+          className="relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border-2 border-brand-purple-600 bg-white p-4 text-left shadow-sm transition-colors hover:border-brand-purple-700 disabled:opacity-60"
+        >
+          <span className="absolute right-0 top-0 rounded-bl-xl bg-brand-purple-800 px-2.5 py-0.5 text-[10px] font-bold text-white">SPREAD THE COST</span>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ffb3c7] text-brand-purple-950">
+            {busy === "klarna" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wallet className="h-5 w-5" />}
+          </span>
+          <span className="flex-1">
+            <span className="block font-display text-base font-bold text-brand-purple-950">Pay in 3 with Klarna</span>
+            <span className="block text-sm text-slate-500">Split your whole move into 3 — {gbp(klarnaInstalment)} today, then 2 more.</span>
+          </span>
+          <span className="font-display text-lg font-extrabold tabular-nums text-brand-purple-900">{gbp0(fullTotal)}</span>
+        </button>
+
+        {/* Bank transfer — deposit */}
+        <button
+          type="button"
+          onClick={() => setShowBank((s) => !s)}
+          disabled={busy !== null}
+          className="flex w-full items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-slate-300 disabled:opacity-60"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+            <Landmark className="h-5 w-5" />
+          </span>
+          <span className="flex-1">
+            <span className="block font-display text-base font-bold text-brand-purple-950">Pay deposit by bank transfer</span>
+            <span className="block text-sm text-slate-500">Send {gbp(deposit)} manually — no card fee.</span>
+          </span>
+          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${showBank ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+
+      {/* Bank details (revealed) */}
+      <AnimatePresence>
+        {showBank && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              {BANK_DETAILS_CONFIGURED ? (
+                <dl className="divide-y divide-slate-100">
+                  {rows.map((r) => (<CopyRow key={r.label} label={r.label} value={r.value} />))}
+                </dl>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  Please call us on <a href={`tel:${PHONE_TEL}`} className="font-semibold text-brand-purple-800">{PHONE_DISPLAY}</a> to pay your deposit and lock in your date.
+                </p>
+              )}
+              <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Use <strong>{reference}</strong> as your payment reference so we can match your transfer.
+              </div>
+              <Button
+                onClick={onClaim}
+                size="lg"
+                className="mt-4 h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
+              >
+                I&apos;ve made the bank transfer
+              </Button>
+            </div>
+          </motion.div>
         )}
-        <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Use <strong>{reference}</strong> as your payment reference so we can match your transfer.
-        </div>
-      </div>
+      </AnimatePresence>
 
-      <Button
-        onClick={onClaim}
-        size="lg"
-        className="mt-5 h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
-      >
-        I&apos;ve made the payment
-      </Button>
-      <p className="mt-3 text-center text-xs text-slate-400">
-        Your date is held while we confirm your transfer.
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+        <ShieldCheck className="h-4 w-4" /> Secure payment · Card &amp; Klarna handled by Stripe
       </p>
     </motion.div>
   );
@@ -431,7 +541,7 @@ function DoneView({ firstName, reference }: { firstName: string; reference: stri
         Thank you, {firstName}!
       </h1>
       <p className="mx-auto mt-3 max-w-md text-slate-500">
-        A member of our team will confirm your transfer and be in touch shortly to finalise everything for your move.
+        We&apos;ve got it — a member of our team will be in touch shortly to finalise everything for your move.
       </p>
 
       <div className="mx-auto mt-8 max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">

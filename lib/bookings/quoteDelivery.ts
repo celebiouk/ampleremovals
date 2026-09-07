@@ -201,14 +201,17 @@ export async function sendDepositMessages({
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">To lock in your moving date, please send your deposit of <strong>${amount}</strong> by bank transfer:</p>
+        <p style="font-size: 16px; margin: 16px 0;">To lock in your moving date, choose how you'd like to pay — all three options are on your booking page:</p>
         <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 16px 0; border-radius: 4px;">
+          <p style="margin: 0 0 6px; font-size: 15px;">💳 <strong>Pay your ${amount} deposit by card</strong> — instant, reserves your date.</p>
+          <p style="margin: 0 0 6px; font-size: 15px;">🅺 <strong>Pay in 3 with Klarna</strong> — split your whole move into 3 interest-free instalments.</p>
+          <p style="margin: 0; font-size: 15px;">🏦 <strong>Pay your ${amount} deposit by bank transfer</strong> — no card fee:</p>
           ${bankRows}
         </div>
-        <p style="font-size: 14px; color: #475569;">Please use <strong>${reference}</strong> as the payment reference so we can match your transfer. Once you've paid, tap the button on your quote page to let us know.</p>
+        <p style="font-size: 14px; color: #475569;">For bank transfer, use <strong>${reference}</strong> as the payment reference so we can match it, then tap "I've made the bank transfer" on your booking page. Card and Klarna are confirmed automatically.</p>
         <p style="text-align: center; margin: 24px 0;">
           <a href="${link}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
-            View my booking
+            Pay &amp; lock in my date
           </a>
         </p>
         <p style="font-size: 14px; color: #64748b;"><strong>Don't worry — you can still change your date later.</strong> Any questions? Call us on ${PHONE}.</p>
@@ -218,14 +221,10 @@ export async function sendDepositMessages({
     </div>`;
 
   const smsText =
-    `Ample Removals: your date is reserved! Pay your ${amount} deposit by bank transfer to lock it in — details on your booking page: ${link} (Ref ${reference}). You can still change your date later.`;
+    `Ample Removals: your date is reserved! Lock it in on your booking page — pay the ${amount} deposit by card or bank transfer, or spread your whole move over 3 with Klarna: ${link} (Ref ${reference}). You can still change your date later.`;
 
-  const bankLine = BANK_DETAILS_CONFIGURED
-    ? `*${BANK_DETAILS.accountName}*\nSort code: ${BANK_DETAILS.sortCode}\nAccount: ${BANK_DETAILS.accountNumber}\nReference: ${reference}`
-    : `Call us on ${PHONE} to pay.`;
   const whatsappText =
-    `Hi ${firstName}, your date is reserved! 🎉\n\nTo lock it in, send your *${amount}* deposit by bank transfer:\n\n${bankLine}\n\n` +
-    `Then tap "I've made the payment" on your booking page:\n${link}\n\nDon't worry — you can still change your date later.`;
+    `Hi ${firstName}, your date is reserved! 🎉\n\nTo lock it in, choose how to pay on your booking page:\n\n💳 ${amount} deposit by card\n🅺 Pay in 3 with Klarna (whole move)\n🏦 ${amount} deposit by bank transfer\n\n${link}\n\nRef: ${reference}. Don't worry — you can still change your date later.`;
 
   await Promise.allSettled([
     resend.emails

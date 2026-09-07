@@ -109,6 +109,13 @@ export async function POST(request: NextRequest) {
         // how the customer paid. (Driver payout stays manual.)
         if (inv.type === "full_balance") {
           await calculateDriverEarnings(inv.booking_id, inv.total, inv.vat_amount ?? 0);
+          // Paying the FULL amount up front (e.g. Klarna from the quote page) skips
+          // the deposit step — so confirm the job here too, unless it was already
+          // confirmed by an earlier deposit payment.
+          const prev = currentBooking?.status;
+          if (!prev || !["deposit_paid_job_confirmed", "full_balance_paid", "job_completed"].includes(prev)) {
+            await sendJobConfirmation(supabase, inv.booking_id);
+          }
         }
         break;
       }

@@ -20,4 +20,6 @@ Card & bank = 25% deposit; Klarna = FULL move ÷3. Klarna already enabled in Str
 - [ ] Confirmation/deposit emails reflect all 3 payment options.
 
 ### Review
-(to be filled in on completion)
+- **Phase 1 (live):** `/booking` landing page — no navbar/footer (kept Meta pixel + attribution), assumes a domestic house move, contact-first, postcode-only (no paid address lookup). Flow: name/phone/email → from → to → bedrooms → key items → date → live editable quote (Standard "what you get" INSIDE the card; Premium = "everything in Standard, plus…"). Back/edit updates the price via public `/api/quote/estimate`. Reserve → `/api/booking/landing` (reuses createBooking + summary email) → existing quote page.
+- **Phase 2 (payments):** quote/deposit screen now offers 3 options — Pay deposit by card, Pay in 3 with Klarna (whole move ÷3), Pay deposit by bank transfer. `/api/quote/[bookingId]/pay` creates/reuses a lean invoice (deposit or full_balance) and starts a Stripe Checkout (card / klarna) — reuses the existing webhook to mark paid, set status, confirm the job, compute driver earnings. Webhook now also confirms the job on a full (Klarna) payment that skips the deposit. Deposit email/SMS/WhatsApp updated to present all 3 options.
+- **Watch out for:** Klarna must stay enabled in Stripe (it is). Card adds the processing fee line; Klarna charges the exact quote. `?test=1` routes through the Stripe test client. Pre-existing repo-wide tsc errors unrelated (ignoreBuildErrors); all touched files typecheck + lint clean.
