@@ -86,8 +86,8 @@ export function bookingSummaryEmailHtml(input: BookingSummaryInput): string {
     reference, customerName, email, phone, serviceLabel, dateText,
     from, to, propertyType, bedrooms, inventory = [], extras = [], description,
     quoteTotal,
-    heading = "Here's everything you gave us",
-    intro = "Thanks for your booking request. So there are no surprises on the day, here is exactly what you told us. Please check it over — especially the access details for each address — and call us on 0333 577 2070 if anything needs changing.",
+    heading = "Thanks — here's your booking summary",
+    intro = "Thanks so much for choosing Ample Removals! Here's a friendly summary of your booking for your records — there's nothing you need to do right now. We'll take great care of your move, and we'll be in touch with the next steps. If you ever want to add or change anything, we're here on 0333 577 2070.",
   } = input;
 
   const inventoryHtml = inventory.length
