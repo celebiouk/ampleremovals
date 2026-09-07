@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const { data: booking, error } = await supabase
       .from("bookings")
-      .select("status, reference, quote_line_items, customer:customers!inner(full_name, email, phone)")
+      .select("status, reference, quote_line_items, quote_total, quote_premium_total, customer:customers!inner(full_name, email, phone)")
       .eq("id", bookingId)
       .single();
     if (error || !booking) {
@@ -51,11 +51,20 @@ export async function POST(req: NextRequest) {
       keptLines.reduce((sum: number, l: { total?: number }) => sum + (Number(l.total) || 0), 0)
     );
 
-    // Tier choice: Premium switches the quote to a fixed multiple of Standard and
-    // bundles in the done-for-you services (packing/materials/dismantle/reassemble).
+    // Tier choice: Premium bundles in the done-for-you services
+    // (packing/materials/dismantle/reassemble). Its price is normally Standard ×
+    // multiplier, but an admin-set Premium price (e.g. "fill it for them") is an
+    // exact figure — scaled by the same ratio as any removable lines the
+    // customer dropped, matching exactly what they saw on the quote page.
     const isPremium = tier === "premium";
     const { config: pricingCfg } = await loadPricing(supabase);
-    const total = isPremium ? round2(standardTotal * pricingCfg.premium_multiplier) : standardTotal;
+    const storedStandardTotal = Number(booking.quote_total) || standardTotal;
+    const premiumRatio = storedStandardTotal > 0 ? standardTotal / storedStandardTotal : 1;
+    const total = isPremium
+      ? booking.quote_premium_total != null
+        ? round2(Number(booking.quote_premium_total) * premiumRatio)
+        : round2(standardTotal * pricingCfg.premium_multiplier)
+      : standardTotal;
     const finalLines = isPremium
       ? [{ key: "premium", description: "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)", quantity: 1, unit_price: total, total, removable: false }]
       : keptLines;

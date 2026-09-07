@@ -14,19 +14,15 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 /** Optional overrides applied when an admin (not the customer) completes a lead. */
 export interface CompleteLeadOptions {
   /**
-   * A price the admin typed in themselves (they're on a call agreeing it). When
-   * set, it becomes THE quote total — replacing the auto-estimate — and is stored
-   * as a single non-removable line so the quote page, reserve step and 25%
-   * deposit all stay consistent with the agreed figure.
+   * Prices the admin typed in themselves (they're on a call agreeing it). Either
+   * or both can be set — whatever the admin fills in becomes exactly what the
+   * CUSTOMER sees and is charged for that package on their quote page, replacing
+   * the auto-estimate for that tier. The customer still picks Standard or
+   * Premium themselves as normal; this only fixes the prices, not the choice.
+   * Leaving one (or both) blank falls back to the auto-estimate for it.
    */
-  priceOverride?: number;
-  /**
-   * Which package the admin is selling. Premium is the full pack-&-move service:
-   * it bundles packing, materials and dismantle/reassemble, is labelled as such on
-   * the quote, and — when no manual price is given — defaults to the Premium
-   * multiple of the Standard estimate (matching the customer-facing reserve flow).
-   */
-  tier?: "standard" | "premium";
+  standardPriceOverride?: number;
+  premiumPriceOverride?: number;
 }
 
 export interface CompleteLeadResult {
@@ -99,28 +95,24 @@ export async function completeLead(
     mileageCost: mCost,
   });
 
-  // Manual price (admin on a call) wins over the auto-estimate. Stored as one
-  // non-removable line so total = reserve total = the agreed figure everywhere.
-  // Premium: when no manual price is set, default to the Premium multiple of the
-  // Standard estimate (mirrors the customer reserve flow), and always label it as
-  // the full pack-&-move package.
-  const isPremium = opts?.tier === "premium";
-  const override = opts?.priceOverride;
-  const useOverride = typeof override === "number" && Number.isFinite(override) && override > 0;
-  const finalTotal = useOverride
-    ? round2(override)
-    : isPremium
-    ? round2(quote.total * pricingCfg.premium_multiplier)
-    : quote.total;
-  // A single non-removable line whenever the admin fixed the figure or chose
-  // Premium; otherwise the customer keeps the itemised Standard breakdown.
-  const premiumLabel = "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)";
-  const finalLines = isPremium
-    ? [{ key: "premium", description: premiumLabel, quantity: 1, unit_price: finalTotal, total: finalTotal, removable: false }]
-    : useOverride
-    ? [{ key: "base", description: "Removals service", quantity: 1, unit_price: finalTotal, total: finalTotal, removable: false }]
+  // Manual prices (admin on a call) win over the auto-estimate, independently for
+  // each tier. The customer still picks Standard or Premium themselves — this
+  // only fixes what each one costs. quote_total/quote_line_items always represent
+  // STANDARD; Premium is its own column (quote_premium_total), read directly by
+  // the customer quote page and the reserve step instead of being recomputed as
+  // Standard × multiplier, so an overridden Premium price is never overwritten.
+  const stdOverride = opts?.standardPriceOverride;
+  const useStdOverride = typeof stdOverride === "number" && Number.isFinite(stdOverride) && stdOverride > 0;
+  const finalStandardTotal = useStdOverride ? round2(stdOverride) : quote.total;
+  const finalLines = useStdOverride
+    ? [{ key: "base", description: "Removals service", quantity: 1, unit_price: finalStandardTotal, total: finalStandardTotal, removable: false }]
     : quote.lines;
-  const finalDeposit = depositFor(finalTotal);
+
+  const premOverride = opts?.premiumPriceOverride;
+  const usePremOverride = typeof premOverride === "number" && Number.isFinite(premOverride) && premOverride > 0;
+  const finalPremiumTotal = usePremOverride ? round2(premOverride) : round2(finalStandardTotal * pricingCfg.premium_multiplier);
+
+  const finalDeposit = depositFor(finalStandardTotal);
 
   // 6. Core booking update — addresses, date, description, quote. These columns
   // have always existed, so this must succeed for the completion to count.
@@ -135,8 +127,9 @@ export async function completeLead(
       flexible_date_to: flexTo,
       description: data.description ?? null,
       quote_line_items: finalLines,
-      quote_subtotal: finalTotal,
-      quote_total: finalTotal,
+      quote_subtotal: finalStandardTotal,
+      quote_total: finalStandardTotal,
+      quote_premium_total: finalPremiumTotal,
     })
     .eq("id", bookingId);
   if (coreErr) throw new Error(`lead completion failed: ${coreErr.message}`);
@@ -155,7 +148,6 @@ export async function completeLead(
         dest_has_lift: data.destHasLift ?? false, // "no lift" unless the customer says yes
         dest_parking_within_20m: data.destParkingWithin20m ?? null,
         dest_access_notes: data.destAccessNotes ?? null,
-        quote_tier: isPremium ? "premium" : "standard",
         inventory,
         has_white_goods: whiteGoods,
         deposit_amount: finalDeposit,
@@ -176,15 +168,13 @@ export async function completeLead(
   });
 
   await supabase.from("additional_services").delete().eq("booking_id", bookingId);
-  // Premium is a done-for-you package — force the bundled services on regardless
-  // of what was ticked in the form.
-  const premiumServices = isPremium
-    ? { packing_services: true, packing_materials: true, disassemble_furniture: true, assemble_furniture: true }
-    : {};
+  // Premium's done-for-you services (packing/materials/dismantle/assemble) are
+  // bundled in when the CUSTOMER actually picks Premium at reserve time (see
+  // /api/quote/reserve) — not pre-decided here, since admin no longer chooses
+  // the tier on their behalf.
   await supabase.from("additional_services").insert({
     booking_id: bookingId,
     ...data.additionalServices,
-    ...premiumServices,
   });
   // Add-on quantities (best-effort — new columns).
   try {
@@ -206,12 +196,18 @@ export async function completeLead(
     booking_id: bookingId,
     customer_id: customerId,
     action: "lead_completed",
-    metadata: { reference: booking.reference, quote_total: finalTotal, manual_price: useOverride, tier: isPremium ? "premium" : "standard" },
-    performed_by: useOverride ? "admin" : "customer",
+    metadata: {
+      reference: booking.reference,
+      standard_total: finalStandardTotal,
+      premium_total: finalPremiumTotal,
+      manual_standard_price: useStdOverride,
+      manual_premium_price: usePremOverride,
+    },
+    performed_by: useStdOverride || usePremOverride ? "admin" : "customer",
   });
 
   // 9. The quote is now ready → advance to "Quote Sent to Customer".
   await markQuoteSent(supabase, bookingId, (booking.status as string) ?? null);
 
-  return { reference: booking.reference as string, bookingId, customerId, quoteTotal: finalTotal };
+  return { reference: booking.reference as string, bookingId, customerId, quoteTotal: finalStandardTotal };
 }

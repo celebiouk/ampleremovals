@@ -49,6 +49,7 @@ interface QuoteData {
   hasQuote: boolean;
   crew?: QuoteCrew;
   premiumCrewLine?: string;
+  premiumTotal?: number;
   premiumMultiplier?: number;
 }
 
@@ -291,9 +292,17 @@ function RevealView({
   liveDeposit: number;
   onReserve: (tier: "standard" | "premium") => void;
 }) {
-  const premiumTotal = quote.premiumMultiplier
-    ? Math.round(liveTotal * quote.premiumMultiplier * 100) / 100
-    : premiumTotalFor(liveTotal);
+  // Premium is normally Standard × multiplier, live as the customer edits — but
+  // an admin-set Premium price (e.g. "fill it for them") is an exact figure, not
+  // a multiple, so we scale it by the same ratio the live total has moved instead
+  // of ignoring it. When nothing's been overridden this reduces to the same
+  // liveTotal × multiplier as before (premiumTotal === total × multiplier).
+  const premiumRatio = quote.total > 0 ? liveTotal / quote.total : 1;
+  const premiumTotal = quote.premiumTotal != null
+    ? Math.round(quote.premiumTotal * premiumRatio * 100) / 100
+    : quote.premiumMultiplier
+      ? Math.round(liveTotal * quote.premiumMultiplier * 100) / 100
+      : premiumTotalFor(liveTotal);
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}

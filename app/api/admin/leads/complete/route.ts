@@ -13,9 +13,10 @@ export const runtime = "nodejs";
 /**
  * POST /api/admin/leads/complete
  * The ADMIN completing a lead on the customer's behalf (e.g. on a call). Same as
- * the public completion, but admin-authenticated and it accepts `adminPrice` — a
- * price the admin types in that becomes the quote total (overriding the
- * auto-estimate) so the figure emailed to the customer is the agreed one.
+ * the public completion, but admin-authenticated and it accepts `standardPrice`
+ * and/or `premiumPrice` — figures the admin types in that become exactly what
+ * the customer sees and pays for that package (the customer still picks Standard
+ * or Premium themselves; this only fixes the price of each).
  */
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin();
@@ -28,11 +29,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  const { bookingId, token, adminPrice, adminTier } = (body as {
+  const { bookingId, token, standardPrice, premiumPrice } = (body as {
     bookingId?: string;
     token?: string;
-    adminPrice?: number | string;
-    adminTier?: string;
+    standardPrice?: number | string;
+    premiumPrice?: number | string;
   }) ?? {};
   if (!bookingId) {
     return NextResponse.json({ success: false, error: "Missing booking." }, { status: 400 });
@@ -43,23 +44,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Please check the details and try again." }, { status: 400 });
   }
 
-  // The admin-typed price (optional — blank means fall back to the suggested price).
-  const priceNum = typeof adminPrice === "string" ? Number(adminPrice) : adminPrice;
-  const priceOverride = typeof priceNum === "number" && Number.isFinite(priceNum) && priceNum > 0 ? priceNum : undefined;
-  const tier = adminTier === "premium" ? "premium" : "standard";
+  // The admin-typed prices (optional — blank falls back to the suggested price).
+  const toNum = (v: number | string | undefined): number | undefined => {
+    const n = typeof v === "string" ? Number(v) : v;
+    return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
+  };
+  const standardPriceOverride = toNum(standardPrice);
+  const premiumPriceOverride = toNum(premiumPrice);
 
   try {
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { priceOverride, tier });
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride });
     const d = parsed.data;
 
-    // Record who did this and whether the price was set by hand.
+    // Record who did this and whether the prices were set by hand.
     try {
       await createAdminClient().from("activity_log").insert({
         booking_id: bookingId,
-        action: priceOverride != null
-          ? `Lead completed by admin — quote set to ${formatCurrency(quoteTotal)}`
-          : "Lead completed by admin (auto-estimated price)",
-        metadata: { manual_price: priceOverride ?? null, quote_total: quoteTotal },
+        action: standardPriceOverride != null || premiumPriceOverride != null
+          ? `Lead completed by admin — Standard ${formatCurrency(standardPriceOverride ?? quoteTotal)}${premiumPriceOverride != null ? `, Premium ${formatCurrency(premiumPriceOverride)}` : ""}`
+          : "Lead completed by admin (auto-estimated prices)",
+        metadata: { standard_price: standardPriceOverride ?? null, premium_price: premiumPriceOverride ?? null, quote_total: quoteTotal },
         performed_by: "admin",
       });
     } catch { /* non-critical */ }

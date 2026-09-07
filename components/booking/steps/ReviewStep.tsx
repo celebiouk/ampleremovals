@@ -103,10 +103,11 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
   const values = useWatch({ control });
   const { goToStep, admin } = useWizard();
   const confirm = useController({ name: "confirmed", control });
-  const adminPrice = useController({ name: "adminPrice", control, defaultValue: "" });
-  // Which package the admin is charging for — recorded on completion so the
-  // customer gets Standard vs Premium (Premium bundles packing/dismantle/assemble).
-  const adminTier = useController({ name: "adminTier", control, defaultValue: "standard" });
+  // Independent prices for each package. The customer still picks Standard or
+  // Premium themselves on their quote page — these just fix what each one costs
+  // instead of the auto-estimate. Either or both can be left blank.
+  const standardPrice = useController({ name: "standardPrice", control, defaultValue: "" });
+  const premiumPrice = useController({ name: "premiumPrice", control, defaultValue: "" });
 
   // Live system-suggested quote (Standard + Premium), shown to the admin as
   // guidance only. The fee they actually charge is whatever they type below.
@@ -223,9 +224,10 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
       </div>
 
       {/* Admin-only: distances to judge the job, the system-suggested quote (exactly
-          what the customer would see — Standard & Premium) as guidance, then pick a
-          package and set the fee by hand. The fee you type is what the customer is
-          charged — not the suggestion. */}
+          what the customer would see — Standard & Premium) as guidance, then set
+          BOTH prices by hand. Whatever you enter here is exactly what the customer
+          sees and pays for that package — they still pick Standard or Premium
+          themselves; this only fixes the price of each. */}
       {admin && (
         <div className="mt-6 space-y-3">
           <DistancePanel
@@ -241,7 +243,7 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
               {previewing && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-purple-400" />}
             </div>
             <p className="mb-3 text-xs text-brand-purple-700">
-              This is what the customer would be quoted automatically. Use it to decide what to charge — you can match it or reduce it.
+              This is what the customer would be quoted automatically. Use it to decide what to charge — you can match it or reduce it, for either or both packages.
             </p>
             {preview ? (
               <div className="grid grid-cols-2 gap-2">
@@ -249,19 +251,13 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
                   label={TIER_COPY.standard.name}
                   total={preview.standardTotal}
                   deposit={preview.standardDeposit}
-                  onUse={() => {
-                    adminTier.field.onChange("standard");
-                    adminPrice.field.onChange(String(preview.standardTotal));
-                  }}
+                  onUse={() => standardPrice.field.onChange(String(preview.standardTotal))}
                 />
                 <Suggestion
                   label={TIER_COPY.premium.name}
                   total={preview.premiumTotal}
                   deposit={preview.premiumDeposit}
-                  onUse={() => {
-                    adminTier.field.onChange("premium");
-                    adminPrice.field.onChange(String(preview.premiumTotal));
-                  }}
+                  onUse={() => premiumPrice.field.onChange(String(preview.premiumTotal))}
                 />
               </div>
             ) : (
@@ -269,50 +265,46 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
             )}
           </div>
 
-          {/* Which package the customer is getting */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <label className="block text-sm font-bold text-slate-800">Package the customer is getting</label>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {(["standard", "premium"] as const).map((t) => {
-                const active = adminTier.field.value === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => adminTier.field.onChange(t)}
-                    className={cn(
-                      "flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all",
-                      active
-                        ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-900"
-                        : "border-slate-200 text-slate-600 hover:border-brand-purple-300"
-                    )}
-                  >
-                    {t === "premium" ? <Sparkles className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
-                    {t === "premium" ? "Premium" : "Standard"}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* The fee actually charged */}
+          {/* The fees actually charged — one box per package. The customer picks
+              which one they want on their own quote page, same as always. */}
           <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
-            <label className="block text-sm font-bold text-amber-900">Set the quote price (admin)</label>
+            <label className="block text-sm font-bold text-amber-900">Set the quote prices (admin)</label>
             <p className="mt-0.5 text-xs text-amber-700">
-              Whatever you enter here is what the customer is charged. Leave blank to use the suggested {adminTier.field.value === "premium" ? "Premium" : "Standard"} price.
+              Whatever you enter here is exactly what the customer sees and pays for that package. Leave either blank to use its auto-estimate. The customer still chooses which package to book.
             </p>
-            <div className="relative mt-3 max-w-[200px]">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
-              <input
-                type="number"
-                min={0}
-                step={0.01}
-                inputMode="decimal"
-                value={(adminPrice.field.value as string) ?? ""}
-                onChange={(e) => adminPrice.field.onChange(e.target.value)}
-                placeholder="0.00"
-                className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
-              />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Truck className="h-3.5 w-3.5" /> Standard</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    inputMode="decimal"
+                    value={(standardPrice.field.value as string) ?? ""}
+                    onChange={(e) => standardPrice.field.onChange(e.target.value)}
+                    placeholder="0.00"
+                    className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Sparkles className="h-3.5 w-3.5" /> Premium</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    inputMode="decimal"
+                    value={(premiumPrice.field.value as string) ?? ""}
+                    onChange={(e) => premiumPrice.field.onChange(e.target.value)}
+                    placeholder="0.00"
+                    className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

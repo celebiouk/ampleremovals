@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const { data: booking, error } = await supabase
       .from("bookings")
       .select(`
-        reference, service_type, status, quote_line_items, quote_total,
+        reference, service_type, status, quote_line_items, quote_total, quote_premium_total,
         deposit_amount, deposit_status, move_date, inventory, has_white_goods,
         quote_crew_blurb, quote_van_size, quote_van_count,
         customer:customers!inner(full_name)
@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
     const lines = Array.isArray(booking.quote_line_items) ? booking.quote_line_items : [];
     const total = Number(booking.quote_total) || 0;
     const { config: pricingCfg } = await loadPricing(supabase);
+    // An admin-set Premium price (e.g. "fill it for them") wins over the auto
+    // multiplier, so the customer sees exactly the figure that was agreed.
+    const premiumTotal = booking.quote_premium_total != null
+      ? Number(booking.quote_premium_total)
+      : Math.round(total * pricingCfg.premium_multiplier * 100) / 100;
 
     // Team & vehicle — tier-aware, derived from the move size. Standard = 2 movers
     // (7 yrs); Premium = 4 movers (11 yrs). Vans follow the item-count rule. The
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
       total,
       crew,
       premiumCrewLine: prem.line,
+      premiumTotal,
       premiumMultiplier: pricingCfg.premium_multiplier,
       deposit: booking.deposit_amount != null ? Number(booking.deposit_amount) : depositFor(total),
       depositPercentage: DEPOSIT_PERCENTAGE,

@@ -18,7 +18,7 @@ async function buildQuoteAssets(bookingId: string, standardTotal: number): Promi
     const supabase = createAdminClient();
     const { data: b } = await supabase
       .from("bookings")
-      .select(`reference, service_type, quote_line_items, quote_subtotal, quote_vat_rate, quote_vat_amount, quote_total, quote_valid_until, quote_notes,
+      .select(`reference, service_type, quote_line_items, quote_subtotal, quote_vat_rate, quote_vat_amount, quote_total, quote_premium_total, quote_valid_until, quote_notes,
         quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb,
         customer:customers(full_name, email, phone),
         origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
@@ -27,8 +27,13 @@ async function buildQuoteAssets(bookingId: string, standardTotal: number): Promi
       .single();
     if (!b) return { pdf: null, premiumTotal: premiumTotalFor(standardTotal) };
 
-    const { config } = await loadPricing(supabase);
-    const premiumTotal = Math.round(standardTotal * config.premium_multiplier * 100) / 100;
+    // Prefer an admin-set Premium price (e.g. from "fill it for them") over the
+    // auto multiplier, so the email always matches what the customer will see.
+    let premiumTotal = b.quote_premium_total != null ? Number(b.quote_premium_total) : null;
+    if (premiumTotal == null) {
+      const { config } = await loadPricing(supabase);
+      premiumTotal = Math.round(standardTotal * config.premium_multiplier * 100) / 100;
+    }
 
     const customer = Array.isArray(b.customer) ? b.customer[0] : b.customer;
     const origin = Array.isArray(b.origin_address) ? b.origin_address[0] : b.origin_address;
