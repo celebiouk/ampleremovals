@@ -220,6 +220,21 @@ export default function BookingDetailPage() {
     }
   }, [data]);
 
+  // Premium multiplier — so admin can see exactly what the customer saw:
+  // Standard (the stored quote_total) AND Premium (Standard × multiplier).
+  const [premiumMultiplier, setPremiumMultiplier] = useState<number | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: cfg } = await supabase.from("pricing_config").select("premium_multiplier").eq("id", 1).maybeSingle();
+        setPremiumMultiplier(cfg?.premium_multiplier ? Number(cfg.premium_multiplier) : 2.25);
+      } catch {
+        setPremiumMultiplier(2.25);
+      }
+    })();
+  }, []);
+
   const copyReference = () => {
     if (!data) return;
     navigator.clipboard.writeText(data.booking.reference);
@@ -667,9 +682,25 @@ export default function BookingDetailPage() {
           <Card title="Quote">
             {booking.quote_total && booking.quote_line_items && Array.isArray(booking.quote_line_items) ? (
               <div className="space-y-3">
+                {/* What the customer actually saw/received: Standard AND Premium. */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className={`rounded-xl border p-3 ${booking.quote_tier === "standard" ? "border-green-400 bg-green-50 ring-2 ring-green-200" : "border-slate-200 bg-slate-50"}`}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standard {booking.quote_tier === "standard" && <span className="text-green-700">✓ chosen</span>}</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) / (premiumMultiplier ?? 2.25) : (booking.quote_total as number))}</p>
+                  </div>
+                  <div className={`rounded-xl border p-3 ${booking.quote_tier === "premium" ? "border-brand-purple-400 bg-brand-purple-50 ring-2 ring-brand-purple-200" : "border-slate-200 bg-slate-50"}`}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Premium {booking.quote_tier === "premium" && <span className="text-brand-purple-700">✓ chosen</span>}</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">
+                      {formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) : (booking.quote_total as number) * (premiumMultiplier ?? 2.25))}
+                    </p>
+                  </div>
+                </div>
+                {!booking.quote_tier && (
+                  <p className="text-xs text-slate-400">Customer hasn&apos;t chosen a package yet — both prices shown are what they see on their quote page.</p>
+                )}
                 <div className="rounded-xl bg-green-50 border border-green-200 p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-green-900">Quote Total</span>
+                    <span className="text-sm font-semibold text-green-900">Quote Total{booking.quote_tier ? ` (${booking.quote_tier === "premium" ? "Premium" : "Standard"})` : ""}</span>
                     <span className="text-lg font-bold text-green-900">{formatCurrency(booking.quote_total)}</span>
                   </div>
                   {booking.quote_sent_at && (
@@ -810,7 +841,7 @@ export default function BookingDetailPage() {
 
           {/* Pending WhatsApp messages for this booking — send manually from your own number */}
           <Card title="WhatsApp Queue">
-            <WhatsAppQueueList bookingId={bookingId} />
+            <WhatsAppQueueList bookingId={bookingId} phone={customer?.phone} />
           </Card>
 
           {/* Call-back reminders — expandable, one open at a time */}

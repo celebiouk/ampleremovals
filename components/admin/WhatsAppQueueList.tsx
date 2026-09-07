@@ -133,17 +133,20 @@ function QueueRow({ item, onHandled }: { item: QueueItem; onHandled: (id: string
  * `bookingId` to show only that booking's queue (used on the booking detail
  * page); omit it for the global queue page.
  */
-export function WhatsAppQueueList({ bookingId }: { bookingId?: string }) {
+export function WhatsAppQueueList({ bookingId, phone }: { bookingId?: string; phone?: string }) {
   const [items, setItems] = useState<QueueItem[] | null>(null);
 
   const load = useCallback(async () => {
-    const qs = bookingId ? `?bookingId=${encodeURIComponent(bookingId)}` : "";
+    const params = new URLSearchParams();
+    if (bookingId) params.set("bookingId", bookingId);
+    if (phone) params.set("phone", phone);
+    const qs = params.toString() ? `?${params.toString()}` : "";
     try {
       const res = await fetch(`/api/admin/whatsapp-queue${qs}`);
       const data = await res.json();
       if (data.success) setItems(data.items as QueueItem[]);
     } catch { /* leave as-is */ }
-  }, [bookingId]);
+  }, [bookingId, phone]);
 
   useEffect(() => { load(); }, [load]);
 
