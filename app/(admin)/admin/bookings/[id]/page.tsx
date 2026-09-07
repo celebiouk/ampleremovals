@@ -228,9 +228,9 @@ export default function BookingDetailPage() {
       try {
         const supabase = createClient();
         const { data: cfg } = await supabase.from("pricing_config").select("premium_multiplier").eq("id", 1).maybeSingle();
-        setPremiumMultiplier(cfg?.premium_multiplier ? Number(cfg.premium_multiplier) : 2.25);
+        setPremiumMultiplier(cfg?.premium_multiplier ? Number(cfg.premium_multiplier) : 1.7);
       } catch {
-        setPremiumMultiplier(2.25);
+        setPremiumMultiplier(1.7);
       }
     })();
   }, []);
@@ -686,12 +686,12 @@ export default function BookingDetailPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className={`rounded-xl border p-3 ${booking.quote_tier === "standard" ? "border-green-400 bg-green-50 ring-2 ring-green-200" : "border-slate-200 bg-slate-50"}`}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standard {booking.quote_tier === "standard" && <span className="text-green-700">✓ chosen</span>}</p>
-                    <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) / (premiumMultiplier ?? 2.25) : (booking.quote_total as number))}</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) / (premiumMultiplier ?? 1.7) : (booking.quote_total as number))}</p>
                   </div>
                   <div className={`rounded-xl border p-3 ${booking.quote_tier === "premium" ? "border-brand-purple-400 bg-brand-purple-50 ring-2 ring-brand-purple-200" : "border-slate-200 bg-slate-50"}`}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Premium {booking.quote_tier === "premium" && <span className="text-brand-purple-700">✓ chosen</span>}</p>
                     <p className="mt-1 text-lg font-bold text-slate-900">
-                      {formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) : (booking.quote_total as number) * (premiumMultiplier ?? 2.25))}
+                      {formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) : (booking.quote_total as number) * (premiumMultiplier ?? 1.7))}
                     </p>
                   </div>
                 </div>

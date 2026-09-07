@@ -3,9 +3,13 @@
  * AnyVan. Premium is a fixed multiple of the Standard quote and, when chosen,
  * bundles in full packing, materials and dismantle/reassemble.
  *
- * Change PREMIUM_MULTIPLIER here to tune the Premium price (e.g. 2.2 = +120%).
+ * Change PREMIUM_MULTIPLIER here to tune the Premium price (e.g. 1.7 = +70%).
+ * This is only the code-level fallback — the live default admin edits is
+ * pricing_config.premium_multiplier (Admin → Pricing), read via loadPricing().
+ * Admin can also set a completely fixed Premium price per booking ("fill it
+ * for them" — see completeLead.ts), which overrides this multiplier entirely.
  */
-export const PREMIUM_MULTIPLIER = 2.25;
+export const PREMIUM_MULTIPLIER = 1.7;
 
 export const premiumTotalFor = (standardTotal: number): number =>
   Math.round((Number(standardTotal) || 0) * PREMIUM_MULTIPLIER * 100) / 100;

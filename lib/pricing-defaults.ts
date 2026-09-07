@@ -11,7 +11,7 @@ export const DEFAULT_PRICING_CONFIG = {
   base_callout: 120,       // £ minimum — crew + van turning up (short local move)
   free_miles: 15,          // miles included before mileage applies
   per_mile: 1.5,           // £ per mile beyond the free radius
-  premium_multiplier: 2.25,
+  premium_multiplier: 1.7,
 };
 
 /** Fallback price for a customer-typed "custom:" item with no catalogue price. */
