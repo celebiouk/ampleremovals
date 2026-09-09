@@ -89,7 +89,7 @@ export function EditableCustomerCard({
       {!editing ? (
         <>
           <p className="text-base font-bold text-slate-900">{upperName(customer.full_name)}</p>
-          <a href={`mailto:${customer.email}`} className="mt-1.5 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Mail className="h-4 w-4" />{customer.email}</a>
+          <a href={`mailto:${customer.email}`} className="mt-1.5 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Mail className="h-4 w-4 shrink-0" /><span className="min-w-0 break-all">{customer.email}</span></a>
           <a href={`tel:${customer.phone}`} className="mt-1 flex items-center gap-2 text-sm text-brand-purple-700 hover:underline"><Phone className="h-4 w-4" />{customer.phone}</a>
           <p className="mt-2 text-xs text-slate-400">Customer since {formatDate(customer.created_at)}</p>
           <Link href={`/admin/customers/${customer.id}`} className="mt-1 text-xs text-brand-purple-600 hover:underline">View all bookings from this customer →</Link>

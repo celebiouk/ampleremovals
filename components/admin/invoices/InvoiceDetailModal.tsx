@@ -152,18 +152,20 @@ export function InvoiceDetailModal({ isOpen, onClose, invoiceId, onActionComplet
                     {/* Line items */}
                     <div>
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Line Items</h4>
-                      <table className="w-full text-sm">
-                        <thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-2 text-left">Description</th><th className="pb-2 text-center">Qty</th><th className="pb-2 text-right">Total</th></tr></thead>
-                        <tbody>
-                          {invoice.line_items.map((item, i) => (
-                            <tr key={i} className="border-b border-slate-50">
-                              <td className="py-2">{item.description}</td>
-                              <td className="py-2 text-center">{item.quantity}</td>
-                              <td className="py-2 text-right font-medium">{formatCurrency(item.total)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[320px] text-sm">
+                          <thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-2 text-left">Description</th><th className="pb-2 text-center">Qty</th><th className="pb-2 text-right">Total</th></tr></thead>
+                          <tbody>
+                            {invoice.line_items.map((item, i) => (
+                              <tr key={i} className="border-b border-slate-50">
+                                <td className="max-w-0 break-words py-2">{item.description}</td>
+                                <td className="py-2 text-center">{item.quantity}</td>
+                                <td className="py-2 text-right font-medium">{formatCurrency(item.total)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                       <div className="mt-3 space-y-1 text-sm">
                         <div className="flex justify-between text-slate-500"><span>Subtotal</span><span>{formatCurrency(invoice.subtotal)}</span></div>
                         {invoice.vat_rate > 0 && <div className="flex justify-between text-slate-500"><span>VAT ({invoice.vat_rate}%)</span><span>{formatCurrency(invoice.vat_amount)}</span></div>}

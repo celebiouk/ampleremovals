@@ -442,8 +442,8 @@ export default function BookingDetailPage() {
       {booking.deposit_status === "claimed" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">💷</span>
-            <div>
+            <span className="text-2xl shrink-0">💷</span>
+            <div className="min-w-0">
               <p className="font-bold text-amber-900">Customer says they&apos;ve paid the deposit</p>
               <p className="text-sm text-amber-700">They tapped &ldquo;I&apos;ve made the payment&rdquo;. Check the bank account, then confirm to lock in the job and notify them.</p>
             </div>
@@ -465,8 +465,8 @@ export default function BookingDetailPage() {
         booking.deposit_status !== "verified" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🏦</span>
-            <div>
+            <span className="text-2xl shrink-0">🏦</span>
+            <div className="min-w-0">
               <p className="font-bold text-slate-800">
                 Deposit invoice sent{bannerDepositAmount != null ? ` — ${formatCurrency(bannerDepositAmount)}` : ""}
               </p>
@@ -492,8 +492,8 @@ export default function BookingDetailPage() {
       {/* Cross-sell flag: customer wants end-of-tenancy cleaning at 30% off */}
       {booking.wants_eot_cleaning && (
         <div className="mb-6 flex items-center gap-3 rounded-2xl border-2 border-brand-green-300 bg-brand-green-50 p-4">
-          <span className="text-2xl">🧹</span>
-          <div>
+          <span className="text-2xl shrink-0">🧹</span>
+          <div className="min-w-0">
             <p className="font-bold text-brand-green-900">Customer wants End of Tenancy Cleaning</p>
             <p className="text-sm text-brand-green-700">They opted in during booking — quote the cleaning at <strong>30% off</strong> and add it to their job.</p>
           </div>
@@ -601,13 +601,13 @@ export default function BookingDetailPage() {
                 <div className="flex justify-between"><dt className="text-slate-500">Type</dt><dd className="font-medium capitalize">{houseCleaningDetails.cleaning_type.replace("_", " ")}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Frequency</dt><dd className="font-medium capitalize">{houseCleaningDetails.frequency.replace("_", " ")}</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Time Slot</dt><dd className="font-medium capitalize">{houseCleaningDetails.preferred_time_slot ?? "—"}</dd></div>
-                {houseCleaningDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="font-medium">{houseCleaningDetails.access_instructions}</dd></div>}
+                {houseCleaningDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="break-words font-medium">{houseCleaningDetails.access_instructions}</dd></div>}
               </>)}
               {endOfTenancyDetails && (<>
                 <div className="flex justify-between"><dt className="text-slate-500">Property</dt><dd className="font-medium">{endOfTenancyDetails.property_type}, {endOfTenancyDetails.bedrooms} bed</dd></div>
                 <div className="flex justify-between"><dt className="text-slate-500">Tenancy End</dt><dd className="font-medium">{endOfTenancyDetails.tenancy_end_date ? formatDate(endOfTenancyDetails.tenancy_end_date) : "—"}</dd></div>
-                {(endOfTenancyDetails.addons?.length ?? 0) > 0 && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Add-ons</dt><dd className="font-medium">{endOfTenancyDetails.addons?.join(", ")}</dd></div>}
-                {endOfTenancyDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="font-medium">{endOfTenancyDetails.access_instructions}</dd></div>}
+                {(endOfTenancyDetails.addons?.length ?? 0) > 0 && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Add-ons</dt><dd className="break-words font-medium">{endOfTenancyDetails.addons?.join(", ")}</dd></div>}
+                {endOfTenancyDetails.access_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Access</dt><dd className="break-words font-medium">{endOfTenancyDetails.access_instructions}</dd></div>}
               </>)}
 
               {/* Access details captured in the wizard (removals) — BOTH addresses */}
@@ -616,14 +616,14 @@ export default function BookingDetailPage() {
                 {booking.floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.floor === "ground" ? "Ground floor" : `${booking.floor} flight(s) of stairs`}</dd></div>}
                 <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.has_lift ? "Yes" : "No"}</dd></div>
                 {booking.parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.parking_within_20m ? "Yes" : "No"}</dd></div>}
-                {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="font-medium">{booking.special_instructions}</dd></div>}
+                {booking.special_instructions && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="break-words font-medium">{booking.special_instructions}</dd></div>}
               </>)}
               {(booking.dest_floor || booking.dest_has_lift != null || booking.dest_parking_within_20m != null || booking.dest_access_notes) && (<>
                 <div className="pt-1"><dt className="text-xs font-bold uppercase tracking-wide text-brand-purple-700">Drop-off access</dt></div>
                 {booking.dest_floor && <div className="flex justify-between"><dt className="text-slate-500">Floor</dt><dd className="font-medium">{booking.dest_floor === "ground" ? "Ground floor" : `${booking.dest_floor} flight(s) of stairs`}</dd></div>}
                 <div className="flex justify-between"><dt className="text-slate-500">Lift</dt><dd className="font-medium">{booking.dest_has_lift ? "Yes" : "No"}</dd></div>
                 {booking.dest_parking_within_20m != null && <div className="flex justify-between"><dt className="text-slate-500">Parking within 20m</dt><dd className="font-medium">{booking.dest_parking_within_20m ? "Yes" : "No"}</dd></div>}
-                {booking.dest_access_notes && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="font-medium">{booking.dest_access_notes}</dd></div>}
+                {booking.dest_access_notes && <div className="flex flex-col gap-0.5"><dt className="text-slate-500">Notes</dt><dd className="break-words font-medium">{booking.dest_access_notes}</dd></div>}
               </>)}
             </dl>
           </Card>
@@ -672,7 +672,7 @@ export default function BookingDetailPage() {
 
           <Card title="Description">
             {booking.description ? (
-              <blockquote className="rounded-xl border-l-4 border-brand-purple-300 bg-slate-50 p-4 text-sm italic leading-relaxed text-slate-700">&ldquo;{booking.description}&rdquo;</blockquote>
+              <blockquote className="break-words rounded-xl border-l-4 border-brand-purple-300 bg-slate-50 p-4 text-sm italic leading-relaxed text-slate-700">&ldquo;{booking.description}&rdquo;</blockquote>
             ) : <p className="text-sm text-slate-400">No description provided</p>}
           </Card>
 
@@ -746,12 +746,12 @@ export default function BookingDetailPage() {
             {invoices.length > 0 ? (
               <div className="mb-4 space-y-2">
                 {invoices.map(inv => (
-                  <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
+                  <div key={inv.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
                     <span className="font-mono font-semibold text-brand-purple-700">{inv.invoice_number}</span>
                     <span className="capitalize text-slate-500">{inv.type.replace("_", " ")}</span>
                     <span className="font-semibold">{formatCurrency(inv.total)}</span>
                     <StatusBadge status={inv.status as BookingStatus} />
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
                       <button onClick={() => setViewingInvoiceId(inv.id)} className="flex items-center gap-1 text-xs text-brand-purple-600 hover:underline">
                         <ExternalLink className="h-3 w-3" /> View
                       </button>
@@ -971,7 +971,7 @@ export default function BookingDetailPage() {
                 {visibleHistory.map(h => (
                   <div key={h.id} className="flex items-start gap-3">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATUS_DOT_COLOURS[h.new_status]}`} />
-                    <div>
+                    <div className="min-w-0 break-words">
                       <p className="text-sm font-medium text-slate-800">{STATUS_LABELS[h.new_status]}</p>
                       <p className="text-xs text-slate-400">{h.previous_status ? `From ${STATUS_LABELS[h.previous_status]}` : "Initial"} · {formatDate(h.changed_at)} · {h.changed_by}</p>
                     </div>
@@ -997,7 +997,7 @@ export default function BookingDetailPage() {
               <div className="space-y-3">
                 {notes.map(n => (
                   <div key={n.id} className="group relative rounded-xl bg-slate-50 p-4">
-                    <p className="pr-6 text-sm text-slate-800">{n.note}</p>
+                    <p className="pr-6 text-sm text-slate-800 break-words">{n.note}</p>
                     <p className="mt-1 text-xs text-slate-400">Admin · {formatDate(n.created_at)}</p>
                     <button onClick={() => setDeletingNoteId(n.id)} className="absolute right-3 top-3 hidden text-slate-300 hover:text-red-500 group-hover:block">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1101,7 +1101,7 @@ export default function BookingDetailPage() {
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-purple-50 text-brand-purple-700">
                     {activityIcon(entry.action)}
                   </span>
-                  <div>
+                  <div className="min-w-0 break-words">
                     <p className="text-sm text-slate-800">{entry.action}</p>
                     <p className="text-xs text-slate-400">{formatDateTime(entry.created_at)} · {entry.performed_by}</p>
                   </div>
