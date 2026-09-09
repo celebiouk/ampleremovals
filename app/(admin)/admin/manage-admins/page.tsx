@@ -266,7 +266,7 @@ export default function ManageAdminsPage() {
           {showCreateForm && (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-900">Create New Admin</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
                   <input
@@ -370,8 +370,8 @@ export default function ManageAdminsPage() {
           )}
 
           {/* Users List */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <table className="w-full">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Name</th>
@@ -474,9 +474,9 @@ export default function ManageAdminsPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="max-h-[600px] overflow-y-auto">
-              <table className="w-full">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">Time</th>
