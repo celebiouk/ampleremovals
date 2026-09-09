@@ -80,19 +80,24 @@ function QueueRow({ item, onHandled }: { item: QueueItem; onHandled: (id: string
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0 break-words">
           <p className="font-display text-sm font-bold text-brand-purple-950">{item.title}</p>
           <p className="text-xs text-slate-500">
             {item.customer_name ?? "Unknown customer"} · {item.customer_phone}
             {ref ? ` · ${ref}` : ""}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
           <Clock className="h-3 w-3" /> Expires in {countdown}
         </span>
       </div>
 
-      <p className="mb-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{item.message}</p>
+      {/* break-words is the fix: the message includes a long unbroken quote
+          link, and whitespace-pre-wrap alone preserves line breaks but never
+          splits a word/URL with no spaces in it — so it was overflowing the
+          card's width (page-wide scroll before AdminShell's overflow-x-hidden
+          backstop; silently clipped after). break-words lets it wrap. */}
+      <p className="mb-3 min-w-0 whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{item.message}</p>
 
       <div className="flex flex-wrap items-center gap-2">
         <button

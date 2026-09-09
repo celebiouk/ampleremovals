@@ -878,7 +878,7 @@ export default function BookingDetailPage() {
                             <div><p className="text-slate-400">Call-back day</p><p className="font-medium text-slate-700">{formatDateTime(r.reminder_datetime)}</p></div>
                           </div>
                           {r.notes
-                            ? <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{r.notes}</p>
+                            ? <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">{r.notes}</p>
                             : <p className="text-sm text-slate-400">No note was left for this reminder.</p>}
                         </div>
                       )}

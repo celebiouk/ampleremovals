@@ -171,7 +171,7 @@ export default function CallBackCalendarPage() {
                           <p className="truncate font-semibold text-slate-800">{upperName(r.customer_name)}</p>
                         </div>
                         {r.reason && <p className="mt-1 text-sm text-slate-500">{r.reason.replace(/_/g, " ")}</p>}
-                        {r.notes && <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">{r.notes}</p>}
+                        {r.notes && <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap break-words">{r.notes}</p>}
                       </div>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL[r.status] ?? "bg-slate-100 text-slate-600"}`}>
                         {statusLabel(r.status)}
