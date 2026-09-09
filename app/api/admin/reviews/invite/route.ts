@@ -10,7 +10,12 @@ export const runtime = "nodejs";
 const InviteSchema = z.object({
   name: z.string().trim().min(2, "Enter their name"),
   email: z.string().trim().email("Enter a valid email"),
+  /** Set once the admin has seen the "already invited recently" warning and
+   *  wants to send anyway. */
+  confirm: z.boolean().optional(),
 });
+
+const DUPLICATE_WINDOW_DAYS = 30;
 
 function reviewInviteEmailHtml(name: string, company: string): string {
   const first = name.split(" ")[0];
@@ -46,9 +51,29 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
-  const { name, email } = parsed.data;
-
+  const { name, email, confirm } = parsed.data;
   const supabase = createAdminClient();
+
+  // Soft warning, not a block: if this email was invited recently, tell the
+  // admin and let them decide — a second call with confirm:true sends anyway.
+  if (!confirm) {
+    const since = new Date(Date.now() - DUPLICATE_WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
+    const { data: recent } = await supabase
+      .from("review_invites")
+      .select("created_at")
+      .eq("email", email)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (recent) {
+      return NextResponse.json(
+        { success: false, warning: true, lastInvitedAt: recent.created_at, error: `${email} was already invited on ${new Date(recent.created_at).toLocaleDateString("en-GB")}.` },
+        { status: 409 }
+      );
+    }
+  }
+
   const { data: settings } = await supabase.from("settings").select("company_name").eq("id", 1).maybeSingle();
   const company = settings?.company_name || "Ample Removals";
 

@@ -41,18 +41,26 @@ export default function ReviewInvitePage() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
+  const send = async (confirmAnyway = false) => {
     setSending(true);
     try {
       const res = await fetch("/api/admin/reviews/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, confirm: confirmAnyway }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Couldn't send the invite.");
+      if (!res.ok || !data.success) {
+        if (data.warning) {
+          // Soft warning — offer to send anyway instead of blocking outright.
+          toast.warning(data.error, {
+            action: { label: "Send anyway", onClick: () => send(true) },
+            duration: 8000,
+          });
+          return;
+        }
+        throw new Error(data.error || "Couldn't send the invite.");
+      }
       toast.success(`Invite sent to ${name} — Trustpilot will follow up in their own time.`);
       setName(""); setEmail("");
       load();
@@ -61,6 +69,12 @@ export default function ReviewInvitePage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    send(false);
   };
 
   return (
