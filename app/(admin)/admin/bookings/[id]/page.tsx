@@ -683,7 +683,7 @@ export default function BookingDetailPage() {
             {booking.quote_total && booking.quote_line_items && Array.isArray(booking.quote_line_items) ? (
               <div className="space-y-3">
                 {/* What the customer actually saw/received: Standard AND Premium. */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div className={`rounded-xl border p-3 ${booking.quote_tier === "standard" ? "border-green-400 bg-green-50 ring-2 ring-green-200" : "border-slate-200 bg-slate-50"}`}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standard {booking.quote_tier === "standard" && <span className="text-green-700">✓ chosen</span>}</p>
                     <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(booking.quote_tier === "premium" ? (booking.quote_total as number) / (premiumMultiplier ?? 1.7) : (booking.quote_total as number))}</p>

@@ -337,7 +337,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-slate-50">
       {/* Desktop sidebar */}
       <aside className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col transition-all duration-200 md:flex", sidebarWidth)}>
         <SidebarContent />
@@ -357,8 +357,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Main content */}
-      <div className={cn("flex min-h-screen flex-1 flex-col transition-all duration-200", collapsed ? "md:pl-[72px]" : "md:pl-[280px]")}>
+      {/* Main content. min-w-0 is the key line: as a flex item, it would
+          otherwise default to min-width:auto and grow to fit whatever wide
+          content a page renders (a table, a long line of text…), dragging the
+          WHOLE page wider than the screen on mobile instead of that one
+          element scrolling/clipping internally. */}
+      <div className={cn("flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-200", collapsed ? "md:pl-[72px]" : "md:pl-[280px]")}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 shadow-sm">
           {/* Mobile hamburger */}
@@ -409,7 +413,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="flex-1 p-6"
+          className="min-w-0 flex-1 overflow-x-hidden p-6"
         >
           {children}
         </motion.main>
