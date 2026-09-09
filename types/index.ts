@@ -304,6 +304,8 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
   last_login_at: string | null;
+  /** Which /admin pages this account can see; null = unrestricted (sees everything). */
+  allowed_pages: string[] | null;
 }
 
 export interface AdminActivityLog {

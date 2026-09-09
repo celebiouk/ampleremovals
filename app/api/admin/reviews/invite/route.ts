@@ -10,23 +10,28 @@ export const runtime = "nodejs";
 const InviteSchema = z.object({
   name: z.string().trim().min(2, "Enter their name"),
   email: z.string().trim().email("Enter a valid email"),
-  /** Set once the admin has seen the "already invited recently" warning and
-   *  wants to send anyway. */
+  /** Which service they used, e.g. "Removals", "Man & Van" — makes the email
+   *  read as a genuine post-service thank-you rather than a generic note, which
+   *  is what Trustpilot needs to recognise this as a real completed customer. */
+  service: z.string().trim().max(60).optional(),
   confirm: z.boolean().optional(),
 });
 
 const DUPLICATE_WINDOW_DAYS = 30;
 
-function reviewInviteEmailHtml(name: string, company: string): string {
+function reviewInviteEmailHtml(name: string, company: string, service?: string): string {
   const first = name.split(" ")[0];
+  const serviceLine = service
+    ? `Thank you for using our <strong>${service}</strong> service — it was a pleasure helping with your move.`
+    : `Thank you for choosing ${company} — it was a pleasure helping with your move.`;
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
     <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:22px;">Thank you, ${first}!</h1>
     </div>
     <div style="background:#fff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:28px;">
-      <p style="color:#1e293b;">Thank you for choosing ${company} — it was a pleasure helping with your move.</p>
+      <p style="color:#1e293b;">${serviceLine}</p>
       <p style="color:#475569;line-height:1.6;">We hope everything went smoothly. If anything at all needs sorting out, just call us on <a href="tel:+443335772070" style="color:#6b21a8;">${COMPANY_PHONE}</a> and we'll put it right straight away.</p>
-      <p style="color:#94a3b8;font-size:13px;margin-top:24px;">Thanks again for your business.</p>
+      <p style="color:#94a3b8;font-size:13px;margin-top:24px;">Thanks again for your business — we're glad you chose ${company}.</p>
     </div>
   </div>`;
 }
@@ -51,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
-  const { name, email, confirm } = parsed.data;
+  const { name, email, service, confirm } = parsed.data;
   const supabase = createAdminClient();
 
   // Soft warning, not a block: if this email was invited recently, tell the
@@ -82,14 +87,14 @@ export async function POST(req: NextRequest) {
       from: resendFrom,
       to: email,
       bcc: [process.env.TRUSTPILOT_INVITE_EMAIL],
-      subject: `Thank you for choosing ${company}`,
-      html: reviewInviteEmailHtml(name, company),
+      subject: service ? `Thank you for your ${service} with ${company}` : `Thank you for choosing ${company}`,
+      html: reviewInviteEmailHtml(name, company, service),
     });
   } catch (err) {
     return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Couldn't send the email." }, { status: 500 });
   }
 
-  await supabase.from("review_invites").insert({ name, email, invited_by: auth.userId });
+  await supabase.from("review_invites").insert({ name, email, service: service || null, invited_by: auth.userId });
 
   return NextResponse.json({ success: true });
 }
@@ -102,7 +107,7 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("review_invites")
-    .select("id, name, email, created_at")
+    .select("id, name, email, service, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) return NextResponse.json({ success: false, error: "Couldn't load invites." }, { status: 500 });

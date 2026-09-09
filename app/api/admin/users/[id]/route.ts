@@ -103,6 +103,8 @@ export async function PATCH(
     const body = await req.json() as {
       is_active?: boolean;
       new_password?: string;
+      /** Which admin pages this account can see; null clears any restriction. */
+      allowed_pages?: string[] | null;
     };
 
     // Check authentication
@@ -183,6 +185,25 @@ export async function PATCH(
         resource_type: "admin_user",
         resource_id: id,
         metadata: { target_email: userToUpdate.email },
+      });
+    }
+
+    // Update page permissions if provided — never applies to super_admin, who
+    // always sees everything.
+    if (body.allowed_pages !== undefined && userToUpdate.role !== "super_admin") {
+      const { error: pagesError } = await supabase
+        .from("admin_users")
+        .update({ allowed_pages: body.allowed_pages })
+        .eq("id", id);
+      if (pagesError) throw pagesError;
+
+      await supabase.from("admin_activity_log").insert({
+        admin_user_id: currentAdmin.id,
+        admin_email: currentAdmin.email,
+        action: "Updated page permissions",
+        resource_type: "admin_user",
+        resource_id: id,
+        metadata: { target_email: userToUpdate.email, allowed_pages: body.allowed_pages },
       });
     }
 

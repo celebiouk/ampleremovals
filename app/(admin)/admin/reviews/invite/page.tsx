@@ -9,8 +9,11 @@ interface Invite {
   id: string;
   name: string;
   email: string;
+  service?: string | null;
   created_at: string;
 }
+
+const SERVICES = ["Removals", "Man & Van", "House Clearance", "House Cleaning", "End of Tenancy Cleaning"];
 
 /**
  * Admin "Invite for Review" — enter a name + email and send a review invite for
@@ -21,6 +24,7 @@ interface Invite {
 export default function ReviewInvitePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [service, setService] = useState("");
   const [sending, setSending] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +51,7 @@ export default function ReviewInvitePage() {
       const res = await fetch("/api/admin/reviews/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, confirm: confirmAnyway }),
+        body: JSON.stringify({ name, email, service: service || undefined, confirm: confirmAnyway }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -62,7 +66,7 @@ export default function ReviewInvitePage() {
         throw new Error(data.error || "Couldn't send the invite.");
       }
       toast.success(`Invite sent to ${name} — Trustpilot will follow up in their own time.`);
-      setName(""); setEmail("");
+      setName(""); setEmail(""); setService("");
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -101,6 +105,18 @@ export default function ReviewInvitePage() {
               className="h-12 w-full rounded-xl border-2 border-slate-200 pl-9 pr-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
             />
           </div>
+        </div>
+        <div className="mb-4">
+          <label className="mb-1.5 block text-sm font-semibold text-slate-700">Service used <span className="font-normal text-slate-400">(optional, but recommended)</span></label>
+          <select
+            value={service}
+            onChange={(e) => setService(e.target.value)}
+            className="h-12 w-full rounded-xl border-2 border-slate-200 px-4 text-base outline-none transition-colors focus:border-brand-purple-600 focus:ring-2 focus:ring-brand-purple-100"
+          >
+            <option value="">Not specified</option>
+            {SERVICES.map((s) => (<option key={s} value={s}>{s}</option>))}
+          </select>
+          <p className="mt-1 text-xs text-slate-400">Mentioning the actual service makes it read as a genuine completed customer, not a generic note.</p>
         </div>
         <div className="mb-2">
           <label className="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
@@ -143,7 +159,7 @@ export default function ReviewInvitePage() {
               <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <div className="min-w-0">
                   <p className="font-semibold text-brand-purple-950">{inv.name}</p>
-                  <p className="truncate text-sm text-slate-500">{inv.email}</p>
+                  <p className="truncate text-sm text-slate-500">{inv.email}{inv.service ? ` · ${inv.service}` : ""}</p>
                 </div>
                 <span className="shrink-0 text-xs text-slate-400">
                   {new Date(inv.created_at).toLocaleDateString("en-GB")}

@@ -66,6 +66,9 @@ export async function POST(req: NextRequest) {
       full_name: string;
       password: string;
       role?: "admin" | "super_admin";
+      /** Which admin pages this account can see (null/omitted = unrestricted,
+       *  same as every admin today). Ignored for role "super_admin". */
+      allowed_pages?: string[] | null;
     };
 
     // Check if current user is authenticated
@@ -124,6 +127,7 @@ export async function POST(req: NextRequest) {
         role: body.role || "admin",
         supabase_user_id: authData.user.id,
         created_by: currentAdmin.id,
+        allowed_pages: body.role === "super_admin" ? null : (body.allowed_pages ?? null),
       })
       .select()
       .single();

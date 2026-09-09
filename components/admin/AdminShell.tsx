@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CommandPalette } from "@/components/admin/CommandPalette";
 import { NotificationCentre } from "@/components/admin/NotificationCentre";
 
-const NAV_GROUPS = [
+export const NAV_GROUPS = [
   {
     label: "OVERVIEW",
     items: [
@@ -94,6 +94,16 @@ const NAV_GROUPS = [
     ],
   },
 ];
+
+/** Flattened {group, href, label} list — used by Manage Admins to build the
+ *  "which pages can they see" checkboxes, and by the access guard below. */
+export const ALL_ADMIN_PAGES: { group: string; href: string; label: string }[] = NAV_GROUPS.flatMap((g) =>
+  g.items.map((item) => ({ group: g.label, href: item.href, label: item.label }))
+);
+
+/** Pages every logged-in admin/operator can always reach, regardless of any
+ *  page restriction — so a restricted account can never be locked out entirely. */
+const ALWAYS_ALLOWED_PAGES = ["/admin", "/admin/profile", "/admin/login"];
 
 function SidebarLink({
   href, label, icon: Icon, exact = false, badge = 0, collapsed = false,
@@ -202,6 +212,39 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   // Close mobile drawer on route change
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
+  // Restricted "team member" accounts (admin_users.allowed_pages set) only see
+  // the pages they've been granted, and get bounced off any other admin page —
+  // super_admins and unrestricted admins (allowed_pages null) see everything, as
+  // today. This is a navigation/visibility control, not an API-level lock: it
+  // keeps a restricted account's day-to-day experience simple, but a request
+  // made directly to an admin API endpoint isn't blocked by this alone.
+  const [access, setAccess] = useState<{ role: string; allowedPages: string[] | null } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/me")
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.success) setAccess(d.admin ? { role: d.admin.role, allowedPages: d.admin.allowed_pages } : { role: "admin", allowedPages: null }); })
+      .catch(() => { if (!cancelled) setAccess({ role: "admin", allowedPages: null }); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const isRestricted = access?.role !== "super_admin" && Array.isArray(access?.allowedPages);
+  const isPageAllowed = useCallback(
+    (href: string) => !isRestricted || ALWAYS_ALLOWED_PAGES.includes(href) || (access!.allowedPages as string[]).includes(href),
+    [isRestricted, access]
+  );
+
+  // Bounce a restricted account off any page it hasn't been granted.
+  useEffect(() => {
+    if (!access || !isRestricted) return;
+    if (ALWAYS_ALLOWED_PAGES.includes(pathname)) return;
+    if (!isPageAllowed(pathname)) router.replace("/admin");
+  }, [access, isRestricted, isPageAllowed, pathname, router]);
+
+  const visibleNavGroups = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((item) => isPageAllowed(item.href)) }))
+    .filter((g) => g.items.length > 0);
+
   if (pathname === "/admin/login") return <>{children}</>;
 
   const handleSignOut = async () => { await signOut(); router.replace("/admin/login"); };
@@ -229,7 +272,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {NAV_GROUPS.map((group) => (
+        {visibleNavGroups.map((group) => (
           <div key={group.label} className="mb-2">
             {!collapsed && (
               <p className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
@@ -255,8 +298,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Footer */}
       <div className="shrink-0 border-t border-purple-900/50 p-3 space-y-1">
         <SidebarLink href="/admin/profile" label="My Profile" icon={User} collapsed={collapsed} />
-        <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={collapsed} />
-        <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={collapsed} />
+        {!isRestricted && <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={collapsed} />}
+        {!isRestricted && <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={collapsed} />}
         {!collapsed && (
           <div className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-700 text-xs font-bold text-white">

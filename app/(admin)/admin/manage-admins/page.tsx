@@ -1,12 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Activity, Shield, Plus, Trash2, Key, UserX, UserCheck, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
+import { Users, Activity, Shield, Plus, Trash2, Key, UserX, UserCheck, Loader2, RefreshCw, ArrowLeft, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { ALL_ADMIN_PAGES } from "@/components/admin/AdminShell";
 import type { AdminUser, AdminActivityLog, AdminRole } from "@/types";
+
+/** Grouped {group -> pages[]} for the permission checkboxes, in nav order. */
+const PAGE_GROUPS: { group: string; pages: { href: string; label: string }[] }[] = (() => {
+  const order: string[] = [];
+  const byGroup = new Map<string, { href: string; label: string }[]>();
+  for (const p of ALL_ADMIN_PAGES) {
+    if (!byGroup.has(p.group)) { byGroup.set(p.group, []); order.push(p.group); }
+    byGroup.get(p.group)!.push({ href: p.href, label: p.label });
+  }
+  return order.map((group) => ({ group, pages: byGroup.get(group)! }));
+})();
 
 export default function ManageAdminsPage() {
   const [activeTab, setActiveTab] = useState<"users" | "activity">("users");
@@ -24,6 +36,14 @@ export default function ManageAdminsPage() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<AdminRole>("admin");
+  const [restrictAccess, setRestrictAccess] = useState(false);
+  const [newUserPages, setNewUserPages] = useState<string[]>([]);
+
+  // Editing an existing user's page permissions
+  const [editingPermsUserId, setEditingPermsUserId] = useState<string | null>(null);
+  const [editingPages, setEditingPages] = useState<string[]>([]);
+  const [editingRestricted, setEditingRestricted] = useState(true);
+  const [savingPerms, setSavingPerms] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -69,6 +89,7 @@ export default function ManageAdminsPage() {
         full_name: newUserName,
         password: newUserPassword,
         role: newUserRole,
+        allowed_pages: newUserRole === "admin" && restrictAccess ? newUserPages : null,
       }),
     });
 
@@ -82,6 +103,8 @@ export default function ManageAdminsPage() {
       setNewUserName("");
       setNewUserPassword("");
       setNewUserRole("admin");
+      setRestrictAccess(false);
+      setNewUserPages([]);
       fetchUsers();
     } else {
       toast.error(data.error || "Failed to create user");
@@ -122,6 +145,35 @@ export default function ManageAdminsPage() {
     } else {
       toast.error(data.error || "Failed to change password");
     }
+  };
+
+  const openEditPerms = (user: AdminUser) => {
+    setEditingPermsUserId(user.id);
+    setEditingRestricted(Array.isArray(user.allowed_pages));
+    setEditingPages(user.allowed_pages ?? []);
+  };
+
+  const savePerms = async () => {
+    if (!editingPermsUserId) return;
+    setSavingPerms(true);
+    const res = await fetch(`/api/admin/users/${editingPermsUserId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ allowed_pages: editingRestricted ? editingPages : null }),
+    });
+    const data = await res.json() as { success: boolean; error?: string };
+    setSavingPerms(false);
+    if (data.success) {
+      toast.success("Permissions updated");
+      setEditingPermsUserId(null);
+      fetchUsers();
+    } else {
+      toast.error(data.error || "Failed to update permissions");
+    }
+  };
+
+  const togglePage = (list: string[], setList: (v: string[]) => void, href: string) => {
+    setList(list.includes(href) ? list.filter((h) => h !== href) : [...list, href]);
   };
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
@@ -257,6 +309,47 @@ export default function ManageAdminsPage() {
                   </select>
                 </div>
               </div>
+
+              {newUserRole === "admin" && (
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <div className="flex items-center gap-2">
+                    <LockKeyhole className="w-4 h-4 text-slate-500" />
+                    <p className="text-sm font-semibold text-slate-800">Access</p>
+                  </div>
+                  <div className="mt-2 flex gap-4">
+                    <label className="flex items-center gap-2 text-sm text-slate-700">
+                      <input type="radio" checked={!restrictAccess} onChange={() => setRestrictAccess(false)} />
+                      Full access (sees everything)
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-slate-700">
+                      <input type="radio" checked={restrictAccess} onChange={() => setRestrictAccess(true)} />
+                      Restricted — choose exactly what they see
+                    </label>
+                  </div>
+                  {restrictAccess && (
+                    <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-lg bg-slate-50 p-3">
+                      {PAGE_GROUPS.map((g) => (
+                        <div key={g.group}>
+                          <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">{g.group}</p>
+                          <div className="grid grid-cols-2 gap-1">
+                            {g.pages.map((p) => (
+                              <label key={p.href} className="flex items-center gap-1.5 text-sm text-slate-700">
+                                <input
+                                  type="checkbox"
+                                  checked={newUserPages.includes(p.href)}
+                                  onChange={() => togglePage(newUserPages, setNewUserPages, p.href)}
+                                />
+                                {p.label}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={() => setShowCreateForm(false)}
@@ -302,6 +395,11 @@ export default function ManageAdminsPage() {
                       }`}>
                         {user.role === "super_admin" ? "Super Admin" : "Admin"}
                       </span>
+                      {user.role !== "super_admin" && Array.isArray(user.allowed_pages) && (
+                        <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          Restricted ({user.allowed_pages.length})
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -324,6 +422,15 @@ export default function ManageAdminsPage() {
                             >
                               {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                             </button>
+                            {user.role !== "super_admin" && (
+                              <button
+                                onClick={() => openEditPerms(user)}
+                                className="p-2 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                                title="Edit page permissions"
+                              >
+                                <LockKeyhole className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               onClick={() => setChangingPasswordUserId(user.id)}
                               className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
@@ -441,6 +548,63 @@ export default function ManageAdminsPage() {
                 className="px-4 py-2 text-sm bg-brand-purple-700 text-white rounded-xl hover:bg-brand-purple-800 font-bold"
               >
                 Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Page Permissions Dialog */}
+      {editingPermsUserId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl">
+            <h3 className="mb-1 text-lg font-semibold text-slate-900">Page Permissions</h3>
+            <p className="mb-4 text-xs text-slate-500">Controls which menu items this account sees and can navigate to. Does not restrict direct API access.</p>
+            <div className="mb-3 flex gap-4">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="radio" checked={!editingRestricted} onChange={() => setEditingRestricted(false)} />
+                Full access (sees everything)
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="radio" checked={editingRestricted} onChange={() => setEditingRestricted(true)} />
+                Restricted
+              </label>
+            </div>
+            {editingRestricted && (
+              <div className="mb-4 max-h-72 space-y-3 overflow-y-auto rounded-lg bg-slate-50 p-3">
+                {PAGE_GROUPS.map((g) => (
+                  <div key={g.group}>
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">{g.group}</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {g.pages.map((p) => (
+                        <label key={p.href} className="flex items-center gap-1.5 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={editingPages.includes(p.href)}
+                            onChange={() => togglePage(editingPages, setEditingPages, p.href)}
+                          />
+                          {p.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setEditingPermsUserId(null)}
+                className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={savePerms}
+                disabled={savingPerms}
+                className="px-4 py-2 text-sm bg-brand-purple-700 text-white rounded-xl hover:bg-brand-purple-800 disabled:opacity-50 flex items-center gap-2 font-bold"
+              >
+                {savingPerms && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save
               </button>
             </div>
           </div>

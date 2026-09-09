@@ -69,10 +69,28 @@ export async function isDriver(userId: string | undefined): Promise<boolean> {
 }
 
 /**
- * Checks if a user is an admin
+ * Checks if a user is an admin. Additionally: if this user HAS a row in
+ * admin_users (the Manage Admins system) and it's been deactivated, they're
+ * blocked even though getUserType() would otherwise call them "admin" — this
+ * closes a gap where deactivating someone in Manage Admins didn't actually
+ * revoke anything. Anyone without an admin_users row keeps today's behaviour
+ * unchanged (not tracked there → unrestricted).
  * @param userId - Supabase Auth user UUID
  */
 export async function isAdmin(userId: string | undefined): Promise<boolean> {
   const userType = await getUserType(userId);
-  return userType === "admin";
+  if (userType !== "admin") return false;
+  if (!userId) return false;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("admin_users")
+      .select("is_active")
+      .eq("supabase_user_id", userId)
+      .maybeSingle();
+    if (data && data.is_active === false) return false;
+  } catch {
+    /* admin_users lookup failing shouldn't lock everyone out */
+  }
+  return true;
 }
