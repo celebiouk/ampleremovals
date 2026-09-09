@@ -324,8 +324,8 @@ export default function BookingDetailPage() {
     <div className="space-y-4">
       <Skeleton className="h-8 w-64" />
       <div className="grid gap-6 lg:grid-cols-[55fr_45fr]">
-        <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}</div>
-        <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
+        <div className="min-w-0 space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}</div>
+        <div className="min-w-0 space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
       </div>
     </div>
   );
@@ -504,7 +504,13 @@ export default function BookingDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[55fr_45fr]">
 
         {/* LEFT PANEL */}
-        <div className="space-y-5">
+        {/* min-w-0 is required: CSS Grid tracks default to min-width:auto, so
+            without it any wide descendant (e.g. DistancePanel's postcode text
+            arriving after its async fetch resolves) can force this track past
+            its 55fr share and blow the whole grid wider than the viewport —
+            which then gets silently clipped on the right by the page's
+            overflow-x-hidden backstop, cutting off content in EVERY card. */}
+        <div className="min-w-0 space-y-5">
           {/* Job distances at a glance — no need to open the quote builder */}
           <DistancePanel
             originPostcode={originAddress?.postcode}
@@ -818,7 +824,7 @@ export default function BookingDetailPage() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {/* Quick Actions - Call Back Reminders & Quote Builder */}
           <Card title="Quick Actions">
             <div className="space-y-2">

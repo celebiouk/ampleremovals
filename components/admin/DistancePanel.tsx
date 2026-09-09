@@ -66,19 +66,19 @@ export function DistancePanel({
       </div>
       <div className="mt-2 space-y-1.5 text-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 text-slate-600">
-            <Building2 className="h-4 w-4 text-blue-500" />
+          <span className="flex min-w-0 items-center gap-1.5 truncate text-slate-600">
+            <Building2 className="h-4 w-4 shrink-0 text-blue-500" />
             Office{data?.officePostcode ? ` (${data.officePostcode})` : ""} → pickup
           </span>
-          {miles(data?.officeToOrigin ?? null)}
+          <span className="shrink-0">{miles(data?.officeToOrigin ?? null)}</span>
         </div>
         {destination && (
           <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-slate-600">
-              <MapPin className="h-4 w-4 text-blue-500" />
+            <span className="flex min-w-0 items-center gap-1.5 truncate text-slate-600">
+              <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
               Pickup → dropoff
             </span>
-            {miles(data?.originToDestination ?? null)}
+            <span className="shrink-0">{miles(data?.originToDestination ?? null)}</span>
           </div>
         )}
       </div>
