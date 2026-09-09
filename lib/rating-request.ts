@@ -56,9 +56,19 @@ export async function sendRatingRequest(
       .join("");
 
     if (customer.email) {
+      // Trustpilot's email-invite integration: BCC'ing their unique address on an
+      // email that goes TO the customer right after their job is done is how it
+      // triggers a Trustpilot review invitation (sent later, on Trustpilot's own
+      // schedule — nothing extra shows in the email itself). Only on the initial
+      // send (channel "all"), never on the daily reminder nudges, so Trustpilot
+      // isn't asked to invite the same customer repeatedly for one booking.
+      const trustpilotBcc = channel === "all" && process.env.TRUSTPILOT_INVITE_EMAIL
+        ? [process.env.TRUSTPILOT_INVITE_EMAIL]
+        : undefined;
       await resend.emails.send({
         from: resendFrom,
         to: customer.email,
+        ...(trustpilotBcc ? { bcc: trustpilotBcc } : {}),
         subject: `How was your move, ${first}? Rate ${company} ⭐`,
         html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
           <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
