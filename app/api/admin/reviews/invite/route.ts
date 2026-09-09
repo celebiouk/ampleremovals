@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
+import { resend, resendFrom } from "@/lib/resend";
+import { COMPANY_PHONE } from "@/lib/constants";
+
+export const runtime = "nodejs";
+
+const InviteSchema = z.object({
+  name: z.string().trim().min(2, "Enter their name"),
+  email: z.string().trim().email("Enter a valid email"),
+});
+
+function reviewInviteEmailHtml(name: string, company: string): string {
+  const first = name.split(" ")[0];
+  return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+    <div style="background:#6b21a8;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+      <h1 style="color:#fff;margin:0;font-size:22px;">Thank you, ${first}!</h1>
+    </div>
+    <div style="background:#fff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:28px;">
+      <p style="color:#1e293b;">Thank you for choosing ${company} — it was a pleasure helping with your move.</p>
+      <p style="color:#475569;line-height:1.6;">We hope everything went smoothly. If anything at all needs sorting out, just call us on <a href="tel:+443335772070" style="color:#6b21a8;">${COMPANY_PHONE}</a> and we'll put it right straight away.</p>
+      <p style="color:#94a3b8;font-size:13px;margin-top:24px;">Thanks again for your business.</p>
+    </div>
+  </div>`;
+}
+
+/**
+ * POST /api/admin/reviews/invite — admin manually invites someone (by name +
+ * email, no booking required) for a review. Sends them a short thank-you email
+ * with Trustpilot's invite address BCC'd — the same mechanism as the automatic
+ * job-completion trigger (see lib/rating-request.ts), but fireable on demand for
+ * anyone: a customer who slipped through, a phone booking, a favour, etc.
+ * Trustpilot emails the review invite separately, in its own time.
+ */
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  if (!process.env.TRUSTPILOT_INVITE_EMAIL) {
+    return NextResponse.json({ success: false, error: "Trustpilot isn't configured yet (TRUSTPILOT_INVITE_EMAIL is missing)." }, { status: 503 });
+  }
+
+  const parsed = InviteSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
+  }
+  const { name, email } = parsed.data;
+
+  const supabase = createAdminClient();
+  const { data: settings } = await supabase.from("settings").select("company_name").eq("id", 1).maybeSingle();
+  const company = settings?.company_name || "Ample Removals";
+
+  try {
+    await resend.emails.send({
+      from: resendFrom,
+      to: email,
+      bcc: [process.env.TRUSTPILOT_INVITE_EMAIL],
+      subject: `Thank you for choosing ${company}`,
+      html: reviewInviteEmailHtml(name, company),
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Couldn't send the email." }, { status: 500 });
+  }
+
+  await supabase.from("review_invites").insert({ name, email, invited_by: auth.userId });
+
+  return NextResponse.json({ success: true });
+}
+
+/** GET /api/admin/reviews/invite — recent manual invites, newest first. */
+export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("review_invites")
+    .select("id, name, email, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return NextResponse.json({ success: false, error: "Couldn't load invites." }, { status: 500 });
+  return NextResponse.json({ success: true, invites: data ?? [] });
+}
