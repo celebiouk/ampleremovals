@@ -40,6 +40,9 @@ export async function generateMetadata({ params }: { params: Promise<{ location:
     title,
     description,
     keywords: keywords.join(", "),
+    // NOTE: a child route's openGraph/twitter REPLACES the root layout's rather
+    // than merging, so the share image must be repeated here or these pages
+    // would share with no image at all.
     openGraph: {
       title,
       description,
@@ -47,11 +50,13 @@ export async function generateMetadata({ params }: { params: Promise<{ location:
       siteName: "Ample Removals",
       type: "website",
       locale: "en_GB",
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Ample Removals" }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: ["/opengraph-image"],
     },
     alternates: {
       canonical: `https://www.ampleremovals.com/locations/${slug}`,

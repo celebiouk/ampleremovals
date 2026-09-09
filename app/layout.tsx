@@ -57,9 +57,11 @@ export const metadata: Metadata = {
     title: "Ample Removals — Professional Removal Services UK",
     description:
       "Professional removal services across the UK. Get a free quote in minutes.",
+    // Generated at app/opengraph-image.tsx (the old /og-image.png never existed,
+    // which is why shared links showed no image).
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Ample Removals - Professional Removal Services",
@@ -71,7 +73,7 @@ export const metadata: Metadata = {
     title: "Ample Removals — Professional Removal Services UK",
     description:
       "Professional removal services across the UK. Get a free quote in minutes.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
