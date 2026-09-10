@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody, sendWhatsApp } from "@/lib/twilio";
 import { normaliseUKPhone, formatDate, formatCurrency } from "@/lib/utils";
 import { downloadInvoicePDF, getInvoiceSignedURL } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
@@ -76,6 +76,18 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     await logError({ message: `Invoice resend SMS failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
+  }
+
+  try {
+    if (customer.phone) {
+      const msg = `Reminder: Invoice ${invoice.invoice_number} for ${formatCurrency(invoice.total)} is due.\n\nPay online (card or bank transfer): ${payLink}`;
+      await sendWhatsApp(customer.phone, msg, undefined, {
+        bookingId: booking.id,
+        title: `${typeLabel} invoice ${invoice.invoice_number} — pay link (reminder)`,
+      });
+    }
+  } catch (err) {
+    await logError({ message: `Invoice resend WhatsApp queue failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
   }
 
   await supabase.from("activity_log").insert({

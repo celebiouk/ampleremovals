@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
-import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody, sendWhatsApp } from "@/lib/twilio";
 import { normaliseUKPhone, formatDate, formatCurrency } from "@/lib/utils";
 import { downloadInvoicePDF, getInvoiceSignedURL, uploadInvoicePDF } from "@/lib/storage";
 import { logError } from "@/lib/log-error";
@@ -204,6 +204,23 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     await logError({ message: `Invoice SMS failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
+  }
+
+  // Queue a WhatsApp message with the pay link — admin taps to send it from
+  // their own business number (see lib/twilio.ts sendWhatsApp for why this is
+  // queued rather than auto-sent).
+  try {
+    if (customer.phone) {
+      const msg = payLink
+        ? `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) is ready.\n\nPay online (card or bank transfer): ${payLink}`
+        : `Hi ${customer.full_name.split(" ")[0]}, your ${typeLabel} invoice for ${formatCurrency(invoice.total)} (${invoice.invoice_number}) has been sent to your email. Pay by bank transfer - details in email.`;
+      await sendWhatsApp(customer.phone, msg, undefined, {
+        bookingId: booking.id,
+        title: `${typeLabel} invoice ${invoice.invoice_number} — pay link`,
+      });
+    }
+  } catch (err) {
+    await logError({ message: `Invoice WhatsApp queue failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { invoiceId } });
   }
 
   // Update invoice status
