@@ -29,6 +29,7 @@ interface BookingRow {
   created_at: string; customer_name: string;
   origin_postcode: string; destination_postcode: string | null;
   lead_band: string | null; lead_score: number | null;
+  is_flagged: boolean; flag_reason: string | null;
 }
 
 const LEAD_BADGE: Record<string, string> = {
@@ -137,7 +138,7 @@ function BookingsListInner() {
 
     // Try with lead-score columns; fall back gracefully if that migration
     // hasn't been run yet (so the list never breaks).
-    let { data, count, error } = await buildQuery(`${baseCols},lead_band,lead_score`);
+    let { data, count, error } = await buildQuery(`${baseCols},lead_band,lead_score,is_flagged,flag_reason`);
     if (error) {
       ({ data, count } = await buildQuery(baseCols));
     }
@@ -152,6 +153,8 @@ function BookingsListInner() {
       destination_postcode: (b.dest_addr as { postcode: string } | null)?.postcode ?? null,
       lead_band: (b.lead_band as string | null) ?? null,
       lead_score: (b.lead_score as number | null) ?? null,
+      is_flagged: (b.is_flagged as boolean | null) ?? false,
+      flag_reason: (b.flag_reason as string | null) ?? null,
     }));
 
     setBookings(rows);
@@ -340,6 +343,11 @@ function BookingsListInner() {
                         {b.lead_band && (
                           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${isInquiry ? "bg-white/20 text-white" : LEAD_BADGE[b.lead_band] ?? "bg-slate-100 text-slate-500"}`} title={`Lead score ${b.lead_score ?? "—"}/100`}>
                             {b.lead_band}
+                          </span>
+                        )}
+                        {b.is_flagged && (
+                          <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700" title={b.flag_reason ?? "Needs a human look"}>
+                            ⚠ needs review
                           </span>
                         )}
                       </div>

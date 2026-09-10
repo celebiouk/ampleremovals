@@ -138,6 +138,12 @@ export async function POST(
         quote_confirmed_at: null,
         quote_followup_stage: 0,
         quote_last_followup_at: sentAt, // step-1 gap (2h) is measured from here
+        // Restart the daily follow-up drip (lib/followups/engine.ts) and
+        // un-flag — a re-send deserves a fresh chase, not silence.
+        quote_followup_last_morning_sent_on: null,
+        quote_followup_last_evening_sent_on: null,
+        is_flagged: false,
+        flag_reason: null,
       })
       .eq("id", bookingId);
 

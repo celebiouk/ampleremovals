@@ -1,25 +1,40 @@
-## Task: Meta-ad landing page /booking + Klarna/card/bank payment options
+## Task: Quote & Deposit follow-up drip messaging
 
-Decisions (confirmed): flow = contact → FROM postcode → TO postcode → bedrooms → items → date → editable quote.
-Card & bank = 25% deposit; Klarna = FULL move ÷3. Klarna already enabled in Stripe.
+Plan approved: daily follow-ups after a quote is sent (email+SMS+WhatsApp days 1-5, email+WhatsApp days 6-14),
+same cadence after a deposit invoice is sent, stopping the instant the customer confirms/pays. 14 days of
+silence → booking auto-flagged (`is_flagged`/`flag_reason`, reusing existing unused columns) for admin review.
+Full plan: C:\Users\User\.claude\plans\adaptive-conjuring-fox.md
 
-### Phase 1 — the landing page + editable-quote wizard  (this build)
-- [ ] `app/(landing)/layout.tsx` — no navbar/footer; keep Pixels + AttributionCapture (Meta pixel + ad attribution).
-- [ ] `app/(landing)/booking/page.tsx` — renders the wizard; distraction-free.
-- [ ] `components/landing/LandingBooking.tsx` — compelling, minimal wizard:
-      contact (name/phone/email) → FROM postcode → TO postcode → bedrooms → key items → date
-      → editable quote step (Standard with "what you get" INSIDE it; Premium = "everything in Standard, plus…"; Back to edit → price updates).
-      Assumes a domestic house move (no domestic/business choice). Postcode-only (no address lookup).
-- [ ] `app/api/quote/estimate/route.ts` — public live quote (standard + premium + deposit) from bedrooms/items/postcodes.
-- [ ] `app/api/booking/landing/route.ts` — create customer + booking (postcode-only addresses) + quote + token; send "everything you supplied" email; return {bookingId, token} → go to /quote/[id]/[token] to reserve + pay.
-- [ ] Strong ad copy throughout.
-
-### Phase 2 — payment options on the quote/pay screen  (next build)
-- [ ] Quote/pay screen: single Pay → 3 options: Pay by card (deposit), Pay in 3 with Klarna (full), Pay by bank transfer (deposit).
-- [ ] Stripe Checkout: card (deposit) + klarna (full ÷3); reuse invoice + webhook.
-- [ ] Confirmation/deposit emails reflect all 3 payment options.
+### Plan
+- [x] Migration: add drip-tracking columns (`supabase/migrations/add_drip_followups.sql` + mirrored in `scripts/run-migrations.ts`), run it against the live DB.
+- [x] `lib/followups/content.ts` — hand-written day-by-day copy (quote sequence: 14 days x up to 3 channels; deposit sequence: same) — warm, human, non-salesy, no fabricated testimonials.
+- [x] `lib/followups/engine.ts` — shared runner: computes day number from anchor, sends/queues per channel, flags at day 15.
+- [x] `app/api/cron/followup-morning/route.ts` + `app/api/cron/followup-evening/route.ts` (new); delete dead `app/api/cron/quote-followup/route.ts`.
+- [x] Wire anchors/resets into `quote/send/route.ts` and `invoices/send/route.ts`.
+- [x] `vercel.json` — add the two new crons + functions entries, remove the old quote-followup entry.
+- [x] Admin UI: `is_flagged` pill on `app/(admin)/admin/bookings/page.tsx`.
+- [x] Typecheck, dry-run against live data, commit, push, deploy, verify live.
 
 ### Review
-- **Phase 1 (live):** `/booking` landing page — no navbar/footer (kept Meta pixel + attribution), assumes a domestic house move, contact-first, postcode-only (no paid address lookup). Flow: name/phone/email → from → to → bedrooms → key items → date → live editable quote (Standard "what you get" INSIDE the card; Premium = "everything in Standard, plus…"). Back/edit updates the price via public `/api/quote/estimate`. Reserve → `/api/booking/landing` (reuses createBooking + summary email) → existing quote page.
-- **Phase 2 (payments):** quote/deposit screen now offers 3 options — Pay deposit by card, Pay in 3 with Klarna (whole move ÷3), Pay deposit by bank transfer. `/api/quote/[bookingId]/pay` creates/reuses a lean invoice (deposit or full_balance) and starts a Stripe Checkout (card / klarna) — reuses the existing webhook to mark paid, set status, confirm the job, compute driver earnings. Webhook now also confirms the job on a full (Klarna) payment that skips the deposit. Deposit email/SMS/WhatsApp updated to present all 3 options.
-- **Watch out for:** Klarna must stay enabled in Stripe (it is). Card adds the processing fee line; Klarna charges the exact quote. `?test=1` routes through the Stripe test client. Pre-existing repo-wide tsc errors unrelated (ignoreBuildErrors); all touched files typecheck + lint clean.
+Built two daily crons (`followup-morning` 10am: email always days 1-14 + SMS days 1-5; `followup-evening` 6pm:
+WhatsApp queued days 1-14) driving two independent drips — quote (anchored on existing `quote_sent_at`, active
+while `status='quote_sent'`) and deposit (new `deposit_followup_started_at` anchor, active while
+`status='deposit_invoice_sent'`). Both stop automatically via the existing status-based gating the moment the
+customer confirms/pays. 14 days of silence → `is_flagged`/`flag_reason` (reused existing unused columns) +
+notification + admin push, no more messages. Content is 66 hand-written messages (2 sequences × 14 days ×
+up to 3 channels), each day genuinely different — reassurance, what's-included, the "cheap/careless mover"
+pain point, social proof via the real Google review link (no fabricated testimonials), fear-addressing days,
+gentle urgency near the end. Old unscheduled 7-step ladder cron deleted as fully superseded.
+
+Found via a read-only check before going live: 88 existing quote_sent + 11 existing deposit_invoice_sent
+bookings already in the DB. User chose to backfill `deposit_followup_started_at` for the 11 existing deposits
+(from their invoice `sent_at`) so they join the drip too — quote side already had a real anchor. A dry-run
+(pure query + day-math, no sends) confirmed the outcome before deploy: 15 quote + 1 deposit booking get an
+in-sequence message on the first real run, 70 quote + 7 deposit bookings (most 20-90+ days old) get quietly
+flagged for review with zero messages sent — no retroactive spam to old stale leads.
+
+**Watch out for:** the quote-confirm link expiry is a pre-existing hardcoded 48h (`verifyQuoteConfirmToken`,
+`app/api/quote-confirm/route.ts`) — fine since a fresh link is generated every single send, but an old day's
+email link will 404 if clicked days later. The Supabase `.not(col, "eq", val)` filter silently excludes NULL
+rows (NULL = val is NULL/falsy in Postgres) — used `.or(col.is.null, col.lt.val)` instead in both candidate
+queries; worth remembering for any future guard-column pattern in this codebase.

@@ -133,6 +133,28 @@ const MIGRATIONS = [
       ADD COLUMN IF NOT EXISTS lead_reminder_stage INT DEFAULT 0,
       ADD COLUMN IF NOT EXISTS lead_last_reminder_at TIMESTAMPTZ`,
   },
+  // Quote & deposit daily follow-up drip — see add_drip_followups.sql
+  {
+    name: "bookings drip followup columns",
+    sql: `ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS quote_followup_last_morning_sent_on DATE,
+      ADD COLUMN IF NOT EXISTS quote_followup_last_evening_sent_on DATE,
+      ADD COLUMN IF NOT EXISTS deposit_followup_started_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS deposit_followup_last_morning_sent_on DATE,
+      ADD COLUMN IF NOT EXISTS deposit_followup_last_evening_sent_on DATE`,
+  },
+  {
+    name: "bookings drip followup indexes",
+    sql: `CREATE INDEX IF NOT EXISTS idx_bookings_quote_drip
+      ON bookings (status, is_flagged, quote_followup_last_morning_sent_on, quote_followup_last_evening_sent_on)
+      WHERE status = 'quote_sent'`,
+  },
+  {
+    name: "bookings drip followup indexes 2",
+    sql: `CREATE INDEX IF NOT EXISTS idx_bookings_deposit_drip
+      ON bookings (status, is_flagged, deposit_followup_last_morning_sent_on, deposit_followup_last_evening_sent_on)
+      WHERE status = 'deposit_invoice_sent'`,
+  },
 ];
 
 async function run() {

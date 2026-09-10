@@ -233,7 +233,20 @@ export async function POST(request: NextRequest) {
   const nextStatus = invoice.type === "deposit" ? "deposit_invoice_sent"
     : invoice.type === "full_balance" ? "full_invoice_sent" : null;
   if (nextStatus && booking.status !== nextStatus) {
-    await supabase.from("bookings").update({ status: nextStatus }).eq("id", booking.id);
+    await supabase.from("bookings").update({
+      status: nextStatus,
+      // Anchor + (re)start the deposit follow-up drip (lib/followups/engine.ts)
+      // the first time a booking enters deposit_invoice_sent. The outer `if`
+      // already guards this to fire once per genuine transition, so it won't
+      // reset an in-progress drip on an unrelated update.
+      ...(nextStatus === "deposit_invoice_sent" ? {
+        deposit_followup_started_at: new Date().toISOString(),
+        deposit_followup_last_morning_sent_on: null,
+        deposit_followup_last_evening_sent_on: null,
+        is_flagged: false,
+        flag_reason: null,
+      } : {}),
+    }).eq("id", booking.id);
     await supabase.from("status_history").insert({
       booking_id: booking.id,
       previous_status: booking.status ?? null,

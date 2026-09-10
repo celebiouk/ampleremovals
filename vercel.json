@@ -83,6 +83,14 @@
     {
       "path": "/api/cron/driver-job-reminders",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/followup-morning",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/followup-evening",
+      "schedule": "0 18 * * *"
     }
   ],
   "functions": {
@@ -122,7 +130,10 @@
     "app/api/cron/send-surveys/route.ts": {
       "maxDuration": 60
     },
-    "app/api/cron/quote-followup/route.ts": {
+    "app/api/cron/followup-morning/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/followup-evening/route.ts": {
       "maxDuration": 60
     },
     "app/api/cron/send-referral-invites/route.ts": {
