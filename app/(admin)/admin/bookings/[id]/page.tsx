@@ -28,6 +28,7 @@ import { InventoryEditor } from "@/components/admin/InventoryEditor";
 import { BookingLocationsEditor } from "@/components/admin/BookingLocationsEditor";
 import { CrewEditor } from "@/components/admin/CrewEditor";
 import { WhatsAppQueueList } from "@/components/admin/WhatsAppQueueList";
+import { AccessIncidentsCard } from "@/components/admin/AccessIncidentsCard";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { isSuperAdmin } from "@/lib/super-admin";
@@ -849,6 +850,9 @@ export default function BookingDetailPage() {
           <Card title="WhatsApp Queue">
             <WhatsAppQueueList bookingId={bookingId} phone={customer?.phone} />
           </Card>
+
+          {/* Renders nothing when there are no incidents for this booking */}
+          <AccessIncidentsCard bookingId={bookingId} />
 
           {/* Call-back reminders — expandable, one open at a time */}
           {reminders.length > 0 && (

@@ -3,7 +3,7 @@ import { View, Text, Linking, Share, Pressable, ActivityIndicator, Alert, Action
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Navigation, MapPin, Home, Calendar, Users, PoundSterling, Info, Truck,
-  Package, CheckCircle2, Share2, Phone, Play, Flag, FileText,
+  Package, CheckCircle2, Share2, Phone, Play, Flag, FileText, AlertTriangle,
 } from "lucide-react-native";
 import { Screen, Card, Button, Badge, toast, ErrorState, Skeleton } from "@/components/ui";
 import { ArrivedModal } from "@/components/ArrivedModal";
@@ -241,6 +241,19 @@ export default function JobDetailScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[type.bodySmall, { color: colors.slate[400] }]}>If goods weren&apos;t protected by the customer</Text>
             <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>Sign liability waiver</Text>
+          </View>
+        </View>
+      </Card>
+
+      {/* Access/damage-risk report — for a specific situation mid-job, not a blanket waiver */}
+      <Card style={{ marginTop: spacing.base }} onPress={() => router.push(`/job/${j.id}/incident`)}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+          <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: "#fef3c7", alignItems: "center", justifyContent: "center" }}>
+            <AlertTriangle size={18} color="#b45309" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[type.bodySmall, { color: colors.slate[400] }]}>Item/doorway/property risk the customer wants you to try anyway</Text>
+            <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>Report an access/damage risk</Text>
           </View>
         </View>
       </Card>

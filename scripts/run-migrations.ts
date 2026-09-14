@@ -168,6 +168,23 @@ const MIGRATIONS = [
       ADD COLUMN IF NOT EXISTS call5_duration_seconds INT,
       ADD COLUMN IF NOT EXISTS call5_notification_sent BOOLEAN NOT NULL DEFAULT FALSE`,
   },
+  // Access/damage-risk incident reports — see add_job_incidents.sql
+  {
+    name: "job_incidents table",
+    sql: `CREATE TABLE IF NOT EXISTS job_incidents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+      driver_id UUID REFERENCES drivers(id) ON DELETE SET NULL,
+      description TEXT NOT NULL,
+      photo_paths TEXT[] NOT NULL DEFAULT '{}',
+      signer_name TEXT NOT NULL,
+      signature_path TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  { name: "job_incidents RLS", sql: "ALTER TABLE job_incidents ENABLE ROW LEVEL SECURITY" },
+  { name: "job_incidents policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='job_incidents' AND policyname='Admins full access to job_incidents') THEN CREATE POLICY "Admins full access to job_incidents" ON job_incidents FOR ALL TO authenticated USING (true); END IF; END $$` },
+  { name: "job_incidents index", sql: "CREATE INDEX IF NOT EXISTS idx_job_incidents_booking ON job_incidents (booking_id, created_at DESC)" },
 ];
 
 async function run() {
