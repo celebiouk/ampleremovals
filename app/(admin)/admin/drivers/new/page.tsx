@@ -33,6 +33,11 @@ export default function CreateDriverPage() {
       return;
     }
 
+    if (!emergencyContactName || !emergencyContactPhone) {
+      toast.error("Please add an emergency contact name and phone");
+      return;
+    }
+
     // Age validation (must be 18+)
     const birthDate = new Date(dateOfBirth);
     const age = Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
@@ -207,10 +212,11 @@ export default function CreateDriverPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Contact Name
+                Contact Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={emergencyContactName}
                 onChange={(e) => setEmergencyContactName(e.target.value)}
                 placeholder="e.g. John Smith"
@@ -219,10 +225,11 @@ export default function CreateDriverPage() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Contact Phone
+                Contact Phone <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
+                required
                 value={emergencyContactPhone}
                 onChange={(e) => setEmergencyContactPhone(e.target.value)}
                 placeholder="07123456789"

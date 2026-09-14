@@ -35,6 +35,11 @@ export default function DriverRegisterPage() {
       return;
     }
 
+    if (!emergencyContactName || !emergencyContactPhone || !emergencyContactRelationship) {
+      toast.error("Please add your emergency contact's details");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -270,9 +275,12 @@ export default function DriverRegisterPage() {
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Emergency Contact</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Contact Name</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Contact Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
+                  required
                   value={emergencyContactName}
                   onChange={(e) => setEmergencyContactName(e.target.value)}
                   placeholder="e.g. John Smith"
@@ -280,9 +288,12 @@ export default function DriverRegisterPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Contact Phone</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Contact Phone <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="tel"
+                  required
                   value={emergencyContactPhone}
                   onChange={(e) => setEmergencyContactPhone(e.target.value)}
                   placeholder="07123456789"
@@ -290,9 +301,12 @@ export default function DriverRegisterPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Relationship</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Relationship <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
+                  required
                   value={emergencyContactRelationship}
                   onChange={(e) => setEmergencyContactRelationship(e.target.value)}
                   placeholder="e.g. Spouse, Parent, Friend"

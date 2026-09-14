@@ -114,6 +114,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!emergencyContactName || !emergencyContactPhone) {
+      return NextResponse.json(
+        { success: false, error: "Emergency contact name and phone are required" },
+        { status: 400 }
+      );
+    }
+
     const supabase = createAdminClient();
 
     // Generate temporary password

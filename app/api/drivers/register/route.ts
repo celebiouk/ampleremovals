@@ -35,6 +35,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!emergencyContactName || !emergencyContactPhone || !emergencyContactRelationship) {
+      return NextResponse.json(
+        { success: false, error: "Emergency contact details are required" },
+        { status: 400 }
+      );
+    }
+
     if (password.length < 8) {
       return NextResponse.json(
         { success: false, error: "Password must be at least 8 characters" },
