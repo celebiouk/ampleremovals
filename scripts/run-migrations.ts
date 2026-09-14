@@ -155,6 +155,19 @@ const MIGRATIONS = [
       ON bookings (status, is_flagged, deposit_followup_last_morning_sent_on, deposit_followup_last_evening_sent_on)
       WHERE status = 'deposit_invoice_sent'`,
   },
+  // Smart-ETA 4-stage checkpoints (30/20/10/5-min) — see add_eta_5stage_checkpoints.sql
+  {
+    name: "bookings eta call4/call5 columns",
+    sql: `ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS scheduled_call4_time TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS call4_eta_timestamp TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS call4_duration_seconds INT,
+      ADD COLUMN IF NOT EXISTS call4_notification_sent BOOLEAN NOT NULL DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS scheduled_call5_time TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS call5_eta_timestamp TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS call5_duration_seconds INT,
+      ADD COLUMN IF NOT EXISTS call5_notification_sent BOOLEAN NOT NULL DEFAULT FALSE`,
+  },
 ];
 
 async function run() {

@@ -1,40 +1,44 @@
-## Task: Quote & Deposit follow-up drip messaging
+## Task: Fix driver ETA notifications (30/20/10/5-min checkpoints)
 
-Plan approved: daily follow-ups after a quote is sent (email+SMS+WhatsApp days 1-5, email+WhatsApp days 6-14),
-same cadence after a deposit invoice is sent, stopping the instant the customer confirms/pays. 14 days of
-silence → booking auto-flagged (`is_flagged`/`flag_reason`, reusing existing unused columns) for admin review.
-Full plan: C:\Users\User\.claude\plans\adaptive-conjuring-fox.md
+Confirmed via `journey_eta_log` (832 rows): only "journey_started" and "arrived" have ever fired —
+20-min/10-min checkpoints have NEVER fired in production. Root cause candidate: the live GPS-based
+distance-matrix duration used to gate each checkpoint can go stale (driver position not advancing
+between polls) and the old retry-forever logic just waits indefinitely instead of degrading gracefully.
+User decided: (1) make it resilient to stale GPS rather than deep-diving the driver app's background
+location task, (2) expand from 2 checkpoints (20/10-min) to 4 (30/20/10/5-min) in the same pass.
+
+Also fixed en route: unscheduled a stale Supabase pg_cron job (`quote-followup`) left over from the
+previous drip-messaging task — it was hitting a 404 hourly since that route was deleted without checking
+pg_cron. Already committed (eecd209) and applied live.
 
 ### Plan
-- [x] Migration: add drip-tracking columns (`supabase/migrations/add_drip_followups.sql` + mirrored in `scripts/run-migrations.ts`), run it against the live DB.
-- [x] `lib/followups/content.ts` — hand-written day-by-day copy (quote sequence: 14 days x up to 3 channels; deposit sequence: same) — warm, human, non-salesy, no fabricated testimonials.
-- [x] `lib/followups/engine.ts` — shared runner: computes day number from anchor, sends/queues per channel, flags at day 15.
-- [x] `app/api/cron/followup-morning/route.ts` + `app/api/cron/followup-evening/route.ts` (new); delete dead `app/api/cron/quote-followup/route.ts`.
-- [x] Wire anchors/resets into `quote/send/route.ts` and `invoices/send/route.ts`.
-- [x] `vercel.json` — add the two new crons + functions entries, remove the old quote-followup entry.
-- [x] Admin UI: `is_flagged` pill on `app/(admin)/admin/bookings/page.tsx`.
-- [x] Typecheck, dry-run against live data, commit, push, deploy, verify live.
+- [ ] Migration: add `call4_*`/`scheduled_call4_time` + `call5_*`/`scheduled_call5_time` columns to `bookings` (call2/call3 get repurposed in *meaning* — 30-min/20-min — no schema change needed for those, since they've never successfully fired in prod).
+- [ ] Rewrite `lib/driver-eta.ts`: generalize the 2-stage ladder into a 4-stage table (30/20/10/5-min), single cascading `processCall` that skips forward through stages in one pass when the driver's already closer than expected (no wasted cron minutes). Add the staleness fallback: if the driver's GPS fix is older than ~4 min, use the ORIGINAL Call-1 ETA (wall-clock) to judge whether a checkpoint is due, instead of trusting a frozen live duration — so a checkpoint always eventually fires near the right time even if GPS never updates again.
+- [ ] `lib/driver-notify.ts`: add `"30min"` / `"5min"` to `JourneyEvent`, write email/SMS/WhatsApp copy for both (matching the existing 20min/10min tone).
+- [ ] `lib/whatsapp-templates.ts`: add `driver_30_mins_away` / `driver_5_mins_away` title entries (contentSid unused, per the existing pattern — WhatsApp is queued, never auto-sent via the Twilio API).
+- [ ] Typecheck, dry-run the cascading logic against a few synthetic scenarios (fresh GPS in-window, fresh GPS too-far, stale GPS past the window), commit, push (no Vercel deploy needed if this only touches `lib/`/route logic already covered by existing deploys — confirm which files actually need a fresh prod deploy), verify against a real or synthetic in-progress job.
 
 ### Review
-Built two daily crons (`followup-morning` 10am: email always days 1-14 + SMS days 1-5; `followup-evening` 6pm:
-WhatsApp queued days 1-14) driving two independent drips — quote (anchored on existing `quote_sent_at`, active
-while `status='quote_sent'`) and deposit (new `deposit_followup_started_at` anchor, active while
-`status='deposit_invoice_sent'`). Both stop automatically via the existing status-based gating the moment the
-customer confirms/pays. 14 days of silence → `is_flagged`/`flag_reason` (reused existing unused columns) +
-notification + admin push, no more messages. Content is 66 hand-written messages (2 sequences × 14 days ×
-up to 3 channels), each day genuinely different — reassurance, what's-included, the "cheap/careless mover"
-pain point, social proof via the real Google review link (no fabricated testimonials), fear-addressing days,
-gentle urgency near the end. Old unscheduled 7-step ladder cron deleted as fully superseded.
+Rewrote `lib/driver-eta.ts`'s mid-journey checkpoint logic as a table-driven cascade (`STAGES`:
+30/20/10/5-min, each with a fire window + retry interval) instead of two hand-written call2/call3
+branches. A single `processCall` walks forward through any stages the driver's already passed
+using the same GPS reading (no wasted cron minute per stage on a short/fast leg), and — the actual
+bug fix — checks GPS freshness (`driver_locations.updated_at` < 4 min old) before trusting a live
+distance-matrix duration; when GPS is stale it falls back to a wall-clock estimate from the original
+Call-1 ETA, so a checkpoint still fires near the right time even if the driver app's background
+location never updates again (which is what silently broke every 20-min/10-min notification in
+production — confirmed via `journey_eta_log`: 0 fires in 832 rows, only journey_started/arrived).
+`call2`/`call3` columns are reused with new meaning (30-min/20-min instead of 20-min/10-min) since
+they never carried real fired data; `call4`/`call5` are new columns for 10-min/5-min. Added matching
+copy + WhatsApp template entries in `lib/driver-notify.ts`/`lib/whatsapp-templates.ts`. Confirmed the
+driver app only calls the smart-ETA engine (`journey/start` + `arrived`) — the older manual
+`twenty_mins_away`/`ten_mins_away` status route is dead code, left untouched. Verified no journey was
+active at deploy time (0 rows with `current_journey_leg` set), so no live job could be disrupted by
+the call2/call3 meaning change.
 
-Found via a read-only check before going live: 88 existing quote_sent + 11 existing deposit_invoice_sent
-bookings already in the DB. User chose to backfill `deposit_followup_started_at` for the 11 existing deposits
-(from their invoice `sent_at`) so they join the drip too — quote side already had a real anchor. A dry-run
-(pure query + day-math, no sends) confirmed the outcome before deploy: 15 quote + 1 deposit booking get an
-in-sequence message on the first real run, 70 quote + 7 deposit bookings (most 20-90+ days old) get quietly
-flagged for review with zero messages sent — no retroactive spam to old stale leads.
-
-**Watch out for:** the quote-confirm link expiry is a pre-existing hardcoded 48h (`verifyQuoteConfirmToken`,
-`app/api/quote-confirm/route.ts`) — fine since a fresh link is generated every single send, but an old day's
-email link will 404 if clicked days later. The Supabase `.not(col, "eq", val)` filter silently excludes NULL
-rows (NULL = val is NULL/falsy in Postgres) — used `.or(col.is.null, col.lt.val)` instead in both candidate
-queries; worth remembering for any future guard-column pattern in this codebase.
+**Watch out for:** if a future investigation wants the GPS root cause (why background location
+sometimes freezes for 20+ minutes), the 4-minute staleness fallback in this fix will mask it —
+`journey_eta_log`'s `duration_seconds_returned` next to `driver_locations.updated_at` at the time is
+the place to look. Also fixed en route: unscheduled a stale Supabase pg_cron job (`quote-followup`,
+eecd209) that the previous drip-messaging task broke by deleting its route without checking pg_cron —
+lesson logged in `tasks/lessons.md`.

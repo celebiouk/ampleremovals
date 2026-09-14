@@ -148,3 +148,25 @@ containing standalone node scripts that are not part of the Next.js app.
 ## Lesson 3 — framer-motion v12 needs literal easing
 **What happened:** `ease: "easeOut"` typed as `string` failed the build.
 **Rule going forward:** Type variants as `Variants` and use `ease: "easeOut" as const`.
+
+## Lesson 16 — Vercel Hobby's daily-cron limit means some crons run via Supabase pg_cron instead — check BOTH before calling a route "dead code"
+**What happened:** Deleted `app/api/cron/quote-followup/route.ts` because it was
+absent from `vercel.json`'s `crons` array (looked unscheduled/dead). It was
+actually being invoked hourly via Supabase `pg_cron` (`supabase/migrations/
+setup_pg_cron.sql`, which calls `net.http_get` against the deployed URL) — a
+workaround set up specifically because Vercel Hobby only allows daily
+schedules, so any sub-daily cron in this project (`eta-engine` every minute,
+`lead-routing`/`late-check` every 15 min, `lead-reminders` hourly) lives in
+Supabase, not `vercel.json`. Deleting the route meant that hourly pg_cron job
+hit a 404 for several hours before being caught (`net._http_response` showed
+the 404 HTML).
+**Root cause:** Only checked `vercel.json` for scheduling before deleting a
+cron route. This codebase has TWO cron mechanisms, and a route can be
+completely absent from one while still live in the other.
+**Rule going forward:** Before deleting or assuming any `app/api/cron/*/route.ts`
+is unscheduled/dead, check both `vercel.json`'s `crons` array AND query the live
+`cron.job` table (`select jobname, schedule from cron.job`) via `DATABASE_URL`.
+If removing a route that pg_cron calls, also update
+`supabase/migrations/setup_pg_cron.sql` and re-apply it (a small tracked runner
+script, e.g. `scripts/apply-pg-cron.ts`, re-running that idempotent file is the
+reviewable way to do it — the same pattern as `scripts/run-migrations.ts`).

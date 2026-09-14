@@ -25,8 +25,13 @@ export const WHATSAPP_TEMPLATES = {
   reschedule_confirmed: "HXb5cd3058bbf7955296875d3246149abd",
   // B. Driver ETA & move-day (UTILITY)
   driver_on_the_way: "HX0b387a7b731f3fa4ba9290a7909ff48b",
+  // Pending Meta approval, like lead_details_request above — sendWhatsApp() only
+  // reads this map for a display title today (WhatsApp is queued, never sent via
+  // the Twilio Content API), so an empty SID doesn't block anything.
+  driver_30_mins_away: "",
   driver_20_mins_away: "HX834fee3617b82703ef888a6ff7413e04",
   driver_10_mins_away: "HX58859e022b877069b4139ec02dd2b013",
+  driver_5_mins_away: "",
   driver_15_mins_to_delivery: "HXd37f59435fd5eac6c2fb65d688f7c003",
   driver_arrived: "HXa523054acb1f74d54dc0d413cbd7e8c0",
   driver_running_late: "HX77ee9099a494269bc56abcbcc02fd013",
@@ -59,8 +64,10 @@ export const WHATSAPP_TEMPLATE_TITLES: Record<WhatsAppTemplate, string> = {
   booking_details_updated: "Booking details updated",
   reschedule_confirmed: "Reschedule confirmed",
   driver_on_the_way: "Driver on the way",
+  driver_30_mins_away: "Driver ~30 mins away",
   driver_20_mins_away: "Driver ~20 mins away",
   driver_10_mins_away: "Driver ~10 mins away",
+  driver_5_mins_away: "Driver ~5 mins away",
   driver_15_mins_to_delivery: "Driver ~15 mins to delivery",
   driver_arrived: "Driver arrived",
   driver_running_late: "Driver running late",

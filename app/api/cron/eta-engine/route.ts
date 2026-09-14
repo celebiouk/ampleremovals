@@ -1,6 +1,6 @@
 /**
- * GET /api/cron/eta-engine — runs every minute. Fires any due Call 2 / Call 3 of
- * the smart-ETA engine using each driver's last uploaded GPS.
+ * GET /api/cron/eta-engine — runs every minute. Fires any due checkpoint
+ * (30/20/10/5-min) of the smart-ETA engine using each driver's last uploaded GPS.
  */
 
 import { NextResponse } from "next/server";

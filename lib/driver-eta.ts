@@ -3,19 +3,52 @@
  * Smart-ETA orchestration (server-side brain of the hybrid engine).
  *
  * Call 1 runs synchronously when the driver taps "Start Journey" (instant ETA).
- * Calls 2 & 3 are fired by the 1-minute cron from scheduled_callN_time, using the
- * driver's last uploaded GPS. Arrived (Call 4) is GPS-detected on the device and
- * confirmed via recordArrived(). Every call is written to journey_eta_log.
+ * Calls 2-5 (30/20/10/5-min checkpoints) are fired by the 1-minute cron from
+ * scheduled_callN_time, using the driver's last uploaded GPS. Arrival is
+ * GPS-detected on the device and confirmed via recordArrived(). Every call is
+ * written to journey_eta_log.
  *
- * Thresholds (per spec):
- *  Call 2: 900–1320s → fire 20-min; >1320 → retry +5min; <900 → skip, go to Call 3.
- *  Call 3: 480–720s  → fire 10-min; >720  → retry +3min; <480 → skip (arrival imminent).
- *  scheduled_call2 = start + (duration − 1200s); scheduled_call3 = call2 ETA − 600s.
+ * STAGES (see below): each has a fire window [lowerFireSec, upperFireSec]. If the
+ * live duration is above the window, retry after retryMs. If it's below the
+ * window (driver's already closer than expected), the stage is skipped with no
+ * message and the cascade immediately re-checks the NEXT stage against the same
+ * data point — no wasted cron minute waiting for a stage that's already passed.
+ *
+ * STALE-GPS FALLBACK: a distance-matrix duration computed from a GPS fix that
+ * hasn't moved in a while can get "stuck" (this is exactly what broke the old
+ * 2-stage version in production — duration stayed ~constant call after call
+ * because the driver's live position wasn't advancing, so it kept retrying
+ * forever and no checkpoint ever fired). Rather than chase why the driver app's
+ * background GPS sometimes stalls, each check first looks at how fresh the
+ * driver's last GPS fix is (driver_locations.updated_at). If it's stale (>4 min
+ * old), we don't trust a live recalculation — instead we fall back to a
+ * wall-clock estimate: minutes remaining = call1_eta_timestamp − now (the ETA
+ * captured back when the journey started). That number degrades gracefully
+ * over the course of the journey and guarantees every checkpoint still fires
+ * near the right time even if GPS never updates again.
  */
 
 import { distanceMatrix } from "./google-maps";
 import { notifyCustomer, notifyAdmin, type NotifyContext, type JourneyEvent } from "./driver-notify";
 import { autoSendFullBalanceInvoice } from "./auto-full-invoice";
+
+interface Stage {
+  call: 2 | 3 | 4 | 5;
+  type: "30min" | "20min" | "10min" | "5min";
+  lowerFireSec: number; // below this, the driver's already closer — skip to the next stage
+  upperFireSec: number; // above this, too early — retry
+  retryMs: number;
+  targetOffsetSec: number; // how many seconds before ETA this checkpoint targets (for scheduling the call)
+}
+
+const STAGES: Stage[] = [
+  { call: 2, type: "30min", lowerFireSec: 1500, upperFireSec: 2100, retryMs: 5 * 60_000, targetOffsetSec: 1800 },
+  { call: 3, type: "20min", lowerFireSec: 900, upperFireSec: 1320, retryMs: 5 * 60_000, targetOffsetSec: 1200 },
+  { call: 4, type: "10min", lowerFireSec: 480, upperFireSec: 720, retryMs: 3 * 60_000, targetOffsetSec: 600 },
+  { call: 5, type: "5min", lowerFireSec: 210, upperFireSec: 390, retryMs: 2 * 60_000, targetOffsetSec: 300 },
+];
+
+const GPS_STALE_MS = 4 * 60_000;
 
 export type Leg = "pickup" | "delivery";
 
@@ -89,8 +122,13 @@ async function driverPhoneOf(supabase: any, driverId: string): Promise<string | 
 }
 
 async function driverGps(supabase: any, driverId: string) {
-  const { data } = await supabase.from("driver_locations").select("lat,lng").eq("driver_id", driverId).maybeSingle();
+  const { data } = await supabase.from("driver_locations").select("lat,lng,updated_at").eq("driver_id", driverId).maybeSingle();
   return data;
+}
+
+function gpsIsFresh(gps: { updated_at?: string } | null): boolean {
+  if (!gps?.updated_at) return false;
+  return Date.now() - new Date(gps.updated_at).getTime() < GPS_STALE_MS;
 }
 
 async function logCall(
@@ -128,9 +166,12 @@ export async function startJourneyCall1(
   }
 
   const now = new Date();
-  // Schedule the 20-min check only when we have a real ETA (Calls 2/3 also need the API).
+  // Schedule the first checkpoint (30-min) only when we have a real ETA (every
+  // stage needs the API). A short hop (< 30 min total) starts the cascade
+  // already past stage 1 — processCall's skip-forward logic (see below) will
+  // land on whichever stage actually applies the first time the cron runs it.
   const scheduledCall2 = dm
-    ? new Date(now.getTime() + Math.max(0, dm.durationSeconds - 1200) * 1000).toISOString()
+    ? new Date(now.getTime() + Math.max(0, dm.durationSeconds - STAGES[0].targetOffsetSec) * 1000).toISOString()
     : null;
 
   const update: any = {
@@ -140,6 +181,8 @@ export async function startJourneyCall1(
     scheduled_call2_time: scheduledCall2,
     call2_eta_timestamp: null, call2_duration_seconds: null, call2_notification_sent: false,
     scheduled_call3_time: null, call3_eta_timestamp: null, call3_duration_seconds: null, call3_notification_sent: false,
+    scheduled_call4_time: null, call4_eta_timestamp: null, call4_duration_seconds: null, call4_notification_sent: false,
+    scheduled_call5_time: null, call5_eta_timestamp: null, call5_duration_seconds: null, call5_notification_sent: false,
     arrived_at: null,
   };
   if (leg === "pickup") update.journey_started_at = now.toISOString();
@@ -169,66 +212,98 @@ export async function startJourneyCall1(
   return { etaTimestamp: dm?.etaTimestamp ?? null, durationSeconds: dm?.durationSeconds ?? null };
 }
 
-/** Process one due scheduled call (2 or 3) from the cron. */
-async function processCall(supabase: any, bookingId: string, leg: Leg, callNo: 2 | 3) {
+const CALL_FIELD = {
+  2: { scheduled: "scheduled_call2_time", eta: "call2_eta_timestamp", dur: "call2_duration_seconds", sent: "call2_notification_sent" },
+  3: { scheduled: "scheduled_call3_time", eta: "call3_eta_timestamp", dur: "call3_duration_seconds", sent: "call3_notification_sent" },
+  4: { scheduled: "scheduled_call4_time", eta: "call4_eta_timestamp", dur: "call4_duration_seconds", sent: "call4_notification_sent" },
+  5: { scheduled: "scheduled_call5_time", eta: "call5_eta_timestamp", dur: "call5_duration_seconds", sent: "call5_notification_sent" },
+} as const;
+
+/**
+ * Process one due checkpoint from the cron, cascading forward through any
+ * stages the driver has already passed (using the same GPS reading) so a
+ * short/fast-moving leg doesn't need to wait out a full cron cycle per stage.
+ */
+async function processCall(supabase: any, bookingId: string, leg: Leg, startCallNo: 2 | 3 | 4 | 5) {
   const booking = await loadBooking(supabase, bookingId);
   if (!booking || booking.arrived_at) return;
   const driver = await leadDriver(supabase, bookingId);
   const gps = driver ? await driverGps(supabase, driver.id) : null;
   const nowMs = Date.now();
+  const startIdx = STAGES.findIndex((s) => s.call === startCallNo);
 
   if (!gps) {
-    // No GPS yet — push the check a couple of minutes later.
+    // No GPS at all yet — push this check a couple of minutes later.
     const bump = new Date(nowMs + 120_000).toISOString();
-    await supabase.from("bookings").update(callNo === 2 ? { scheduled_call2_time: bump } : { scheduled_call3_time: bump }).eq("id", bookingId);
+    await supabase.from("bookings").update({ [CALL_FIELD[startCallNo].scheduled]: bump }).eq("id", bookingId);
     return;
   }
 
   const dest = legDest(booking, leg);
-  let dm;
+  const fresh = gpsIsFresh(gps);
+  let dm: { durationSeconds: number; etaTimestamp: string } | null = null;
   try { dm = await distanceMatrix(Number(gps.lat), Number(gps.lng), dest.dest); }
-  catch (e) { console.error("[eta] distance matrix failed", e); return; }
-  const dur = dm.durationSeconds;
+  catch (e) { console.error("[eta] distance matrix failed", e); }
+
+  // Prefer a fresh live reading. If the driver's GPS hasn't moved/updated
+  // recently, a live duration can be stuck (this is what silently broke every
+  // checkpoint before) — fall back to the wall-clock estimate from Call 1
+  // instead of trusting it, so the checkpoint still fires close to on time.
+  let dur: number;
+  let etaTimestamp: string;
+  if (dm && fresh) {
+    dur = dm.durationSeconds;
+    etaTimestamp = dm.etaTimestamp;
+  } else if (booking.call1_eta_timestamp) {
+    dur = Math.max(0, Math.round((new Date(booking.call1_eta_timestamp).getTime() - nowMs) / 1000));
+    etaTimestamp = booking.call1_eta_timestamp;
+  } else if (dm) {
+    // No baseline ETA to fall back to (Call 1's distance-matrix call failed) —
+    // the live reading, stale or not, is all we have.
+    dur = dm.durationSeconds;
+    etaTimestamp = dm.etaTimestamp;
+  } else {
+    // No live reading AND no baseline — genuinely nothing to go on. Retry soon.
+    const next = new Date(nowMs + 120_000).toISOString();
+    await supabase.from("bookings").update({ [CALL_FIELD[startCallNo].scheduled]: next }).eq("id", bookingId);
+    return;
+  }
+
   const ctxBase = (etaTime?: string) => ctxOf(booking, leg, driverName(driver), driver?.phone ?? null, dest.postcode, etaTime);
 
-  if (callNo === 2) {
-    if (dur > 1320) {
-      const next = new Date(nowMs + 300_000).toISOString(); // +5 min
-      await supabase.from("bookings").update({ scheduled_call2_time: next }).eq("id", bookingId);
-      await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "2", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired: false, type: null, nextAt: next });
-      return;
-    }
-    let fired = false;
-    if (dur >= 900) {
-      await notifyCustomer("20min", ctxBase());
-      await notifyAdmin(supabase, bookingId, "20min", ctxBase());
-      fired = true;
-    }
-    const scheduledCall3 = new Date(new Date(dm.etaTimestamp).getTime() - 600_000).toISOString(); // ETA − 10min
-    await supabase.from("bookings").update({
-      call2_eta_timestamp: dm.etaTimestamp, call2_duration_seconds: dur, call2_notification_sent: true, scheduled_call3_time: scheduledCall3,
-    }).eq("id", bookingId);
-    await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "2", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired, type: fired ? "20min" : null, nextAt: scheduledCall3 });
+  let idx = startIdx;
+  while (idx < STAGES.length && dur < STAGES[idx].lowerFireSec) {
+    // Already closer than this stage targets — mark it done with no message
+    // and immediately check the next stage against the same data point.
+    const f = CALL_FIELD[STAGES[idx].call];
+    await supabase.from("bookings").update({ [f.eta]: etaTimestamp, [f.dur]: dur, [f.sent]: true }).eq("id", bookingId);
+    await logCall(supabase, { bookingId, driverId: driver.id, leg, call: String(STAGES[idx].call), dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: etaTimestamp, fired: false, type: null, nextAt: null });
+    idx++;
+  }
+
+  if (idx >= STAGES.length) return; // past every checkpoint — arrival handles the rest
+
+  const stage = STAGES[idx];
+  const field = CALL_FIELD[stage.call];
+
+  if (dur > stage.upperFireSec) {
+    // Too early — retry this same stage later.
+    const next = new Date(nowMs + stage.retryMs).toISOString();
+    await supabase.from("bookings").update({ [field.scheduled]: next }).eq("id", bookingId);
+    await logCall(supabase, { bookingId, driverId: driver.id, leg, call: String(stage.call), dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: etaTimestamp, fired: false, type: null, nextAt: next });
     return;
   }
 
-  // callNo === 3
-  if (dur > 720) {
-    const next = new Date(nowMs + 180_000).toISOString(); // +3 min
-    await supabase.from("bookings").update({ scheduled_call3_time: next }).eq("id", bookingId);
-    await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "3", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired: false, type: null, nextAt: next });
-    return;
-  }
-  let fired = false;
-  if (dur >= 480) {
-    await notifyCustomer("10min", ctxBase());
-    await notifyAdmin(supabase, bookingId, "10min", ctxBase());
-    fired = true;
-  }
-  await supabase.from("bookings").update({
-    call3_eta_timestamp: dm.etaTimestamp, call3_duration_seconds: dur, call3_notification_sent: true,
-  }).eq("id", bookingId);
-  await logCall(supabase, { bookingId, driverId: driver.id, leg, call: "3", dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: dm.etaTimestamp, fired, type: fired ? "10min" : null, nextAt: null });
+  // In the window — fire it.
+  await notifyCustomer(stage.type, ctxBase(fmtEta(etaTimestamp)));
+  await notifyAdmin(supabase, bookingId, stage.type, ctxBase());
+
+  const nextStage = STAGES[idx + 1];
+  const nextScheduled = nextStage ? new Date(new Date(etaTimestamp).getTime() - nextStage.targetOffsetSec * 1000).toISOString() : null;
+  const update: any = { [field.eta]: etaTimestamp, [field.dur]: dur, [field.sent]: true };
+  if (nextStage) update[CALL_FIELD[nextStage.call].scheduled] = nextScheduled;
+  await supabase.from("bookings").update(update).eq("id", bookingId);
+  await logCall(supabase, { bookingId, driverId: driver.id, leg, call: String(stage.call), dLat: gps.lat, dLng: gps.lng, destLat: dest.lat, destLng: dest.lng, dur, eta: etaTimestamp, fired: true, type: stage.type, nextAt: nextScheduled });
 }
 
 // Recalc the traffic-aware ETA on a TIME cadence — regardless of whether the
@@ -297,29 +372,24 @@ export async function refreshActiveEtas(supabase: any): Promise<{ refreshed: num
   return { refreshed, held };
 }
 
-/** Cron entry: process every due Call 2 / Call 3. */
+/** Cron entry: process every due checkpoint (30/20/10/5-min). */
 export async function runDueEtaCalls(supabase: any): Promise<{ processed: number }> {
   const nowIso = new Date().toISOString();
   let processed = 0;
 
-  const { data: due2 } = await supabase
-    .from("bookings")
-    .select("id, current_journey_leg")
-    .lte("scheduled_call2_time", nowIso)
-    .eq("call2_notification_sent", false)
-    .not("current_journey_leg", "is", null)
-    .is("arrived_at", null);
-  for (const b of due2 ?? []) { await processCall(supabase, b.id, b.current_journey_leg, 2); processed++; }
-
-  const { data: due3 } = await supabase
-    .from("bookings")
-    .select("id, current_journey_leg")
-    .lte("scheduled_call3_time", nowIso)
-    .eq("call3_notification_sent", false)
-    .not("scheduled_call3_time", "is", null)
-    .not("current_journey_leg", "is", null)
-    .is("arrived_at", null);
-  for (const b of due3 ?? []) { await processCall(supabase, b.id, b.current_journey_leg, 3); processed++; }
+  for (const stage of STAGES) {
+    const field = CALL_FIELD[stage.call];
+    let query = supabase
+      .from("bookings")
+      .select("id, current_journey_leg")
+      .lte(field.scheduled, nowIso)
+      .eq(field.sent, false)
+      .not("current_journey_leg", "is", null)
+      .is("arrived_at", null);
+    if (stage.call !== 2) query = query.not(field.scheduled, "is", null);
+    const { data: due } = await query;
+    for (const b of due ?? []) { await processCall(supabase, b.id, b.current_journey_leg, stage.call); processed++; }
+  }
 
   return { processed };
 }

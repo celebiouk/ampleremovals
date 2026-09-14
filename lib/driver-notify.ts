@@ -12,7 +12,7 @@ type SupabaseClient = any;
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ampleremovals.com";
 
-export type JourneyEvent = "journey_started" | "20min" | "10min" | "arrived";
+export type JourneyEvent = "journey_started" | "30min" | "20min" | "10min" | "5min" | "arrived";
 
 export interface NotifyContext {
   customerName: string;
@@ -47,6 +47,15 @@ function bodies(ev: JourneyEvent, c: NotifyContext): { email: { subject: string;
         sms: `Ample Removals: Your driver ${driverContact} has started their journey. ETA ${c.etaTime ?? "soon"}. Job ${c.reference}. Track: ${link}`,
         whatsapp: `🚚 *Your Ample Removals driver is on the way!*\n\nDriver: *${c.driverName}*${c.driverPhone ? `\nContact: ${c.driverPhone}` : ""}\nETA: *${c.etaTime ?? "soon"}*\nJob: ${c.reference}\n\nTrack live: ${link}`,
       };
+    case "30min":
+      return {
+        email: {
+          subject: "Your driver is about 30 minutes away",
+          html: `<p>Hi ${first}, your Ample Removals driver is approximately <strong>30 minutes away</strong>. Job ref: ${c.reference}.</p><p><a href="${link}">Track live →</a></p>`,
+        },
+        sms: `Ample Removals: Driver ${c.driverName} is ~30 mins away. Job ${c.reference}. Track: ${link}`,
+        whatsapp: `Your driver is *about 30 minutes away*. Track live: ${link}`,
+      };
     case "20min":
       return {
         email: {
@@ -65,6 +74,15 @@ function bodies(ev: JourneyEvent, c: NotifyContext): { email: { subject: string;
         sms: `Ample Removals: Driver 10 mins away. Job ${c.reference}. Track: ${link}`,
         whatsapp: `Almost there! Your driver is *10 minutes away*.`,
       };
+    case "5min":
+      return {
+        email: {
+          subject: "Your driver is almost there — 5 minutes away",
+          html: `<p>Hi ${first}, your driver is just <strong>5 minutes away</strong> — please head to the door. Job ref: ${c.reference}.</p>`,
+        },
+        sms: `Ample Removals: Driver 5 mins away, almost there! Job ${c.reference}`,
+        whatsapp: `Your driver is *5 minutes away* — almost there! 🚚`,
+      };
     case "arrived":
       return {
         email: {
@@ -79,17 +97,21 @@ function bodies(ev: JourneyEvent, c: NotifyContext): { email: { subject: string;
 
 /** The approved WhatsApp template (+ variables) for each journey event. */
 function waTemplate(ev: JourneyEvent, c: NotifyContext): {
-  name: "driver_on_the_way" | "driver_20_mins_away" | "driver_10_mins_away" | "driver_arrived";
+  name: "driver_on_the_way" | "driver_30_mins_away" | "driver_20_mins_away" | "driver_10_mins_away" | "driver_5_mins_away" | "driver_arrived";
   variables: Record<string, string>;
 } {
   const link = trackLink(c.trackingToken);
   switch (ev) {
     case "journey_started":
       return { name: "driver_on_the_way", variables: { "1": c.driverPhone ? `${c.driverName} (${c.driverPhone})` : c.driverName, "2": c.etaTime ?? "soon", "3": c.reference, "4": link } };
+    case "30min":
+      return { name: "driver_30_mins_away", variables: { "1": c.reference, "2": link } };
     case "20min":
       return { name: "driver_20_mins_away", variables: { "1": c.reference, "2": link } };
     case "10min":
       return { name: "driver_10_mins_away", variables: { "1": c.reference } };
+    case "5min":
+      return { name: "driver_5_mins_away", variables: { "1": c.reference } };
     case "arrived":
       return { name: "driver_arrived", variables: { "1": c.reference } };
   }
@@ -120,8 +142,10 @@ export async function notifyAdmin(
   const where = `${legLabel} ${c.customerName} ${c.destinationPostcode}`;
   const map: Record<JourneyEvent, string> = {
     journey_started: `Driver ${c.driverName} started journey to ${where}${c.etaTime ? ` — ETA ${c.etaTime}` : ""}`,
+    "30min": `Driver ${c.driverName} — 30 mins from ${where}`,
     "20min": `Driver ${c.driverName} — 20 mins from ${where}`,
     "10min": `Driver ${c.driverName} — 10 mins from ${where}`,
+    "5min": `Driver ${c.driverName} — 5 mins from ${where}`,
     arrived: `Driver ${c.driverName} — Arrived at ${where}`,
   };
   const message = map[ev];
