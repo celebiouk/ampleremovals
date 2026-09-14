@@ -3,8 +3,12 @@
 --
 -- Drives the sub-daily endpoints that can't live on Vercel Hobby:
 --   • /api/cron/eta-engine     — every minute (driver-app smart-ETA Calls 2/3)
---   • /api/cron/quote-followup — hourly       (quote reminder ladder)
 --   • /api/cron/lead-reminders — hourly       (new-lead reminder ladder)
+--
+-- NOTE: 'quote-followup' was unscheduled here — the old 7-step reminder ladder
+-- route it called (app/api/cron/quote-followup/route.ts) was deleted when it was
+-- superseded by the daily quote/deposit follow-up drip (app/api/cron/followup-morning
+-- + followup-evening, on Vercel's daily cron — no pg_cron needed for that one).
 --
 -- Both endpoints are protected by CRON_SECRET (Bearer). The secret + the app's
 -- base URL are read from Supabase Vault so nothing sensitive lives in git.
@@ -61,7 +65,6 @@ begin
 end $$;
 
 select cron.schedule('eta-engine',     '* * * * *',  $$ select public.invoke_cron('/api/cron/eta-engine');     $$);
-select cron.schedule('quote-followup', '0 * * * *',  $$ select public.invoke_cron('/api/cron/quote-followup'); $$);
 select cron.schedule('lead-routing',   '*/15 * * * *', $$ select public.invoke_cron('/api/cron/lead-routing'); $$);
 select cron.schedule('late-check',     '*/15 * * * *', $$ select public.invoke_cron('/api/cron/late-check');   $$);
 select cron.schedule('lead-reminders', '0 * * * *',  $$ select public.invoke_cron('/api/cron/lead-reminders'); $$);
