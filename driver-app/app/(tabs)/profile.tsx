@@ -60,9 +60,12 @@ export default function ProfileScreen() {
   const [ecPhone, setEcPhone] = useState("");
   const [ecRel, setEcRel] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [idCameraOpen, setIdCameraOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingId, setUploadingId] = useState(false);
 
   useEffect(() => {
     if (!driver) return;
@@ -74,6 +77,11 @@ export default function ProfileScreen() {
     if (driver.profile_photo_url) {
       supabase.storage.from("driver-documents").createSignedUrl(driver.profile_photo_url, 3600).then(({ data }) => {
         if (data?.signedUrl) setPhotoUrl(data.signedUrl);
+      });
+    }
+    if (driver.id_card_url) {
+      supabase.storage.from("driver-documents").createSignedUrl(driver.id_card_url, 3600).then(({ data }) => {
+        if (data?.signedUrl) setIdCardUrl(data.signedUrl);
       });
     }
   }, [driver]);
@@ -108,6 +116,22 @@ export default function ProfileScreen() {
       toast.error("Upload failed", (e as Error)?.message);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function onIdCard(uri: string) {
+    setIdCameraOpen(false);
+    if (!driverId) return;
+    setUploadingId(true);
+    try {
+      const { signedUrl } = await uploadImage(uri, `${driverId}/id-card.jpg`);
+      await supabase.from("drivers").update({ id_card_url: `${driverId}/id-card.jpg`, updated_at: new Date().toISOString() }).eq("id", driverId);
+      if (signedUrl) setIdCardUrl(signedUrl);
+      toast.success("ID card updated");
+    } catch (e) {
+      toast.error("Upload failed", (e as Error)?.message);
+    } finally {
+      setUploadingId(false);
     }
   }
 
@@ -150,16 +174,36 @@ export default function ProfileScreen() {
         <Button label="Save changes" loading={saving} onPress={save} fullWidth />
       </Card>
 
-      {/* Vehicle & licence (managed by office) */}
-      <Text style={[type.h3, { color: colors.slate[900], marginTop: spacing.xl, marginBottom: spacing.md }]}>Vehicle & licence</Text>
+      {/* ID card — passport/ID photo, relevant to everyone (porters especially, since they don't drive) */}
+      <Text style={[type.h3, { color: colors.slate[900], marginTop: spacing.xl, marginBottom: spacing.md }]}>ID card</Text>
       <Card>
-        <ReadOnly icon={<Car size={18} color={colors.primary.DEFAULT} />} label="Vehicle" value={[driver?.vehicle_make_model, driver?.vehicle_registration].filter(Boolean).join(" · ")} />
-        <View style={{ height: 1, backgroundColor: colors.slate[100] }} />
-        <ReadOnly icon={<IdCard size={18} color={colors.primary.DEFAULT} />} label="Licence number" value={driver?.license_number ?? ""} />
-        <View style={{ height: 1, backgroundColor: colors.slate[100] }} />
-        <ReadOnly icon={<IdCard size={18} color={colors.amber.DEFAULT} />} label="Licence expires" value={driver?.license_expiry ? formatDate(driver.license_expiry) : ""} />
-        <Text style={[type.bodySmall, { color: colors.slate[400], marginTop: spacing.sm }]}>Contact the office to update vehicle or licence details.</Text>
+        <Pressable onPress={() => setIdCameraOpen(true)} style={{ alignItems: "center" }}>
+          {idCardUrl ? (
+            <Image source={{ uri: idCardUrl }} style={{ width: "100%", height: 140, borderRadius: radius.md, resizeMode: "cover" }} />
+          ) : (
+            <View style={{ width: "100%", height: 100, borderRadius: radius.md, borderWidth: 2, borderColor: colors.primary.surfaceMid, borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: colors.primary.surface }}>
+              <IdCard size={28} color={colors.primary.DEFAULT} />
+              <Text style={[type.bodySmall, { color: colors.primary.DEFAULT, marginTop: 6 }]}>Tap to add a photo of your ID card</Text>
+            </View>
+          )}
+          {uploadingId ? <Text style={[type.bodySmall, { color: colors.primary.DEFAULT, marginTop: 6 }]}>Uploading…</Text> : idCardUrl ? <Text style={[type.bodySmall, { color: colors.slate[400], marginTop: 6 }]}>Tap to replace</Text> : null}
+        </Pressable>
       </Card>
+
+      {/* Vehicle & licence — drivers only, porters don't drive */}
+      {driver?.account_type !== "porter" && (
+        <>
+          <Text style={[type.h3, { color: colors.slate[900], marginTop: spacing.xl, marginBottom: spacing.md }]}>Vehicle & licence</Text>
+          <Card>
+            <ReadOnly icon={<Car size={18} color={colors.primary.DEFAULT} />} label="Vehicle" value={[driver?.vehicle_make_model, driver?.vehicle_registration].filter(Boolean).join(" · ")} />
+            <View style={{ height: 1, backgroundColor: colors.slate[100] }} />
+            <ReadOnly icon={<IdCard size={18} color={colors.primary.DEFAULT} />} label="Licence number" value={driver?.license_number ?? ""} />
+            <View style={{ height: 1, backgroundColor: colors.slate[100] }} />
+            <ReadOnly icon={<IdCard size={18} color={colors.amber.DEFAULT} />} label="Licence expires" value={driver?.license_expiry ? formatDate(driver.license_expiry) : ""} />
+            <Text style={[type.bodySmall, { color: colors.slate[400], marginTop: spacing.sm }]}>Contact the office to update vehicle or licence details.</Text>
+          </Card>
+        </>
+      )}
 
       <View style={{ marginTop: spacing.xl }}>
         <Button label="My ratings" variant="outline" icon={<Star size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/ratings")} fullWidth />
@@ -174,6 +218,9 @@ export default function ProfileScreen() {
       <View style={{ marginTop: spacing.md }}>
         <Button label="Time off" variant="outline" icon={<CalendarOff size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/leave" as Href)} fullWidth />
       </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Button label="Request pay for a job" variant="outline" icon={<Wallet size={18} color={colors.primary.DEFAULT} />} onPress={() => router.push("/pay-request" as Href)} fullWidth />
+      </View>
 
       <View style={{ marginTop: spacing.md }}>
         <Button label="Sign out" variant="danger" icon={<LogOut size={18} color={colors.white} />} onPress={doSignOut} fullWidth />
@@ -181,6 +228,7 @@ export default function ProfileScreen() {
       <Text style={[type.bodySmall, { color: colors.slate[400], textAlign: "center", marginTop: spacing.lg }]}>Ample Driver v{appVersion}</Text>
 
       <CameraCapture visible={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={onPhoto} />
+      <CameraCapture visible={idCameraOpen} onClose={() => setIdCameraOpen(false)} onCapture={onIdCard} />
     </Screen>
   );
 }

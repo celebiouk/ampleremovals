@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Truck, X, Loader2, PoundSterling } from "lucide-react";
+import { Plus, Truck, X, Loader2, PoundSterling, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { AssignDriverModal } from "./AssignDriverModal";
 import Link from "next/link";
@@ -10,9 +10,11 @@ import Link from "next/link";
 interface AssignedDriversProps {
   bookingId: string;
   bookingReference: string;
+  moveDate?: string | null;
+  isAnyvan?: boolean;
 }
 
-export function AssignedDrivers({ bookingId, bookingReference }: AssignedDriversProps) {
+export function AssignedDrivers({ bookingId, bookingReference, moveDate, isAnyvan }: AssignedDriversProps) {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,6 +23,9 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
   const [tipAmount, setTipAmount] = useState("");
   const [tipNote, setTipNote] = useState("");
   const [savingTip, setSavingTip] = useState(false);
+  const [payExtraFor, setPayExtraFor] = useState<string | null>(null);
+  const [payExtraAmount, setPayExtraAmount] = useState("");
+  const [savingPayExtra, setSavingPayExtra] = useState(false);
 
   useEffect(() => {
     loadAssignments();
@@ -68,6 +73,28 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
       toast.error("Failed to record tip");
     } finally {
       setSavingTip(false);
+    }
+  }
+
+  async function handlePayExtra(earningId: string) {
+    const amount = parseFloat(payExtraAmount);
+    if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    setSavingPayExtra(true);
+    try {
+      const res = await fetch(`/api/admin/earnings/${earningId}/pay-extra`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Pay extra of £${amount.toFixed(2)} added`);
+        setPayExtraFor(null);
+        setPayExtraAmount("");
+        loadAssignments();
+      } else toast.error(data.error || "Failed to add pay extra");
+    } finally {
+      setSavingPayExtra(false);
     }
   }
 
@@ -162,11 +189,34 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
                         )}
                       </div>
                       <p className="text-sm text-slate-600">
-                        Pay: {assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}%
+                        {assignment.flat_pay_amount != null
+                          ? `Flat pay: £${Number(assignment.flat_pay_amount).toFixed(2)}`
+                          : `Pay: ${assignment.pay_percentage_override || assignment.driver?.default_pay_percentage}% (legacy)`}
+                        {Number(assignment.earnings?.[0]?.pay_extra_amount) > 0 && (
+                          <span className="ml-1 text-green-600">+£{Number(assignment.earnings[0].pay_extra_amount).toFixed(2)} extra</span>
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    {assignment.acceptance_status === "declined" && (
+                      <button
+                        onClick={() => setModalOpen(true)}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-brand-purple-600 hover:bg-white"
+                        title="Reassign this job"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> Reassign
+                      </button>
+                    )}
+                    {assignment.earnings?.[0]?.id && (
+                      <button
+                        onClick={() => setPayExtraFor(payExtraFor === assignment.earnings[0].id ? null : assignment.earnings[0].id)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-brand-purple-600"
+                        title="Pay extra"
+                      >
+                        <PoundSterling className="h-4 w-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => setTipDriverId(tipDriverId === assignment.driver_id ? null : assignment.driver_id)}
                       className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-green-600"
@@ -188,6 +238,34 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
                     </button>
                   </div>
                 </div>
+
+                {/* Inline pay-extra form */}
+                {assignment.earnings?.[0]?.id && payExtraFor === assignment.earnings[0].id && (
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="mb-1 block text-xs font-medium text-slate-600">Pay extra (£)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.50"
+                          value={payExtraAmount}
+                          onChange={(e) => setPayExtraAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handlePayExtra(assignment.earnings[0].id)}
+                        disabled={savingPayExtra}
+                        className="rounded-lg bg-brand-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-purple-700 disabled:opacity-50"
+                      >
+                        {savingPayExtra ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">On top of the daily-pay cap — use this to pay more than the usual day rate.</p>
+                  </div>
+                )}
 
                 {/* Inline tip form */}
                 {tipDriverId === assignment.driver_id && (
@@ -234,6 +312,8 @@ export function AssignedDrivers({ bookingId, bookingReference }: AssignedDrivers
       <AssignDriverModal
         bookingId={bookingId}
         bookingReference={bookingReference}
+        moveDate={moveDate}
+        isAnyvan={isAnyvan}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSuccess={loadAssignments}

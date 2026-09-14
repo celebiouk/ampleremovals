@@ -185,6 +185,51 @@ const MIGRATIONS = [
   { name: "job_incidents RLS", sql: "ALTER TABLE job_incidents ENABLE ROW LEVEL SECURITY" },
   { name: "job_incidents policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='job_incidents' AND policyname='Admins full access to job_incidents') THEN CREATE POLICY "Admins full access to job_incidents" ON job_incidents FOR ALL TO authenticated USING (true); END IF; END $$` },
   { name: "job_incidents index", sql: "CREATE INDEX IF NOT EXISTS idx_job_incidents_booking ON job_incidents (booking_id, created_at DESC)" },
+  // Porters as drivers-table accounts — see add_porter_accounts.sql
+  {
+    name: "drivers account_type",
+    sql: "ALTER TABLE drivers ADD COLUMN IF NOT EXISTS account_type TEXT NOT NULL DEFAULT 'driver' CHECK (account_type IN ('driver', 'porter'))",
+  },
+  { name: "drivers id_card_url", sql: "ALTER TABLE drivers ADD COLUMN IF NOT EXISTS id_card_url TEXT" },
+  { name: "drop booking_porter_assignments (unused)", sql: "DROP TABLE IF EXISTS booking_porter_assignments" },
+  { name: "drop porters (unused)", sql: "DROP TABLE IF EXISTS porters" },
+  // Flat pay replaces %-of-invoice going forward — see add_flat_pay.sql
+  {
+    name: "booking_driver_assignments flat_pay_amount",
+    sql: "ALTER TABLE booking_driver_assignments ADD COLUMN IF NOT EXISTS flat_pay_amount NUMERIC(10,2)",
+  },
+  {
+    name: "driver_earnings pay_extra_amount",
+    sql: "ALTER TABLE driver_earnings ADD COLUMN IF NOT EXISTS pay_extra_amount NUMERIC(10,2) NOT NULL DEFAULT 0",
+  },
+  // AnyVan jobs — see add_anyvan_jobs.sql
+  { name: "bookings is_anyvan", sql: "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS is_anyvan BOOLEAN NOT NULL DEFAULT FALSE" },
+  { name: "booking_status anyvan_job enum value", sql: "ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'anyvan_job'" },
+  {
+    name: "AnyVan placeholder customer",
+    sql: `INSERT INTO customers (id, full_name, email, phone)
+      SELECT '00000000-0000-0000-0000-000000000001', 'AnyVan (external job)', 'anyvan@internal.ampleremovals.com', '0000000000'
+      WHERE NOT EXISTS (SELECT 1 FROM customers WHERE id = '00000000-0000-0000-0000-000000000001')`,
+  },
+  // Manual pay requests — see add_job_pay_requests.sql
+  {
+    name: "job_pay_requests table",
+    sql: `CREATE TABLE IF NOT EXISTS job_pay_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+      work_date DATE NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+      approved_amount NUMERIC(10,2),
+      approved_booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+      decided_by TEXT,
+      decided_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  { name: "job_pay_requests RLS", sql: "ALTER TABLE job_pay_requests ENABLE ROW LEVEL SECURITY" },
+  { name: "job_pay_requests policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='job_pay_requests' AND policyname='Admins full access to job_pay_requests') THEN CREATE POLICY "Admins full access to job_pay_requests" ON job_pay_requests FOR ALL TO authenticated USING (true); END IF; END $$` },
+  { name: "job_pay_requests index", sql: "CREATE INDEX IF NOT EXISTS idx_job_pay_requests_driver ON job_pay_requests (driver_id, status)" },
 ];
 
 async function run() {

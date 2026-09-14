@@ -13,14 +13,20 @@ interface Suggestion {
 interface AssignDriverModalProps {
   bookingId: string;
   bookingReference: string;
+  moveDate?: string | null;
+  isAnyvan?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
+interface DailyPayPreview { dayRate: number; committedToday: number; remaining: number }
+
 export function AssignDriverModal({
   bookingId,
   bookingReference,
+  moveDate,
+  isAnyvan,
   isOpen,
   onClose,
   onSuccess,
@@ -31,6 +37,8 @@ export function AssignDriverModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [payPercentageOverride, setPayPercentageOverride] = useState("");
+  const [flatPayAmount, setFlatPayAmount] = useState("");
+  const [dailyPay, setDailyPay] = useState<DailyPayPreview | null>(null);
   const [isLeadDriver, setIsLeadDriver] = useState(false);
   const [role, setRole] = useState<"driver" | "porter">("driver");
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
@@ -42,6 +50,25 @@ export function AssignDriverModal({
       loadSuggestions();
     }
   }, [isOpen]);
+
+  // Cap-aware preview: only meaningful for porters or an AnyVan job's driver
+  // (see lib/daily-pay.ts) — regular driver jobs have no daily cap concept.
+  useEffect(() => {
+    if (!selectedDriverId || !moveDate || !(role === "porter" || isAnyvan)) {
+      setDailyPay(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/drivers/${selectedDriverId}/daily-pay?date=${moveDate}&role=${role}&isAnyvan=${isAnyvan ? "true" : "false"}`);
+        const data = await res.json();
+        if (data.success) {
+          setDailyPay({ dayRate: data.dayRate, committedToday: data.committedToday, remaining: data.remaining });
+          setFlatPayAmount((cur) => cur || String(data.remaining));
+        }
+      } catch { /* preview only */ }
+    })();
+  }, [selectedDriverId, moveDate, role, isAnyvan]);
 
   async function loadDrivers() {
     try {
@@ -88,6 +115,7 @@ export function AssignDriverModal({
         body: JSON.stringify({
           driverId: selectedDriverId,
           payPercentageOverride: payPercentageOverride ? parseFloat(payPercentageOverride) : null,
+          flatPayAmount: flatPayAmount !== "" ? parseFloat(flatPayAmount) : null,
           isLeadDriver,
           role,
         }),
@@ -206,12 +234,37 @@ export function AssignDriverModal({
               )}
             </div>
 
-            {/* Pay Override */}
+            {/* Flat pay — the model going forward for every assignment */}
             {selectedDriverId && (
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Pay % Override (optional)
+                  Pay for this job (£)
                 </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={flatPayAmount}
+                  onChange={(e) => setFlatPayAmount(e.target.value)}
+                  placeholder={role === "porter" || isAnyvan ? "Defaults to the day rate below" : "Enter an amount"}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                />
+                {dailyPay && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Already committed today: £{dailyPay.committedToday.toFixed(2)} of the £{dailyPay.dayRate.toFixed(2)} day rate
+                    {dailyPay.remaining === 0 ? " — day rate already met, this defaults to £0 unless you type an amount or use \"Pay extra\" after assigning." : "."}
+                  </p>
+                )}
+                {!dailyPay && role !== "porter" && !isAnyvan && (
+                  <p className="mt-1.5 text-xs text-slate-500">Leaving this empty falls back to the old %-of-invoice calculation once the invoice is paid.</p>
+                )}
+              </div>
+            )}
+
+            {/* Legacy %-of-invoice override — only matters if no flat amount is set above */}
+            {selectedDriverId && role !== "porter" && (
+              <details className="rounded-xl border border-slate-200 p-3 text-sm">
+                <summary className="cursor-pointer font-medium text-slate-600">Legacy pay % override (only used if pay above is left empty)</summary>
                 <input
                   type="number"
                   min="0"
@@ -219,10 +272,10 @@ export function AssignDriverModal({
                   step="0.5"
                   value={payPercentageOverride}
                   onChange={(e) => setPayPercentageOverride(e.target.value)}
-                  placeholder="Leave empty to use default"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                  placeholder="Leave empty to use driver default"
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
                 />
-              </div>
+              </details>
             )}
 
             {/* Lead driver toggle */}

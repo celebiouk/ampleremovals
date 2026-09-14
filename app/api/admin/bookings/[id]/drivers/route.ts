@@ -21,7 +21,8 @@ export async function GET(
       .from("booking_driver_assignments")
       .select(`
         *,
-        driver:drivers(*)
+        driver:drivers(*),
+        earnings:driver_earnings(id, gross_earnings, pay_extra_amount, total_earnings)
       `)
       .eq("booking_id", bookingId);
 

@@ -22,6 +22,7 @@ export default function CreateDriverPage() {
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
   const [status, setStatus] = useState<"active" | "inactive" | "suspended" | "on_leave">("active");
   const [defaultPayPercentage, setDefaultPayPercentage] = useState("40");
+  const [accountType, setAccountType] = useState<"driver" | "porter">("driver");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,6 +58,7 @@ export default function CreateDriverPage() {
           emergencyContactPhone: emergencyContactPhone || null,
           status,
           defaultPayPercentage: parseFloat(defaultPayPercentage),
+          accountType,
         }),
       });
 
@@ -94,6 +96,29 @@ export default function CreateDriverPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Account type */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">Account type</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setAccountType("driver")}
+              className={`rounded-xl border-2 p-4 text-left transition-colors ${accountType === "driver" ? "border-brand-purple-600 bg-brand-purple-50" : "border-slate-200 hover:bg-slate-50"}`}
+            >
+              <p className="font-semibold text-slate-900">Driver</p>
+              <p className="mt-1 text-sm text-slate-500">Can start/track the journey, sees the full job.</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType("porter")}
+              className={`rounded-xl border-2 p-4 text-left transition-colors ${accountType === "porter" ? "border-brand-purple-600 bg-brand-purple-50" : "border-slate-200 hover:bg-slate-50"}`}
+            >
+              <p className="font-semibold text-slate-900">Porter</p>
+              <p className="mt-1 text-sm text-slate-500">Assists on jobs, flat pay per assignment, no journey controls.</p>
+            </button>
+          </div>
+        </div>
+
         {/* Personal Details */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Personal Details</h2>
@@ -226,29 +251,36 @@ export default function CreateDriverPage() {
                 <option value="suspended">Suspended</option>
               </select>
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Default Pay % <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={defaultPayPercentage}
-                  onChange={(e) => setDefaultPayPercentage(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-10 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  %
-                </span>
+            {accountType === "driver" && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Default Pay % <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={defaultPayPercentage}
+                    onChange={(e) => setDefaultPayPercentage(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-10 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                    %
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  Only used for legacy assignments made before flat pay — every new assignment now gets a flat amount set when you assign the job.
+                </p>
               </div>
-              <p className="mt-1 text-sm text-slate-500">
-                e.g. 40 means driver receives 40% of booking total
-              </p>
-            </div>
+            )}
+            {accountType === "porter" && (
+              <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
+                Porters are paid a flat amount per assignment (default £100/day), set when you assign them to a job — no percentage needed here.
+              </div>
+            )}
           </div>
         </div>
 

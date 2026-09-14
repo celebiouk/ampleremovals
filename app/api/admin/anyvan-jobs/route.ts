@@ -1,55 +1,49 @@
 /**
- * /api/admin/anyvan-jobs — admin records an AnyVan job (POST) and lists them (GET).
- * Minimal fields: customer name, phone, email (optional), amount, delivery date/time,
- * and the driver who did it. The 48h cron then sends the rating request.
+ * POST /api/admin/anyvan-jobs — create a minimal job for work handled through
+ * AnyVan (never touches this system as a real booking): just a date/time,
+ * no customer/addresses/invoice. Reuses `bookings` (is_anyvan: true,
+ * status: 'anyvan_job') so the existing assign/accept-decline/driver-app
+ * machinery works unchanged — see lib/daily-pay.ts and the plan notes in
+ * supabase/migrations/add_anyvan_jobs.sql for why.
  */
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { generateBookingReference } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+const ANYVAN_CUSTOMER_ID = "00000000-0000-0000-0000-000000000001";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
-  try {
-    const b = await req.json().catch(() => null) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const customer_name = (b?.customer_name ?? "").trim();
-    const phone = (b?.phone ?? "").trim();
-    const job_at = b?.job_at;
-    if (!customer_name || !phone || !job_at) {
-      return NextResponse.json({ success: false, error: "Name, phone and delivery date/time are required" }, { status: 400 });
-    }
-    const supabase = createAdminClient();
-    let driver_name = (b?.driver_name ?? "").trim() || null;
-    if (b?.driver_id && !driver_name) {
-      const { data: d } = await supabase.from("drivers").select("first_name, last_name, preferred_name").eq("id", b.driver_id).maybeSingle();
-      if (d) driver_name = d.preferred_name || [d.first_name, d.last_name].filter(Boolean).join(" ");
-    }
-    const { data, error } = await supabase.from("anyvan_jobs").insert({
-      customer_name, phone,
-      email: (b?.email ?? "").trim() || null,
-      amount: b?.amount != null && b.amount !== "" ? Number(b.amount) : null,
-      job_at,
-      driver_id: b?.driver_id || null,
-      driver_name,
-      created_by: "admin",
-    }).select("id").single();
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true, id: data.id });
-  } catch (e) {
-    return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 });
-  }
-}
 
-export async function GET() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return auth.response;
-  try {
-    const supabase = createAdminClient();
-    const { data } = await supabase.from("anyvan_jobs").select("*").order("job_at", { ascending: false }).limit(200);
-    return NextResponse.json({ success: true, jobs: data ?? [] });
-  } catch (e) {
-    return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 });
-  }
+  const body = await req.json().catch(() => null) as { date?: string; time?: string } | null;
+  if (!body?.date) return NextResponse.json({ success: false, error: "Date required" }, { status: 400 });
+
+  const supabase = createAdminClient();
+  const reference = generateBookingReference("man_and_van");
+
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .insert({
+      reference,
+      service_type: "man_and_van",
+      customer_id: ANYVAN_CUSTOMER_ID,
+      status: "anyvan_job",
+      is_anyvan: true,
+      move_date: body.date,
+      move_time: body.time ?? null,
+      source: "anyvan",
+    })
+    .select("id, reference")
+    .single();
+  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+
+  await supabase.from("activity_log").insert({
+    booking_id: booking.id,
+    action: `AnyVan job created for ${body.date}`,
+    performed_by: "admin",
+  });
+
+  return NextResponse.json({ success: true, booking });
 }

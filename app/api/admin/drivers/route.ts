@@ -102,7 +102,9 @@ export async function POST(req: NextRequest) {
       emergencyContactPhone,
       status,
       defaultPayPercentage,
+      accountType,
     } = body;
+    const type = accountType === "porter" ? "porter" : "driver";
 
     // Validation
     if (!firstName || !lastName || !dateOfBirth || !email || !phone) {
@@ -146,7 +148,10 @@ export async function POST(req: NextRequest) {
         emergency_contact_name: emergencyContactName,
         emergency_contact_phone: emergencyContactPhone,
         status: status || "active",
-        default_pay_percentage: defaultPayPercentage || 0,
+        // Porters are paid flat, per-assignment (see flat_pay_amount) — % of
+        // invoice is meaningless for them, so it's just left at 0.
+        default_pay_percentage: type === "porter" ? 0 : (defaultPayPercentage || 0),
+        account_type: type,
       })
       .select()
       .single();

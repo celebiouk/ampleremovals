@@ -5,6 +5,7 @@ import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { detectDriverConflicts } from "@/lib/conflict-detection";
 import { generateAssignmentToken } from "@/lib/tokens";
+import { dailyPayStatus } from "@/lib/daily-pay";
 
 /**
  * POST /api/admin/bookings/[id]/assign-driver
@@ -19,7 +20,7 @@ export async function POST(
     if (!auth.ok) return auth.response;
 
     const { id: bookingId } = params;
-    const { driverId, payPercentageOverride, isLeadDriver, role } = await req.json();
+    const { driverId, payPercentageOverride, isLeadDriver, role, flatPayAmount } = await req.json();
 
     if (!driverId) {
       return NextResponse.json(
@@ -30,19 +31,25 @@ export async function POST(
 
     const supabase = createAdminClient();
 
-    // Check if already assigned
+    // Check if already assigned. A DECLINED assignment doesn't block
+    // reassigning — including reassigning back to the same person — it's
+    // just cleared out first so a fresh one can be created.
     const { data: existing } = await supabase
       .from("booking_driver_assignments")
-      .select("id")
+      .select("id, acceptance_status")
       .eq("booking_id", bookingId)
       .eq("driver_id", driverId)
-      .single();
+      .maybeSingle();
 
-    if (existing) {
+    if (existing && existing.acceptance_status !== "declined") {
       return NextResponse.json(
         { success: false, error: "Driver already assigned to this booking" },
         { status: 400 }
       );
+    }
+    if (existing) {
+      await supabase.from("driver_earnings").delete().eq("assignment_id", existing.id);
+      await supabase.from("booking_driver_assignments").delete().eq("id", existing.id);
     }
 
     // Get driver details
@@ -59,6 +66,21 @@ export async function POST(
       );
     }
 
+    // Flat pay is the model going forward (see lib/driver-earnings.ts's
+    // comment on calculateDriverEarnings) — a numeric amount here means this
+    // assignment is paid flat; leaving it out for a REGULAR job falls back to
+    // the legacy %-of-invoice calculation once the invoice is paid. Porters
+    // and AnyVan-job drivers get a cap-aware default instead (see
+    // lib/daily-pay.ts): the day's rate the first time, £0 for a same-day
+    // second job (already met that day's rate) — admin can still type their
+    // own amount to override, or use "pay extra" once assigned.
+    const { data: bookingForPay } = await supabase.from("bookings").select("is_anyvan, move_date").eq("id", bookingId).maybeSingle();
+    let flatAmount = flatPayAmount != null && flatPayAmount !== "" ? Number(flatPayAmount) : null;
+    if (flatAmount == null && (role === "porter" || bookingForPay?.is_anyvan) && bookingForPay?.move_date) {
+      const cap = await dailyPayStatus(driverId, bookingForPay.move_date, role === "porter" ? "porter" : "driver", !!bookingForPay.is_anyvan);
+      flatAmount = cap.remaining;
+    }
+
     // Create assignment
     const { data: assignment, error: assignError } = await supabase
       .from("booking_driver_assignments")
@@ -67,6 +89,7 @@ export async function POST(
         driver_id: driverId,
         pay_percentage_override: payPercentageOverride,
         is_lead_driver: isLeadDriver ?? false,
+        flat_pay_amount: flatAmount,
       })
       .select()
       .single();
@@ -85,7 +108,9 @@ export async function POST(
       await supabase.from("booking_driver_assignments").update({ role: "porter" }).eq("id", assignment.id);
     }
 
-    // Create earnings placeholder (will be calculated when invoice is paid)
+    // Flat pay is set now, final — no invoice-triggered recalculation needed.
+    // A legacy (no flatAmount) assignment keeps the old £0 placeholder, filled
+    // in by calculateDriverEarnings once the invoice is paid.
     const payPercentage = payPercentageOverride || driver.default_pay_percentage;
 
     await supabase.from("driver_earnings").insert({
@@ -93,10 +118,10 @@ export async function POST(
       booking_id: bookingId,
       assignment_id: assignment.id,
       booking_total: 0,
-      pay_percentage: payPercentage,
-      gross_earnings: 0,
+      pay_percentage: flatAmount != null ? 0 : payPercentage,
+      gross_earnings: flatAmount ?? 0,
       tip_amount: 0,
-      total_earnings: 0,
+      total_earnings: flatAmount ?? 0,
       status: "pending",
     });
 

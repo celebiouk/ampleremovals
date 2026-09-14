@@ -138,6 +138,7 @@ export interface Booking {
   quote_crew_blurb: string | null;
   quote_pdf_url: string | null;
   quote_sent_at: string | null;
+  is_anyvan?: boolean;
   created_at: string;
   updated_at: string;
   // Optional joined relations

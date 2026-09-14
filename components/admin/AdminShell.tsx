@@ -43,6 +43,8 @@ export const NAV_GROUPS = [
       { href: "/admin/call-back", label: "Call back", icon: PhoneCall },
       { href: "/admin/drivers", label: "Drivers", icon: Truck },
       { href: "/admin/porters", label: "Porters", icon: Users },
+      { href: "/admin/anyvan-jobs", label: "AnyVan Jobs", icon: Package },
+      { href: "/admin/pay-requests", label: "Pay Requests", icon: PoundSterling },
       { href: "/admin/routes", label: "Route Plans", icon: Route },
     ],
   },

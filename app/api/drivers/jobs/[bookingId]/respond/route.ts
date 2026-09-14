@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { requireDriver } from "@/lib/driver-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { notifyAdminDeclineEscalated } from "@/lib/driver-notify";
 
 export async function POST(req: Request, { params }: { params: { bookingId: string } }) {
   const auth = await requireDriver();
@@ -60,6 +61,15 @@ export async function POST(req: Request, { params }: { params: { bookingId: stri
       body: `${name} ${status} job ${ref}${action === "decline" ? " — reassign needed" : ""}.`,
       data: { bookingId: params.bookingId },
     }).catch(() => {});
+    if (action === "decline") {
+      await notifyAdminDeclineEscalated({
+        workerName: name,
+        workerRole: auth.driver.account_type,
+        bookingReference: ref,
+        bookingId: params.bookingId,
+        reason,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, status });
   } catch (e) {

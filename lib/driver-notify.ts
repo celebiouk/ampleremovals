@@ -4,9 +4,11 @@
  * throws (the ETA engine must keep running).
  */
 
-import { resend, resendFrom } from "@/lib/resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import twilio from "twilio";
+import { resend, resendFrom, resendAdminEmails } from "@/lib/resend";
+import { sendSMS, sendWhatsApp, twilioFrom, twilioWhatsAppFrom, normaliseSmsBody } from "@/lib/twilio";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { normalisePhone } from "@/lib/message-store";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any;
 
@@ -155,4 +157,59 @@ export async function notifyAdmin(
   try {
     await sendAdminPush({ title: "Driver update", body: message, data: { bookingId } });
   } catch (e) { console.error("[driver-notify] admin push failed", e); }
+}
+
+/**
+ * A driver/porter decline needs to reach admin through every channel, not
+ * just the push the rest of this app relies on. `sendSMS`/`sendWhatsApp`
+ * silently skip the admin's own number by design (cost control for customer
+ * messaging, see isAdminNotify in lib/twilio.ts), and WhatsApp there only
+ * ever queues for manual sending, which is pointless when the recipient IS
+ * the admin. So this sends SMS + WhatsApp via a freshly-constructed Twilio
+ * client instead of the exported singleton: that singleton has
+ * `.messages.create` monkey-patched (an own-property override on that one
+ * object, not the SDK itself) to enforce the same admin-skip guard, so a new
+ * instance is genuinely unpatched. A deliberate, narrow exception for this
+ * one rare, urgent, admin-only alert.
+ */
+const rawTwilioClient = (() => {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const apiKeySid = process.env.TWILIO_API_KEY_SID;
+  const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (accountSid?.startsWith("AC") && apiKeySid?.startsWith("SK") && apiKeySecret) return twilio(apiKeySid, apiKeySecret, { accountSid });
+  if (accountSid?.startsWith("AC") && authToken) return twilio(accountSid, authToken);
+  return null;
+})();
+
+export async function notifyAdminDeclineEscalated(params: {
+  workerName: string;
+  workerRole: "driver" | "porter";
+  bookingReference: string;
+  bookingId: string;
+  reason: string;
+}): Promise<void> {
+  const { workerName, workerRole, bookingReference, bookingId, reason } = params;
+  const subject = `⚠️ ${workerRole === "porter" ? "Porter" : "Driver"} declined job ${bookingReference} — reassign needed`;
+  const body = `${workerName} declined job ${bookingReference}. Reason: "${reason}". Please reassign.`;
+
+  try {
+    await resend.emails.send({
+      from: resendFrom,
+      to: resendAdminEmails,
+      subject,
+      html: `<p>${body}</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/bookings/${bookingId}">View booking →</a></p>`,
+    });
+  } catch (e) { console.error("[driver-notify] decline escalation email failed", e); }
+
+  const adminPhone = process.env.ADMIN_PHONE || process.env.NEXT_PUBLIC_ADMIN_PHONE;
+  if (adminPhone && rawTwilioClient) {
+    const dest = normalisePhone(adminPhone) || adminPhone;
+    try {
+      await rawTwilioClient.messages.create({ from: twilioFrom, to: dest, body: normaliseSmsBody(body) });
+    } catch (e) { console.error("[driver-notify] decline escalation SMS failed", e); }
+    try {
+      await rawTwilioClient.messages.create({ from: twilioWhatsAppFrom, to: `whatsapp:${dest}`, body });
+    } catch (e) { console.error("[driver-notify] decline escalation WhatsApp failed", e); }
+  }
 }

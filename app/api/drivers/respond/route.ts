@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAssignmentToken } from "@/lib/tokens";
 import { sendAdminPush } from "@/lib/push-dispatch";
+import { notifyAdminDeclineEscalated } from "@/lib/driver-notify";
 import { formatDate } from "@/lib/utils";
 import { SERVICE_LABELS } from "@/lib/constants";
 import type { ServiceType } from "@/types";
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ success: false, error: "Couldn't save your response." }, { status: 500 });
 
   // Notify admin + log.
-  const { data: driver } = await supabase.from("drivers").select("first_name, last_name, preferred_name").eq("id", driverId).single();
+  const { data: driver } = await supabase.from("drivers").select("first_name, last_name, preferred_name, account_type").eq("id", driverId).single();
   const { data: booking } = await supabase.from("bookings").select("reference").eq("id", bookingId).single();
   const name = driver?.preferred_name || [driver?.first_name, driver?.last_name].filter(Boolean).join(" ") || "Driver";
   const ref = booking?.reference ?? "";
@@ -113,6 +114,15 @@ export async function POST(req: Request) {
     body: `${name} ${status} job ${ref}${action === "decline" ? " — reassign needed" : ""}.`,
     data: { bookingId },
   }).catch(() => {});
+  if (action === "decline") {
+    await notifyAdminDeclineEscalated({
+      workerName: name,
+      workerRole: driver?.account_type === "porter" ? "porter" : "driver",
+      bookingReference: ref,
+      bookingId,
+      reason,
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ success: true, status });
 }

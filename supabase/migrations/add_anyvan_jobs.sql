@@ -1,22 +1,20 @@
--- AnyVan marketplace jobs: minimal record of a job we did via AnyVan, so we can
--- ask the customer (48h later) to rate the Ample Removals driver and, on 5 stars,
--- invite them to a Google review. Server-side only (RLS deny-all).
-CREATE TABLE IF NOT EXISTS anyvan_jobs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  email TEXT,
-  amount NUMERIC(10,2),
-  job_at TIMESTAMPTZ NOT NULL,                 -- date + time of the delivery
-  driver_id UUID REFERENCES drivers(id) ON DELETE SET NULL,
-  driver_name TEXT,                            -- snapshot for the rating message
-  rating_request_sent BOOLEAN DEFAULT false,
-  rating_request_sent_at TIMESTAMPTZ,
-  rating INT CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5)),
-  rating_feedback TEXT,
-  rated_at TIMESTAMPTZ,
-  created_by TEXT,                             -- 'admin' | 'driver'
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_anyvan_jobs_due ON anyvan_jobs (rating_request_sent, job_at);
-ALTER TABLE anyvan_jobs ENABLE ROW LEVEL SECURITY;
+-- AnyVan jobs — work with no real customer in this system. Reuses `bookings`
+-- (driver/porter assignment, accept/decline, the driver-app job screens,
+-- activity log, and admin decline notifications all already work against a
+-- booking_id) rather than a parallel table. Never enters the sales pipeline:
+-- every automation/cron in this codebase filters on specific statuses, and an
+-- AnyVan job's status is never one of those.
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS is_anyvan BOOLEAN NOT NULL DEFAULT FALSE;
+COMMENT ON COLUMN bookings.is_anyvan IS 'True for a job with no real customer (AnyVan or an approved manual pay request) — admin UI branches on this before showing customer/invoice fields.';
+
+-- New enum value so an AnyVan job's status can never collide with (or be
+-- caught by) the real sales pipeline's status filters.
+ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'anyvan_job';
+
+-- One placeholder customer every AnyVan booking points customer_id at — safer
+-- than loosening bookings.customer_id's NOT NULL, since a lot of code assumes
+-- a booking's customer join always resolves to a real row.
+INSERT INTO customers (id, full_name, email, phone)
+SELECT '00000000-0000-0000-0000-000000000001', 'AnyVan (external job)', 'anyvan@internal.ampleremovals.com', '0000000000'
+WHERE NOT EXISTS (SELECT 1 FROM customers WHERE id = '00000000-0000-0000-0000-000000000001');

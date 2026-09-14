@@ -946,7 +946,7 @@ export default function BookingDetailPage() {
           </Card>
 
           {/* Assigned Drivers */}
-          <AssignedDrivers bookingId={bookingId} bookingReference={booking.reference} />
+          <AssignedDrivers bookingId={bookingId} bookingReference={booking.reference} moveDate={booking.move_date} isAnyvan={Boolean(booking.is_anyvan)} />
 
           {/* Evidence pack (chain of custody) */}
           {(booking.pickup_confirmed || booking.delivery_confirmed) && (

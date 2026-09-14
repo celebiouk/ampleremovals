@@ -152,6 +152,8 @@ export interface DriverProfile {
   email?: string | null;
   phone?: string | null;
   profile_photo_url?: string | null;
+  id_card_url?: string | null;
+  account_type?: "driver" | "porter";
   vehicle_registration?: string | null;
   vehicle_make_model?: string | null;
   license_number?: string | null;
@@ -212,6 +214,26 @@ export function useDriverStats() {
       const earningsThisMonth = (earnings ?? []).reduce((s, e) => s + (e.total_earnings || 0), 0);
       const tipsThisMonth = (earnings ?? []).reduce((s, e) => s + (e.tip_amount || 0), 0);
       return { jobsThisWeek, jobsThisMonth: monthJobs ?? 0, earningsThisMonth, tipsThisMonth };
+    },
+  });
+}
+
+/** Earnings for a custom date range (YYYY-MM-DD, inclusive) — for the "My performance" screen's date-range picker. Never includes what the customer paid, only the driver's own earnings. */
+export function useDriverEarningsRange(from: string, to: string) {
+  const driverId = useAuthStore((s) => s.driverId);
+  return useQuery({
+    queryKey: ["driver-earnings-range", driverId, from, to],
+    enabled: !!driverId && !!from && !!to,
+    queryFn: async (): Promise<{ total: number; tips: number; jobCount: number }> => {
+      const { data } = await supabase
+        .from("driver_earnings")
+        .select("total_earnings, tip_amount")
+        .eq("driver_id", driverId)
+        .gte("created_at", `${from}T00:00:00`)
+        .lte("created_at", `${to}T23:59:59`);
+      const total = (data ?? []).reduce((s, e) => s + (e.total_earnings || 0), 0);
+      const tips = (data ?? []).reduce((s, e) => s + (e.tip_amount || 0), 0);
+      return { total, tips, jobCount: data?.length ?? 0 };
     },
   });
 }

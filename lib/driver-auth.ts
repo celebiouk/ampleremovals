@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  * Returns the driver row on success.
  */
 export async function requireDriver(): Promise<
-  | { ok: true; userId: string; driver: { id: string; first_name: string; preferred_name: string | null } }
+  | { ok: true; userId: string; driver: { id: string; first_name: string; preferred_name: string | null; account_type: "driver" | "porter" } }
   | { ok: false; response: NextResponse }
 > {
   const supabase = await createClient();
@@ -25,7 +25,7 @@ export async function requireDriver(): Promise<
 
   const { data: driver } = await supabase
     .from("drivers")
-    .select("id, first_name, preferred_name")
+    .select("id, first_name, preferred_name, account_type")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
