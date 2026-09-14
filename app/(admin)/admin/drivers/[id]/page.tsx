@@ -38,20 +38,23 @@ export default function DriverProfilePage() {
 
   async function quickApprove() {
     setApproving(true);
+    // Porters are paid flat, per-assignment — % of invoice is meaningless
+    // for them, so only default a driver account to 40%.
+    const isPorter = driver?.account_type === "porter";
     try {
       const response = await fetch(`/api/admin/drivers/${driverId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "active",
-          default_pay_percentage: 40, // Default 40%
+          default_pay_percentage: isPorter ? 0 : 40,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Driver approved! Status set to Active with 40% pay.");
+        toast.success(isPorter ? "Porter approved! Status set to Active." : "Driver approved! Status set to Active with 40% pay.");
         router.push("/admin/drivers");
       } else {
         toast.error("Failed to approve driver");
@@ -121,7 +124,7 @@ export default function DriverProfilePage() {
                 Pending Approval
               </h3>
               <p className="mb-4 text-sm text-amber-700">
-                This driver has submitted their application and is waiting for approval.
+                This {driver?.account_type === "porter" ? "porter" : "driver"} has submitted their application and is waiting for approval.
                 Click below to approve with default settings, or edit manually.
               </p>
               <div className="flex gap-3">
@@ -138,7 +141,7 @@ export default function DriverProfilePage() {
                   ) : (
                     <>
                       <CheckCircle className="h-5 w-5" />
-                      Quick Approve (40% Pay, Active)
+                      {driver?.account_type === "porter" ? "Quick Approve (Active)" : "Quick Approve (40% Pay, Active)"}
                     </>
                   )}
                 </button>

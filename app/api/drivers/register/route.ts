@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
       emergencyContactRelationship,
       drivingLicenceNumber,
       drivingLicenceExpiry,
+      accountType,
     } = body;
+    const type = accountType === "porter" ? "porter" : "driver";
 
     // Validation
     if (!firstName || !lastName || !dateOfBirth || !email || !phone || !password) {
@@ -90,7 +92,8 @@ export async function POST(req: NextRequest) {
         driving_licence_number: drivingLicenceNumber,
         driving_licence_expiry: drivingLicenceExpiry,
         status: "inactive", // Start as inactive, admin will activate
-        default_pay_percentage: 0, // Admin will set this
+        default_pay_percentage: 0, // Admin will set this (irrelevant for porters — flat pay)
+        account_type: type,
       });
 
     if (driverError) {
@@ -118,11 +121,11 @@ export async function POST(req: NextRequest) {
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "bookings@ampleremovals.com",
         to: process.env.RESEND_ADMIN_EMAIL || "admin@ampleremovals.com",
-        subject: `🚨 New Driver Application: ${firstName} ${lastName}`,
+        subject: `🚨 New ${type === "porter" ? "Porter" : "Driver"} Application: ${firstName} ${lastName}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #6b21a8;">New Driver Application Received</h2>
-            <p>A new driver has submitted their application and is waiting for approval.</p>
+            <h2 style="color: #6b21a8;">New ${type === "porter" ? "Porter" : "Driver"} Application Received</h2>
+            <p>A new ${type} has submitted their application and is waiting for approval.</p>
 
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="margin-top: 0;">Driver Details:</h3>
@@ -155,12 +158,12 @@ export async function POST(req: NextRequest) {
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "bookings@ampleremovals.com",
         to: email,
-        subject: "Application Received - Ample Removals Driver Team",
+        subject: `Application Received - Ample Removals ${type === "porter" ? "Porter" : "Driver"} Team`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #6b21a8;">Application Received!</h2>
             <p>Hi ${firstName},</p>
-            <p>Thank you for applying to join our driver team at Ample Removals!</p>
+            <p>Thank you for applying to join our ${type} team at Ample Removals!</p>
 
             <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0;">
               <p style="margin: 0;"><strong>📋 Your application is now pending approval.</strong></p>

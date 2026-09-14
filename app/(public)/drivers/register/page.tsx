@@ -24,6 +24,7 @@ export default function DriverRegisterPage() {
   const [emergencyContactRelationship, setEmergencyContactRelationship] = useState("");
   const [drivingLicenceNumber, setDrivingLicenceNumber] = useState("");
   const [drivingLicenceExpiry, setDrivingLicenceExpiry] = useState("");
+  const [accountType, setAccountType] = useState<"driver" | "porter">("driver");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,8 +70,9 @@ export default function DriverRegisterPage() {
           emergencyContactName: emergencyContactName || null,
           emergencyContactPhone: emergencyContactPhone || null,
           emergencyContactRelationship: emergencyContactRelationship || null,
-          drivingLicenceNumber: drivingLicenceNumber || null,
-          drivingLicenceExpiry: drivingLicenceExpiry || null,
+          drivingLicenceNumber: accountType === "driver" ? (drivingLicenceNumber || null) : null,
+          drivingLicenceExpiry: accountType === "driver" ? (drivingLicenceExpiry || null) : null,
+          accountType,
         }),
       });
 
@@ -121,10 +123,33 @@ export default function DriverRegisterPage() {
             <Truck className="h-8 w-8 text-white" />
           </div>
           <h1 className="mb-2 text-3xl font-bold text-slate-900">Join Our Team</h1>
-          <p className="text-slate-600">Complete this form to apply as a driver</p>
+          <p className="text-slate-600">Complete this form to apply as a {accountType}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Role */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">What are you applying for?</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setAccountType("driver")}
+                className={`rounded-xl border-2 p-4 text-left transition-colors ${accountType === "driver" ? "border-brand-purple-600 bg-brand-purple-50" : "border-slate-200 hover:bg-slate-50"}`}
+              >
+                <p className="font-semibold text-slate-900">Driver</p>
+                <p className="mt-1 text-sm text-slate-500">Drives the van, needs a driving licence.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType("porter")}
+                className={`rounded-xl border-2 p-4 text-left transition-colors ${accountType === "porter" ? "border-brand-purple-600 bg-brand-purple-50" : "border-slate-200 hover:bg-slate-50"}`}
+              >
+                <p className="font-semibold text-slate-900">Porter</p>
+                <p className="mt-1 text-sm text-slate-500">Assists on jobs — no driving licence needed.</p>
+              </button>
+            </div>
+          </div>
+
           {/* Personal Details */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Personal Details</h2>
@@ -277,7 +302,8 @@ export default function DriverRegisterPage() {
             </div>
           </div>
 
-          {/* Driving Licence */}
+          {/* Driving Licence — drivers only, porters don't drive */}
+          {accountType === "driver" && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Driving Licence (Optional)</h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -302,6 +328,7 @@ export default function DriverRegisterPage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Submit */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
