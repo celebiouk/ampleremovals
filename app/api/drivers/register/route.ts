@@ -42,6 +42,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (type === "driver" && (!drivingLicenceNumber || !drivingLicenceExpiry)) {
+      return NextResponse.json(
+        { success: false, error: "Driving licence number and expiry are required" },
+        { status: 400 }
+      );
+    }
+
     if (password.length < 8) {
       return NextResponse.json(
         { success: false, error: "Password must be at least 8 characters" },

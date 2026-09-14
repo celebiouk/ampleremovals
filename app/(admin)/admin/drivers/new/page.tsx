@@ -23,6 +23,8 @@ export default function CreateDriverPage() {
   const [status, setStatus] = useState<"active" | "inactive" | "suspended" | "on_leave">("active");
   const [defaultPayPercentage, setDefaultPayPercentage] = useState("40");
   const [accountType, setAccountType] = useState<"driver" | "porter">("driver");
+  const [drivingLicenceNumber, setDrivingLicenceNumber] = useState("");
+  const [drivingLicenceExpiry, setDrivingLicenceExpiry] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +37,11 @@ export default function CreateDriverPage() {
 
     if (!emergencyContactName || !emergencyContactPhone) {
       toast.error("Please add an emergency contact name and phone");
+      return;
+    }
+
+    if (accountType === "driver" && (!drivingLicenceNumber || !drivingLicenceExpiry)) {
+      toast.error("Please add a driving licence number and expiry");
       return;
     }
 
@@ -64,6 +71,8 @@ export default function CreateDriverPage() {
           status,
           defaultPayPercentage: parseFloat(defaultPayPercentage),
           accountType,
+          drivingLicenceNumber: accountType === "driver" ? (drivingLicenceNumber || null) : null,
+          drivingLicenceExpiry: accountType === "driver" ? (drivingLicenceExpiry || null) : null,
         }),
       });
 
@@ -290,6 +299,40 @@ export default function CreateDriverPage() {
             )}
           </div>
         </div>
+
+        {/* Driving Licence — drivers only, porters don't drive */}
+        {accountType === "driver" && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Driving Licence</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Licence Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={drivingLicenceNumber}
+                  onChange={(e) => setDrivingLicenceNumber(e.target.value)}
+                  placeholder="e.g. SMITH123456AB1CD"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Licence Expiry <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={drivingLicenceExpiry}
+                  onChange={(e) => setDrivingLicenceExpiry(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit */}
         <div className="flex justify-end gap-4">

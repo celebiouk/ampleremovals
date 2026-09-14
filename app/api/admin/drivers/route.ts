@@ -103,6 +103,8 @@ export async function POST(req: NextRequest) {
       status,
       defaultPayPercentage,
       accountType,
+      drivingLicenceNumber,
+      drivingLicenceExpiry,
     } = body;
     const type = accountType === "porter" ? "porter" : "driver";
 
@@ -117,6 +119,13 @@ export async function POST(req: NextRequest) {
     if (!emergencyContactName || !emergencyContactPhone) {
       return NextResponse.json(
         { success: false, error: "Emergency contact name and phone are required" },
+        { status: 400 }
+      );
+    }
+
+    if (type === "driver" && (!drivingLicenceNumber || !drivingLicenceExpiry)) {
+      return NextResponse.json(
+        { success: false, error: "Driving licence number and expiry are required" },
         { status: 400 }
       );
     }
@@ -154,6 +163,8 @@ export async function POST(req: NextRequest) {
         phone,
         emergency_contact_name: emergencyContactName,
         emergency_contact_phone: emergencyContactPhone,
+        driving_licence_number: type === "driver" ? drivingLicenceNumber : null,
+        driving_licence_expiry: type === "driver" ? drivingLicenceExpiry : null,
         status: status || "active",
         // Porters are paid flat, per-assignment (see flat_pay_amount) — % of
         // invoice is meaningless for them, so it's just left at 0.

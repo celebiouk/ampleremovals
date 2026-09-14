@@ -40,6 +40,11 @@ export default function DriverRegisterPage() {
       return;
     }
 
+    if (accountType === "driver" && (!drivingLicenceNumber || !drivingLicenceExpiry)) {
+      toast.error("Please add your driving licence details");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -319,12 +324,15 @@ export default function DriverRegisterPage() {
           {/* Driving Licence — drivers only, porters don't drive */}
           {accountType === "driver" && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">Driving Licence (Optional)</h2>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Driving Licence</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Licence Number</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Licence Number <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
+                  required
                   value={drivingLicenceNumber}
                   onChange={(e) => setDrivingLicenceNumber(e.target.value)}
                   placeholder="e.g. SMITH123456AB1CD"
@@ -332,9 +340,12 @@ export default function DriverRegisterPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Licence Expiry</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Licence Expiry <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
+                  required
                   value={drivingLicenceExpiry}
                   onChange={(e) => setDrivingLicenceExpiry(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
