@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const premiumPriceOverride = toNum(premiumPrice);
 
   try {
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride });
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride, isAdminFlow: true });
     const d = parsed.data;
 
     // Record who did this and whether the prices were set by hand.

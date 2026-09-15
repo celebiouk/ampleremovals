@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { RemovalsFormSchema } from "@/lib/schemas/booking";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { completeLead } from "@/lib/bookings/completeLead";
-import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import { logError } from "@/lib/log-error";
 
@@ -39,11 +38,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data);
+    const { reference, customerId } = await completeLead(bookingId, parsed.data);
     const d = parsed.data;
 
-    // Notify the admin (like a normal new booking) and send the customer their
-    // quote + reserve link. Best-effort — never blocks the response.
+    // Notify the admin immediately (like a normal new booking). The customer's
+    // own confirmation is NOT sent here — no price shown, see
+    // lib/business-hours.ts — the confirmation page the client redirects to
+    // triggers it after ~60s via /api/booking/notify, same as every other
+    // customer-facing submission path.
     const notifPayload: NotificationPayload = {
       bookingId,
       customerId,
@@ -66,19 +68,7 @@ export async function POST(req: NextRequest) {
         assembleFurniture: d.additionalServices.assemble_furniture,
       },
     };
-    await Promise.allSettled([
-      sendAdminNewBookingEmail(notifPayload),
-      sendReserveMessages({
-        bookingId,
-        token,
-        reference,
-        firstName: d.fullName.split(" ")[0],
-        email: d.email,
-        phone: d.phone,
-        total: quoteTotal,
-        inventory: d.inventory,
-      }),
-    ]);
+    await sendAdminNewBookingEmail(notifPayload);
 
     return NextResponse.json({ success: true, reference, bookingId, quoteToken: token });
   } catch (err) {

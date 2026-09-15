@@ -117,19 +117,23 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       // Fire conversion pixels (no-ops if pixels aren't configured).
       trackLead({ reference: data.reference, service: config.slug });
 
-      // Completion mode: straight to the lead's quote page (we already hold its
-      // id + token). Otherwise Removals gets the instant-quote flow and every
-      // other service keeps the plain confirmation page.
-      if (config.completion) {
-        router.push(`/quote/${config.completion.bookingId}/${config.completion.token}`);
-      } else if (config.slug === "removals" && data.bookingId && data.quoteToken) {
-        router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
+      // Admin's "fill it for them" is the one real exception: they already
+      // built a real price with the customer on the phone, so they go
+      // straight to that priced quote page as before. Every customer-facing
+      // path — a fresh submission, or a customer finishing their OWN partial
+      // lead — never shows a price; they land on the plain confirmation page
+      // with the "you've been assigned" message instead (see
+      // lib/business-hours.ts and app/(public)/confirmation/page.tsx).
+      if (isAdminCompletion) {
+        router.push(`/quote/${config.completion!.bookingId}/${config.completion!.token}`);
       } else {
         // bookingId + quoteToken (when we have both) let the confirmation page
         // trigger the customer's confirmation email/SMS itself after a short
         // delay, instead of it firing the instant they submit.
-        const notifyQs = data.bookingId && data.quoteToken
-          ? `&bid=${encodeURIComponent(data.bookingId)}&t=${encodeURIComponent(data.quoteToken)}`
+        const bid = config.completion?.bookingId ?? data.bookingId;
+        const t = config.completion?.token ?? data.quoteToken;
+        const notifyQs = bid && t
+          ? `&bid=${encodeURIComponent(bid)}&t=${encodeURIComponent(t)}`
           : "";
         router.push(
           `/confirmation?ref=${encodeURIComponent(

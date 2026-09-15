@@ -8,7 +8,6 @@ import { ukDateString } from "@/lib/dates";
 import { buildQuote } from "@/lib/quote-engine";
 import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
-import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import type { ServiceType, AddressOption } from "@/types";
 import type {
   RemovalsForm,
@@ -336,11 +335,12 @@ export async function createBooking(
     performed_by: "website",
   });
 
-  // 7. Removals ships an instant quote — advance the pipeline to "Quote Sent to
-  // Customer" so the dashboard and follow-up automations treat it as a live quote.
-  if (serviceType === "removals") {
-    await markQuoteSent(supabase, bookingId, "inquiry");
-  }
+  // Booking stays at "inquiry" — the customer is never shown a price at this
+  // point (see lib/business-hours.ts's assignment message), so this is no
+  // longer a real "quote sent" moment. quote_total/quote_line_items above are
+  // still computed and stored for admin's own view — status only moves to
+  // "quote_sent" (and the quote follow-up drip starts) once a team member
+  // actually sends a real quote via the admin dashboard.
 
   return { reference, bookingId, customerId, quoteTotal };
 }

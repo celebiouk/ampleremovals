@@ -23,6 +23,14 @@ export interface CompleteLeadOptions {
    */
   standardPriceOverride?: number;
   premiumPriceOverride?: number;
+  /**
+   * True only when an admin is completing this lead themselves (the "fill it
+   * for them" flow) — distinct from standard/premiumPriceOverride being set,
+   * since admin may complete a lead without typing manual prices. Customers
+   * completing their OWN partial lead never pass this, and are never shown a
+   * price — see lib/business-hours.ts's assignment message instead.
+   */
+  isAdminFlow?: boolean;
 }
 
 export interface CompleteLeadResult {
@@ -206,8 +214,14 @@ export async function completeLead(
     performed_by: useStdOverride || usePremOverride ? "admin" : "customer",
   });
 
-  // 9. The quote is now ready → advance to "Quote Sent to Customer".
-  await markQuoteSent(supabase, bookingId, (booking.status as string) ?? null);
+  // 9. Only the admin "fill it for them" flow actually sends a real quote —
+  // admin is on the phone with the customer building a real price together,
+  // so advancing to "Quote Sent to Customer" here is genuinely accurate. A
+  // customer completing their OWN partial lead is never shown a price and
+  // stays wherever their status already was (see lib/business-hours.ts).
+  if (opts?.isAdminFlow) {
+    await markQuoteSent(supabase, bookingId, (booking.status as string) ?? null);
+  }
 
   return { reference: booking.reference as string, bookingId, customerId, quoteTotal: finalStandardTotal };
 }

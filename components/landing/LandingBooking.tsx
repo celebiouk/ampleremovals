@@ -173,7 +173,11 @@ export function LandingBooking() {
       });
       const data = await res.json();
       if (!res.ok || !data.success || !data.bookingId || !data.quoteToken) throw new Error(data.error || "Something went wrong. Please try again.");
-      router.push(`/quote/${data.bookingId}/${data.quoteToken}`);
+      // No price shown here — a real person calls with one instead. See
+      // lib/business-hours.ts and app/(public)/confirmation/page.tsx.
+      router.push(
+        `/confirmation?ref=${encodeURIComponent(data.reference)}&service=removals&bid=${encodeURIComponent(data.bookingId)}&t=${encodeURIComponent(data.quoteToken)}`
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setBusy(false);
@@ -200,7 +204,7 @@ export function LandingBooking() {
             <motion.div className="h-full rounded-full bg-brand-green-500" initial={false}
               animate={{ width: `${((step + 1) / (REVIEW_STEP + 1)) * 100}%` }} transition={{ duration: 0.35 }} />
           </div>
-          <p className="mt-2 text-xs font-medium text-slate-400">Step {step + 1} of {REVIEW_STEP + 1} · fixed price, no obligation</p>
+          <p className="mt-2 text-xs font-medium text-slate-400">Step {step + 1} of {REVIEW_STEP + 1} · no obligation, quick call back</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
@@ -211,7 +215,7 @@ export function LandingBooking() {
                   <Field icon={User} placeholder="Full name" value={fullName} onChange={setFullName} autoFocus />
                   <Field icon={Phone} placeholder="Mobile number" value={phone} onChange={setPhone} type="tel" />
                   <Field icon={Mail} placeholder="Email address" value={email} onChange={setEmail} type="email" />
-                  <p className="mt-1 text-xs text-slate-400">We&apos;ll send your quote here. We never share your details.</p>
+                  <p className="mt-1 text-xs text-slate-400">We&apos;ll call you here. We never share your details.</p>
                 </StepShell>
               )}
 
@@ -331,7 +335,7 @@ export function LandingBooking() {
               )}
 
               {step === REVIEW_STEP && (
-                <StepShell title="Quick review before your quote" subtitle="Check everything's right — tap any section to change it.">
+                <StepShell title="Quick review before you submit" subtitle="Check everything's right — tap any section to change it.">
                   <div className="space-y-2.5">
                     <ReviewRow label="Your details" value={`${fullName} · ${phone} · ${email}`} onEdit={() => setStep(0)} />
                     <ReviewRow label="Moving from" value={fmtAddress(fromAddr)} onEdit={() => setStep(1)} />
@@ -363,7 +367,7 @@ export function LandingBooking() {
             ) : (
               <button type="button" onClick={submit} disabled={busy}
                 className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500 disabled:opacity-50">
-                {busy ? <><Loader2 className="h-5 w-5 animate-spin" /> Getting your quote…</> : <>See my quote <ArrowRight className="h-5 w-5" /></>}
+                {busy ? <><Loader2 className="h-5 w-5 animate-spin" /> Submitting…</> : <>Submit request <ArrowRight className="h-5 w-5" /></>}
               </button>
             )}
           </div>

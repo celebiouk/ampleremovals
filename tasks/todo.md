@@ -1,62 +1,41 @@
-## Task: Porters in the driver app + flat/AnyVan pay model
-
-Plan approved: full plan at C:\Users\User\.claude\plans\adaptive-conjuring-fox.md
+## Task: Remove customer-facing quote price, show "assigned to a team member" instead
 
 ### Plan
-- [ ] Migration 1: `drivers.account_type` ('driver'|'porter'); drop unused `porters`/`booking_porter_assignments` tables + their dead API routes.
-- [ ] Migration 2: `booking_driver_assignments.flat_pay_amount`; wire `assign-driver` route to use it (write driver_earnings at that amount, not £0); gate `calculateDriverEarnings` on `flat_pay_amount IS NULL`.
-- [ ] Migration 3: `bookings.is_anyvan`, new `anyvan_job` status enum value, placeholder "AnyVan (external job)" customer row.
-- [ ] Migration 4: `job_pay_requests` table (manual retroactive pay requests).
-- [ ] Daily-pay-cap helper (sum today's driver_earnings for a worker vs their day rate) + "Pay extra" field, surfaced at assign/approve time.
-- [ ] Admin: "New AnyVan job" form → creates the placeholder booking → existing assign flow.
-- [ ] Admin: assign-driver UI takes `flatPayAmount` (+ shows the cap warning), "Reassign" action for declined assignments.
-- [ ] Admin: approve/reject UI for `job_pay_requests`.
-- [ ] Shared `notifyAdminDeclineEscalated` (email+SMS+WhatsApp+push) called from both respond routes.
-- [ ] Driver-app: porter account creation in admin (reuse driver-create form + account_type).
-- [ ] Driver-app: `lib/driver-job-view.ts` redacts customer PII for porters on completed jobs.
-- [ ] Driver-app: profile ID-card upload; earnings screen gets a date-range picker.
-- [ ] Driver-app: manual pay-request screen (date, description, submit).
-- [ ] Typecheck (both repos), scripted DB test of the cap logic, commit, push, deploy Next.js side; note driver-app needs the user's own `eas build`.
+- [x] `lib/business-hours.ts` — new shared helper: `isWithinBusinessHours()` + `getAssignmentMessage()` (8am-6pm, Europe/London, derived from `lib/company.ts`'s `OPENING_HOURS_SPEC`).
+- [x] `lib/bookings/createBooking.ts` — stop auto-calling `markQuoteSent` for a fresh Removals submission (quote_total still computed/stored for admin; status stays "inquiry").
+- [x] `lib/bookings/completeLead.ts` — new `isAdminFlow` option; only admin's "fill it for them" (real price, real quote) still calls `markQuoteSent`. A customer completing their own partial lead does not.
+- [x] `app/api/admin/leads/complete/route.ts` — pass `isAdminFlow: true`.
+- [x] `hooks/useBookingForm.ts` — only admin completion still redirects to the priced `/quote/[id]/[token]` page; every customer-facing path (fresh submission, non-admin completion) goes to `/confirmation`.
+- [x] `components/landing/LandingBooking.tsx` — same redirect change + copy tweaks ("fixed price" → "no obligation, quick call back", "See my quote" → "Submit request").
+- [x] `app/(public)/confirmation/page.tsx` — renders the new time-based assignment message (computed server-side).
+- [x] `lib/notifications.ts` — email/SMS copy updated to the assignment message; added `sendCustomerConfirmationWhatsApp` (queued, matching the "message = email+sms+whatsapp" rule).
+- [x] `app/api/booking/notify/route.ts` — removals no longer gets the priced `sendReserveMessages` email; every service type uses the same no-price email+SMS+WhatsApp now.
+- [x] `app/api/leads/complete/route.ts` — was sending the customer an immediate priced email (would have double-sent with the confirmation page's delayed trigger too) — removed; admin alert still fires immediately.
+- [x] `app/api/booking/landing/route.ts` — same fallback fixed (rare `!quoteToken` path) + removed now-unused `quoteTotal`.
+- [x] Typecheck (only pre-existing baseline noise remains, none in touched files); verified the 8am/6pm boundary logic against real BST/GMT dates with a scripted test (all 7 cases correct).
 
 ### Review
-Built the full plan: `drivers.account_type` ('driver'|'porter') replaces the unused no-login `porters`
-table (0 rows, retired — its API routes deleted, `/admin/porters` repurposed as a filtered view of
-driver-app accounts). `booking_driver_assignments.flat_pay_amount` + `driver_earnings.pay_extra_amount`
-give every assignment admin-set flat pay going forward (legacy %-of-invoice via
-`calculateDriverEarnings` still works untouched for the 28 pre-existing assignments with no flat
-amount). `bookings.is_anyvan` + a new `anyvan_job` status enum value + one placeholder customer let
-AnyVan jobs reuse the entire existing booking/assignment/accept-decline/driver-app pipeline instead of
-a parallel table. `job_pay_requests` handles retroactive pay claims — on approval it creates a minimal
-AnyVan-style booking behind the scenes so it flows through the same earnings pipeline too.
-`lib/daily-pay.ts` computes the day-rate cap (porters £100/day, AnyVan drivers £150/day default) and
-is surfaced as a live preview in the assign-driver modal, defaulting a same-day second job to £0 unless
-admin types their own amount or uses the new "Pay extra" action (exempt from the cap by design).
-Decline now escalates through email+SMS+WhatsApp+push via a shared `notifyAdminDeclineEscalated` (uses
-a freshly-constructed, unpatched Twilio client — the exported singleton's `.messages.create` is
-monkey-patched to skip the admin's own number for cost control, which would otherwise silently eat
-this alert). Reassigning to someone who declined now works (previously blocked with "already assigned").
-Admin gets three new pages: AnyVan Jobs, Pay Requests, and a repurposed Porters page; the assign-driver
-modal gets a flat-pay field + cap preview. Driver-app gets a manual pay-request screen, an ID-card photo
-upload (distinct from driving-licence fields, which don't apply to porters), and a custom date-range
-earnings picker.
+Customers never see a price anywhere in the initial enquiry flow anymore — all 5 services plus the ad
+landing page now show/send "you've been assigned to a member of our team" with a time-aware promise
+(within 30 minutes if it's currently 8am-6pm UK time, otherwise today-if-there's-time-or-8am-tomorrow),
+computed once in `lib/business-hours.ts` and reused everywhere (confirmation page, email, SMS, WhatsApp).
+No real "assign to a specific person" mechanism was built, per instruction — this is honest, generic
+copy; the existing lead-routing admin alert is what actually prompts a human to act.
 
-One requirement turned out to already be fully built: `lib/driver-job-view.ts` already redacts
-customer name/address/phone/email for EVERY driver (not just porters) once a job is completed — nothing
-needed there.
+Admin's "fill it for them" flow is fully untouched: ReviewStep.tsx still shows the suggested Standard/
+Premium prices in-wizard, and `completeLead`'s new `isAdminFlow` flag ensures that path alone still
+sends the customer a real priced quote and advances the booking to "Quote Sent" — exactly as before.
 
-Verified: all 4 new/changed migrations applied live (`account_type`, `flat_pay_amount`, `is_anyvan` +
-enum value + placeholder customer, `job_pay_requests`, `id_card_url`); a scripted end-to-end test
-against the real DB confirmed the cap logic exactly (£100 day rate → second same-day job defaults to
-£0 → pay-extra correctly exempt from the cap → a different day resets the cap), then cleaned up.
-Driver-app typechecks clean on its own tsconfig; main-repo typecheck shows only pre-existing baseline
-noise, none of it in any file this task touched.
+Found and fixed two real bugs while tracing this through: `app/api/leads/complete/route.ts` was sending
+the customer an immediate priced quote email that would have started DOUBLE-SENDING once the
+confirmation page's existing 60-second delayed-notify trigger also fired for the same booking — removed
+the immediate send. `app/api/booking/landing/route.ts` had a same-shaped (rarer) fallback, fixed the
+same way. Server-side quote calculation (`quote_total`/`quote_line_items`) is untouched everywhere —
+admin, lead-routing alerts, and invoicing still see it; only the CUSTOMER-facing display/messages changed.
 
-**Watch out for:** driver-app changes need the user's own `eas build` to reach devices (no OTA channel
-configured). The decline-escalation WhatsApp send is free-form text to the admin's own number — per
-Twilio's WhatsApp Business rules this only reliably works inside a 24h customer-initiated window unless
-sent via an approved template; email + SMS are the channels to trust for this alert until/unless a
-template gets approved. The root `tsconfig.json` doesn't exclude `driver-app/` (only `node_modules`,
-`scripts`, `admin-app` are excluded), so a root `npx tsc --noEmit` incidentally sweeps in driver-app
-files under the wrong (Next.js) tsconfig and reports spurious errors there — always verify driver-app
-separately with `cd driver-app && npx tsc --noEmit`, which is what its own tsconfig is for. This is
-pre-existing, not something this task introduced or fixed.
+**Watch out for:** `app/(public)/quote/[bookingId]/[token]/page.tsx` (the old priced reveal page) is now
+only reachable via admin's "fill it for them" redirect and old bookmarked links — deliberately left
+untouched rather than deleted, since it's still load-bearing for that one path. The landing page's
+`<title>` metadata ("Get Your Instant Removals Quote") still references instant pricing for SEO/ad
+targeting — left alone since changing ad-facing copy wasn't asked for and could affect campaign
+matching; flagging it as an easy follow-up if wanted.

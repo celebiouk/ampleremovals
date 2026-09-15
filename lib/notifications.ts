@@ -1,8 +1,9 @@
 import { resend, resendFrom, resendAdminEmails } from "@/lib/resend";
-import { twilioClient, twilioFrom, normaliseSmsBody } from "@/lib/twilio";
+import { twilioClient, twilioFrom, normaliseSmsBody, sendWhatsApp } from "@/lib/twilio";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { formatDate, normaliseUKPhone } from "@/lib/utils";
+import { getAssignmentMessage } from "@/lib/business-hours";
 import type { ServiceType, AddressOption } from "@/types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -58,8 +59,9 @@ function customerEmailHtml(params: {
   serviceLabel: string;
   dateText: string;
   originAddress: string;
+  assignmentLine: string;
 }): string {
-  const { customerName, reference, serviceLabel, dateText, originAddress } = params;
+  const { customerName, reference, serviceLabel, dateText, originAddress, assignmentLine } = params;
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Booking Request Received</title></head>
@@ -78,8 +80,14 @@ function customerEmailHtml(params: {
         <tr><td style="background:#ffffff;padding:40px;">
           <p style="margin:0 0 16px;font-size:16px;color:#1e1b4b;">Hi <strong>${customerName}</strong>,</p>
           <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-            Thank you for choosing Ample Removals. We have received your <strong>${serviceLabel}</strong> request and our team will be in touch within <strong>2 hours</strong> to confirm the details.
+            Thank you for choosing Ample Removals. We have received your <strong>${serviceLabel}</strong> request.
           </p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:18px 20px;">
+              <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">You&rsquo;ve been assigned to a member of our team</p>
+              <p style="margin:8px 0 0;font-size:14px;color:#15803d;line-height:1.6;">${assignmentLine}</p>
+            </td></tr>
+          </table>
 
           <!-- Reference box -->
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
@@ -115,7 +123,7 @@ function customerEmailHtml(params: {
           <!-- What happens next -->
           <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1e293b;">What happens next</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-            ${["Our team reviews your request", "We call you within 2 hours to confirm", "Your booking is confirmed by email"].map((step, i) => `
+            ${["Our team reviews your request", "The team member assigned to you calls to discuss your move and give you a quote", "Your booking is confirmed by email"].map((step, i) => `
             <tr><td style="padding:8px 0;font-size:14px;color:#475569;">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#6b21a8;border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:10px;">${i + 1}</span>
               ${step}
@@ -125,7 +133,7 @@ function customerEmailHtml(params: {
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <span style="display:inline-block;background:#16a34a;border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">We Will Be In Touch Soon</span>
+              <span style="display:inline-block;background:#16a34a;border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">We&rsquo;ll Call You Soon</span>
             </td></tr>
           </table>
         </td></tr>
@@ -332,6 +340,7 @@ export async function sendCustomerConfirmationEmail(
         serviceLabel,
         dateText,
         originAddress,
+        assignmentLine: getAssignmentMessage().line,
       }),
     });
 
@@ -423,7 +432,7 @@ export async function sendCustomerConfirmationSMS(
     // Keep under 160 chars
     const body =
       `Hi ${payload.customerName}, we've received your ${serviceLabel} request (Ref: ${payload.reference}). ` +
-      `Our team will call you within 2 hours to confirm. – Ample Removals`;
+      `${getAssignmentMessage().short} – Ample Removals`;
 
     await twilioClient.messages.create({
       from: twilioFrom,
@@ -438,6 +447,37 @@ export async function sendCustomerConfirmationSMS(
   } catch (err) {
     await logError({
       message: `sendCustomerConfirmationSMS failed: ${err instanceof Error ? err.message : String(err)}`,
+      metadata: { reference: payload.reference, phone: payload.phone },
+    });
+  }
+}
+
+/**
+ * Queues a WhatsApp confirmation for the customer (admin sends it manually
+ * from their own number — see sendWhatsApp in lib/twilio.ts for why).
+ * Failures are logged to server_logs but never throw.
+ */
+export async function sendCustomerConfirmationWhatsApp(
+  payload: NotificationPayload
+): Promise<void> {
+  try {
+    const serviceLabel = SERVICE_LABEL_SHORT[payload.serviceType];
+    const body =
+      `Hi ${payload.customerName}! We've received your ${serviceLabel} request (Ref: *${payload.reference}*).\n\n` +
+      `${getAssignmentMessage().short}`;
+
+    await sendWhatsApp(payload.phone, body, undefined, {
+      bookingId: payload.bookingId,
+      title: `Booking received — ${payload.reference}`,
+    });
+
+    await logActivity(payload.bookingId, payload.customerId, "Customer WhatsApp confirmation queued", {
+      phone: payload.phone,
+      reference: payload.reference,
+    });
+  } catch (err) {
+    await logError({
+      message: `sendCustomerConfirmationWhatsApp failed: ${err instanceof Error ? err.message : String(err)}`,
       metadata: { reference: payload.reference, phone: payload.phone },
     });
   }

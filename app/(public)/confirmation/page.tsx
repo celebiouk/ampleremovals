@@ -3,14 +3,9 @@ import { Home, RotateCcw } from "lucide-react";
 import { SuccessCheck } from "@/components/booking/SuccessCheck";
 import { ConfirmationNotifyTrigger } from "@/components/booking/ConfirmationNotifyTrigger";
 import { SERVICE_BY_SLUG } from "@/lib/services";
+import { getAssignmentMessage } from "@/lib/business-hours";
 
 export const metadata = { title: "Booking Request Received" };
-
-const NEXT_STEPS = [
-  "Our team will review your request",
-  "We will call you within 2 hours to confirm details",
-  "Your booking will be scheduled and confirmed by email",
-];
 
 export default function ConfirmationPage({
   searchParams,
@@ -24,6 +19,7 @@ export default function ConfirmationPage({
   const makeAnotherHref = serviceMeta
     ? `/booking/${serviceMeta.slug}`
     : "/booking/removals";
+  const assignment = getAssignmentMessage();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-5 py-24">
@@ -35,7 +31,7 @@ export default function ConfirmationPage({
           Booking Request Received!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-slate-500">
-          Thank you for choosing Ample Removals. We will be in touch shortly.
+          Thank you for choosing Ample Removals.
         </p>
 
         {reference && (
@@ -49,26 +45,14 @@ export default function ConfirmationPage({
           </div>
         )}
 
-        {/* What happens next */}
-        <div className="mt-9 text-left">
-          <h2 className="mb-4 text-center font-display text-lg font-bold text-brand-purple-950">
-            What happens next
+        {/* Assignment message — no price here; a real person calls instead */}
+        <div className="mt-9 rounded-2xl border border-brand-green-100 bg-brand-green-50/60 p-5 text-left">
+          <h2 className="font-display text-lg font-bold text-brand-purple-950">
+            {assignment.heading}
           </h2>
-          <ol className="space-y-3">
-            {NEXT_STEPS.map((text, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3.5"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-green-600 text-sm font-bold text-white">
-                  {i + 1}
-                </span>
-                <span className="pt-0.5 text-sm font-medium text-slate-700">
-                  {text}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700">
+            {assignment.line}
+          </p>
         </div>
 
         {/* Actions */}

@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyQuoteConfirmToken } from "@/lib/tokens";
-import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
-import { buildSummaryFromBookingRow } from "@/lib/bookings/summary-input";
-import { sendReserveMessages } from "@/lib/bookings/quoteDelivery";
-import { sendCustomerConfirmationEmail, sendCustomerConfirmationSMS, type NotificationPayload } from "@/lib/notifications";
+import { sendCustomerConfirmationEmail, sendCustomerConfirmationSMS, sendCustomerConfirmationWhatsApp, type NotificationPayload } from "@/lib/notifications";
 import type { ServiceType, AddressOption } from "@/types";
 
 export const runtime = "nodejs";
 const TOKEN_EXPIRY_HOURS = 24 * 30;
 
 /**
- * POST /api/booking/notify — sends the customer's "here's your quote" /
- * confirmation email+SMS(+WhatsApp), reconstructed from the stored booking.
+ * POST /api/booking/notify — sends the customer's booking-received
+ * confirmation (email+SMS+WhatsApp, no price — see lib/business-hours.ts),
+ * reconstructed from the stored booking.
  *
  * This is deliberately NOT called at submit time. Instead the quote page (and
  * the plain confirmation page) call it after the customer has been on the page
@@ -65,42 +63,33 @@ export async function POST(req: NextRequest) {
   const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
   if (!customer?.email) return NextResponse.json({ success: true }); // nothing to send to
 
-  if (booking.service_type === "removals") {
-    await Promise.allSettled([
-      sendBookingSummaryEmail(buildSummaryFromBookingRow(booking)),
-      sendReserveMessages({
-        bookingId,
-        token,
-        reference: booking.reference as string,
-        firstName: (customer.full_name ?? "there").split(" ")[0],
-        email: customer.email,
-        phone: customer.phone,
-        total: Number(booking.quote_total) || 0,
-        inventory: booking.inventory,
-      }),
-    ]);
-  } else {
-    const origin = Array.isArray(booking.origin) ? booking.origin[0] : booking.origin;
-    const destination = Array.isArray(booking.destination) ? booking.destination[0] : booking.destination;
-    const notif: NotificationPayload = {
-      bookingId,
-      customerId: booking.customer_id as string,
-      reference: booking.reference as string,
-      serviceType: booking.service_type as ServiceType,
-      customerName: customer.full_name ?? "",
-      email: customer.email,
-      phone: customer.phone,
-      originAddress: (origin as AddressOption) ?? null,
-      destinationAddress: (destination as AddressOption) ?? null,
-      moveDate: booking.move_date,
-      isFlexibleDate: Boolean(booking.is_flexible_date),
-      flexibleDateFrom: booking.flexible_date_from,
-      flexibleDateTo: booking.flexible_date_to,
-      description: booking.description,
-      additionalServices: null,
-    };
-    await Promise.allSettled([sendCustomerConfirmationEmail(notif), sendCustomerConfirmationSMS(notif)]);
-  }
+  // Same price-free "you've been assigned" message for every service type —
+  // removals used to get a priced quote email here (sendReserveMessages); that
+  // no longer happens anywhere in this flow, see lib/business-hours.ts.
+  const origin = Array.isArray(booking.origin) ? booking.origin[0] : booking.origin;
+  const destination = Array.isArray(booking.destination) ? booking.destination[0] : booking.destination;
+  const notif: NotificationPayload = {
+    bookingId,
+    customerId: booking.customer_id as string,
+    reference: booking.reference as string,
+    serviceType: booking.service_type as ServiceType,
+    customerName: customer.full_name ?? "",
+    email: customer.email,
+    phone: customer.phone,
+    originAddress: (origin as AddressOption) ?? null,
+    destinationAddress: (destination as AddressOption) ?? null,
+    moveDate: booking.move_date,
+    isFlexibleDate: Boolean(booking.is_flexible_date),
+    flexibleDateFrom: booking.flexible_date_from,
+    flexibleDateTo: booking.flexible_date_to,
+    description: booking.description,
+    additionalServices: null,
+  };
+  await Promise.allSettled([
+    sendCustomerConfirmationEmail(notif),
+    sendCustomerConfirmationSMS(notif),
+    sendCustomerConfirmationWhatsApp(notif),
+  ]);
 
   return NextResponse.json({ success: true });
 }

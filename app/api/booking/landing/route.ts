@@ -3,9 +3,7 @@ import { z } from "zod";
 import { createBooking } from "@/lib/bookings/createBooking";
 import { completeLead } from "@/lib/bookings/completeLead";
 import { generateQuoteConfirmToken, verifyQuoteConfirmToken } from "@/lib/tokens";
-import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
-import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
-import { buildRemovalsSummary } from "@/lib/bookings/summary-input";
+import { sendAdminNewBookingEmail, sendCustomerConfirmationEmail, sendCustomerConfirmationSMS, sendCustomerConfirmationWhatsApp, type NotificationPayload } from "@/lib/notifications";
 import { RemovalsFormSchema, InventorySelectionSchema, AddressOptionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
 import { logError } from "@/lib/log-error";
 import type { RemovalsForm } from "@/lib/schemas/booking";
@@ -105,13 +103,13 @@ export async function POST(req: NextRequest) {
   // Complete the pre-created enquiry (status → quote sent) when we have its id +
   // a valid token; otherwise create a fresh booking (fallback).
   const completing = Boolean(d.bookingId && d.token && verifyQuoteConfirmToken(d.bookingId, d.token, TOKEN_EXPIRY_HOURS));
-  let reference: string, bookingId: string, customerId: string, quoteTotal: number | null | undefined;
+  let reference: string, bookingId: string, customerId: string;
   try {
     if (completing) {
       const r = await completeLead(d.bookingId!, form);
-      ({ reference, bookingId, customerId, quoteTotal } = r);
+      ({ reference, bookingId, customerId } = r);
     } else {
-      ({ reference, bookingId, customerId, quoteTotal } = await createBooking("removals", form, rawAttribution));
+      ({ reference, bookingId, customerId } = await createBooking("removals", form, rawAttribution));
     }
   } catch (err) {
     await logError({ message: `landing booking failed: ${err instanceof Error ? err.message : "unknown"}`, metadata: {} });
@@ -135,15 +133,18 @@ export async function POST(req: NextRequest) {
     description: form.description,
     additionalServices: null,
   };
-  // Admin alert fires immediately. The customer's summary + reserve messages are
-  // NOT sent here — the quote page the browser is redirected to triggers them
-  // itself via /api/booking/notify after ~60s (or sooner via a page-unload
-  // beacon), so it lands after they've had a moment on the page, not the
-  // instant they submit. If we couldn't sign a token (no quote page to trigger
-  // from), fall back to sending the summary immediately.
+  // Admin alert fires immediately. The customer's own confirmation is NOT sent
+  // here (no price — see lib/business-hours.ts) — the confirmation page the
+  // browser is redirected to triggers it itself via /api/booking/notify after
+  // ~60s (or sooner via a page-unload beacon). If we couldn't sign a token (no
+  // page to trigger from), fall back to sending it immediately instead.
   await sendAdminNewBookingEmail(notifPayload);
   if (!quoteToken) {
-    await sendBookingSummaryEmail(buildRemovalsSummary(form, reference, quoteTotal ?? null));
+    await Promise.allSettled([
+      sendCustomerConfirmationEmail(notifPayload),
+      sendCustomerConfirmationSMS(notifPayload),
+      sendCustomerConfirmationWhatsApp(notifPayload),
+    ]);
   }
 
   return NextResponse.json({ success: true, reference, bookingId, quoteToken });
