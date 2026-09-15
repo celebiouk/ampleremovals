@@ -1,41 +1,37 @@
-## Task: Remove customer-facing quote price, show "assigned to a team member" instead
+## Task: Confirmation-page personalisation + admin Standard/Premium quote toggle
 
 ### Plan
-- [x] `lib/business-hours.ts` — new shared helper: `isWithinBusinessHours()` + `getAssignmentMessage()` (8am-6pm, Europe/London, derived from `lib/company.ts`'s `OPENING_HOURS_SPEC`).
-- [x] `lib/bookings/createBooking.ts` — stop auto-calling `markQuoteSent` for a fresh Removals submission (quote_total still computed/stored for admin; status stays "inquiry").
-- [x] `lib/bookings/completeLead.ts` — new `isAdminFlow` option; only admin's "fill it for them" (real price, real quote) still calls `markQuoteSent`. A customer completing their own partial lead does not.
-- [x] `app/api/admin/leads/complete/route.ts` — pass `isAdminFlow: true`.
-- [x] `hooks/useBookingForm.ts` — only admin completion still redirects to the priced `/quote/[id]/[token]` page; every customer-facing path (fresh submission, non-admin completion) goes to `/confirmation`.
-- [x] `components/landing/LandingBooking.tsx` — same redirect change + copy tweaks ("fixed price" → "no obligation, quick call back", "See my quote" → "Submit request").
-- [x] `app/(public)/confirmation/page.tsx` — renders the new time-based assignment message (computed server-side).
-- [x] `lib/notifications.ts` — email/SMS copy updated to the assignment message; added `sendCustomerConfirmationWhatsApp` (queued, matching the "message = email+sms+whatsapp" rule).
-- [x] `app/api/booking/notify/route.ts` — removals no longer gets the priced `sendReserveMessages` email; every service type uses the same no-price email+SMS+WhatsApp now.
-- [x] `app/api/leads/complete/route.ts` — was sending the customer an immediate priced email (would have double-sent with the confirmation page's delayed trigger too) — removed; admin alert still fires immediately.
-- [x] `app/api/booking/landing/route.ts` — same fallback fixed (rare `!quoteToken` path) + removed now-unused `quoteTotal`.
-- [x] Typecheck (only pre-existing baseline noise remains, none in touched files); verified the 8am/6pm boundary logic against real BST/GMT dates with a scripted test (all 7 cases correct).
+- [x] `lib/business-hours.ts` — warmer copy ("dedicated move coordinator"), new `phoneNote` field.
+- [x] `app/(public)/confirmation/page.tsx` — removed "Make Another Booking", added the phone-number callout, single "Call us now" action, warmer heading/body.
+- [x] `lib/notifications.ts` — email/SMS/WhatsApp updated to match (heading, phone note, "coordinator" language throughout).
+- [x] `supabase/migrations/add_show_premium_quote.sql` — `bookings.show_premium_quote BOOLEAN DEFAULT TRUE`.
+- [x] `lib/bookings/quoteDelivery.ts` — `sendReserveMessages` takes a `showPremium` flag; single-quote email/SMS/WhatsApp branch when off (no Standard/Premium framing at all).
+- [x] `app/api/quote/details/route.ts` + the customer quote reveal page — expose/respect `showPremiumQuote`; Premium block, its button, and the "Choose your package" label all disappear when off.
+- [x] `app/api/admin/bookings/[id]/quote/tiers/route.ts` (new) — admin sets Standard + Premium totals and the toggle, optionally sends immediately (save vs "Save & Send", mirroring the existing itemized quote builder's pattern).
+- [x] `components/admin/quotes/EditRemovalsQuoteModal.tsx` (new) — Removals-specific "Edit Quote" UI (tiered model), separate from the itemized `QuoteBuilderModal` used by every other service.
+- [x] `app/(admin)/admin/bookings/[id]/page.tsx` — "Edit Quote"/"Build Quote" now opens the new modal for Removals bookings, unchanged for everything else.
+- [x] `types/index.ts` — added `quote_premium_total`/`show_premium_quote` to the `Booking` type.
+- [x] Typecheck (only pre-existing baseline noise); confirmed the new column defaults `true` for all 241 existing bookings (no behaviour change for anyone until admin actually uses the toggle).
 
 ### Review
-Customers never see a price anywhere in the initial enquiry flow anymore — all 5 services plus the ad
-landing page now show/send "you've been assigned to a member of our team" with a time-aware promise
-(within 30 minutes if it's currently 8am-6pm UK time, otherwise today-if-there's-time-or-8am-tomorrow),
-computed once in `lib/business-hours.ts` and reused everywhere (confirmation page, email, SMS, WhatsApp).
-No real "assign to a specific person" mechanism was built, per instruction — this is honest, generic
-copy; the existing lead-routing admin alert is what actually prompts a human to act.
+Two independent changes bundled together (both requested in the same message):
 
-Admin's "fill it for them" flow is fully untouched: ReviewStep.tsx still shows the suggested Standard/
-Premium prices in-wizard, and `completeLead`'s new `isAdminFlow` flag ensures that path alone still
-sends the customer a real priced quote and advances the booking to "Quote Sent" — exactly as before.
+**Confirmation page** now reads as a real assignment, not a form receipt: "Your dedicated move
+coordinator is on it!", a phone-number callout ("We'll be calling from 0333 577 2070 — do save it!"),
+and a single "Call us now" action instead of the old "Make Another Booking" button, which never made
+sense right after a genuine submission. Same language reused in the email/SMS/WhatsApp via the shared
+`lib/business-hours.ts` helper from the previous task.
 
-Found and fixed two real bugs while tracing this through: `app/api/leads/complete/route.ts` was sending
-the customer an immediate priced quote email that would have started DOUBLE-SENDING once the
-confirmation page's existing 60-second delayed-notify trigger also fired for the same booking — removed
-the immediate send. `app/api/booking/landing/route.ts` had a same-shaped (rarer) fallback, fixed the
-same way. Server-side quote calculation (`quote_total`/`quote_line_items`) is untouched everywhere —
-admin, lead-routing alerts, and invoicing still see it; only the CUSTOMER-facing display/messages changed.
+**Admin quote toggle**: Removals bookings now have their own "Edit Quote" modal (Standard + Premium
+price fields, a "Show Premium" toggle) distinct from the itemized line-item builder every other service
+uses — the two pricing models were never the same thing, so keeping them as separate components avoided
+awkwardly overloading one UI for two different data shapes. Toggling Premium off removes ALL trace of
+tiering everywhere the customer could see it: the quote reveal page (Premium card, its button, the
+"Choose your package" label), and the quote email/SMS/WhatsApp (single price, "Confirm my quote" instead
+of "I'm booking Standard/Premium"). "Save & Send" reuses the exact same `markQuoteSent`/`sendReserveMessages`
+pipeline the rest of the quote system already relies on, so the quote-follow-up drip and everything else
+downstream keeps working unchanged.
 
-**Watch out for:** `app/(public)/quote/[bookingId]/[token]/page.tsx` (the old priced reveal page) is now
-only reachable via admin's "fill it for them" redirect and old bookmarked links — deliberately left
-untouched rather than deleted, since it's still load-bearing for that one path. The landing page's
-`<title>` metadata ("Get Your Instant Removals Quote") still references instant pricing for SEO/ad
-targeting — left alone since changing ad-facing copy wasn't asked for and could affect campaign
-matching; flagging it as an easy follow-up if wanted.
+**Watch out for:** the itemized `QuoteBuilderModal` (used for Man & Van/House Clearance/etc.) was
+intentionally left untouched — those services never had a Standard/Premium reveal page to begin with,
+so the toggle has no meaning for them.

@@ -155,6 +155,9 @@ export interface ReserveMessageParams {
   total: number;
   /** Customer's selected items — shown as a simple list in the email. */
   inventory?: unknown;
+  /** False = the customer only ever hears about ONE quote (no Standard/
+   *  Premium framing at all). Defaults true (today's behaviour) when omitted. */
+  showPremium?: boolean;
 }
 
 /**
@@ -172,6 +175,7 @@ export async function sendReserveMessages({
   phone,
   total,
   inventory,
+  showPremium = true,
 }: ReserveMessageParams): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
@@ -189,17 +193,10 @@ export async function sendReserveMessages({
   const standardList = STANDARD_INCLUDES.map((f) => `<li>${f}</li>`).join("");
   const premiumList = PREMIUM_INCLUDES.slice(1).map((f) => `<li>${f}</li>`).join("");
 
-  const emailHtml = `
-    <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px;">Your quote is ready 🎉</h1>
-      </div>
-      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
-        <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">Here's your fixed-price quote for your move — choose the package that suits you. Your full quote is attached as a PDF.</p>
-        ${crewHtml}
-
-        <!-- Standard: what you get INSIDE it -->
+  // showPremium=false: the customer only ever hears about ONE quote — no
+  // "Standard"/"Premium" framing, one price, one link, one button.
+  const quoteBlockHtml = showPremium
+    ? `
         <div style="border: 2px solid #6b21a8; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
             <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Standard Removal</td>
@@ -207,8 +204,6 @@ export async function sendReserveMessages({
           </tr></table>
           <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${standardList}</ul>
         </div>
-
-        <!-- Premium: everything in Standard, plus… -->
         <div style="border: 2px solid #6b21a8; background:#faf5ff; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
             <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Premium — Full Pack &amp; Move</td>
@@ -216,10 +211,18 @@ export async function sendReserveMessages({
           </tr></table>
           <p style="margin: 8px 0 4px; font-size: 13px; font-weight: bold; color:#475569;">Everything in Standard, plus:</p>
           <ul style="margin: 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${premiumList}</ul>
-        </div>
+        </div>`
+    : `
+        <div style="border: 2px solid #6b21a8; border-radius: 12px; padding: 18px; margin: 20px 0;">
+          <table style="width:100%;"><tr>
+            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Your Removal</td>
+            <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${standardAmount}</td>
+          </tr></table>
+          <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${standardList}</ul>
+        </div>`;
 
-        ${bookingItemsBlockHtml(inventory)}
-
+  const ctaHtml = showPremium
+    ? `
         <p style="font-size: 16px; margin: 20px 0 12px;">Ready to book? Pick your package — <strong>you can still change your date later</strong>:</p>
         <p style="text-align: center; margin: 0 0 12px;">
           <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
@@ -230,7 +233,27 @@ export async function sendReserveMessages({
           <a href="${premiumLink}" style="background: #6b21a8; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
             I'm booking Premium — ${premiumAmount}
           </a>
-        </p>
+        </p>`
+    : `
+        <p style="font-size: 16px; margin: 20px 0 12px;"><strong>Ready to book? You can still change your date later.</strong></p>
+        <p style="text-align: center; margin: 0 0 24px;">
+          <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
+            Confirm my quote — ${standardAmount}
+          </a>
+        </p>`;
+
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
+      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 22px;">Your quote is ready 🎉</h1>
+      </div>
+      <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px;">Hi ${firstName},</p>
+        <p style="font-size: 16px; margin: 16px 0;">Here's your fixed-price quote for your move${showPremium ? " — choose the package that suits you" : ""}. Your full quote is attached as a PDF.</p>
+        ${crewHtml}
+        ${quoteBlockHtml}
+        ${bookingItemsBlockHtml(inventory)}
+        ${ctaHtml}
         <p style="font-size: 14px; color: #64748b;">Or open your quote any time: <a href="${link}" style="color: #6b21a8;">${link}</a></p>
         <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${PHONE}.<br><br>Daniel<br>Ample Removals</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
@@ -238,18 +261,22 @@ export async function sendReserveMessages({
     </div>`;
 
   const smsLink = await shortenUrl(link);
-  const smsText =
-    `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Book your package (change your date later): ${smsLink} — Ref ${reference}`;
+  const smsText = showPremium
+    ? `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Book your package (change your date later): ${smsLink} — Ref ${reference}`
+    : `Hi ${firstName}, your Ample Removals quote is ${standardAmount}. Confirm (you can change your date later): ${smsLink} — Ref ${reference}`;
 
-  const whatsappText =
-    `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount}\n*Premium (full pack & move):* ${premiumAmount}\n\nPick your package to book (you can change the date later):\n${link}\n\nRef: ${reference}`;
+  const whatsappText = showPremium
+    ? `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount}\n*Premium (full pack & move):* ${premiumAmount}\n\nPick your package to book (you can change the date later):\n${link}\n\nRef: ${reference}`
+    : `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Your quote:* ${standardAmount}\n\nConfirm to book (you can change the date later):\n${link}\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails
       .send({
         from: resendFrom,
         to: email,
-        subject: `Your Ample Removals quote — Standard ${standardAmount} or Premium ${premiumAmount} (${reference})`,
+        subject: showPremium
+          ? `Your Ample Removals quote — Standard ${standardAmount} or Premium ${premiumAmount} (${reference})`
+          : `Your Ample Removals quote — ${standardAmount} (${reference})`,
         html: emailHtml,
         ...(pdf ? { attachments: [{ filename: `Quote-${reference}.pdf`, content: pdf }] } : {}),
       })

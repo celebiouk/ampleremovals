@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       .from("bookings")
       .select(`
         reference, service_type, status, quote_line_items, quote_total, quote_premium_total,
+        show_premium_quote,
         deposit_amount, deposit_status, move_date, inventory, has_white_goods,
         quote_crew_blurb, quote_van_size, quote_van_count,
         customer:customers!inner(full_name)
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
       premiumCrewLine: prem.line,
       premiumTotal,
       premiumMultiplier: pricingCfg.premium_multiplier,
+      showPremiumQuote: booking.show_premium_quote !== false,
       deposit: booking.deposit_amount != null ? Number(booking.deposit_amount) : depositFor(total),
       depositPercentage: DEPOSIT_PERCENTAGE,
       depositStatus: booking.deposit_status ?? "unpaid",

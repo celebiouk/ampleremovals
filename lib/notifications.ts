@@ -59,9 +59,11 @@ function customerEmailHtml(params: {
   serviceLabel: string;
   dateText: string;
   originAddress: string;
+  assignmentHeading: string;
   assignmentLine: string;
+  phoneNote: string;
 }): string {
-  const { customerName, reference, serviceLabel, dateText, originAddress, assignmentLine } = params;
+  const { customerName, reference, serviceLabel, dateText, originAddress, assignmentHeading, assignmentLine, phoneNote } = params;
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Booking Request Received</title></head>
@@ -84,8 +86,9 @@ function customerEmailHtml(params: {
           </p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
             <tr><td style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:18px 20px;">
-              <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">You&rsquo;ve been assigned to a member of our team</p>
+              <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">${assignmentHeading}</p>
               <p style="margin:8px 0 0;font-size:14px;color:#15803d;line-height:1.6;">${assignmentLine}</p>
+              <p style="margin:12px 0 0;font-size:13px;font-weight:600;color:#166534;">📞 ${phoneNote}</p>
             </td></tr>
           </table>
 
@@ -123,7 +126,7 @@ function customerEmailHtml(params: {
           <!-- What happens next -->
           <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1e293b;">What happens next</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-            ${["Our team reviews your request", "The team member assigned to you calls to discuss your move and give you a quote", "Your booking is confirmed by email"].map((step, i) => `
+            ${["Your move coordinator reviews your request", "They call you to talk through your move and give you a quote", "Your booking is confirmed by email"].map((step, i) => `
             <tr><td style="padding:8px 0;font-size:14px;color:#475569;">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#6b21a8;border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:10px;">${i + 1}</span>
               ${step}
@@ -330,6 +333,7 @@ export async function sendCustomerConfirmationEmail(
     const dateText = buildDateText(payload);
     const originAddress = formatAddress(payload.originAddress);
 
+    const assignment = getAssignmentMessage();
     const { error } = await resend.emails.send({
       from: resendFrom,
       to: payload.email,
@@ -340,7 +344,9 @@ export async function sendCustomerConfirmationEmail(
         serviceLabel,
         dateText,
         originAddress,
-        assignmentLine: getAssignmentMessage().line,
+        assignmentHeading: assignment.heading,
+        assignmentLine: assignment.line,
+        phoneNote: assignment.phoneNote,
       }),
     });
 
@@ -462,9 +468,10 @@ export async function sendCustomerConfirmationWhatsApp(
 ): Promise<void> {
   try {
     const serviceLabel = SERVICE_LABEL_SHORT[payload.serviceType];
+    const assignment = getAssignmentMessage();
     const body =
       `Hi ${payload.customerName}! We've received your ${serviceLabel} request (Ref: *${payload.reference}*).\n\n` +
-      `${getAssignmentMessage().short}`;
+      `${assignment.short}\n\n📞 ${assignment.phoneNote}`;
 
     await sendWhatsApp(payload.phone, body, undefined, {
       bookingId: payload.bookingId,

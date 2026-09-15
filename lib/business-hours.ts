@@ -1,4 +1,5 @@
 import { OPENING_HOURS_SPEC } from "@/lib/company";
+import { COMPANY_PHONE } from "@/lib/constants";
 
 // Derived from the single source of truth in lib/company.ts ("08:00"/"18:00")
 // so the two can never drift apart.
@@ -22,24 +23,30 @@ export interface AssignmentMessage {
   line: string;
   /** Compact variant, safe for a GSM-7 SMS alongside other text. */
   short: string;
+  /** Separate call-out so the number can be styled/linked on its own. */
+  phoneNote: string;
 }
 
 /**
  * What a customer sees/is told after submitting an enquiry — no price, just
- * an honest promise of when a real person will call, varying by whether
- * we're inside business hours (8am-6pm, 7 days — lib/company.ts) right now.
+ * a warm, personal promise of when their own move coordinator will call,
+ * varying by whether we're inside business hours (8am-6pm, 7 days —
+ * lib/company.ts) right now.
  */
 export function getAssignmentMessage(): AssignmentMessage {
+  const phoneNote = `We'll be calling from ${COMPANY_PHONE} — do save it, so you know it's us!`;
   if (isWithinBusinessHours()) {
     return {
-      heading: "You've been assigned to a member of our team",
-      line: "A member of our team has been assigned to your enquiry and will call you within the next 30 minutes to talk through your move and give you a quote.",
-      short: "A member of our team will call you within 30 minutes to talk through your move and give you a quote.",
+      heading: "Your dedicated move coordinator is on it!",
+      line: "We've personally assigned you a dedicated move coordinator, and they're looking at your details right now. Expect a call within the next 30 minutes to talk through your move and put together your quote — we can't wait to help.",
+      short: "Your dedicated move coordinator will call you within 30 minutes to talk through your move and give you a quote.",
+      phoneNote,
     };
   }
   return {
-    heading: "You've been assigned to a member of our team",
-    line: "A member of our team has been assigned to your enquiry. They'll call you today to talk through your move and give you a quote — and if it's too late today, they'll call first thing tomorrow, from 8am.",
-    short: "A member of our team will call you today if there's time, or by 8am tomorrow, to talk through your move and give you a quote.",
+    heading: "Your dedicated move coordinator is on it!",
+    line: "We've personally assigned you a dedicated move coordinator. They'll call you today to talk through your move and put together your quote — and if it's too late today, they'll be one of the first calls made tomorrow, from 8am.",
+    short: "Your dedicated move coordinator will call you today if there's time, or by 8am tomorrow, to talk through your move and give you a quote.",
+    phoneNote,
   };
 }

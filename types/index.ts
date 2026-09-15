@@ -130,6 +130,8 @@ export interface Booking {
   quote_vat_rate: number | null;
   quote_vat_amount: number | null;
   quote_total: number | null;
+  quote_premium_total?: number | null;
+  show_premium_quote?: boolean;
   quote_valid_until: string | null;
   quote_notes: string | null;
   quote_crew_men: number | null;

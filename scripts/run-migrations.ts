@@ -230,6 +230,8 @@ const MIGRATIONS = [
   { name: "job_pay_requests RLS", sql: "ALTER TABLE job_pay_requests ENABLE ROW LEVEL SECURITY" },
   { name: "job_pay_requests policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='job_pay_requests' AND policyname='Admins full access to job_pay_requests') THEN CREATE POLICY "Admins full access to job_pay_requests" ON job_pay_requests FOR ALL TO authenticated USING (true); END IF; END $$` },
   { name: "job_pay_requests index", sql: "CREATE INDEX IF NOT EXISTS idx_job_pay_requests_driver ON job_pay_requests (driver_id, status)" },
+  // Admin toggle for Premium visibility on a Removals quote — see add_show_premium_quote.sql
+  { name: "bookings show_premium_quote", sql: "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS show_premium_quote BOOLEAN NOT NULL DEFAULT TRUE" },
 ];
 
 async function run() {

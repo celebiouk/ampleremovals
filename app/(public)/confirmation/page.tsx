@@ -1,8 +1,7 @@
-import Link from "next/link";
-import { Home, RotateCcw } from "lucide-react";
+import { Phone } from "lucide-react";
 import { SuccessCheck } from "@/components/booking/SuccessCheck";
 import { ConfirmationNotifyTrigger } from "@/components/booking/ConfirmationNotifyTrigger";
-import { SERVICE_BY_SLUG } from "@/lib/services";
+import { COMPANY_PHONE } from "@/lib/constants";
 import { getAssignmentMessage } from "@/lib/business-hours";
 
 export const metadata = { title: "Booking Request Received" };
@@ -13,13 +12,8 @@ export default function ConfirmationPage({
   searchParams: { ref?: string; service?: string; bid?: string; t?: string };
 }) {
   const reference = searchParams.ref;
-  const serviceMeta = searchParams.service
-    ? SERVICE_BY_SLUG[searchParams.service]
-    : undefined;
-  const makeAnotherHref = serviceMeta
-    ? `/booking/${serviceMeta.slug}`
-    : "/booking/removals";
   const assignment = getAssignmentMessage();
+  const phoneHref = `tel:${COMPANY_PHONE.replace(/\s+/g, "")}`;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-5 py-24">
@@ -28,10 +22,10 @@ export default function ConfirmationPage({
         <SuccessCheck />
 
         <h1 className="mt-7 font-display text-3xl font-extrabold tracking-tight text-brand-purple-950 sm:text-4xl">
-          Booking Request Received!
+          You&apos;re booked in!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-slate-500">
-          Thank you for choosing Ample Removals.
+          Thank you for choosing Ample Removals — we&apos;re looking forward to helping with your move.
         </p>
 
         {reference && (
@@ -53,24 +47,21 @@ export default function ConfirmationPage({
           <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700">
             {assignment.line}
           </p>
+          <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-brand-purple-800">
+            <Phone className="h-4 w-4 shrink-0" />
+            {assignment.phoneNote}
+          </p>
         </div>
 
         {/* Actions */}
-        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/"
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-slate-200 px-6 py-3.5 text-base font-bold text-slate-700 transition-colors hover:bg-slate-50"
+        <div className="mt-9">
+          <a
+            href={phoneHref}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-purple-800 px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-brand-purple-900"
           >
-            <Home className="h-5 w-5" />
-            Back to Homepage
-          </Link>
-          <Link
-            href={makeAnotherHref}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-purple-800 px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-brand-purple-900"
-          >
-            <RotateCcw className="h-5 w-5" />
-            Make Another Booking
-          </Link>
+            <Phone className="h-5 w-5" />
+            Can&apos;t wait? Call us now — {COMPANY_PHONE}
+          </a>
         </div>
       </div>
     </div>

@@ -20,6 +20,7 @@ import { GenerateReceiptModal } from "@/components/admin/invoices/GenerateReceip
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDialog";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
+import { EditRemovalsQuoteModal } from "@/components/admin/quotes/EditRemovalsQuoteModal";
 import { CallBackReminderModal } from "@/components/admin/CallBackReminderModal";
 import { DocumentsPanel } from "@/components/admin/documents/DocumentsPanel";
 import { AssignedDrivers } from "@/components/admin/drivers/AssignedDrivers";
@@ -1152,8 +1153,20 @@ export default function BookingDetailPage() {
         />
       )}
 
-      {/* Quote modal */}
-      {data && (
+      {/* Quote modal — Removals uses the Standard/Premium tiered model; every
+          other service uses the itemized line-item builder. */}
+      {data && data.booking.service_type === "removals" ? (
+        <EditRemovalsQuoteModal
+          bookingId={bookingId}
+          bookingReference={data.booking.reference}
+          existingStandardTotal={data.booking.quote_total ?? null}
+          existingPremiumTotal={data.booking.quote_premium_total ?? null}
+          existingShowPremium={data.booking.show_premium_quote !== false}
+          isOpen={quoteModalOpen}
+          onClose={() => { setQuoteModalOpen(false); notifyEmbedDone(); }}
+          onSaved={() => { refresh(); notifyEmbedDone(); }}
+        />
+      ) : data && (
         <QuoteBuilderModal
           bookingId={bookingId}
           bookingReference={data.booking.reference}
