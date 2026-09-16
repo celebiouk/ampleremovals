@@ -112,9 +112,16 @@ export const IN_PROGRESS_STATUSES: BookingStatus[] = [
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
 ];
 
+// "pending" is deliberately absent — it and "processing" both display as
+// "Pending" (see STATUS_LABELS above), which showed up as a confusing
+// duplicate entry in the status dropdown. "pending" has never actually been
+// used on a real booking (processing has), so it's the one left out here —
+// no data migration needed. The BookingStatus type still allows "pending"
+// (a booking already sitting at that status keeps behaving normally), it
+// just isn't offered as a choice going forward.
 export const ALL_STATUSES: BookingStatus[] = [
   "inquiry", "called", "not_called", "answered", "not_answered",
-  "processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "processing", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
 ];
