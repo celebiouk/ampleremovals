@@ -14,8 +14,7 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_called:                 "Called - Not Answered",
   answered:                   "Called - Answered",
   not_answered:               "Called - Not Answered",
-  processing:                 "Pending", // Processing removed, show as Pending
-  pending:                    "Pending",
+  processing:                 "Pending",
   quote_sent:                 "Quote Sent to Customer",
   quote_confirmed:            "Quote Confirmed",
   deposit_invoice_sent:       "Deposit Invoice Sent",
@@ -44,8 +43,7 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
   not_called:                 "bg-red-100 text-red-700", // Light red - called but not answered
   answered:                   "bg-red-100 text-red-700", // Light red - answered
   not_answered:               "bg-red-100 text-red-700", // Light red - not answered
-  processing:                 "bg-yellow-100 text-yellow-700", // Same as pending
-  pending:                    "bg-yellow-100 text-yellow-700",
+  processing:                 "bg-yellow-100 text-yellow-700",
   quote_sent:                 "bg-sky-100 text-sky-700",
   quote_confirmed:            "bg-teal-100 text-teal-700",
   deposit_invoice_sent:       "bg-violet-100 text-violet-700",
@@ -64,7 +62,6 @@ export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
   answered:                   "bg-red-400", // Light red
   not_answered:               "bg-red-400", // Light red
   processing:                 "bg-yellow-500",
-  pending:                    "bg-yellow-500",
   quote_sent:                 "bg-sky-500",
   quote_confirmed:            "bg-teal-500",
   deposit_invoice_sent:       "bg-violet-500",
@@ -108,17 +105,16 @@ export const SERVICE_COLOURS: Record<ServiceType, string> = {
 
 export const IN_PROGRESS_STATUSES: BookingStatus[] = [
   "called", "not_called", "answered", "not_answered",
-  "processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "processing", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
 ];
 
-// "pending" is deliberately absent — it and "processing" both display as
-// "Pending" (see STATUS_LABELS above), which showed up as a confusing
-// duplicate entry in the status dropdown. "pending" has never actually been
-// used on a real booking (processing has), so it's the one left out here —
-// no data migration needed. The BookingStatus type still allows "pending"
-// (a booking already sitting at that status keeps behaving normally), it
-// just isn't offered as a choice going forward.
+// "pending" has been fully removed — it and "processing" always displayed as
+// the same "Pending" label (see STATUS_LABELS above), which showed up as a
+// confusing duplicate entry in the status dropdown, and it had 0 live
+// bookings. Unlike the pairs below, this one no longer exists anywhere: the
+// booking_status Postgres enum itself was recreated without it (migration
+// remove_pending_status.sql) and it's gone from the BookingStatus type too.
 //
 // "called" and "not_called" are also deliberately absent for the same
 // reason — they displayed as identical duplicates of "answered" and

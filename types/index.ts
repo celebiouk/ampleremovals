@@ -36,7 +36,6 @@ export type BookingStatus =
   | "answered"
   | "not_answered"
   | "processing"
-  | "pending"
   | "quote_sent"
   | "quote_confirmed"
   | "deposit_invoice_sent"
