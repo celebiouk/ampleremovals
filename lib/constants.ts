@@ -119,8 +119,17 @@ export const IN_PROGRESS_STATUSES: BookingStatus[] = [
 // no data migration needed. The BookingStatus type still allows "pending"
 // (a booking already sitting at that status keeps behaving normally), it
 // just isn't offered as a choice going forward.
+//
+// "called" and "not_called" are also deliberately absent for the same
+// reason — they displayed as identical duplicates of "answered" and
+// "not_answered" ("Called - Answered" / "Called - Not Answered"). Unlike
+// "pending", both legacy values did have live bookings, so those rows were
+// migrated to "answered"/"not_answered" first (with status_history +
+// activity_log audit entries) before removing them here. The BookingStatus
+// type still allows "called"/"not_called" for backwards compatibility, they
+// just aren't offered as a choice going forward.
 export const ALL_STATUSES: BookingStatus[] = [
-  "inquiry", "called", "not_called", "answered", "not_answered",
+  "inquiry", "answered", "not_answered",
   "processing", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
