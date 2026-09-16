@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       `)
       .eq("move_date", tomorrowDate)
       .eq("address_confirmed", false)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .is("address_unconfirmed_alert_sent", null);
 
     if (unconfirmedMoves && unconfirmedMoves.length > 0) {
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
         created_at,
         customer:customers!inner(full_name, phone, email)
       `)
-      .in("status", ["inquiry", "called", "not_called", "answered", "processing"])
+      .in("status", ["inquiry", "called", "not_called", "answered"])
       .lte("created_at", sevenDaysAgo.toISOString())
       .is("inactivity_alert_sent", null);
 

@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       `)
       .eq("move_date", ukDate)
       .eq("address_confirmed", false)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"]);
+      .in("status", ["deposit_paid_job_confirmed"]);
 
     if (error) {
       console.error("Fetch bookings error:", error);

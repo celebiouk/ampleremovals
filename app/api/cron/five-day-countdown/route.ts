@@ -39,7 +39,7 @@ export async function GET(req: Request) {
         customer:customers!inner(full_name, email, phone)
       `)
       .eq("move_date", targetDate)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .is("five_day_reminder_sent_at", null);
 
     if (error) {

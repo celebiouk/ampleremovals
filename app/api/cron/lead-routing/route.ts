@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { sendAdminPush } from "@/lib/push-dispatch";
 import { formatCurrency } from "@/lib/utils";
 
-const PRE_QUOTE = ["inquiry", "called", "not_called", "answered", "not_answered", "processing", "pending"];
+const PRE_QUOTE = ["inquiry", "called", "not_called", "answered", "not_answered"];
 
 export async function GET(req: Request) {
   if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {

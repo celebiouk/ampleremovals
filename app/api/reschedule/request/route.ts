@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       `)
       .eq("id", bookingId)
       .eq("reschedule_token", token)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .single();
 
     if (error || !booking) {

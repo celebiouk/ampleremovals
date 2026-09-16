@@ -16,7 +16,7 @@ import type { BookingStatus } from "@/types";
 const STATUS_FILTERS: { label: string; value: BookingStatus | "" }[] = [
   { label: "All Status", value: "" },
   { label: "Inquiry", value: "inquiry" },
-  { label: "Pending", value: "pending" },
+  { label: STATUS_LABELS.answered, value: "answered" },
   { label: STATUS_LABELS.quote_sent, value: "quote_sent" },
   { label: STATUS_LABELS.quote_confirmed, value: "quote_confirmed" },
   { label: STATUS_LABELS.deposit_invoice_sent, value: "deposit_invoice_sent" },

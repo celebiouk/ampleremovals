@@ -33,8 +33,6 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_called: "Called - Not Answered",
   answered: "Called - Answered",
   not_answered: "Called - Not Answered",
-  processing: "Pending",
-  pending: "Pending",
   quote_sent: "Quote Sent to Customer",
   quote_confirmed: "Quote Confirmed",
   deposit_invoice_sent: "Deposit Invoice Sent",
@@ -62,8 +60,6 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
   not_called: "bg-orange-100 text-orange-700",
   answered: "bg-blue-100 text-blue-700",
   not_answered: "bg-orange-100 text-orange-700",
-  processing: "bg-purple-100 text-purple-700",
-  pending: "bg-purple-100 text-purple-700",
   quote_sent: "bg-sky-100 text-sky-700",
   quote_confirmed: "bg-teal-100 text-teal-700",
   deposit_invoice_sent: "bg-purple-100 text-purple-700",
@@ -86,8 +82,6 @@ export const STATUS_ROW: Record<BookingStatus, string> = {
   not_called:                 "bg-rose-50 border-l-4 border-l-rose-400",
   answered:                   "bg-rose-50 border-l-4 border-l-rose-400",
   not_answered:               "bg-rose-50 border-l-4 border-l-rose-400",
-  processing:                 "bg-amber-50 border-l-4 border-l-amber-400",
-  pending:                    "bg-amber-50 border-l-4 border-l-amber-400",
   quote_sent:                 "bg-sky-50 border-l-4 border-l-sky-500",
   quote_confirmed:            "bg-teal-50 border-l-4 border-l-teal-500",
   deposit_invoice_sent:       "bg-violet-50 border-l-4 border-l-violet-500",
@@ -105,8 +99,6 @@ export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
   not_called: "bg-red-400",
   answered: "bg-red-400",
   not_answered: "bg-red-400",
-  processing: "bg-yellow-500",
-  pending: "bg-yellow-500",
   quote_sent: "bg-sky-500",
   quote_confirmed: "bg-teal-500",
   deposit_invoice_sent: "bg-violet-500",
@@ -119,15 +111,15 @@ export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
 };
 
 export const ALL_STATUSES: BookingStatus[] = [
-  "inquiry", "called", "not_called", "answered", "not_answered",
-  "processing", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "inquiry", "answered", "not_answered",
+  "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
 ];
 
 // Columns shown on the pipeline / kanban (side-exits excluded).
 export const PIPELINE_STATUSES: BookingStatus[] = [
-  "inquiry", "pending", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "inquiry", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed",
 ];

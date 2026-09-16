@@ -14,7 +14,6 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   not_called:                 "Called - Not Answered",
   answered:                   "Called - Answered",
   not_answered:               "Called - Not Answered",
-  processing:                 "Pending",
   quote_sent:                 "Quote Sent to Customer",
   quote_confirmed:            "Quote Confirmed",
   deposit_invoice_sent:       "Deposit Invoice Sent",
@@ -43,7 +42,6 @@ export const STATUS_COLOURS: Record<BookingStatus, string> = {
   not_called:                 "bg-red-100 text-red-700", // Light red - called but not answered
   answered:                   "bg-red-100 text-red-700", // Light red - answered
   not_answered:               "bg-red-100 text-red-700", // Light red - not answered
-  processing:                 "bg-yellow-100 text-yellow-700",
   quote_sent:                 "bg-sky-100 text-sky-700",
   quote_confirmed:            "bg-teal-100 text-teal-700",
   deposit_invoice_sent:       "bg-violet-100 text-violet-700",
@@ -61,7 +59,6 @@ export const STATUS_DOT_COLOURS: Record<BookingStatus, string> = {
   not_called:                 "bg-red-400", // Light red
   answered:                   "bg-red-400", // Light red
   not_answered:               "bg-red-400", // Light red
-  processing:                 "bg-yellow-500",
   quote_sent:                 "bg-sky-500",
   quote_confirmed:            "bg-teal-500",
   deposit_invoice_sent:       "bg-violet-500",
@@ -105,28 +102,28 @@ export const SERVICE_COLOURS: Record<ServiceType, string> = {
 
 export const IN_PROGRESS_STATUSES: BookingStatus[] = [
   "called", "not_called", "answered", "not_answered",
-  "processing", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
 ];
 
-// "pending" has been fully removed — it and "processing" always displayed as
-// the same "Pending" label (see STATUS_LABELS above), which showed up as a
-// confusing duplicate entry in the status dropdown, and it had 0 live
-// bookings. Unlike the pairs below, this one no longer exists anywhere: the
-// booking_status Postgres enum itself was recreated without it (migration
-// remove_pending_status.sql) and it's gone from the BookingStatus type too.
+// "pending" and "processing" have both been fully removed — they always
+// displayed as the same "Pending" label (see STATUS_LABELS above), which
+// showed up as a confusing duplicate entry in the status dropdown. Both had
+// live bookings at various points; the affected rows were migrated first
+// (with status_history + activity_log audit entries) before the values were
+// dropped from the booking_status Postgres enum itself (migrations
+// remove_pending_status.sql, remove_processing_status.sql) and from the
+// BookingStatus type. Neither exists anywhere in the system anymore.
 //
 // "called" and "not_called" are also deliberately absent for the same
 // reason — they displayed as identical duplicates of "answered" and
-// "not_answered" ("Called - Answered" / "Called - Not Answered"). Unlike
-// "pending", both legacy values did have live bookings, so those rows were
-// migrated to "answered"/"not_answered" first (with status_history +
-// activity_log audit entries) before removing them here. The BookingStatus
-// type still allows "called"/"not_called" for backwards compatibility, they
-// just aren't offered as a choice going forward.
+// "not_answered" ("Called - Answered" / "Called - Not Answered"). Those
+// rows were migrated to "answered"/"not_answered" the same way, but the
+// BookingStatus type still allows "called"/"not_called" for backwards
+// compatibility — they just aren't offered as a choice going forward.
 export const ALL_STATUSES: BookingStatus[] = [
   "inquiry", "answered", "not_answered",
-  "processing", "quote_sent", "quote_confirmed", "deposit_invoice_sent",
+  "quote_sent", "quote_confirmed", "deposit_invoice_sent",
   "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
   "job_completed", "bad_lead", "not_a_good_fit",
 ];

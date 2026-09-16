@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         destination:addresses!destination_address_id(line_1, line_2, city, postcode)
       `)
       .eq("move_date", targetDate)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .is("seven_day_reminder_sent_at", null);
 
     if (error) {

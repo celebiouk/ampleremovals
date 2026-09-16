@@ -41,7 +41,7 @@ export async function GET(req: Request) {
         destination:addresses!destination_address_id(postcode)
       `)
       .eq("move_date", targetDate)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .is("weather_alert_sent_at", null);
 
     if (error) {

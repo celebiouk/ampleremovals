@@ -14,7 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { SERVICE_LABELS } from "@/lib/constants";
 import type { ServiceType } from "@/types";
 
-const ACTIVE = ["deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid", "pending", "processing"];
+const ACTIVE = ["deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid"];
 
 export async function GET(req: Request) {
   if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {

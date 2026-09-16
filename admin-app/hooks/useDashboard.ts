@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import type { BookingStatus } from "@/types";
 
 const IN_PROGRESS: BookingStatus[] = [
-  "called", "not_called", "answered", "not_answered", "processing", "pending",
+  "called", "not_called", "answered", "not_answered",
   "deposit_invoice_sent", "deposit_paid_job_confirmed", "full_invoice_sent", "full_balance_paid",
 ];
 

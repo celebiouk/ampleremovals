@@ -61,7 +61,7 @@ export async function GET(req: Request) {
         additional_services(packing_services, packing_materials, disassemble_furniture, assemble_furniture, packing_hours, packing_men, dismantle_count, assemble_count)
       `)
       .eq("move_date", targetDate)
-      .in("status", ["deposit_paid_job_confirmed", "processing", "pending"])
+      .in("status", ["deposit_paid_job_confirmed"])
       .is("three_day_reminder_sent_at", null);
 
     if (error) {
