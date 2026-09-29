@@ -108,7 +108,7 @@ function quoteVars(b: QuoteCandidate, customer: { full_name: string; email: stri
     firstName: (customer.full_name || "there").split(" ")[0],
     total: formatCurrency(Number(b.quote_total ?? 0)),
     reference: b.reference,
-    actionLink: token ? `${SITE_URL}/confirm-quote/${b.id}/${token}` : `${SITE_URL}/quote/${b.id}`,
+    actionLink: token ? `${SITE_URL}/quote/${b.id}/${token}` : `${SITE_URL}/quote/${b.id}`,
     reviewLink: review,
     phone: COMPANY_PHONE,
   };

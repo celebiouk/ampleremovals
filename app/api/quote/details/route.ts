@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
       .from("bookings")
       .select(`
         reference, service_type, status, quote_line_items, quote_total, quote_premium_total,
-        show_premium_quote,
+        show_premium_quote, deposit_percentage,
         deposit_amount, deposit_status, move_date, inventory, has_white_goods,
-        quote_crew_blurb, quote_van_size, quote_van_count,
+        quote_crew_men, quote_crew_blurb, quote_van_size, quote_van_count,
         customer:customers!inner(full_name)
       `)
       .eq("id", bookingId)
@@ -78,10 +78,16 @@ export async function POST(req: NextRequest) {
     const vans = booking.quote_van_count != null ? Number(booking.quote_van_count) : undefined;
     const std = crewSummary("standard", itemQty, hasWG, { autoVans, vehicle, vans });
     const prem = crewSummary("premium", itemQty, hasWG, { autoVans, vehicle, vans });
+    // An admin-set crew size (quote_crew_men — always set for a non-Removals
+    // quote built in the generic Quote Builder, which has no Standard/Premium
+    // auto-sizing) wins over the tier-computed default.
+    const menOverride = booking.quote_crew_men != null ? Number(booking.quote_crew_men) : null;
     const crew = {
-      men: std.men,
+      men: menOverride ?? std.men,
       vanCount: std.vans,
-      line: std.line,
+      line: menOverride != null
+        ? `${menOverride} professional movers · ${std.vans} × ${std.vehicle}`
+        : std.line,
       blurb: booking.quote_crew_blurb || std.blurb,
     };
 
@@ -98,15 +104,19 @@ export async function POST(req: NextRequest) {
       premiumTotal,
       premiumMultiplier: pricingCfg.premium_multiplier,
       showPremiumQuote: booking.show_premium_quote !== false,
+      // This booking's own rate (stamped at creation) — never the current
+      // site-wide default, so a later rate change can't move an existing
+      // booking's deposit.
+      depositPercentage: Number(booking.deposit_percentage) || DEPOSIT_PERCENTAGE,
       // Before the customer has reserved (deposit invoiced), there is no real
-      // "invoiced" deposit yet — always show 25% of the CURRENT quote_total so an
-      // admin's price edit is reflected immediately. Once a deposit has actually
-      // been invoiced (reserve locks in `deposit_amount` from that moment's
-      // quote_total), that stored figure is the one already promised/charged.
+      // "invoiced" deposit yet — always show this booking's rate applied to the
+      // CURRENT quote_total so an admin's price edit is reflected immediately.
+      // Once a deposit has actually been invoiced (reserve locks in
+      // `deposit_amount` from that moment's quote_total), that stored figure is
+      // the one already promised/charged.
       deposit: RESERVED_STATUSES.has(booking.status as string) && booking.deposit_amount != null
         ? Number(booking.deposit_amount)
-        : depositFor(total),
-      depositPercentage: DEPOSIT_PERCENTAGE,
+        : depositFor(total, Number(booking.deposit_percentage) || undefined),
       depositStatus: booking.deposit_status ?? "unpaid",
       // A quote we couldn't compute (e.g. missing bedrooms) has no lines — let
       // the page show a graceful "we'll be in touch" instead of an empty quote.

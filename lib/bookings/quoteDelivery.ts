@@ -1,7 +1,7 @@
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatCurrency } from "@/lib/utils";
-import { BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
+import { BANK_DETAILS, BANK_DETAILS_CONFIGURED, depositFor, DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { bookingItemsBlockHtml } from "@/lib/inventory-email";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resolveCrew } from "@/lib/crew";
@@ -13,19 +13,19 @@ import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 /** Build the quote PDF + Standard/Premium figures for a booking. Best-effort:
  *  returns a null buffer if anything is missing so the email still sends. */
-async function buildQuoteAssets(bookingId: string, standardTotal: number): Promise<{ pdf: Buffer | null; premiumTotal: number }> {
+async function buildQuoteAssets(bookingId: string, standardTotal: number): Promise<{ pdf: Buffer | null; premiumTotal: number; depositPercentage: number }> {
   try {
     const supabase = createAdminClient();
     const { data: b } = await supabase
       .from("bookings")
       .select(`reference, service_type, quote_line_items, quote_subtotal, quote_vat_rate, quote_vat_amount, quote_total, quote_premium_total, quote_valid_until, quote_notes,
-        quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb,
+        quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb, deposit_percentage,
         customer:customers(full_name, email, phone),
         origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
         destination_address:addresses!destination_address_id(line_1, line_2, city, postcode)`)
       .eq("id", bookingId)
       .single();
-    if (!b) return { pdf: null, premiumTotal: premiumTotalFor(standardTotal) };
+    if (!b) return { pdf: null, premiumTotal: premiumTotalFor(standardTotal), depositPercentage: DEPOSIT_PERCENTAGE };
 
     // Prefer an admin-set Premium price (e.g. from "fill it for them") over the
     // auto multiplier, so the email always matches what the customer will see.
@@ -64,9 +64,9 @@ async function buildQuoteAssets(bookingId: string, standardTotal: number): Promi
       premium_includes: PREMIUM_INCLUDES,
     };
     const pdf = await generateQuotePDF(pdfData).catch(() => null);
-    return { pdf, premiumTotal };
+    return { pdf, premiumTotal, depositPercentage: Number(b.deposit_percentage) || DEPOSIT_PERCENTAGE };
   } catch {
-    return { pdf: null, premiumTotal: premiumTotalFor(standardTotal) };
+    return { pdf: null, premiumTotal: premiumTotalFor(standardTotal), depositPercentage: DEPOSIT_PERCENTAGE };
   }
 }
 
@@ -183,8 +183,10 @@ export async function sendReserveMessages({
   const crewHtml = await crewBlockHtml(bookingId);
 
   // Quote PDF + Premium figure (best-effort — email still goes without them).
-  const { pdf, premiumTotal } = await buildQuoteAssets(bookingId, total);
+  const { pdf, premiumTotal, depositPercentage } = await buildQuoteAssets(bookingId, total);
   const premiumAmount = formatCurrency(premiumTotal);
+  const standardDepositAmount = formatCurrency(depositFor(total, depositPercentage));
+  const premiumDepositAmount = formatCurrency(depositFor(premiumTotal, depositPercentage));
   // Two one-click links that pre-select the tier and take the customer straight
   // to reserve + pay on their quote page.
   const standardLink = `${link}?tier=standard`;
@@ -223,22 +225,22 @@ export async function sendReserveMessages({
 
   const ctaHtml = showPremium
     ? `
-        <p style="font-size: 16px; margin: 20px 0 12px;">Ready to book? Pick your package — <strong>you can still change your date later</strong>:</p>
+        <p style="font-size: 16px; margin: 20px 0 12px;">Ready to secure your date? A small deposit does it — <strong>the rest isn't due until moving day</strong>:</p>
         <p style="text-align: center; margin: 0 0 12px;">
           <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            I'm booking Standard — ${standardAmount}
+            Pay ${standardDepositAmount} deposit — Standard
           </a>
         </p>
         <p style="text-align: center; margin: 0 0 24px;">
           <a href="${premiumLink}" style="background: #6b21a8; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            I'm booking Premium — ${premiumAmount}
+            Pay ${premiumDepositAmount} deposit — Premium
           </a>
         </p>`
     : `
-        <p style="font-size: 16px; margin: 20px 0 12px;"><strong>Ready to book? You can still change your date later.</strong></p>
+        <p style="font-size: 16px; margin: 20px 0 12px;"><strong>Ready to secure your date? A small deposit does it — the rest isn't due until moving day.</strong></p>
         <p style="text-align: center; margin: 0 0 24px;">
           <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            Confirm my quote — ${standardAmount}
+            Pay ${standardDepositAmount} deposit to secure your date
           </a>
         </p>`;
 
@@ -249,7 +251,7 @@ export async function sendReserveMessages({
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">Here's your fixed-price quote for your move${showPremium ? " — choose the package that suits you" : ""}. Your full quote is attached as a PDF.</p>
+        <p style="font-size: 16px; margin: 16px 0;">Here's your fixed-price quote for your move${showPremium ? " — pick the package that suits you" : ""}. Your full quote is attached as a PDF.</p>
         ${crewHtml}
         ${quoteBlockHtml}
         ${bookingItemsBlockHtml(inventory)}
@@ -262,12 +264,12 @@ export async function sendReserveMessages({
 
   const smsLink = await shortenUrl(link);
   const smsText = showPremium
-    ? `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Book your package (change your date later): ${smsLink} — Ref ${reference}`
-    : `Hi ${firstName}, your Ample Removals quote is ${standardAmount}. Confirm (you can change your date later): ${smsLink} — Ref ${reference}`;
+    ? `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Pay a small deposit to secure your date (rest due on moving day): ${smsLink} — Ref ${reference}`
+    : `Hi ${firstName}, your Ample Removals quote is ${standardAmount}. Pay a small deposit to secure your date (rest due on moving day): ${smsLink} — Ref ${reference}`;
 
   const whatsappText = showPremium
-    ? `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount}\n*Premium (full pack & move):* ${premiumAmount}\n\nPick your package to book (you can change the date later):\n${link}\n\nRef: ${reference}`
-    : `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Your quote:* ${standardAmount}\n\nConfirm to book (you can change the date later):\n${link}\n\nRef: ${reference}`;
+    ? `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount} (deposit ${standardDepositAmount})\n*Premium (full pack & move):* ${premiumAmount} (deposit ${premiumDepositAmount})\n\nA small deposit secures your date — the rest isn't due until moving day:\n${link}\n\nRef: ${reference}`
+    : `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Your quote:* ${standardAmount} (deposit ${standardDepositAmount})\n\nA small deposit secures your date — the rest isn't due until moving day:\n${link}\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails

@@ -59,6 +59,13 @@ export async function PATCH(
         quote_van_count: body.van_count ?? null,
         quote_van_size: body.van_size ?? null,
         quote_crew_blurb: body.crew_blurb ?? null,
+        // The generic Quote Builder (Man & Van / House Clearance / House
+        // Cleaning / End of Tenancy) has no Standard/Premium tier concept —
+        // one flat price. Without this, the customer's quote page would fall
+        // back to the column default (TRUE) and try to show a fabricated
+        // "Premium" tier that was never built for this quote.
+        show_premium_quote: false,
+        quote_premium_total: null,
       })
       .eq("id", bookingId);
 

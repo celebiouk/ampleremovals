@@ -1,5 +1,27 @@
 # Lessons Log
 
+## Lesson 18 — A rate that can change over time belongs on the row it applies to, not a global constant
+**What happened:** Changing the site-wide deposit rate from 25% to 20% needed
+to apply to new bookings only — every existing booking had to keep computing
+at whatever rate it was actually quoted at. Also found `lib/quote-engine.ts`
+had its OWN hardcoded `DEPOSIT_RATE = 0.25`, completely independent of
+`lib/deposit.ts`'s `DEPOSIT_PERCENTAGE` — the exact "two sources of truth for
+one fact" pattern from Lesson 17 (`quote_total` vs. `quote_line_items`), just
+recurring in a different pair of files.
+**Root cause:** A percentage/rate that's read live from a global constant
+(env var or otherwise) everywhere it's needed looks simple, but it means
+changing the constant silently changes what EVERY row — including old,
+already-quoted or already-invoiced ones — is computed against from that
+moment on.
+**Rule going forward:** Any rate that can plausibly change over time (deposit
+%, VAT rate, commission %, etc.) and where changing it must NOT retroactively
+alter existing rows: stamp it onto the row at creation time (with a DB column
+DEFAULT backfilling existing rows to the old rate), and have every
+computation read the row's own stamped value, falling back to the current
+global constant only for brand-new rows that haven't been stamped yet. Never
+let two different files hardcode the same rate independently — one imports
+the other's constant, always.
+
 ## Lesson 17 — A single "source of truth" price field is worthless if any read path can recompute a different one
 **What happened:** Admin edited a customer's quote price. The customer-facing
 quote page, the reserve step, Stripe checkout, and the final balance invoice

@@ -6,6 +6,7 @@ import { computeLeadScore } from "@/lib/lead-scoring";
 import { detectIntent } from "@/lib/lead-signals";
 import { ukDateString } from "@/lib/dates";
 import { buildQuote } from "@/lib/quote-engine";
+import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import type { ServiceType, AddressOption } from "@/types";
@@ -179,6 +180,9 @@ export async function createBooking(
         fbclid: attribution?.fbclid ?? null,
         referrer: attribution?.referrer ?? null,
         landing_page: attribution?.landing_page ?? null,
+        // Stamped once at creation so a later site-wide rate change never
+        // alters what THIS booking owes.
+        deposit_percentage: DEPOSIT_PERCENTAGE,
       })
       .eq("id", bookingId);
     if (metaErr) console.warn("booking attribution/lead update skipped:", metaErr.message);

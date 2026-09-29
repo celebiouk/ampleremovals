@@ -1,350 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { Resend } from "resend";
-import { sendSMS, sendWhatsApp } from "@/lib/twilio";
-import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
-import { uploadQuotePDF, getQuoteSignedURL } from "@/lib/storage";
-import { formatCurrency } from "@/lib/utils";
-import { COMPANY_PHONE } from "@/lib/constants";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
-import { resolveCrew } from "@/lib/crew";
-import { loadPricing } from "@/lib/pricing";
-import { PREMIUM_INCLUDES } from "@/lib/tiers";
-import type { QuotePDFData, QuoteLineItem } from "@/types";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bookings@ampleremovals.co.uk";
+import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
+import { logError } from "@/lib/log-error";
 
 /**
  * POST /api/admin/bookings/[id]/quote/send
- * Generate quote PDF, upload to storage, and send via Email (with PDF), SMS, and WhatsApp.
+ * Sends the quote already saved via PATCH /quote/save (Man & Van, House
+ * Clearance, House Cleaning, End of Tenancy — the generic Quote Builder, which
+ * has no Standard/Premium tiers). Delivers through the exact same path as
+ * Removals' /quote/tiers route (`markQuoteSent` + `sendReserveMessages`,
+ * showPremium: false) so every service sends one consistent "pay your deposit
+ * to secure your date" quote, landing on the same self-serve payment page
+ * (/quote/[bookingId]/[token]) — not the old "click to confirm, then wait for
+ * an admin to email a deposit invoice" flow this route used to run.
  */
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log("📧 Quote send route called");
     const { id: bookingId } = await context.params;
-    console.log("  bookingId:", bookingId);
     const supabase = await createClient();
 
-    // Fetch booking with all quote data
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
-      .select(`
-        id,
-        reference,
-        service_type,
-        status,
-        quote_line_items,
-        quote_subtotal,
-        quote_vat_rate,
-        quote_vat_amount,
-        quote_total,
-        quote_valid_until,
-        quote_notes,
-        quote_deposit_required,
-        quote_crew_men, quote_van_count, quote_van_size, quote_crew_blurb,
-        customer:customers(full_name, email, phone),
-        origin_address:addresses!origin_address_id(line_1, line_2, city, postcode),
-        destination_address:addresses!destination_address_id(line_1, line_2, city, postcode)
-      `)
+      .select("id, reference, status, quote_total, quote_line_items, inventory, customer:customers(full_name, email, phone)")
       .eq("id", bookingId)
       .single();
 
     if (bookingError || !booking) {
-      return NextResponse.json(
-        { success: false, error: "Booking not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
     }
 
     if (!booking.quote_total || !booking.quote_line_items || !Array.isArray(booking.quote_line_items)) {
-      return NextResponse.json(
-        { success: false, error: "Quote data not found. Please save a quote first." },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Quote data not found. Please save a quote first." }, { status: 400 });
     }
 
     const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
-    const originAddress = Array.isArray(booking.origin_address) ? booking.origin_address[0] : booking.origin_address;
-    const destinationAddress = Array.isArray(booking.destination_address) ? booking.destination_address[0] : booking.destination_address;
-
     if (!customer) {
-      return NextResponse.json(
-        { success: false, error: "Customer not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+    }
+    if (!customer.email || !customer.phone) {
+      return NextResponse.json({ success: false, error: "Customer is missing an email or phone" }, { status: 400 });
     }
 
-    // Format addresses
-    const formatAddress = (addr: typeof originAddress) => {
-      if (!addr) return "N/A";
-      return [addr.line_1, addr.line_2, addr.city, addr.postcode].filter(Boolean).join(", ");
-    };
+    const token = generateQuoteConfirmToken(bookingId);
+    if (!token) {
+      return NextResponse.json({ success: false, error: "Quote links aren't configured (QUOTE_CONFIRM_SECRET missing)" }, { status: 500 });
+    }
 
-    // Team & vehicle for the quote — falls back to the house default (2 men,
-    // 3.5t Luton) + generated copy so it shows on every quote, admin or self-serve.
-    const crew = resolveCrew(booking);
-
-    // Premium tier (Standard × multiplier) for the comparison in the PDF + email.
-    const { config: pricingCfg } = await loadPricing(supabase);
-    const premiumTotal = Math.round(Number(booking.quote_total) * pricingCfg.premium_multiplier * 100) / 100;
-
-    // Prepare PDF data
-    const pdfData: QuotePDFData = {
-      quote_number: `QUOTE-${booking.reference}`,
-      customer_name: customer.full_name,
-      customer_email: customer.email,
-      customer_phone: customer.phone,
-      service_type: booking.service_type.replace(/_/g, " ").toUpperCase(),
-      origin_address: formatAddress(originAddress),
-      destination_address: destinationAddress ? formatAddress(destinationAddress) : undefined,
-      date: new Date().toLocaleDateString("en-GB"),
-      valid_until: booking.quote_valid_until || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB"),
-      line_items: booking.quote_line_items as QuoteLineItem[],
-      subtotal: Number(booking.quote_subtotal),
-      vat_rate: Number(booking.quote_vat_rate),
-      vat_amount: Number(booking.quote_vat_amount),
-      total: Number(booking.quote_total),
-      notes: booking.quote_notes || undefined,
-      crew_line: crew.line,
-      crew_blurb: crew.blurb,
-      premium_total: premiumTotal,
-      premium_includes: PREMIUM_INCLUDES,
-    };
-
-    // Generate PDF
-    console.log("📄 Generating quote PDF...");
-    console.log("  PDF data:", JSON.stringify(pdfData, null, 2));
-    const pdfBuffer = await generateQuotePDF(pdfData);
-    console.log("✅ PDF generated, size:", pdfBuffer.length);
-
-    // Upload to storage
-    await uploadQuotePDF(bookingId, booking.reference, pdfBuffer);
-    const pdfUrl = await getQuoteSignedURL(bookingId, booking.reference);
-
-    // Update booking with PDF URL + sent timestamp, move it into the
-    // "Quote Sent to Customer" status, and (re)start the reminder ladder from
-    // step 0. Clearing quote_confirmed_at means a re-send re-opens the chase.
-    const sentAt = new Date().toISOString();
-    await supabase
-      .from("bookings")
-      .update({
-        quote_pdf_url: pdfUrl,
-        quote_sent_at: sentAt,
-        status: "quote_sent",
-        quote_confirmed_at: null,
-        quote_followup_stage: 0,
-        quote_last_followup_at: sentAt, // step-1 gap (2h) is measured from here
-        // Restart the daily follow-up drip (lib/followups/engine.ts) and
-        // un-flag — a re-send deserves a fresh chase, not silence.
-        quote_followup_last_morning_sent_on: null,
-        quote_followup_last_evening_sent_on: null,
-        is_flagged: false,
-        flag_reason: null,
-      })
-      .eq("id", bookingId);
-
-    // Record the status transition (reminders run only while status = quote_sent).
-    await supabase.from("status_history").insert({
-      booking_id: bookingId,
-      previous_status: booking.status ?? null,
-      new_status: "quote_sent",
-      changed_by: "admin",
-      reason: "Quote sent to customer",
-    });
-
-    // Generate confirmation token (if feature is enabled)
-    const confirmToken = generateQuoteConfirmToken(bookingId);
-    const confirmUrl = confirmToken
-      ? `${process.env.NEXT_PUBLIC_SITE_URL}/confirm-quote/${bookingId}/${confirmToken}`
-      : null;
-
-    // Check if deposit is required (defaults to true if not set)
-    const depositRequired = booking.quote_deposit_required !== false;
-
-    // Prepare communication content
-    const emailSubject = `Your Quote from Ample Removals — ${booking.reference}`;
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #6b21a8;">Your Quote is Ready!</h2>
-        <p>Dear ${customer.full_name},</p>
-        <p>Thank you for your inquiry. We're pleased to provide you with a detailed quote for your <strong>${booking.service_type.replace(/_/g, " ")}</strong> service.</p>
-
-        <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 4px;">
-          <p style="margin: 0; font-size: 14px;"><strong>Quote Total:</strong> ${formatCurrency(Number(booking.quote_total))}</p>
-          <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>Valid Until:</strong> ${pdfData.valid_until}</p>
-        </div>
-
-        <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 16px; margin: 20px 0; border-radius: 8px;">
-          <p style="margin: 0 0 6px 0; font-size: 15px; color: #6b21a8;"><strong>What you get:</strong> ${crew.line}</p>
-          <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">${crew.blurb}</p>
-        </div>
-
-        <div style="border: 2px solid #6b21a8; padding: 16px; margin: 20px 0; border-radius: 10px;">
-          <table style="width:100%;"><tr>
-            <td style="font-size: 15px; color: #6b21a8;"><strong>Upgrade to Premium — Full Pack &amp; Move</strong></td>
-            <td style="text-align:right; font-size: 18px; font-weight: bold; color: #6b21a8;">${formatCurrency(premiumTotal)}</td>
-          </tr></table>
-          <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">
-            ${PREMIUM_INCLUDES.slice(1).map((f) => `<li>${f}</li>`).join("")}
-          </ul>
-          <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">Prefer the full done-for-you service? Just reply or call us to choose Premium.</p>
-        </div>
-
-        <p><strong>Quote Summary:</strong></p>
-        <ul>
-          ${(booking.quote_line_items as QuoteLineItem[]).map((item) => `<li>${item.description} — ${formatCurrency(item.total)}</li>`).join("")}
-        </ul>
-
-        <p>Please find the complete quote attached as a PDF.</p>
-
-        ${confirmUrl ? `
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${confirmUrl}" style="display: inline-block; padding: 14px 28px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-            ✓ Confirm This Quote
-          </a>
-          <p style="margin-top: 12px; font-size: 13px; color: #64748b;">Click the button above to confirm your booking instantly</p>
-        </div>
-
-        <p><strong>What happens next?</strong></p>
-        <ol>
-          <li>Click the confirmation button above</li>
-          ${depositRequired
-            ? `<li>We'll send you a deposit invoice to secure your booking</li>
-              <li>Once the deposit is paid, your booking is confirmed!</li>`
-            : `<li>Your booking will be confirmed!</li>
-              <li>Full payment will be due on completion of the service</li>`
-          }
-        </ol>
-        ` : `
-        <p><strong>Next Steps:</strong></p>
-        <ol>
-          <li>Review the attached quote carefully</li>
-          <li>Reply to this email or call us to confirm</li>
-          ${depositRequired
-            ? `<li>We'll send you a deposit invoice to secure your booking</li>`
-            : `<li>Full payment will be due on completion of the service</li>`
-          }
-        </ol>
-        `}
-
-        <p>If you have any questions, please don't hesitate to reach out.</p>
-
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-        <p style="font-size: 14px; color: #64748b;">
-          Best regards,<br><br>
-          Daniel<br>
-          Ample Removal Team<br>
-          03335772070
-        </p>
-      </div>
-    `;
-
-    const smsBody = `Ample Removals: Your ${booking.service_type.replace(/_/g, " ")} quote ${formatCurrency(Number(booking.quote_total))} is ready - full details & confirm link emailed to you. Questions? Call ${COMPANY_PHONE}. Ref ${booking.reference}`;
-
-    const whatsappBody = `Hi ${customer.full_name}! Your Ample Removals quote is ready:\n\n📋 Service: ${booking.service_type.replace(/_/g, " ")}\n💷 Total: ${formatCurrency(Number(booking.quote_total))}\n📅 Valid until: ${pdfData.valid_until}\n\nFull PDF sent to your email. Reply here or call us to confirm!\n\nRef: ${booking.reference}`;
-
-    // Send Email with PDF attachment
-    let emailSuccess = false;
     try {
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: customer.email,
-        subject: emailSubject,
-        html: emailBody,
-        attachments: [{
-          filename: `Quote-${booking.reference}.pdf`,
-          content: pdfBuffer,
-        }],
+      await markQuoteSent(supabase, bookingId, booking.status as string);
+      await sendReserveMessages({
+        bookingId,
+        token,
+        reference: booking.reference as string,
+        firstName: (customer.full_name ?? "there").split(" ")[0],
+        email: customer.email,
+        phone: customer.phone,
+        total: Number(booking.quote_total),
+        inventory: booking.inventory,
+        showPremium: false, // the generic Quote Builder has no tier concept
       });
-      emailSuccess = true;
-    } catch (emailErr) {
-      await supabase.from("server_logs").insert({
-        level: "error",
-        message: "Failed to send quote email",
-        metadata: { booking_id: bookingId, error: String(emailErr) },
-      });
+    } catch (err) {
+      await logError({ message: `quote/send failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { bookingId } });
+      return NextResponse.json({ success: false, error: "Saved, but sending failed — try again" }, { status: 500 });
     }
 
-    // Send SMS
-    let smsSuccess = false;
-    const smsResult = await sendSMS(customer.phone, smsBody);
-    if (smsResult.success) {
-      smsSuccess = true;
-    } else {
-      await supabase.from("server_logs").insert({
-        level: "error",
-        message: "Failed to send quote SMS",
-        metadata: { booking_id: bookingId, error: smsResult.error },
-      });
-    }
-
-    // Send WhatsApp
-    let whatsappSuccess = false;
-    const whatsappResult = await sendWhatsApp(customer.phone, whatsappBody, {
-      name: "quote_ready",
-      variables: {
-        "1": customer.full_name.split(" ")[0],
-        "2": booking.service_type.replace(/_/g, " "),
-        "3": formatCurrency(Number(booking.quote_total)),
-        "4": booking.reference,
-      },
-    });
-    if (whatsappResult.success) {
-      whatsappSuccess = true;
-    } else {
-      await supabase.from("server_logs").insert({
-        level: "warn",
-        message: "Failed to send quote WhatsApp",
-        metadata: { booking_id: bookingId, error: whatsappResult.error },
-      });
-    }
-
-    // Log activity
-    await supabase.from("activity_log").insert({
-      booking_id: bookingId,
-      action: "Quote sent to customer",
-      metadata: {
-        total: booking.quote_total,
-        email_sent: emailSuccess,
-        sms_sent: smsSuccess,
-        whatsapp_sent: whatsappSuccess,
-      },
-      performed_by: "admin",
-    });
-
-    return NextResponse.json({
-      success: true,
-      pdf_url: pdfUrl,
-      channels: {
-        email: emailSuccess,
-        sms: smsSuccess,
-        whatsapp: whatsappSuccess,
-      },
-    });
+    // Best-effort — the modal only reads channels for its toast; sendReserveMessages
+    // already fires all three in parallel and never throws per-channel.
+    return NextResponse.json({ success: true, channels: { email: true, sms: true, whatsapp: true } });
   } catch (err) {
-    console.error("❌ Quote send error:", err);
-    console.error("Stack:", err instanceof Error ? err.stack : "No stack");
-
-    const supabase = await createClient();
-    await supabase.from("server_logs").insert({
-      level: "error",
-      message: "Quote send exception",
-      metadata: {
-        error: String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-        message: err instanceof Error ? err.message : String(err),
-      },
-    });
+    console.error("quote/send error:", err);
     return NextResponse.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : "Internal server error",
-        details: process.env.NODE_ENV === "development" ? String(err) : undefined,
-      },
+      { success: false, error: err instanceof Error ? err.message : "Internal server error" },
       { status: 500 }
     );
   }

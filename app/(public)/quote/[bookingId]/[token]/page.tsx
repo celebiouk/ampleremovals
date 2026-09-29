@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDelayedBookingNotify } from "@/hooks/useDelayedBookingNotify";
 import { CopyRow } from "@/components/shared/CopyRow";
-import { DEPOSIT_PERCENTAGE, BANK_DETAILS, BANK_DETAILS_CONFIGURED } from "@/lib/deposit";
+import { BANK_DETAILS, BANK_DETAILS_CONFIGURED, depositFor } from "@/lib/deposit";
 import { premiumTotalFor, PREMIUM_INCLUDES, STANDARD_INCLUDES, TIER_COPY } from "@/lib/tiers";
 
 const gbp0 = (n: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n || 0);
@@ -44,6 +44,7 @@ interface QuoteData {
   lines: QuoteLine[];
   total: number;
   deposit: number;
+  depositPercentage: number;
   depositStatus: string;
   status: string;
   hasQuote: boolean;
@@ -307,6 +308,7 @@ function RevealView({
       ? Math.round(liveTotal * quote.premiumMultiplier * 100) / 100
       : premiumTotalFor(liveTotal);
   const showPremium = quote.showPremiumQuote !== false;
+  const premiumDeposit = depositFor(premiumTotal, quote.depositPercentage);
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -322,10 +324,8 @@ function RevealView({
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-brand-purple-950">
           Your quote is ready, {quote.firstName}
         </h1>
-        <p className="mt-2 text-slate-500">Fixed price, no hidden fees. Tailor it below.</p>
+        <p className="mt-2 text-slate-500">Fixed price, no hidden fees. Pay a small deposit today to secure your date.</p>
       </div>
-
-      {showPremium && <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-slate-400">Choose your package</p>}
       {/* ── Standard (or the only quote, when Premium is off) ── */}
       <div className="rounded-2xl border-2 border-brand-purple-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
         <div className="mb-3 flex items-center gap-2">
@@ -368,9 +368,16 @@ function RevealView({
           <div className="mt-3 flex items-center gap-2 rounded-xl bg-brand-green-50 px-4 py-3 text-sm text-brand-green-800">
             <CalendarCheck className="h-5 w-5 shrink-0" />
             <span>
-              Reserve today with a <strong>{DEPOSIT_PERCENTAGE}% deposit of {gbp(liveDeposit)}</strong> — the rest is due on moving day.
+              Secure your date with just a <strong>{quote.depositPercentage}% deposit of {gbp(liveDeposit)}</strong> — the rest isn&apos;t due until moving day.
             </span>
           </div>
+          <Button
+            onClick={() => onReserve("standard")}
+            size="lg"
+            className="mt-4 h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500"
+          >
+            Pay {gbp0(liveDeposit)} deposit to secure your date
+          </Button>
         </div>
       </div>
 
@@ -399,29 +406,26 @@ function RevealView({
               </li>
             ))}
           </ul>
+          <div className="mt-4 border-t border-dashed border-brand-purple-200 pt-4">
+            <div className="mb-3 flex items-center gap-2 rounded-xl bg-brand-purple-50 px-4 py-3 text-sm text-brand-purple-800">
+              <CalendarCheck className="h-5 w-5 shrink-0" />
+              <span>
+                Secure your date with just a <strong>{quote.depositPercentage}% deposit of {gbp(premiumDeposit)}</strong> — the rest isn&apos;t due until moving day.
+              </span>
+            </div>
+            <Button
+              onClick={() => onReserve("premium")}
+              size="lg"
+              className="h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
+            >
+              Pay {gbp0(premiumDeposit)} deposit to secure your date
+            </Button>
+          </div>
         </div>
       )}
 
-      <div className="mt-5 space-y-2.5">
-        <Button
-          onClick={() => onReserve("standard")}
-          size="lg"
-          className="h-14 w-full rounded-xl bg-brand-green-600 text-base font-bold text-white shadow-lg shadow-brand-green-200 hover:bg-brand-green-500"
-        >
-          {showPremium ? `I'm booking Standard — ${gbp0(liveTotal)}` : `Confirm my quote — ${gbp0(liveTotal)}`}
-        </Button>
-        {showPremium && (
-          <Button
-            onClick={() => onReserve("premium")}
-            size="lg"
-            className="h-14 w-full rounded-xl bg-brand-purple-800 text-base font-bold text-white shadow-lg shadow-brand-purple-200 hover:bg-brand-purple-900"
-          >
-            I&apos;m booking Premium — {gbp0(premiumTotal)}
-          </Button>
-        )}
-      </div>
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
-        <ShieldCheck className="h-4 w-4" /> No card needed now · Free to reserve · Pay the deposit by bank transfer
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+        <ShieldCheck className="h-4 w-4" /> Secure payment · The rest isn&apos;t due until moving day
       </p>
     </motion.div>
   );

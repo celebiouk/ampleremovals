@@ -31,34 +31,34 @@ export interface DayContent {
 
 const p = (...lines: string[]) => lines.map((l) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#334155;">${l}</p>`).join("");
 
-// ── QUOTE sequence — they haven't decided yet ──────────────────────────────
+// ── QUOTE sequence — they haven't paid their deposit yet ───────────────────
 export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
   1: {
     emailSubject: (v) => `Any questions about your quote, ${v.firstName}?`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
       `Just wanted to check the quote we sent over (ref ${v.reference}) made sense and covered everything you were expecting. Moving's stressful enough without a price that raises more questions than it answers — so if anything's unclear, or you'd just like to talk it through, reply to this email or give us a call.`,
-      `No script, no pressure — just us.`
+      `Whenever you're ready, securing your date just takes a small deposit — no script, no pressure, just us.`
     ),
     sms: (v) => `Hi ${v.firstName}, it's Ample Removals. Any questions on the quote we sent? Happy to talk it through - ${v.phone}`,
-    whatsapp: (v) => `Hi ${v.firstName}! Following up on your quote (ref ${v.reference}) for *${v.total}*. Totally happy to answer anything before you decide. You can confirm here whenever you're ready: ${v.actionLink}\n\nOr just call/message us on ${v.phone} - real people, not a call centre.`,
+    whatsapp: (v) => `Hi ${v.firstName}! Following up on your quote (ref ${v.reference}) for *${v.total}*. Totally happy to answer anything before you pay. When you're ready, a small deposit secures your date: ${v.actionLink}\n\nOr just call/message us on ${v.phone} - real people, not a call centre.`,
   },
   2: {
     emailSubject: (v) => `What's actually included in ${v.reference}`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
       `Quick one — your price of <strong>${v.total}</strong> already covers a fully-insured, professional crew, the van, fuel and mileage, and careful loading and unloading. There's no "oh, that'll be extra" waiting for you on the day.`,
-      `We'd rather you knew exactly what you're getting before you decide, not after.`
+      `We'd rather you knew exactly what you're getting before you pay a penny, not after.`
     ),
     sms: (v) => `Ample Removals: your quote (${v.total}, ref ${v.reference}) includes insured crew, van, fuel & careful handling - no hidden extras. ${v.actionLink}`,
-    whatsapp: (v) => `Hi ${v.firstName}, quick note on what's included in your quote (ref ${v.reference}, *${v.total}*):\n\n✅ Fully insured, professional crew\n✅ Van, fuel & mileage\n✅ Careful loading & unloading\n✅ No hidden extras\n\nConfirm here whenever suits: ${v.actionLink}\nQuestions? Call/WhatsApp ${v.phone}.`,
+    whatsapp: (v) => `Hi ${v.firstName}, quick note on what's included in your quote (ref ${v.reference}, *${v.total}*):\n\n✅ Fully insured, professional crew\n✅ Van, fuel & mileage\n✅ Careful loading & unloading\n✅ No hidden extras\n\nPay your deposit to secure your date whenever suits: ${v.actionLink}\nQuestions? Call/WhatsApp ${v.phone}.`,
   },
   3: {
     emailSubject: (v) => `${v.firstName}, the thing people tell us after a bad move`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
       `One thing we hear a lot from people who switch to us: they'd used a cheaper mover before and ended up with a scratched sofa, a missed time slot, or a crew that just didn't seem to care whether anything got damaged.`,
-      `That's really the whole reason we run things the way we do — proper padding and protection on every item, and a team that treats your place like it's their own. Your quote (ref ${v.reference}) is still open whenever you're ready.`
+      `That's really the whole reason we run things the way we do — proper padding and protection on every item, and a team that treats your place like it's their own. Your quote (ref ${v.reference}) is still open whenever you're ready to secure your date.`
     ),
     sms: (v) => `Hi ${v.firstName}, cheap movers can cost more in breakages. We're fully insured and careful with every item. Quote still open: ${v.actionLink}`,
     whatsapp: (v) => `Hi ${v.firstName}, we hear this a lot: people who used a cheaper mover last time ended up with damaged furniture or a crew that just didn't care.\n\nThat's the whole reason we do things properly - full insurance, real padding and protection, a crew that treats your things like their own.\n\nYour quote (ref ${v.reference}, *${v.total}*) is still open: ${v.actionLink}\nAny questions, just message us on ${v.phone}.`,
@@ -67,21 +67,21 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
     emailSubject: (v) => `${v.firstName}, here's how simple moving day actually is`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
-      `A lot of people assume booking a removal company means more admin for them. In practice it's the opposite — once your date's confirmed, our crew turns up, does the heavy lifting (literally), and you just point us in the right direction.`,
+      `A lot of people assume booking a removal company means more admin for them. In practice it's the opposite — once your date's secured, our crew turns up, does the heavy lifting (literally), and you just point us in the right direction.`,
       `If you've got tricky access — stairs, a narrow doorway, tight parking — tell us and we'll plan around it. That's on us to sort, not you.`
     ),
-    sms: (v) => `Hi ${v.firstName}, booking with us means less admin for you - we handle the heavy lifting & tricky access. Confirm: ${v.actionLink}`,
-    whatsapp: (v) => `Hi ${v.firstName}, moving day with us is genuinely simple - our crew does the heavy lifting, you just point us where things go. Stairs, narrow doors, tight parking? Tell us and we plan around it.\n\nYour quote (ref ${v.reference}): *${v.total}*\nConfirm here: ${v.actionLink}\nQuestions: ${v.phone}`,
+    sms: (v) => `Hi ${v.firstName}, booking with us means less admin for you - we handle the heavy lifting & tricky access. Secure your date: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, moving day with us is genuinely simple - our crew does the heavy lifting, you just point us where things go. Stairs, narrow doors, tight parking? Tell us and we plan around it.\n\nYour quote (ref ${v.reference}): *${v.total}*\nPay your deposit to secure your date: ${v.actionLink}\nQuestions: ${v.phone}`,
   },
   5: {
     emailSubject: (v) => `${v.firstName}, your quote's still here whenever you're ready`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
-      `No rush at all — but if you're at the "I think this is the one, I just haven't clicked confirm yet" stage, that's usually a good sign to trust it. Your quote (ref ${v.reference}) for <strong>${v.total}</strong> is locked in and ready whenever you are.`,
+      `No rush at all — but if you're at the "I think this is the one, I just haven't paid the deposit yet" stage, that's usually a good sign to trust it. Your quote (ref ${v.reference}) for <strong>${v.total}</strong> is locked in and ready whenever you are — securing your date only takes a small deposit, the rest isn't due until moving day.`,
       `If price is the only thing holding you back, tell us — we're always happy to talk it through rather than have you go with someone cheaper and riskier.`
     ),
     sms: (v) => `Hi ${v.firstName}, your quote ${v.total} (ref ${v.reference}) is ready when you are. Questions on price? Just call - ${v.phone}`,
-    whatsapp: (v) => `Hi ${v.firstName}, no rush - but your quote (ref ${v.reference}, *${v.total}*) is ready whenever you decide. If it's price holding you back, message us, we'd rather talk it through than have you take a risk with someone cheaper.\n\nConfirm here: ${v.actionLink}\nCall/WhatsApp: ${v.phone}`,
+    whatsapp: (v) => `Hi ${v.firstName}, no rush - but your quote (ref ${v.reference}, *${v.total}*) is ready whenever you decide. If it's price holding you back, message us, we'd rather talk it through than have you take a risk with someone cheaper.\n\nA small deposit secures your date: ${v.actionLink}\nCall/WhatsApp: ${v.phone}`,
   },
   6: {
     emailSubject: (v) => `${v.firstName}, worried about breakages? Here's how we handle that`,
@@ -90,7 +90,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `A common worry we hear before people book: "what if something gets damaged?" Fair question — it's your stuff, often things that matter to you. We're fully insured, and every item gets wrapped and padded properly before it goes anywhere.`,
       `If that's been on your mind at all with ref ${v.reference}, happy to talk through exactly how we handle fragile or valuable items.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, if you've been quietly worried about "what if something breaks" - that's exactly what our insurance and proper wrapping/padding is there for. Every item, every move.\n\nQuote ref ${v.reference}: *${v.total}*\nConfirm: ${v.actionLink}\nQuestions: ${v.phone}`,
+    whatsapp: (v) => `Hi ${v.firstName}, if you've been quietly worried about "what if something breaks" - that's exactly what our insurance and proper wrapping/padding is there for. Every item, every move.\n\nQuote ref ${v.reference}: *${v.total}*\nSecure your date: ${v.actionLink}\nQuestions: ${v.phone}`,
   },
   7: {
     emailSubject: (v) => `${v.firstName}, we treat every move the same way — personally`,
@@ -99,7 +99,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `We move a lot of households, but every single one still gets planned properly — the crew, the van size, the timing, all matched to what you actually need, not a one-size-fits-all slot.`,
       `Your quote (ref ${v.reference}) was put together the same way. Happy to revisit any part of it if your plans have changed.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, every move we do gets planned properly - crew size, van, timing all matched to what you actually need. Your quote (ref ${v.reference}, *${v.total}*) was built the same way.\n\nPlans changed slightly? Just tell us, we can adjust it: ${v.phone}\nOr confirm as-is: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, every move we do gets planned properly - crew size, van, timing all matched to what you actually need. Your quote (ref ${v.reference}, *${v.total}*) was built the same way.\n\nPlans changed slightly? Just tell us, we can adjust it: ${v.phone}\nOr pay your deposit to secure it as-is: ${v.actionLink}`,
   },
   8: {
     emailSubject: (v) => `${v.firstName}, flexible on dates? We'll work around you`,
@@ -108,7 +108,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `If your move date isn't fully locked yet, that's fine — quote ref ${v.reference} isn't tied to one specific day. Let us know what you're working with and we'll find a slot that suits.`,
       `The main thing is getting the details right, not rushing you into a date that doesn't work.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, if your date isn't fixed yet, no problem - your quote (ref ${v.reference}, *${v.total}*) isn't tied to one day. Tell us what you're working with and we'll find a slot: ${v.phone}\n\nOr confirm now: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, if your date isn't fixed yet, no problem - your quote (ref ${v.reference}, *${v.total}*) isn't tied to one day. Tell us what you're working with and we'll find a slot: ${v.phone}\n\nOr secure it now: ${v.actionLink}`,
   },
   9: {
     emailSubject: (v) => `${v.firstName}, don't just take our word for it`,
@@ -126,7 +126,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `If you're weighing us up against another quote, that's sensible — it's your money and your move. Just make sure whoever you compare us to is actually insured and not cutting corners to hit a lower number.`,
       `We're confident in ours (ref ${v.reference}, ${v.total}) on both price and how the day actually goes. Happy to answer anything that'd help you decide.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, comparing quotes? Totally fair. Just double-check the other one is actually insured and not cutting corners on a low price.\n\nWe're confident in ours - ref ${v.reference}, *${v.total}*. Ask us anything: ${v.phone}\nConfirm: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, comparing quotes? Totally fair. Just double-check the other one is actually insured and not cutting corners on a low price.\n\nWe're confident in ours - ref ${v.reference}, *${v.total}*. Ask us anything: ${v.phone}\nSecure your date: ${v.actionLink}`,
   },
   11: {
     emailSubject: (v) => `${v.firstName}, no surprises — your quote is your quote`,
@@ -135,7 +135,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `Something we take seriously: the price we give you (${v.total}, ref ${v.reference}) is the price, not a starting point that creeps up on the day. If anything genuinely changes — more items, extra access — we'll always tell you before continuing, never after.`,
       `That's a promise, not small print.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, your quote is your quote - *${v.total}* (ref ${v.reference}) - not a number that creeps up on the day. If anything genuinely changes we'll always tell you first.\n\nConfirm here: ${v.actionLink}\nQuestions: ${v.phone}`,
+    whatsapp: (v) => `Hi ${v.firstName}, your quote is your quote - *${v.total}* (ref ${v.reference}) - not a number that creeps up on the day. If anything genuinely changes we'll always tell you first.\n\nSecure your date: ${v.actionLink}\nQuestions: ${v.phone}`,
   },
   12: {
     emailSubject: (v) => `${v.firstName}, just want to talk it through? Call us`,
@@ -143,16 +143,16 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `Hi ${v.firstName},`,
       `Sometimes it's easier to just talk than read another email. If that's you, call or message us on ${v.phone} — no pitch, just happy to answer whatever's on your mind about ref ${v.reference}.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, sometimes it's just easier to talk. If you've got questions about ref ${v.reference} (*${v.total}*), call or message ${v.phone} - no pitch, just a chat.\n\nOr confirm whenever ready: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, sometimes it's just easier to talk. If you've got questions about ref ${v.reference} (*${v.total}*), call or message ${v.phone} - no pitch, just a chat.\n\nOr pay your deposit whenever ready: ${v.actionLink}`,
   },
   13: {
     emailSubject: (v) => `${v.firstName}, dates are filling up around your window`,
     emailBody: (v) => p(
       `Hi ${v.firstName},`,
-      `We don't like pushy countdowns, so we'll just say it plainly: popular dates around your moving window do fill up, and we can only take on so many jobs per day. If you already know this is happening, it's worth locking it in sooner rather than later.`,
+      `We don't like pushy countdowns, so we'll just say it plainly: popular dates around your moving window do fill up, and we can only take on so many jobs per day. If you already know this is happening, it's worth putting your deposit down sooner rather than later.`,
       `Ref ${v.reference}, ${v.total} — still ready whenever you are.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, being straight with you - popular dates around your window do fill up, we can only take so many jobs a day. If you know this is happening, worth locking in soon.\n\nRef ${v.reference}, *${v.total}*: ${v.actionLink}`,
+    whatsapp: (v) => `Hi ${v.firstName}, being straight with you - popular dates around your window do fill up, we can only take so many jobs a day. If you know this is happening, worth securing yours soon.\n\nRef ${v.reference}, *${v.total}*: ${v.actionLink}`,
   },
   14: {
     emailSubject: (v) => `Last note on this one, ${v.firstName}`,
@@ -161,7 +161,7 @@ export const QUOTE_FOLLOWUP_DAYS: Record<number, DayContent> = {
       `This'll be our last email about this particular quote (ref ${v.reference}) — not because we're giving up on helping, just so we're not cluttering your inbox. If the timing's ever right, or your plans change and you'd like a fresh quote, we're one message away.`,
       `Either way, we hope the move goes smoothly, whoever you end up going with.`
     ),
-    whatsapp: (v) => `Hi ${v.firstName}, this'll be our last check-in on this quote (ref ${v.reference}, *${v.total}*) - not giving up on helping, just not wanting to clog your phone!\n\nIf timing's ever right, or you'd like a fresh quote: ${v.actionLink} or ${v.phone}.`,
+    whatsapp: (v) => `Hi ${v.firstName}, this'll be our last check-in on this quote (ref ${v.reference}, *${v.total}*) - not giving up on helping, just not wanting to clog your phone!\n\nIf timing's ever right, or you'd like to secure your date: ${v.actionLink} or ${v.phone}.`,
   },
 };
 

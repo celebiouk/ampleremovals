@@ -5,12 +5,18 @@
  * round-trip and are trivial to change without a deploy.
  */
 
-export const DEPOSIT_PERCENTAGE = Number(process.env.NEXT_PUBLIC_DEPOSIT_PERCENTAGE ?? 25);
+export const DEPOSIT_PERCENTAGE = Number(process.env.NEXT_PUBLIC_DEPOSIT_PERCENTAGE ?? 20);
 
-/** Deposit due for a given quote total, rounded to the penny. */
-export function depositFor(total: number): number {
+/**
+ * Deposit due for a given quote total, rounded to the penny. Pass a specific
+ * booking's `deposit_percentage` (stamped on the booking at creation) so a
+ * change to the site-wide rate never alters what an existing booking owes —
+ * only new bookings pick up the current `DEPOSIT_PERCENTAGE`.
+ */
+export function depositFor(total: number, percentage: number = DEPOSIT_PERCENTAGE): number {
   const n = Number(total) || 0;
-  return Math.round(n * (DEPOSIT_PERCENTAGE / 100) * 100) / 100;
+  const pct = Number(percentage) || 0;
+  return Math.round(n * (pct / 100) * 100) / 100;
 }
 
 export const BANK_DETAILS = {

@@ -232,6 +232,11 @@ const MIGRATIONS = [
   { name: "job_pay_requests index", sql: "CREATE INDEX IF NOT EXISTS idx_job_pay_requests_driver ON job_pay_requests (driver_id, status)" },
   // Admin toggle for Premium visibility on a Removals quote — see add_show_premium_quote.sql
   { name: "bookings show_premium_quote", sql: "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS show_premium_quote BOOLEAN NOT NULL DEFAULT TRUE" },
+  // Per-booking deposit rate, stamped at creation — so changing the site-wide
+  // default (e.g. 25% -> 20%) only affects bookings made from then on. DEFAULT
+  // 25 here backfills every existing booking to the rate they were actually
+  // quoted at; new bookings overwrite it with the current rate on creation.
+  { name: "bookings deposit_percentage", sql: "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_percentage NUMERIC(5,2) NOT NULL DEFAULT 25" },
 ];
 
 async function run() {

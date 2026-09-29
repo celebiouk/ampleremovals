@@ -3,7 +3,7 @@ import { insertAddress } from "@/lib/bookings/createBooking";
 import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
 import { buildQuote } from "@/lib/quote-engine";
 import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
-import { depositFor } from "@/lib/deposit";
+import { depositFor, DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
 import { ukDateString } from "@/lib/dates";
 import type { RemovalsForm } from "@/lib/schemas/booking";
@@ -160,6 +160,9 @@ export async function completeLead(
         has_white_goods: whiteGoods,
         deposit_amount: finalDeposit,
         is_partial_lead: false,
+        // Stamped once here (this booking's first-ever quote) so a later
+        // site-wide rate change never alters what THIS booking owes.
+        deposit_percentage: DEPOSIT_PERCENTAGE,
       })
       .eq("id", bookingId);
   } catch (e) {

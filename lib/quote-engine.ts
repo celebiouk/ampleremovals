@@ -26,6 +26,7 @@
  */
 
 import type { QuoteLineItem } from "@/types";
+import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 
 /** A quote line the customer sees. Extends the stored QuoteLineItem with a
  *  stable key (for removal) and whether the customer may remove it. */
@@ -73,8 +74,10 @@ export interface QuoteEngineResult {
 
 /* ── Rates (single source of truth — adjust as the business changes) ──────── */
 
-/** Deposit is 25% of the total. */
-export const DEPOSIT_RATE = 0.25;
+/** Deposit rate, kept in sync with the one site-wide source of truth
+ *  (lib/deposit.ts) — a duplicated hardcoded rate here is exactly what let the
+ *  two drift apart before. */
+export const DEPOSIT_RATE = DEPOSIT_PERCENTAGE / 100;
 
 /** Flat uplift when the move includes any white goods (hidden from the customer). */
 export const WHITE_GOODS_UPLIFT = 50;

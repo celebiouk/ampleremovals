@@ -4,6 +4,7 @@ import { verifyQuoteConfirmToken } from "@/lib/tokens";
 import { depositFor } from "@/lib/deposit";
 import { sendDepositMessages } from "@/lib/bookings/quoteDelivery";
 import { loadPricing } from "@/lib/pricing";
+import { getOrCreateBookingInvoice } from "@/lib/bookings/booking-invoice";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const { data: booking, error } = await supabase
       .from("bookings")
-      .select("status, reference, quote_line_items, quote_total, quote_premium_total, customer:customers!inner(full_name, email, phone)")
+      .select("status, reference, customer_id, quote_line_items, quote_total, quote_premium_total, deposit_percentage, customer:customers!inner(full_name, email, phone)")
       .eq("id", bookingId)
       .single();
     if (error || !booking) {
@@ -74,7 +75,9 @@ export async function POST(req: NextRequest) {
     const finalLines = isPremium
       ? [{ key: "premium", description: "Premium — Full Pack & Move (packing, materials, dismantle & reassemble)", quantity: 1, unit_price: total, total, removable: false }]
       : keptLines;
-    const deposit = depositFor(total);
+    // Whatever rate THIS booking was quoted at, not the current site-wide one —
+    // a later rate change must never move the goalposts on an existing booking.
+    const deposit = depositFor(total, Number(booking.deposit_percentage) || undefined);
 
     // Reserving sends the deposit request → move to "Deposit Invoice Sent". Core
     // columns first so the reserve always persists.
@@ -120,6 +123,22 @@ export async function POST(req: NextRequest) {
         performed_by: "customer",
       }),
     ]);
+
+    // Create the actual deposit invoice now, not lazily when the customer
+    // clicks "pay by card" — so the deposit follow-up ladder (which looks up an
+    // existing invoice) always has one to chase from the moment they reserve,
+    // instead of silently sending nothing until a payment attempt happens.
+    try {
+      await getOrCreateBookingInvoice(supabase, {
+        bookingId,
+        customerId: booking.customer_id as string,
+        type: "deposit",
+        net: deposit,
+        description: `Ample Removals — deposit to reserve (${booking.reference})`,
+      });
+    } catch (e) {
+      console.warn("reserve: eager deposit invoice creation failed:", e);
+    }
 
     // Send the deposit details across all channels (best-effort, never blocks).
     const customer = Array.isArray(booking.customer) ? booking.customer[0] : booking.customer;
