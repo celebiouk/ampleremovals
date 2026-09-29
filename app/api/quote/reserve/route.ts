@@ -13,10 +13,14 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * POST /api/quote/reserve
- * Customer reserves their date. Recomputes the total SERVER-SIDE from the stored
- * line items minus any removed removable lines (never trusting a client total),
- * persists it, moves the booking to `deposit_invoice_sent` (the deposit request
- * is now sent), and sends the deposit details by email + SMS + WhatsApp.
+ * Customer reserves their date. `quote_total` (never a client-supplied figure)
+ * is the single source of truth for the Standard price — it's whatever the
+ * admin most recently set it to, whether or not they've since edited it — so
+ * it is never recomputed from `quote_line_items` here. Any removable lines the
+ * customer dropped are still stripped out of the stored line items for the
+ * record, but they no longer change the price actually charged. Persists the
+ * total, moves the booking to `deposit_invoice_sent`, and sends the deposit
+ * details by email + SMS + WhatsApp.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -42,27 +46,29 @@ export async function POST(req: NextRequest) {
 
     const allLines = Array.isArray(booking.quote_line_items) ? booking.quote_line_items : [];
     // Drop only removable lines the customer removed; base (and any non-removable
-    // line) always stays.
+    // line) always stays. This no longer drives the price (see below) — it's
+    // just what gets stored back as the line-item record.
     const keptLines = allLines.filter(
       (l: { key?: string; removable?: boolean }) =>
         !(l.removable && l.key && removed.includes(l.key))
     );
-    const standardTotal = round2(
-      keptLines.reduce((sum: number, l: { total?: number }) => sum + (Number(l.total) || 0), 0)
-    );
+
+    // The Standard price is `quote_total` — whatever the admin most recently set
+    // it to. It is NEVER recomputed from `quote_line_items`, which can go stale
+    // the moment an admin edits the price without also editing the line items
+    // (the normal Edit Quote flow only touches quote_total). Recomputing from
+    // stale lines here used to silently overwrite the admin's edited price.
+    const standardTotal = round2(Number(booking.quote_total) || 0);
 
     // Tier choice: Premium bundles in the done-for-you services
     // (packing/materials/dismantle/reassemble). Its price is normally Standard ×
     // multiplier, but an admin-set Premium price (e.g. "fill it for them") is an
-    // exact figure — scaled by the same ratio as any removable lines the
-    // customer dropped, matching exactly what they saw on the quote page.
+    // exact figure, used as-is.
     const isPremium = tier === "premium";
     const { config: pricingCfg } = await loadPricing(supabase);
-    const storedStandardTotal = Number(booking.quote_total) || standardTotal;
-    const premiumRatio = storedStandardTotal > 0 ? standardTotal / storedStandardTotal : 1;
     const total = isPremium
       ? booking.quote_premium_total != null
-        ? round2(Number(booking.quote_premium_total) * premiumRatio)
+        ? round2(Number(booking.quote_premium_total))
         : round2(standardTotal * pricingCfg.premium_multiplier)
       : standardTotal;
     const finalLines = isPremium

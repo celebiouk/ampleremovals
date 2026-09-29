@@ -1,37 +1,56 @@
-## Task: Confirmation-page personalisation + admin Standard/Premium quote toggle
-
+## Task: Fix stale quote price shown/charged to customer after admin edits it
 ### Plan
-- [x] `lib/business-hours.ts` — warmer copy ("dedicated move coordinator"), new `phoneNote` field.
-- [x] `app/(public)/confirmation/page.tsx` — removed "Make Another Booking", added the phone-number callout, single "Call us now" action, warmer heading/body.
-- [x] `lib/notifications.ts` — email/SMS/WhatsApp updated to match (heading, phone note, "coordinator" language throughout).
-- [x] `supabase/migrations/add_show_premium_quote.sql` — `bookings.show_premium_quote BOOLEAN DEFAULT TRUE`.
-- [x] `lib/bookings/quoteDelivery.ts` — `sendReserveMessages` takes a `showPremium` flag; single-quote email/SMS/WhatsApp branch when off (no Standard/Premium framing at all).
-- [x] `app/api/quote/details/route.ts` + the customer quote reveal page — expose/respect `showPremiumQuote`; Premium block, its button, and the "Choose your package" label all disappear when off.
-- [x] `app/api/admin/bookings/[id]/quote/tiers/route.ts` (new) — admin sets Standard + Premium totals and the toggle, optionally sends immediately (save vs "Save & Send", mirroring the existing itemized quote builder's pattern).
-- [x] `components/admin/quotes/EditRemovalsQuoteModal.tsx` (new) — Removals-specific "Edit Quote" UI (tiered model), separate from the itemized `QuoteBuilderModal` used by every other service.
-- [x] `app/(admin)/admin/bookings/[id]/page.tsx` — "Edit Quote"/"Build Quote" now opens the new modal for Removals bookings, unchanged for everything else.
-- [x] `types/index.ts` — added `quote_premium_total`/`show_premium_quote` to the `Booking` type.
-- [x] Typecheck (only pre-existing baseline noise); confirmed the new column defaults `true` for all 241 existing bookings (no behaviour change for anyone until admin actually uses the toggle).
+- [x] `app/api/quote/reserve/route.ts` — stop recomputing the Standard total from
+      `quote_line_items` (stale). Trust `quote_total` (the admin-edited figure)
+      as the source of truth so it's never overwritten with an old number.
+- [x] `app/api/quote/details/route.ts` — the deposit shown before the customer
+      reserves must always be 25% of the CURRENT `quote_total`, not the stale
+      stored `deposit_amount` from booking creation. Only trust stored
+      `deposit_amount` once the deposit has actually been invoiced/reserved.
+- [x] `app/(public)/quote/[bookingId]/[token]/page.tsx` — `RevealView` currently
+      recomputes the total/deposit shown to the customer by summing
+      `quote.lines`, ignoring the server-computed (and admin-edited) `quote.total`.
+      Switch it to use `quote.total`/`quote.deposit` directly (the line-removal
+      feature this was for is already dead — `removed` is a permanently empty set).
+- [x] `lib/bookings/booking-invoice.ts` — `getOrCreateBookingInvoice` reuses an
+      existing unpaid invoice's frozen `total`, which can mask a later admin
+      price edit even after the above fixes. Update the existing invoice's
+      total/line_items to the fresh `net` when they differ, before reusing it.
+- [x] Verify `lib/auto-full-invoice.ts` (final balance) needs no change — it
+      already reads `quote_total` fresh at send time; it was only ever wrong
+      because `quote_total` itself was getting corrupted upstream.
+- [x] Typecheck / lint the touched files — clean (only pre-existing, unrelated
+      warnings/errors elsewhere in the repo).
+- [x] Commit and push.
 
 ### Review
-Two independent changes bundled together (both requested in the same message):
+Root cause: `quote_total` (set correctly by the admin's Edit Quote flow) was
+never actually the value the customer paid against. Three places recomputed or
+re-read a DIFFERENT, stale figure derived from `quote_line_items` /
+`deposit_amount`, which the admin's edit route never touches:
 
-**Confirmation page** now reads as a real assignment, not a form receipt: "Your dedicated move
-coordinator is on it!", a phone-number callout ("We'll be calling from 0333 577 2070 — do save it!"),
-and a single "Call us now" action instead of the old "Make Another Booking" button, which never made
-sense right after a genuine submission. Same language reused in the email/SMS/WhatsApp via the shared
-`lib/business-hours.ts` helper from the previous task.
+1. The customer's quote-reveal page summed `quote.lines` client-side instead of
+   using the server's `quote.total`.
+2. `/api/quote/reserve` (fired when the customer clicks "I'm booking…") went
+   further and recomputed the total from those same stale line items, then
+   WROTE it back into `quote_total`/`deposit_amount` — permanently clobbering
+   the admin's edited price in the database, not just on screen.
+3. Stripe checkout and the final-balance invoice both read `quote_total`
+   straight from the bookings table, so by then they inherited the already
+   corrupted figure.
 
-**Admin quote toggle**: Removals bookings now have their own "Edit Quote" modal (Standard + Premium
-price fields, a "Show Premium" toggle) distinct from the itemized line-item builder every other service
-uses — the two pricing models were never the same thing, so keeping them as separate components avoided
-awkwardly overloading one UI for two different data shapes. Toggling Premium off removes ALL trace of
-tiering everywhere the customer could see it: the quote reveal page (Premium card, its button, the
-"Choose your package" label), and the quote email/SMS/WhatsApp (single price, "Confirm my quote" instead
-of "I'm booking Standard/Premium"). "Save & Send" reuses the exact same `markQuoteSent`/`sendReserveMessages`
-pipeline the rest of the quote system already relies on, so the quote-follow-up drip and everything else
-downstream keeps working unchanged.
+Fix: `quote_total` is now the single source of truth end-to-end — the reveal
+page displays it directly, reserve no longer recomputes/overwrites it from
+line items, and `deposit_amount` is only trusted once a deposit has actually
+been invoiced (before that, it's always freshly derived from `quote_total`).
+Also hardened `getOrCreateBookingInvoice` to resync an existing unpaid
+invoice's total with the current price rather than trusting a frozen figure,
+in case a customer had an invoice created before an admin's edit and returns
+to pay later.
 
-**Watch out for:** the itemized `QuoteBuilderModal` (used for Man & Van/House Clearance/etc.) was
-intentionally left untouched — those services never had a Standard/Premium reveal page to begin with,
-so the toggle has no meaning for them.
+Not addressed (flagged for a separate pass, not touched here since it's data
+cleanup, not code): any bookings that already had their `quote_total`
+corrupted by the old reserve-route bug before this fix shipped. Those would
+need a manual/scripted reconciliation against what the admin actually intended
+to charge — happy to write that repair script on request, but it needs your
+judgment on which affected bookings to correct and to what figure.

@@ -28,6 +28,8 @@ export async function getOrCreateBookingInvoice(
 ): Promise<BookingInvoice> {
   const { bookingId, customerId, type, net, description } = opts;
 
+  const total = round2(net);
+
   const { data: existing } = await supabase
     .from("invoices")
     .select("id, pay_code, total, status")
@@ -37,10 +39,18 @@ export async function getOrCreateBookingInvoice(
     .neq("status", "paid")
     .maybeSingle();
   if (existing) {
-    return { invoiceId: existing.id as string, payCode: (existing.pay_code as string) ?? "", total: Number(existing.total) || net };
+    // The quote may have been edited by the admin since this invoice was first
+    // created (e.g. the customer left checkout and comes back later) — keep the
+    // invoice's amount in sync with the current quote rather than charging a
+    // frozen, possibly stale figure.
+    if (Number(existing.total) !== total) {
+      await supabase
+        .from("invoices")
+        .update({ total, subtotal: total, line_items: [{ description, quantity: 1, unit_price: total, total }] })
+        .eq("id", existing.id);
+    }
+    return { invoiceId: existing.id as string, payCode: (existing.pay_code as string) ?? "", total };
   }
-
-  const total = round2(net);
 
   // Unique invoice number + pay code.
   let invoiceNumber = "";

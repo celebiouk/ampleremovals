@@ -1,5 +1,29 @@
 # Lessons Log
 
+## Lesson 17 — A single "source of truth" price field is worthless if any read path can recompute a different one
+**What happened:** Admin edited a customer's quote price. The customer-facing
+quote page, the reserve step, Stripe checkout, and the final balance invoice
+all kept showing/charging the ORIGINAL system-generated total — one customer
+was overcharged for real. The `bookings.quote_total` column WAS being updated
+correctly by the admin's edit route, but three other places quietly derived
+their own number from `quote_line_items` (an older/richer representation of
+the same price that the edit route never touches) instead of reading
+`quote_total`. Worst of all, `/api/quote/reserve` recomputed from those stale
+line items and then WROTE the stale figure back into `quote_total`, so the
+corruption became permanent in the DB, not just a display bug.
+**Root cause:** Two representations of the same fact (`quote_total` vs.
+`quote_line_items` vs. `deposit_amount`) with only one writer keeping all of
+them in sync. Any code path that reads or recomputes from the non-canonical
+one will drift the instant that writer changes only the canonical field.
+**Rule going forward:** When a value has ONE authoritative column (here:
+`quote_total`, since that's what the admin's Edit Quote UI writes), every
+downstream read — display, payment, invoicing — must read that column
+directly, never re-derive it from a denormalised sibling (line items, cached
+percentages, etc.) "for convenience." If a sibling field must exist (e.g.
+`deposit_amount` for an already-invoiced, locked-in deposit), gate reading it
+behind an explicit state check (e.g. "has this actually been invoiced yet?")
+rather than trusting it by default.
+
 ## Lesson 15 — Next.js fetch cache silently poisons a route when its data source is briefly unavailable
 **What happened:** `GET /api/catalog` (a service-role Supabase read, marked
 `export const dynamic = "force-dynamic"`) returned `{items:[]}` for hours even

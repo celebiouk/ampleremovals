@@ -151,15 +151,16 @@ export default function QuotePage() {
     return () => { cancelled = true; };
   }, [bookingId, token]);
 
-  // Total the customer sees (base + items + distance + any add-ons), with the
-  // breakdown deliberately hidden — a single fixed price, no line-by-line prices.
+  // Total the customer sees, with the breakdown deliberately hidden — a single
+  // fixed price, no line-by-line prices. This MUST be the server-computed
+  // `quote.total`/`quote.deposit` (which reflects the admin's latest edited
+  // price), never re-derived from `quote.lines` — the line items can go stale
+  // the moment an admin edits the price without also editing them, and the
+  // customer would then see (and pay) a different figure than what was sent.
   const { liveTotal, liveDeposit } = useMemo(() => {
     if (!quote) return { liveTotal: 0, liveDeposit: 0 };
-    const t = quote.lines
-      .filter((l) => !removed.has(l.key))
-      .reduce((sum, l) => sum + l.total, 0);
-    return { liveTotal: t, liveDeposit: Math.round(t * (DEPOSIT_PERCENTAGE / 100) * 100) / 100 };
-  }, [quote, removed]);
+    return { liveTotal: quote.total, liveDeposit: quote.deposit };
+  }, [quote]);
 
   const reserve = async (tier: "standard" | "premium" = "standard") => {
     setStage("reserving");

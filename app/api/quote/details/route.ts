@@ -10,6 +10,17 @@ export const runtime = "nodejs";
 /** Quote links stay valid for 30 days. */
 const TOKEN_EXPIRY_HOURS = 24 * 30;
 
+/** Statuses reached only after the customer has reserved — `deposit_amount` is
+ * a real invoiced figure from that point on, not the original creation-time
+ * estimate. */
+const RESERVED_STATUSES = new Set([
+  "deposit_invoice_sent",
+  "deposit_paid_job_confirmed",
+  "full_invoice_sent",
+  "full_balance_paid",
+  "job_completed",
+]);
+
 /**
  * POST /api/quote/details
  * Returns the stored instant quote for a booking so the customer-facing quote
@@ -87,7 +98,14 @@ export async function POST(req: NextRequest) {
       premiumTotal,
       premiumMultiplier: pricingCfg.premium_multiplier,
       showPremiumQuote: booking.show_premium_quote !== false,
-      deposit: booking.deposit_amount != null ? Number(booking.deposit_amount) : depositFor(total),
+      // Before the customer has reserved (deposit invoiced), there is no real
+      // "invoiced" deposit yet — always show 25% of the CURRENT quote_total so an
+      // admin's price edit is reflected immediately. Once a deposit has actually
+      // been invoiced (reserve locks in `deposit_amount` from that moment's
+      // quote_total), that stored figure is the one already promised/charged.
+      deposit: RESERVED_STATUSES.has(booking.status as string) && booking.deposit_amount != null
+        ? Number(booking.deposit_amount)
+        : depositFor(total),
       depositPercentage: DEPOSIT_PERCENTAGE,
       depositStatus: booking.deposit_status ?? "unpaid",
       // A quote we couldn't compute (e.g. missing bedrooms) has no lines — let
