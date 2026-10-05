@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { sendBookingSummaryEmail } from "@/lib/booking-summary-email";
 import { buildSummaryFromBookingRow } from "@/lib/bookings/summary-input";
 
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        move_time,
         is_flexible_date,
         flexible_date_from,
         flexible_date_to,
@@ -102,6 +104,7 @@ export async function GET(req: Request) {
           month: "long",
           year: "numeric"
         });
+        const arrivalWindow = booking.is_flexible_date ? null : formatMoveTimeWindow(booking.move_time);
 
         // EMAIL
         const emailSubject = `Your Move is in 3 Days! 📦 Final Preparations - ${booking.reference}`;
@@ -130,6 +133,13 @@ export async function GET(req: Request) {
                   <li>Defrost freezer and plan final grocery shopping</li>
                 </ul>
               </div>
+
+              ${arrivalWindow ? `
+              <div style="background: #fef2f2; border: 2px solid #2563eb; padding: 14px 20px; margin: 24px 0; border-radius: 8px; text-align: center;">
+                <p style="margin: 0; font-size: 13px; color: #1e40af; font-weight: bold;">⏰ ARRIVAL WINDOW</p>
+                <p style="margin: 4px 0 0; font-size: 20px; color: #1e3a8a; font-weight: bold;">${arrivalWindow}</p>
+              </div>
+              ` : ""}
 
               <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 20px; margin: 24px 0; border-radius: 4px;">
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af;">📍 Your Move Details:</p>
@@ -189,7 +199,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `📦 Your move is in 3 DAYS (${moveDate})!\n\n${moreItemsLine()}\n\nNeed help? Call 03335772070\n\nRef: ${booking.reference}`;
+        const smsBody = `📦 Your move is in 3 DAYS (${moveDate}${arrivalWindow ? `, ${arrivalWindow}` : ""})!\n\n${moreItemsLine()}\n\nNeed help? Call 03335772070\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -199,7 +209,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\n${moreItemsLine()}\n\nNeed help? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `📦 *Your Move is in 3 Days!*\n\n${moveDate}${arrivalWindow ? `\n⏰ Arrival window: ${arrivalWindow}` : ""}\n\n*Preparation Checklist:*\n✅ Pack non-essential items\n✅ Notify utilities\n✅ Update your address\n✅ Arrange parking permits\n✅ Label all boxes\n\n${moreItemsLine()}\n\nNeed help? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

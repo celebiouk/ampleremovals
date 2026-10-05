@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { formatMoveTimeWindow } from "@/lib/dates";
 
 /**
  * GET /api/cron/five-day-countdown
@@ -35,6 +36,8 @@ export async function GET(req: Request) {
         id,
         reference,
         move_date,
+        move_time,
+        is_flexible_date,
         five_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone)
       `)
@@ -71,6 +74,7 @@ export async function GET(req: Request) {
           day: "numeric",
           month: "long"
         });
+        const arrivalWindow = booking.is_flexible_date ? null : formatMoveTimeWindow(booking.move_time);
 
         // EMAIL
         const emailSubject = `5 days to go! ⚡ Time to notify utilities - ${booking.reference}`;
@@ -84,7 +88,7 @@ export async function GET(req: Request) {
               <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
 
               <p style="font-size: 18px; color: #2563eb; font-weight: bold; margin: 20px 0;">
-                Your move is on ${moveDate} - that's just 5 days away!
+                Your move is on ${moveDate}${arrivalWindow ? ` (arrival window ${arrivalWindow})` : ""} - that's just 5 days away!
               </p>
 
               <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
@@ -153,7 +157,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `⚡ 5 DAYS TO GO (${moveDate})!\n\nToday: Notify utilities (gas, electric, water, internet) and update your address with banks, DVLA, GP.\n\nRef: ${booking.reference}`;
+        const smsBody = `⚡ 5 DAYS TO GO (${moveDate}${arrivalWindow ? `, ${arrivalWindow}` : ""})!\n\nToday: Notify utilities (gas, electric, water, internet) and update your address with banks, DVLA, GP.\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -163,7 +167,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `⚡ *5 Days to Go!*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}\n\n*Today's Tasks:*\n⚡ Notify utilities (gas, electric, water, internet)\n📬 Update address with banks, DVLA, GP\n📺 Update TV license & council tax\n📮 Consider Royal Mail redirection\n\n💡 Tip: Take meter reading photos on move day!\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `⚡ *5 Days to Go!*\n\nHi ${customer.full_name},\n\nMove day: ${moveDate}${arrivalWindow ? `\n⏰ Arrival window: ${arrivalWindow}` : ""}\n\n*Today's Tasks:*\n⚡ Notify utilities (gas, electric, water, internet)\n📬 Update address with banks, DVLA, GP\n📺 Update TV license & council tax\n📮 Consider Royal Mail redirection\n\n💡 Tip: Take meter reading photos on move day!\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

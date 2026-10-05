@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { MapPin, ChevronRight, Calendar, Clock } from "lucide-react-native";
 import { Card, Badge, STATUS_TINT, SERVICE_COLOR } from "@/components/ui";
 import { colors, spacing, type } from "@/lib/theme";
-import { customerShortName, serviceLabel, formatDate, isToday, JOB_STATUS_LABELS } from "@/lib/format";
+import { customerShortName, serviceLabel, formatDate, formatMoveTimeWindow, isToday, JOB_STATUS_LABELS } from "@/lib/format";
 import type { Job } from "@/lib/types";
 
 /** A single job summary card used across Today, Schedule and search. */
@@ -39,12 +39,10 @@ export function JobCard({ job, onPress }: { job: Job; onPress: () => void }) {
             </Text>
           </View>
 
-          {job.move_time ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
-              <Clock size={14} color={colors.slate[400]} />
-              <Text style={[type.bodySmall, { color: colors.slate[500] }]}>{job.move_time}</Text>
-            </View>
-          ) : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+            <Clock size={14} color={colors.slate[400]} />
+            <Text style={[type.bodySmall, { color: colors.slate[500] }]}>{formatMoveTimeWindow(job.move_time)}</Text>
+          </View>
         </View>
         <ChevronRight size={22} color={colors.slate[300]} />
       </View>

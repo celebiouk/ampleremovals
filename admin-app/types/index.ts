@@ -75,6 +75,8 @@ export interface Booking {
   origin_address_id?: string | null;
   destination_address_id?: string | null;
   move_date?: string | null;
+  move_time?: string | null;
+  is_flexible_date?: boolean;
   quote_total?: number | null;
   deposit_amount?: number | null;
   deposit_status?: "unpaid" | "claimed" | "verified" | null;

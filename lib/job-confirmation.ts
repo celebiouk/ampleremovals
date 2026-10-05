@@ -11,6 +11,7 @@
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatDate } from "@/lib/utils";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { SERVICE_LABELS } from "@/lib/constants";
 import type { ServiceType } from "@/types";
 
@@ -32,7 +33,7 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
     const { data: booking } = await supabase
       .from("bookings")
       .select(`
-        reference, service_type, move_date, is_flexible_date, flexible_date_from, flexible_date_to,
+        reference, service_type, move_date, move_time, is_flexible_date, flexible_date_from, flexible_date_to,
         customer:customers(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, city, postcode),
         destination:addresses!destination_address_id(line_1, city, postcode)
@@ -50,9 +51,11 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
       a ? [a.line_1, a.city, a.postcode].filter(Boolean).join(", ") : null;
 
     const serviceLabel = SERVICE_LABELS[booking.service_type as ServiceType] ?? booking.service_type;
+    const isFixedDate = !booking.is_flexible_date && Boolean(booking.move_date);
     const dateStr = booking.is_flexible_date && booking.flexible_date_from && booking.flexible_date_to
       ? `Flexible: ${formatDate(booking.flexible_date_from)} – ${formatDate(booking.flexible_date_to)}`
       : booking.move_date ? formatDate(booking.move_date) : "To be confirmed";
+    const windowStr = isFixedDate ? formatMoveTimeWindow(booking.move_time) : null;
     const first = (customer.full_name || "there").split(" ")[0];
 
     const { data: settings } = await supabase.from("settings").select("company_phone").eq("id", 1).single();
@@ -62,6 +65,7 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
       ["Booking reference", booking.reference],
       ["Service", serviceLabel],
       ["Date", dateStr],
+      ...(windowStr ? [["Arrival window", windowStr]] : []),
       ...(fmtAddr(origin) ? [["Collection", fmtAddr(origin)!]] : []),
       ...(fmtAddr(dest) ? [["Delivery", fmtAddr(dest)!]] : []),
     ];
@@ -88,8 +92,7 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
             <div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:14px 16px;margin:22px 0;">
               <p style="margin:0;font-size:14px;color:#166534;">
                 <strong>What happens next?</strong><br/>
-                We'll confirm your crew and timing closer to the day and send you a reminder. If anything
-                changes your end, just let us know — otherwise you're set.
+                ${windowStr ? `Our crew will arrive within your <strong>${windowStr}</strong> arrival window — ` : ""}we'll send you a reminder closer to the day. If anything changes your end, just let us know — otherwise you're set.
               </p>
             </div>
             <p style="font-size:14px;color:#475569;">Questions? Call us anytime on <strong>${phone}</strong>. We're happy to help.</p>
@@ -107,12 +110,13 @@ export async function sendJobConfirmation(supabase: any, bookingId: string): Pro
         html: emailHtml,
       }).catch(() => {});
     }
+    const dateAndWindow = windowStr ? `${dateStr}, ${windowStr}` : dateStr;
     if (customer.phone) {
-      await sendSMS(customer.phone, `Ample Removals: Great news ${first}, your booking ${booking.reference} (${serviceLabel}, ${dateStr}) is CONFIRMED. Nothing else to do for now — we'll be in touch. Questions? ${phone}`).catch(() => {});
+      await sendSMS(customer.phone, `Ample Removals: Great news ${first}, your booking ${booking.reference} (${serviceLabel}, ${dateAndWindow}) is CONFIRMED. Nothing else to do for now — we'll be in touch. Questions? ${phone}`).catch(() => {});
       await sendWhatsApp(
         customer.phone,
-        `✅ *Booking Confirmed!*\n\nHi ${first}, your Ample Removals booking is all set:\n\n📋 *${booking.reference}*\n🚚 ${serviceLabel}\n📅 ${dateStr}\n\nThere's *nothing else you need to do* right now — we'll be in touch as your date approaches. Any questions, just call *${phone}*. 😊`,
-        { name: "booking_confirmed", variables: { "1": first, "2": booking.reference, "3": serviceLabel, "4": dateStr } },
+        `✅ *Booking Confirmed!*\n\nHi ${first}, your Ample Removals booking is all set:\n\n📋 *${booking.reference}*\n🚚 ${serviceLabel}\n📅 ${dateStr}${windowStr ? `\n⏰ Arrival window: ${windowStr}` : ""}\n\nThere's *nothing else you need to do* right now — we'll be in touch as your date approaches. Any questions, just call *${phone}*. 😊`,
+        { name: "booking_confirmed", variables: { "1": first, "2": booking.reference, "3": serviceLabel, "4": dateAndWindow } },
       ).catch(() => {});
     }
 

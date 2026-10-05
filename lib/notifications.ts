@@ -3,6 +3,7 @@ import { twilioClient, twilioFrom, normaliseSmsBody, sendWhatsApp } from "@/lib/
 import { createAdminClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/log-error";
 import { formatDate, normaliseUKPhone } from "@/lib/utils";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { getAssignmentMessage } from "@/lib/business-hours";
 import type { ServiceType, AddressOption } from "@/types";
 
@@ -288,6 +289,7 @@ export interface NotificationPayload {
   originAddress?: AddressOption | null;
   destinationAddress?: AddressOption | null;
   moveDate?: string | null;
+  moveTime?: string | null;
   isFlexibleDate?: boolean;
   flexibleDateFrom?: string | null;
   flexibleDateTo?: string | null;
@@ -304,7 +306,7 @@ function buildDateText(payload: NotificationPayload): string {
   if (payload.isFlexibleDate && payload.flexibleDateFrom && payload.flexibleDateTo) {
     return `Flexible: ${formatDate(payload.flexibleDateFrom)} – ${formatDate(payload.flexibleDateTo)}`;
   }
-  if (payload.moveDate) return formatDate(payload.moveDate);
+  if (payload.moveDate) return `${formatDate(payload.moveDate)} (${formatMoveTimeWindow(payload.moveTime)})`;
   return "To be confirmed";
 }
 

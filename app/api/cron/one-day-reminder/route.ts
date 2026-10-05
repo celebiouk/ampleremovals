@@ -4,6 +4,7 @@ import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
 import { preMovePrepTipsHtml } from "@/lib/pre-move-tips";
+import { formatMoveTimeWindow } from "@/lib/dates";
 
 /**
  * GET /api/cron/one-day-reminder
@@ -39,6 +40,8 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        move_time,
+        is_flexible_date,
         inventory,
         address_confirmed,
         one_day_reminder_sent_at,
@@ -84,6 +87,7 @@ export async function GET(req: Request) {
         const originAddress = formatAddress(origin);
         const destinationAddress = formatAddress(destination);
         const addressConfirmed = booking.address_confirmed;
+        const arrivalWindow = booking.is_flexible_date ? null : formatMoveTimeWindow(booking.move_time);
         // Conditional "please prepare" tips (EMAIL only) based on what wasn't booked.
         const extras = Array.isArray(booking.extras) ? booking.extras[0] : booking.extras as { packing_services?: boolean; disassemble_furniture?: boolean } | null;
         const prepTipsHtml = preMovePrepTipsHtml(extras);
@@ -134,6 +138,13 @@ export async function GET(req: Request) {
                   <li><strong>Get good sleep:</strong> It's going to be an exciting day!</li>
                 </ul>
               </div>
+
+              ${arrivalWindow ? `
+              <div style="background: #fef2f2; border: 2px solid #2563eb; padding: 16px 20px; margin: 24px 0; border-radius: 8px; text-align: center;">
+                <p style="margin: 0; font-size: 14px; color: #1e40af; font-weight: bold;">⏰ ARRIVAL WINDOW</p>
+                <p style="margin: 4px 0 0; font-size: 22px; color: #1e3a8a; font-weight: bold;">${arrivalWindow}</p>
+              </div>
+              ` : ""}
 
               <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 20px; margin: 24px 0; border-radius: 4px;">
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af;">📍 Your Move Tomorrow:</p>
@@ -194,7 +205,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `🚨 MOVING DAY TOMORROW!\n\nFinal checklist: Pack essentials box, clear pathways, ensure parking access, take meter readings.\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ Don't forget to confirm your addresses!\n\n" : ""}We'll update you as our driver heads your way.\n\nCall us: 03335772070\nRef: ${booking.reference}`;
+        const smsBody = `🚨 MOVING DAY TOMORROW!${arrivalWindow ? `\n\nArrival window: ${arrivalWindow}` : ""}\n\nFinal checklist: Pack essentials box, clear pathways, ensure parking access, take meter readings.\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ Don't forget to confirm your addresses!\n\n" : ""}We'll update you as our driver heads your way.\n\nCall us: 03335772070\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -204,7 +215,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `🚨 *MOVING DAY TOMORROW!*\n\nHi ${customer.full_name},\n\nWe're all set! Final checklist:\n\n✅ Pack essentials box\n✅ Clear pathways\n✅ Parking ready\n✅ Meter readings\n✅ Valuables with you\n✅ Get good sleep!\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ *Important:* Please confirm your addresses (check your email)\n\n" : ""}We'll keep you updated tomorrow!\n\nCall us: *0333 577 2070*\nBooking: ${booking.reference}`;
+        const whatsappBody = `🚨 *MOVING DAY TOMORROW!*\n\nHi ${customer.full_name},\n\n${arrivalWindow ? `⏰ *Arrival window: ${arrivalWindow}*\n\n` : ""}We're all set! Final checklist:\n\n✅ Pack essentials box\n✅ Clear pathways\n✅ Parking ready\n✅ Meter readings\n✅ Valuables with you\n✅ Get good sleep!\n\n${moreItemsLine()}\n\n${!addressConfirmed ? "⚠️ *Important:* Please confirm your addresses (check your email)\n\n" : ""}We'll keep you updated tomorrow!\n\nCall us: *0333 577 2070*\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

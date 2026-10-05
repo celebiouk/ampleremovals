@@ -7,10 +7,11 @@ import {
 } from "lucide-react-native";
 import { Screen, Card, Button, Badge, toast, ErrorState, Skeleton } from "@/components/ui";
 import { ArrivedModal } from "@/components/ArrivedModal";
+import { DistancePanel } from "@/components/DistancePanel";
 import { JobExtraButton } from "@/components/JobExtraButton";
 import { useJob, useJobExtras } from "@/hooks/queries";
 import { colors, radius, spacing, shadows, type } from "@/lib/theme";
-import { customerShortName, serviceLabel, formatDate, formatCurrency } from "@/lib/format";
+import { customerShortName, serviceLabel, formatDate, formatCurrency, formatMoveTimeWindow } from "@/lib/format";
 import { journeyPhase, legDestination, currentEta, minutesUntil, type JourneyPhase } from "@/lib/journey";
 import { postOrQueue } from "@/lib/offline-queue";
 import { startBackgroundLocation, stopBackgroundLocation, getCurrentPosition } from "@/lib/location-task";
@@ -182,12 +183,10 @@ export default function JobDetailScreen() {
                 </View>
               ) : null}
             </View>
-            {j.move_time ? (
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={[type.label, { color: colors.primary.surfaceMid }]}>TIME</Text>
-                <Text style={[type.h1, { color: colors.white, fontFamily: type.h1.fontFamily }]}>{j.move_time}</Text>
-              </View>
-            ) : null}
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={[type.label, { color: colors.primary.surfaceMid }]}>ARRIVAL WINDOW</Text>
+              <Text style={[type.h3, { color: colors.white, fontFamily: type.h3.fontFamily }]}>{formatMoveTimeWindow(j.move_time)}</Text>
+            </View>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md }}>
             <Calendar size={16} color={colors.white} />
@@ -289,6 +288,10 @@ export default function JobDetailScreen() {
       {/* Addresses */}
       <AddressCard kind="pickup" address={j.origin} />
       <AddressCard kind="delivery" address={j.destination} />
+
+      <View style={{ marginTop: spacing.base }}>
+        <DistancePanel originPostcode={j.origin?.postcode} destinationPostcode={j.destination?.postcode} />
+      </View>
 
       {/* Job notes — a system line (job type) then " — " then the customer's own
           description, so the crew know what's going on at a glance. */}

@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { Building2, MapPin, Navigation } from "lucide-react-native";
 import { Card } from "@/components/ui";
 import { apiFetch } from "@/lib/api";
+import { colors, spacing, type } from "@/lib/theme";
 
 interface Leg {
   miles: number;
@@ -25,9 +26,9 @@ function formatMinutes(minutes: number): string {
 
 /**
  * Shows the three job legs — office → pickup, pickup → dropoff, dropoff →
- * back to office — each with driving distance (miles) AND typical drive
- * time, from /api/postcode/distances (office read from Settings). Mirrors
- * the web DistancePanel. Renders nothing until there's a pickup postcode.
+ * back to office — each with driving distance AND typical drive time, so a
+ * driver can see at a glance how the day's route adds up. Mirrors the same
+ * panel on the web/admin-app. Renders nothing until there's a pickup postcode.
  */
 export function DistancePanel({
   originPostcode,
@@ -68,44 +69,47 @@ export function DistancePanel({
   if (!origin) return null;
 
   const LegValue = ({ leg }: { leg: Leg | null }) =>
-    loading ? <ActivityIndicator size="small" color="#94a3b8" />
-      : leg == null ? <Text className="text-sm font-bold text-slate-400">—</Text>
-      : <Text className="text-sm font-bold text-slate-900">{leg.miles} mi <Text className="text-xs font-normal text-slate-500">· {formatMinutes(leg.minutes)}</Text></Text>;
+    loading ? <ActivityIndicator size="small" color={colors.slate[400]} />
+      : leg == null ? <Text style={[type.bodySemiBold, { color: colors.slate[400] }]}>—</Text>
+      : (
+        <Text style={[type.bodySemiBold, { color: colors.slate[900] }]}>
+          {leg.miles} mi <Text style={[type.bodySmall, { color: colors.slate[500] }]}>· {formatMinutes(leg.minutes)}</Text>
+        </Text>
+      );
 
   return (
-    <Card className="border-blue-200 bg-blue-50/70">
-      <View className="flex-row items-center gap-1.5">
-        <Navigation size={14} color="#2563eb" />
-        <Text className="text-xs font-bold uppercase tracking-wide text-blue-800">Distances & Drive Times</Text>
+    <Card style={{ borderColor: colors.primary.surfaceMid, backgroundColor: colors.primary.surface }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Navigation size={14} color={colors.primary.DEFAULT} />
+        <Text style={[type.label, { color: colors.primary.dark }]}>DISTANCES & DRIVE TIMES</Text>
       </View>
-      <View className="mt-2.5 gap-2">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1 flex-row items-center gap-1.5">
-            <Building2 size={16} color="#3b82f6" />
-            <Text className="text-slate-600" numberOfLines={1}>
+      <View style={{ marginTop: spacing.sm, gap: spacing.xs }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Building2 size={16} color={colors.primary.DEFAULT} />
+            <Text style={[type.bodySmall, { color: colors.slate[600] }]} numberOfLines={1}>
               Office{data?.officePostcode ? ` (${data.officePostcode})` : ""} → pickup
             </Text>
           </View>
           <LegValue leg={data?.officeToOrigin ?? null} />
         </View>
         {destination ? (
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1 flex-row items-center gap-1.5">
-              <MapPin size={16} color="#3b82f6" />
-              <Text className="text-slate-600">Pickup → dropoff</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <MapPin size={16} color={colors.primary.DEFAULT} />
+              <Text style={[type.bodySmall, { color: colors.slate[600] }]}>Pickup → dropoff</Text>
             </View>
             <LegValue leg={data?.originToDestination ?? null} />
           </View>
         ) : null}
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1 flex-row items-center gap-1.5">
-            <Building2 size={16} color="#3b82f6" />
-            <Text className="text-slate-600">{destination ? "Dropoff" : "Pickup"} → back to office</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Building2 size={16} color={colors.primary.DEFAULT} />
+            <Text style={[type.bodySmall, { color: colors.slate[600] }]}>{destination ? "Dropoff" : "Pickup"} → back to office</Text>
           </View>
           <LegValue leg={data?.destinationToOffice ?? null} />
         </View>
       </View>
-      <Text className="mt-1.5 text-[11px] text-slate-400">Driving distance & typical drive time (via road).</Text>
     </Card>
   );
 }

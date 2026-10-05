@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
+import { formatMoveTimeWindow } from "@/lib/dates";
 
 /**
  * GET /api/cron/seven-day-countdown
@@ -36,6 +37,8 @@ export async function GET(req: Request) {
         reference,
         service_type,
         move_date,
+        move_time,
+        is_flexible_date,
         seven_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
@@ -83,6 +86,7 @@ export async function GET(req: Request) {
           month: "long",
           year: "numeric"
         });
+        const arrivalWindow = booking.is_flexible_date ? null : formatMoveTimeWindow(booking.move_time);
 
         // EMAIL
         const emailSubject = `Your move is 1 week away! 📅 Time to start preparing - ${booking.reference}`;
@@ -96,7 +100,7 @@ export async function GET(req: Request) {
               <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
 
               <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 20px 0;">
-                Your move is just <strong>7 days away</strong>! It's time to start preparing. Here's your week-by-week guide:
+                Your move is just <strong>7 days away</strong>${arrivalWindow ? ` (arrival window <strong>${arrivalWindow}</strong>)` : ""}! It's time to start preparing. Here's your week-by-week guide:
               </p>
 
               <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 20px; margin: 24px 0; border-radius: 4px;">
@@ -169,7 +173,7 @@ export async function GET(req: Request) {
         }
 
         // SMS
-        const smsBody = `📅 Your move is 1 WEEK AWAY (${moveDate})!\n\nThis week: Start packing non-essentials, order materials, declutter.\n\nWe'll send more reminders as moving day gets closer!\n\nRef: ${booking.reference}`;
+        const smsBody = `📅 Your move is 1 WEEK AWAY (${moveDate}${arrivalWindow ? `, ${arrivalWindow}` : ""})!\n\nThis week: Start packing non-essentials, order materials, declutter.\n\nWe'll send more reminders as moving day gets closer!\n\nRef: ${booking.reference}`;
 
         try {
           await sendSMS(customer.phone, smsBody);
@@ -179,7 +183,7 @@ export async function GET(req: Request) {
         }
 
         // WhatsApp
-        const whatsappBody = `📅 *Your Move is 1 Week Away!*\n\n${moveDate}\n\n*This Week's Tasks:*\n📦 Pack non-essentials\n🛒 Order packing materials\n🧹 Declutter & donate\n📁 Organize documents\n\nMore reminders coming as we get closer!\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
+        const whatsappBody = `📅 *Your Move is 1 Week Away!*\n\n${moveDate}${arrivalWindow ? `\n⏰ Arrival window: ${arrivalWindow}` : ""}\n\n*This Week's Tasks:*\n📦 Pack non-essentials\n🛒 Order packing materials\n🧹 Declutter & donate\n📁 Organize documents\n\nMore reminders coming as we get closer!\n\nQuestions? Call *0333 577 2070*\n\nBooking: ${booking.reference}`;
 
         try {
           await sendWhatsApp(customer.phone, whatsappBody, {

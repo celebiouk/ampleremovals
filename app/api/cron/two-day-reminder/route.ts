@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { moreItemsBlockHtml, moreItemsLine } from "@/lib/inventory-email";
+import { formatMoveTimeWindow } from "@/lib/dates";
 
 /**
  * GET /api/cron/two-day-reminder — runs daily.
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
     const { data: bookings, error } = await supabase
       .from("bookings")
       .select(`
-        id, reference, service_type, move_date, inventory, two_day_reminder_sent_at,
+        id, reference, service_type, move_date, move_time, is_flexible_date, inventory, two_day_reminder_sent_at,
         customer:customers!inner(full_name, email, phone),
         origin:addresses!origin_address_id(line_1, line_2, city, postcode),
         destination:addresses!destination_address_id(line_1, line_2, city, postcode)
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
         const fmtAddr = (a: typeof origin) => a ? [a.line_1, a.line_2, a.city, a.postcode].filter(Boolean).join(", ") : "";
         const firstName = customer.full_name.split(" ")[0];
         const moveDate = new Date(booking.move_date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+        const arrivalWindow = booking.is_flexible_date ? null : formatMoveTimeWindow(booking.move_time);
 
         const emailBody = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -60,7 +62,7 @@ export async function GET(req: Request) {
             <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
               <p style="font-size: 16px; color: #1e293b;">Hi ${customer.full_name},</p>
               <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin: 16px 0;">
-                Just a quick note so you know we're on it — your move is coming up on <strong>${moveDate}</strong> and our team is getting everything ready for you.
+                Just a quick note so you know we're on it — your move is coming up on <strong>${moveDate}</strong>${arrivalWindow ? `, arrival window <strong>${arrivalWindow}</strong>,` : ""} and our team is getting everything ready for you.
               </p>
 
               ${moreItemsBlockHtml(booking.inventory)}
@@ -81,10 +83,10 @@ export async function GET(req: Request) {
           await resend.emails.send({ from: resendFrom, to: customer.email, subject: `Your move is in 2 days 👋 — ${booking.reference}`, html: emailBody });
         } catch (e) { console.error("2-day reminder email failed:", e); }
 
-        const smsBody = `👋 Hi ${firstName}, your Ample Removals move is in 2 DAYS (${moveDate}). ${moreItemsLine()}\n\nQuestions? Call 03335772070. Ref: ${booking.reference}`;
+        const smsBody = `👋 Hi ${firstName}, your Ample Removals move is in 2 DAYS (${moveDate}${arrivalWindow ? `, ${arrivalWindow}` : ""}). ${moreItemsLine()}\n\nQuestions? Call 03335772070. Ref: ${booking.reference}`;
         try { await sendSMS(customer.phone, smsBody); } catch (e) { console.error("2-day reminder sms failed:", e); }
 
-        const waBody = `👋 *Your move is in 2 days!*\n\nHi ${firstName}, your move is coming up on ${moveDate} and we're getting ready.\n\n${moreItemsLine()}\n\nQuestions? Call *0333 577 2070*\nBooking: ${booking.reference}`;
+        const waBody = `👋 *Your move is in 2 days!*\n\nHi ${firstName}, your move is coming up on ${moveDate}${arrivalWindow ? `\n⏰ Arrival window: ${arrivalWindow}` : ""} and we're getting ready.\n\n${moreItemsLine()}\n\nQuestions? Call *0333 577 2070*\nBooking: ${booking.reference}`;
         try { await sendWhatsApp(customer.phone, waBody); } catch (e) { console.error("2-day reminder whatsapp failed:", e); }
 
         await supabase.from("bookings").update({ two_day_reminder_sent_at: new Date().toISOString() }).eq("id", booking.id);

@@ -10,6 +10,7 @@ import { ServiceBadge } from "@/components/admin/ServiceBadge";
 import { TableSkeleton } from "@/components/admin/AdminSkeleton";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { formatDate, upperName } from "@/lib/utils";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { ALL_STATUSES, STATUS_LABELS, SERVICE_LABELS_SHORT, HIDDEN_FROM_DEFAULT_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -25,7 +26,7 @@ function relativeTime(d: string) {
 
 interface BookingRow {
   id: string; reference: string; service_type: ServiceType;
-  status: BookingStatus; move_date: string | null; is_flexible_date: boolean;
+  status: BookingStatus; move_date: string | null; move_time: string | null; is_flexible_date: boolean;
   created_at: string; customer_name: string;
   origin_postcode: string; destination_postcode: string | null;
   lead_band: string | null; lead_score: number | null;
@@ -110,7 +111,7 @@ function BookingsListInner() {
     }
 
     // Build the query for a given column set, applying the active filters.
-    const baseCols = "id,reference,service_type,status,move_date,is_flexible_date,created_at,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)";
+    const baseCols = "id,reference,service_type,status,move_date,move_time,is_flexible_date,created_at,customers!inner(full_name),origin_addr:addresses!origin_address_id(postcode),dest_addr:addresses!destination_address_id(postcode)";
     const buildQuery = (cols: string) => {
       let q = supabase
         .from("bookings")
@@ -146,7 +147,7 @@ function BookingsListInner() {
     const rows: BookingRow[] = (data ?? []).map((b: Record<string, unknown>) => ({
       id: b.id as string, reference: b.reference as string,
       service_type: b.service_type as ServiceType, status: b.status as BookingStatus,
-      move_date: b.move_date as string | null, is_flexible_date: b.is_flexible_date as boolean,
+      move_date: b.move_date as string | null, move_time: (b.move_time as string | null) ?? null, is_flexible_date: b.is_flexible_date as boolean,
       created_at: b.created_at as string,
       customer_name: (b.customers as { full_name: string } | null)?.full_name ?? "—",
       origin_postcode: (b.origin_addr as { postcode: string } | null)?.postcode ?? "—",
@@ -355,7 +356,14 @@ function BookingsListInner() {
                     <td className="px-4 py-3"><ServiceBadge service={b.service_type} /></td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.origin_postcode}</td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.destination_postcode ?? "N/A"}</td>
-                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>{b.is_flexible_date ? "Flexible" : b.move_date ? formatDate(b.move_date) : "—"}</td>
+                    <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-600"}`}>
+                      {b.is_flexible_date ? "Flexible" : b.move_date ? (
+                        <>
+                          <div>{formatDate(b.move_date)}</div>
+                          <div className={`text-xs ${isInquiry ? "text-white/80" : "text-slate-400"}`}>{formatMoveTimeWindow(b.move_time)}</div>
+                        </>
+                      ) : "—"}
+                    </td>
                     <td className={`px-4 py-3 text-sm ${isInquiry ? "text-white" : "text-slate-400"}`}>{relativeTime(b.created_at)}</td>
                     <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>

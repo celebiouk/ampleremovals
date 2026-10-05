@@ -73,6 +73,7 @@ export async function handleBookingRoute(
     originAddress: data.originAddress ?? null,
     destinationAddress: "destinationAddress" in data ? (data.destinationAddress ?? null) : null,
     moveDate: "moveDate" in data && data.moveDate ? String(data.moveDate) : null,
+    moveTime: "moveTime" in data && data.moveTime ? String(data.moveTime) : null,
     isFlexibleDate: "isFlexibleDate" in data ? Boolean(data.isFlexibleDate) : false,
     flexibleDateFrom: "flexibleDateFrom" in data && data.flexibleDateFrom ? String(data.flexibleDateFrom) : null,
     flexibleDateTo: "flexibleDateTo" in data && data.flexibleDateTo ? String(data.flexibleDateTo) : null,

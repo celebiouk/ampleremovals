@@ -34,6 +34,7 @@ import { DistancePanel } from "@/components/admin/DistancePanel";
 import { accessFlag } from "@/lib/lead-signals";
 import { isSuperAdmin } from "@/lib/super-admin";
 import { formatDate, formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { EMAIL_TEMPLATES, TEMPLATE_CATEGORIES, type EmailTemplate } from "@/lib/email-templates";
 import { STATUS_LABELS, STATUS_DOT_COLOURS, ALL_STATUSES, SERVICE_LABELS } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
@@ -424,15 +425,15 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Job type + time — the key at-a-glance facts, highlighted at the top. */}
-      {(booking.quote_tier || booking.move_time) && (
+      {(booking.quote_tier || booking.move_date) && (
         <div className={`flex flex-wrap items-center gap-3 rounded-xl border-2 px-4 py-3 ${booking.quote_tier === "premium" ? "border-amber-300 bg-amber-50" : "border-brand-purple-200 bg-brand-purple-50"}`}>
           {booking.quote_tier && (
             <span className={`rounded-full px-3 py-1 text-sm font-extrabold ${booking.quote_tier === "premium" ? "bg-amber-400 text-amber-900" : "bg-brand-purple-800 text-white"}`}>
               {booking.quote_tier === "premium" ? "★ PREMIUM MOVE" : "STANDARD MOVE"}
             </span>
           )}
-          {booking.move_time && (
-            <span className="text-sm font-bold text-slate-800">⏰ {booking.move_time}</span>
+          {booking.move_date && !booking.is_flexible_date && (
+            <span className="text-sm font-bold text-slate-800">⏰ {formatMoveTimeWindow(booking.move_time)}{!booking.move_time && <span className="ml-1 font-normal text-slate-500">(default)</span>}</span>
           )}
           {booking.move_date && (
             <span className="text-sm font-medium text-slate-600">{formatDate(booking.move_date)}</span>
@@ -527,7 +528,7 @@ export default function BookingDetailPage() {
                 <button
                   onClick={() => {
                     setEditMoveDate(booking.move_date || "");
-                    setEditMoveTime("");
+                    setEditMoveTime(booking.move_time || "");
                     setEditDateModalOpen(true);
                   }}
                   className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
@@ -553,6 +554,9 @@ export default function BookingDetailPage() {
                 ["Move Date", booking.is_flexible_date && booking.flexible_date_from && booking.flexible_date_to
                   ? `Flexible: ${formatDate(booking.flexible_date_from)} – ${formatDate(booking.flexible_date_to)}`
                   : booking.move_date ? formatDate(booking.move_date) : "—"],
+                ...(booking.move_date && !booking.is_flexible_date
+                  ? [["Arrival Window", formatMoveTimeWindow(booking.move_time) + (booking.move_time ? "" : " (default)")]]
+                  : []),
                 ["Lead Source", booking.source ? String(booking.source).replace(/_/g, " ") : "—"],
                 ...(booking.utm_campaign ? [["Campaign", booking.utm_campaign]] : []),
                 ["Lead Score", booking.lead_score != null ? `${booking.lead_score}/100 · ${String(booking.lead_band ?? "").toUpperCase()}` : "—"],

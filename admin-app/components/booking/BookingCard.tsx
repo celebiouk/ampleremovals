@@ -6,7 +6,7 @@ import { serviceColors, statusColors, colors } from "@/lib/colors";
 import { type, fonts } from "@/lib/typography";
 import { radius, shadows, spacing } from "@/lib/tokens";
 import { SERVICE_LABELS_SHORT, STATUS_LABELS } from "@/lib/constants";
-import { formatDate, upperName } from "@/lib/utils";
+import { formatDate, formatMoveTimeWindow, upperName } from "@/lib/utils";
 import type { BookingRow } from "@/hooks/useBookings";
 import type { ServiceType } from "@/types";
 
@@ -75,7 +75,10 @@ export function BookingCard({ booking, onPress }: { booking: BookingRow; onPress
           {booking.move_date ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
               <Calendar size={12} color={colors.slate[400]} />
-              <Text style={[type.bodySmall, { color: colors.slate[400] }]}>{formatDate(booking.move_date)}</Text>
+              <Text style={[type.bodySmall, { color: colors.slate[400] }]}>
+                {formatDate(booking.move_date)}
+                {!booking.is_flexible_date ? ` · ${formatMoveTimeWindow(booking.move_time)}` : ""}
+              </Text>
             </View>
           ) : null}
         </View>

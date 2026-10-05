@@ -44,6 +44,26 @@ export function ukNextDays(n: number): { start: string; end: string } {
   return { start: today, end: end.toISOString().slice(0, 10) };
 }
 
+/**
+ * Customer-facing arrival window for a job. `move_time` stores a single
+ * "HH:MM" start time (set via the admin Edit Date modal); the customer is
+ * always shown a 1-hour window starting there. No time set yet defaults to
+ * "9:00 AM – 10:00 AM" — the company's standard arrival window — so every
+ * customer communication can always show a time, never a blank.
+ */
+export const DEFAULT_MOVE_TIME = "09:00";
+
+export function formatMoveTimeWindow(moveTime: string | null | undefined): string {
+  const [hStr, mStr] = (moveTime?.trim() || DEFAULT_MOVE_TIME).split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10) || 0;
+  const start = new Date(2000, 0, 1, h, m);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const fmt = (d: Date) =>
+    d.toLocaleTimeString("en-GB", { hour: "numeric", minute: d.getMinutes() ? "2-digit" : undefined, hour12: true });
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
 /** Monday-start week range (YYYY-MM-DD) containing the UK "today". */
 export function ukWeekRange(): { start: string; end: string } {
   const today = ukToday();

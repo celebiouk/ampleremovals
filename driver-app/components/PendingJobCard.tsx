@@ -3,7 +3,7 @@ import { View, Text, TextInput, Modal, Pressable } from "react-native";
 import { Check, X } from "lucide-react-native";
 import { Card, Button, Badge, toast } from "@/components/ui";
 import { useRespondToJob } from "@/hooks/queries";
-import { serviceLabel, formatDate } from "@/lib/format";
+import { serviceLabel, formatDate, formatMoveTimeWindow } from "@/lib/format";
 import { colors, radius, spacing, type } from "@/lib/theme";
 import type { Job } from "@/lib/types";
 
@@ -38,7 +38,7 @@ export function PendingJobCard({ job, onPress }: { job: Job; onPress: () => void
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Badge label="Awaiting response" bg="#fef3c7" fg="#92400e" />
           <Text style={[type.bodySmall, { color: colors.slate[500] }]}>
-            {formatDate(job.move_date)}{job.move_time ? ` · ${job.move_time}` : ""}
+            {formatDate(job.move_date)} · {formatMoveTimeWindow(job.move_time)}
           </Text>
         </View>
         <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900], marginTop: spacing.sm }]}>{serviceLabel(job.service_type)}</Text>

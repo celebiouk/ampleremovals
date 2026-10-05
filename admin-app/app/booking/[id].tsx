@@ -26,7 +26,7 @@ import { useBookingDetail } from "@/hooks/useBookingDetail";
 import { apiFetch } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { subscribeToBookingActivity, subscribeToBookingNotes, unsubscribe } from "@/lib/realtime";
-import { formatCurrency, formatDate, formatDateTime, toDateKey, upperName } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, formatMoveTimeWindow, toDateKey, upperName } from "@/lib/utils";
 import { STATUS_LABELS, ALL_STATUSES, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import type { Address, BookingStatus } from "@/types";
 
@@ -43,7 +43,15 @@ export default function BookingDetailScreen() {
   const [androidStep, setAndroidStep] = useState<"date" | "time">("date");
 
   function openDatePicker() {
-    setPendingDate(booking?.move_date ? new Date(booking.move_date) : new Date());
+    // Pre-fill with the booking's CURRENT date+time so re-opening the picker
+    // doesn't silently reset an already-set time back to midnight.
+    if (booking?.move_date) {
+      const [y, m, d] = booking.move_date.slice(0, 10).split("-").map(Number);
+      const [hh, mm] = (booking.move_time || "09:00").split(":").map(Number);
+      setPendingDate(new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 9, mm ?? 0));
+    } else {
+      setPendingDate(new Date());
+    }
     setAndroidStep("date");
     setShowDate(true);
   }
@@ -153,7 +161,7 @@ export default function BookingDetailScreen() {
     name: customer?.full_name?.split(" ")[0] ?? "there",
     service: SERVICE_LABELS_SHORT[booking.service_type] ?? booking.service_type,
     ref: booking.reference,
-    date: booking.move_date ? formatDate(booking.move_date) : "TBC",
+    date: booking.move_date ? `${formatDate(booking.move_date)}${!booking.is_flexible_date ? ` (${formatMoveTimeWindow(booking.move_time)})` : ""}` : "TBC",
     origin: origin ? [origin.line_1, origin.postcode].filter(Boolean).join(", ") : "",
   };
 
@@ -202,7 +210,10 @@ export default function BookingDetailScreen() {
           {booking.move_date ? (
             <View className="mt-3 flex-row items-center gap-2">
               <Calendar size={16} color="#e9d5ff" />
-              <Text className="text-purple-100">{formatDate(booking.move_date)}</Text>
+              <Text className="text-purple-100">
+                {formatDate(booking.move_date)}
+                {!booking.is_flexible_date ? ` · ${formatMoveTimeWindow(booking.move_time)}` : ""}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -267,6 +278,13 @@ export default function BookingDetailScreen() {
               {booking.move_date ? formatDate(booking.move_date) : "Not set yet"}
             </Text>
           </View>
+          {booking.move_date && !booking.is_flexible_date ? (
+            <View className="mt-1 flex-row items-center gap-2">
+              <Text className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                ⏰ {formatMoveTimeWindow(booking.move_time)}{!booking.move_time ? " (default)" : ""}
+              </Text>
+            </View>
+          ) : null}
         </Card>
 
         {/* Customer */}

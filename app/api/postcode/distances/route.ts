@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { drivingDistanceMiles } from "@/lib/google-maps";
+import { drivingLeg, type DrivingLeg } from "@/lib/google-maps";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -11,11 +11,15 @@ const FALLBACK_OFFICE = "RG18 3EB";
 
 /**
  * POST /api/postcode/distances
- * Returns the two DRIVING distances the team cares about for a job, in miles
- * (real road distance via Google Distance Matrix — the same source the driver
- * ETA uses; not straight-line):
+ * Returns the three DRIVING legs the team cares about for a job, each with
+ * distance (miles) AND duration (minutes) — real road routing via Google
+ * Distance Matrix (the same source the driver ETA uses; not straight-line):
  *  - officeToOrigin      : our office (from Settings) → the first pickup
  *  - originToDestination : pickup → dropoff (null if there's no destination)
+ *  - destinationToOffice : dropoff → back to our office (null if there's no
+ *                          destination; falls back from the origin if there's
+ *                          no dropoff, so a one-address job still shows a
+ *                          return leg)
  * The office postcode is read from settings so it's never hardcoded.
  */
 export async function POST(req: NextRequest) {
@@ -43,15 +47,23 @@ export async function POST(req: NextRequest) {
     /* fall back to default office postcode */
   }
 
-  const [officeToOrigin, originToDestination] = await Promise.all([
-    origin ? drivingDistanceMiles(office, origin) : Promise.resolve(null),
-    origin && destination ? drivingDistanceMiles(origin, destination) : Promise.resolve(null),
+  // The "return to office" leg starts from the dropoff if there is one,
+  // otherwise from the pickup (a job with only one address still ends there).
+  const returnFrom = destination || origin;
+
+  const [officeToOrigin, originToDestination, returnToOffice] = await Promise.all([
+    origin ? drivingLeg(office, origin) : Promise.resolve(null),
+    origin && destination ? drivingLeg(origin, destination) : Promise.resolve(null),
+    returnFrom ? drivingLeg(returnFrom, office) : Promise.resolve(null),
   ]);
+
+  const leg = (l: DrivingLeg | null) => (l ? { miles: l.miles, minutes: l.minutes } : null);
 
   return NextResponse.json({
     success: true,
     officePostcode: office,
-    officeToOrigin,
-    originToDestination,
+    officeToOrigin: leg(officeToOrigin),
+    originToDestination: leg(originToDestination),
+    destinationToOffice: leg(returnToOffice),
   });
 }
