@@ -1,0 +1,13 @@
+-- `move_time` has been referenced throughout the codebase (TypeScript types,
+-- the admin "Edit Date" modal, driver-app, cron reminders, the AnyVan jobs
+-- route) as if it were a real column on `bookings` — but no migration ever
+-- actually created it. Every attempted read/write of it has been silently
+-- failing wherever errors are caught, and loudly failing (PostgREST
+-- "column does not exist") wherever they aren't — which is what just broke
+-- the admin bookings list the moment move_time was added to its SELECT.
+--
+-- Stored as TEXT ("HH:MM", e.g. "09:00") rather than a native TIME type —
+-- every consumer (formatMoveTimeWindow, the <input type="time"> in the admin
+-- modal, the AnyVan jobs API) already treats it as a plain string, not
+-- something to do time arithmetic on in SQL.
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS move_time TEXT;
