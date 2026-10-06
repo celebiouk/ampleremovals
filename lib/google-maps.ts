@@ -3,6 +3,7 @@
  * Returns the live, traffic-aware duration + ETA from the driver's GPS to the
  * destination. Destination may be "lat,lng" or a postcode string.
  */
+import { logError } from "@/lib/log-error";
 
 export interface DistanceResult {
   durationSeconds: number;
@@ -76,7 +77,17 @@ export async function drivingLeg(
     const res = await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?${params}`);
     const data = await res.json();
     const element = data?.rows?.[0]?.elements?.[0];
-    if (data.status !== "OK" || !element || element.status !== "OK") return null;
+    if (data.status !== "OK" || !element || element.status !== "OK") {
+      // Diagnostic only — never log the key itself. `error_message` is
+      // Google's own plain-English reason (e.g. billing not enabled, API not
+      // enabled, key restricted, invalid key) when status isn't OK.
+      await logError({
+        message: `Google Distance Matrix returned non-OK status: ${element?.status ?? data.status}`,
+        metadata: { topLevelStatus: data.status, elementStatus: element?.status, errorMessage: data.error_message, origin, destination },
+        level: "warn",
+      });
+      return null;
+    }
     const metres: number | undefined = element.distance?.value;
     const seconds: number | undefined = element.duration?.value;
     if (typeof metres !== "number" || typeof seconds !== "number") return null;
@@ -84,7 +95,12 @@ export async function drivingLeg(
       miles: Math.round((metres / METRES_PER_MILE) * 10) / 10, // 1 dp
       minutes: Math.round(seconds / 60),
     };
-  } catch {
+  } catch (err) {
+    await logError({
+      message: `Google Distance Matrix request failed: ${err instanceof Error ? err.message : String(err)}`,
+      metadata: { origin, destination },
+      level: "warn",
+    });
     return null;
   }
 }
