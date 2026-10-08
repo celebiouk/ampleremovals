@@ -1,6 +1,7 @@
 import { resend, resendFrom } from "@/lib/resend";
 import { sendSMS, sendWhatsApp } from "@/lib/twilio";
 import { formatCurrency } from "@/lib/utils";
+import { formatMoveTimeWindow } from "@/lib/dates";
 import { BANK_DETAILS, BANK_DETAILS_CONFIGURED, depositFor, DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { bookingItemsBlockHtml } from "@/lib/inventory-email";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -372,18 +373,32 @@ export interface DepositConfirmedParams {
   firstName: string;
   email: string;
   phone: string;
+  moveDate?: string | null;
+  moveTime?: string | null;
+  isFlexibleDate?: boolean;
 }
 
 /**
  * Sent when the admin verifies the deposit landed: reassures the customer their
  * move is booked. Email + SMS + WhatsApp. Best-effort.
+ *
+ * Includes the arrival window (same formatMoveTimeWindow default as every other
+ * customer message) and a 48h-notice line for date changes — this was the one
+ * message in the confirmed-booking trail that didn't carry the time.
  */
 export async function sendDepositConfirmedMessages({
   reference,
   firstName,
   email,
   phone,
+  moveDate,
+  moveTime,
+  isFlexibleDate,
 }: DepositConfirmedParams): Promise<void> {
+  const showWindow = Boolean(moveDate) && !isFlexibleDate;
+  const windowStr = showWindow ? formatMoveTimeWindow(moveTime) : null;
+  const changeNotice = "Need to change anything? Just call us at least 48 hours before your move date so we can rearrange the crew in time.";
+
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
       <div style="background: #16a34a; padding: 24px; border-radius: 12px 12px 0 0;">
@@ -392,17 +407,23 @@ export async function sendDepositConfirmedMessages({
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
         <p style="font-size: 16px; margin: 16px 0;">Great news — <strong>Ample Removals has confirmed your deposit</strong>, and your moving date is locked in. 🎉</p>
-        <p style="font-size: 16px; margin: 16px 0;">We'll be in touch with the final details as your move approaches. <strong>Don't worry — you can still change your date if you need to</strong>; just give us a call.</p>
+        ${windowStr ? `
+        <div style="background: #f0fdf4; border: 2px solid #16a34a; padding: 14px 18px; margin: 20px 0; border-radius: 8px; text-align: center;">
+          <p style="margin: 0; font-size: 13px; color: #15803d; font-weight: bold;">⏰ ARRIVAL WINDOW</p>
+          <p style="margin: 4px 0 0; font-size: 20px; color: #14532d; font-weight: bold;">${windowStr}</p>
+        </div>` : ""}
+        <p style="font-size: 16px; margin: 16px 0;">We'll be in touch with the final details as your move approaches.</p>
+        <p style="font-size: 14px; margin: 16px 0; color: #475569;"><strong>${changeNotice}</strong></p>
         <p style="font-size: 15px; margin-top: 16px;">Thank you for choosing us,<br>Daniel<br>Ample Removals · ${PHONE}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
 
   const smsText =
-    `Ample Removals: your deposit is confirmed and your moving date is locked in! 🎉 We'll be in touch with the details. Questions? Call ${PHONE}. Ref ${reference}`;
+    `Ample Removals: your deposit is confirmed and your moving date is locked in${windowStr ? ` (arrival window ${windowStr})` : ""}! 🎉 Need to change anything? Call us at least 48hrs ahead. Questions? ${PHONE}. Ref ${reference}`;
 
   const whatsappText =
-    `Hi ${firstName}, great news — *Ample Removals has confirmed your deposit* ✅\n\nYour moving date is locked in. We'll be in touch with the details soon. You can still change your date if you need to — just call us on ${PHONE}.\n\nRef: ${reference}`;
+    `Hi ${firstName}, great news — *Ample Removals has confirmed your deposit* ✅\n\nYour moving date is locked in.${windowStr ? `\n⏰ Arrival window: ${windowStr}` : ""}\n\n${changeNotice}\n\nCall us on ${PHONE}.\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails
