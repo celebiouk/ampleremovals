@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, ClipboardList, Users, CalendarDays,
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
-  ChevronLeft, ChevronRight, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
+  ChevronLeft, ChevronRight, ChevronDown, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
   PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star,
 } from "lucide-react";
@@ -23,6 +23,7 @@ export const NAV_GROUPS = [
     label: "OVERVIEW",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/admin/deposits", label: "Deposits to Confirm", icon: Landmark },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare, showMsgBadge: true },
       { href: "/admin/whatsapp-queue", label: "WhatsApp Queue", icon: MessageCircle },
       { href: "/admin/reviews/invite", label: "Invite for Review", icon: Star },
@@ -155,11 +156,36 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
     if (stored) setCollapsed(stored === "true");
+    const storedGroups = localStorage.getItem("sidebar-open-groups");
+    if (storedGroups) {
+      try { setOpenGroups(JSON.parse(storedGroups)); } catch { /* ignore bad cache */ }
+    }
   }, []);
+
+  const toggleGroup = useCallback((label: string) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [label]: !prev[label] };
+      localStorage.setItem("sidebar-open-groups", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // Close the account dropdown on an outside click.
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [accountOpen]);
 
   const toggleCollapsed = useCallback(() => {
     const next = !collapsed;
@@ -247,6 +273,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     .map((g) => ({ ...g, items: g.items.filter((item) => isPageAllowed(item.href)) }))
     .filter((g) => g.items.length > 0);
 
+  // Whichever group contains the current page auto-expands — so navigating
+  // somewhere never leaves you staring at a collapsed group with no idea
+  // where you are.
+  useEffect(() => {
+    const activeGroup = visibleNavGroups.find((g) =>
+      g.items.some((item) => ("exact" in item && item.exact ? pathname === item.href : pathname.startsWith(item.href)))
+    );
+    if (activeGroup && !openGroups[activeGroup.label]) {
+      setOpenGroups((prev) => ({ ...prev, [activeGroup.label]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   if (pathname === "/admin/login") return <>{children}</>;
 
   const handleSignOut = async () => { await signOut(); router.replace("/admin/login"); };
@@ -272,56 +311,110 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         )}
       </div>
 
-      {/* Nav */}
+      {/* Nav — each group is a collapsible dropdown; the group holding the
+          current page auto-expands (see the effect above). In icon-only
+          (collapsed) mode everything stays flat and visible, same as before,
+          since there's no label to click and the icon rail is compact already. */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {visibleNavGroups.map((group) => (
-          <div key={group.label} className="mb-2">
-            {!collapsed && (
-              <p className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
-                {group.label}
-              </p>
-            )}
-            {collapsed && <div className="my-2 border-t border-purple-900/40" />}
-            {group.items.map((item) => (
-              <SidebarLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                exact={"exact" in item ? item.exact : false}
-                badge={"showBadge" in item && item.showBadge ? inquiryCount : ("showMsgBadge" in item && (item as { showMsgBadge?: boolean }).showMsgBadge ? messagesUnread : 0)}
-                collapsed={collapsed}
-              />
-            ))}
-          </div>
-        ))}
+        {visibleNavGroups.map((group) => {
+          const isOpen = collapsed || Boolean(openGroups[group.label]);
+          return (
+            <div key={group.label} className="mb-1">
+              {!collapsed && (
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className="mb-1 mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-purple-500 transition-colors hover:bg-purple-900/40 hover:text-purple-300"
+                  aria-expanded={isOpen}
+                >
+                  {group.label}
+                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", isOpen ? "rotate-180" : "")} />
+                </button>
+              )}
+              {collapsed && <div className="my-2 border-t border-purple-900/40" />}
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={collapsed ? false : { height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    {group.items.map((item) => (
+                      <SidebarLink
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        exact={"exact" in item ? item.exact : false}
+                        badge={"showBadge" in item && item.showBadge ? inquiryCount : ("showMsgBadge" in item && (item as { showMsgBadge?: boolean }).showMsgBadge ? messagesUnread : 0)}
+                        collapsed={collapsed}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </nav>
 
-      {/* Footer */}
-      <div className="shrink-0 border-t border-purple-900/50 p-3 space-y-1">
-        <SidebarLink href="/admin/profile" label="My Profile" icon={User} collapsed={collapsed} />
-        {!isRestricted && <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={collapsed} />}
-        {!isRestricted && <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={collapsed} />}
-        {!collapsed && (
-          <div className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-700 text-xs font-bold text-white">
-              {userInitials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-purple-200">{user?.email ?? "Admin"}</p>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={handleSignOut}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-purple-300 transition-colors hover:bg-purple-900/50 hover:text-red-400",
-            collapsed ? "justify-center" : ""
+      {/* Footer — "My Account" dropdown: profile, manage admins, settings,
+          your email, sign out. Opens upward since there's no room below. */}
+      <div className="relative shrink-0 border-t border-purple-900/50 p-3" ref={accountRef}>
+        <AnimatePresence>
+          {accountOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.12 }}
+              className={cn(
+                "absolute bottom-full mb-2 overflow-hidden rounded-xl border border-purple-900/50 bg-[#241452] shadow-xl",
+                collapsed ? "left-2 w-56" : "left-3 right-3"
+              )}
+            >
+              <div className="border-b border-purple-900/50 px-3 py-2.5">
+                <p className="truncate text-xs font-medium text-purple-200">{user?.email ?? "Admin"}</p>
+              </div>
+              <div className="p-1.5">
+                <SidebarLink href="/admin/profile" label="My Profile" icon={User} collapsed={false} />
+                {!isRestricted && <SidebarLink href="/admin/manage-admins" label="Manage Admins" icon={Shield} collapsed={false} />}
+                {!isRestricted && <SidebarLink href="/admin/settings" label="Settings" icon={Settings} collapsed={false} />}
+              </div>
+              <div className="border-t border-purple-900/50 p-1.5">
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-purple-300 transition-colors hover:bg-purple-900/50 hover:text-red-400"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  Sign out
+                </button>
+              </div>
+            </motion.div>
           )}
-          title={collapsed ? "Sign out" : undefined}
+        </AnimatePresence>
+
+        <button
+          onClick={() => setAccountOpen((v) => !v)}
+          title={collapsed ? "My Account" : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-purple-900/50",
+            collapsed ? "justify-center px-2" : ""
+          )}
         >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && "Sign out"}
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-700 text-xs font-bold text-white">
+            {userInitials}
+          </span>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">My Account</p>
+                <p className="truncate text-xs text-purple-300">{user?.email ?? "Admin"}</p>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 shrink-0 text-purple-400 transition-transform duration-150", accountOpen ? "rotate-180" : "")} />
+            </>
+          )}
         </button>
 
         {/* Collapse toggle */}
