@@ -9,7 +9,7 @@ import {
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, ChevronDown, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
-  PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star,
+  PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star, Wallet, Banknote,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ import { NotificationCentre } from "@/components/admin/NotificationCentre";
 export const NAV_GROUPS = [
   {
     label: "OVERVIEW",
+    icon: LayoutDashboard,
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { href: "/admin/deposits", label: "Deposits to Confirm", icon: Landmark },
@@ -31,6 +32,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "OPERATIONS",
+    icon: ClipboardList,
     items: [
       { href: "/admin/leads/new", label: "New Lead", icon: UserPlus },
       { href: "/admin/catalog", label: "Item Catalog", icon: Package },
@@ -51,6 +53,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "FINANCE",
+    icon: PoundSterling,
     items: [
       { href: "/admin/pricing", label: "Pricing", icon: PoundSterling },
       { href: "/admin/invoices", label: "Invoices", icon: Receipt },
@@ -62,6 +65,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "PAYROLL",
+    icon: Wallet,
     items: [
       { href: "/admin/payroll/bulk-actions", label: "Bulk Actions", icon: Zap },
       { href: "/admin/payroll/verification", label: "Verification", icon: Shield },
@@ -74,6 +78,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "BOOKKEEPING",
+    icon: Calculator,
     items: [
       { href: "/admin/bookkeeping/year-end", label: "Year-End Tax", icon: Calculator },
       { href: "/admin/bookkeeping/expenses", label: "Expenses", icon: TrendingDown },
@@ -83,6 +88,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "PAYROLL (PAYE)",
+    icon: Banknote,
     items: [
       { href: "/admin/paye", label: "Pay Runs", icon: PoundSterling },
       { href: "/admin/paye/employees", label: "Employees", icon: Users },
@@ -90,6 +96,7 @@ export const NAV_GROUPS = [
   },
   {
     label: "INTELLIGENCE",
+    icon: BarChart2,
     items: [
       { href: "/admin/reports", label: "Reports", icon: BarChart2 },
       { href: "/admin/insights", label: "Insights", icon: TrendingUp },
@@ -156,26 +163,27 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  // Only one group open at a time — opening a new one closes whichever was open.
+  const [openGroup, setOpenGroupState] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
     if (stored) setCollapsed(stored === "true");
-    const storedGroups = localStorage.getItem("sidebar-open-groups");
-    if (storedGroups) {
-      try { setOpenGroups(JSON.parse(storedGroups)); } catch { /* ignore bad cache */ }
-    }
+    const storedGroup = localStorage.getItem("sidebar-open-group");
+    if (storedGroup) setOpenGroupState(storedGroup);
+  }, []);
+
+  const setOpenGroup = useCallback((label: string | null) => {
+    setOpenGroupState(label);
+    if (label) localStorage.setItem("sidebar-open-group", label);
+    else localStorage.removeItem("sidebar-open-group");
   }, []);
 
   const toggleGroup = useCallback((label: string) => {
-    setOpenGroups((prev) => {
-      const next = { ...prev, [label]: !prev[label] };
-      localStorage.setItem("sidebar-open-groups", JSON.stringify(next));
-      return next;
-    });
-  }, []);
+    setOpenGroup(openGroup === label ? null : label);
+  }, [openGroup, setOpenGroup]);
 
   // Close the account dropdown on an outside click.
   useEffect(() => {
@@ -280,8 +288,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     const activeGroup = visibleNavGroups.find((g) =>
       g.items.some((item) => ("exact" in item && item.exact ? pathname === item.href : pathname.startsWith(item.href)))
     );
-    if (activeGroup && !openGroups[activeGroup.label]) {
-      setOpenGroups((prev) => ({ ...prev, [activeGroup.label]: true }));
+    if (activeGroup && openGroup !== activeGroup.label) {
+      setOpenGroup(activeGroup.label);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
@@ -317,17 +325,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           since there's no label to click and the icon rail is compact already. */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {visibleNavGroups.map((group) => {
-          const isOpen = collapsed || Boolean(openGroups[group.label]);
+          const isOpen = collapsed || openGroup === group.label;
+          const GroupIcon = group.icon;
           return (
             <div key={group.label} className="mb-1">
               {!collapsed && (
                 <button
                   onClick={() => toggleGroup(group.label)}
-                  className="mb-1 mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-purple-500 transition-colors hover:bg-purple-900/40 hover:text-purple-300"
+                  className={cn(
+                    "mb-1 mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest transition-colors",
+                    isOpen ? "bg-purple-900/40 text-purple-200" : "text-purple-500 hover:bg-purple-900/40 hover:text-purple-300"
+                  )}
                   aria-expanded={isOpen}
                 >
-                  {group.label}
-                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", isOpen ? "rotate-180" : "")} />
+                  <GroupIcon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 text-left">{group.label}</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-150", isOpen ? "rotate-180" : "")} />
                 </button>
               )}
               {collapsed && <div className="my-2 border-t border-purple-900/40" />}
