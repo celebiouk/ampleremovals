@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useFormContext, useWatch, useController } from "react-hook-form";
-import { Pencil, Check, Sparkles, Loader2, Truck } from "lucide-react";
+import { Pencil, Check, Sparkles, Loader2, Truck, Wrench, Hammer, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { StepHeading } from "@/components/booking/primitives";
 import { useWizard } from "@/components/booking/WizardContext";
 import { DistancePanel } from "@/components/admin/DistancePanel";
 import { TIER_COPY } from "@/lib/tiers";
+import { DISMANTLE_PER_ITEM, ASSEMBLE_PER_ITEM } from "@/lib/quote-engine";
 import type { AddressOption } from "@/types";
 
 const gbp0 = (n: number) =>
@@ -108,6 +109,10 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
   // instead of the auto-estimate. Either or both can be left blank.
   const standardPrice = useController({ name: "standardPrice", control, defaultValue: "" });
   const premiumPrice = useController({ name: "premiumPrice", control, defaultValue: "" });
+  // Off: the customer never hears "Standard" or "Premium" at all — just one
+  // fixed quote (the Standard price/figures). On by default, matching the
+  // existing post-booking "Edit Quote" toggle this mirrors.
+  const showPremium = useController({ name: "showPremium", control, defaultValue: true });
 
   // Live system-suggested quote (Standard + Premium), shown to the admin as
   // guidance only. The fee they actually charge is whatever they type below.
@@ -235,6 +240,48 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
             destinationPostcode={destinationPostcode ?? undefined}
           />
 
+          {/* Per-item add-on pricing — reference only, for quoting on the call. */}
+          <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600">
+            <span className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-slate-400" /> Dismantling: £{DISMANTLE_PER_ITEM}/item</span>
+            <span className="flex items-center gap-1.5"><Hammer className="h-3.5 w-3.5 text-slate-400" /> Assembly: £{ASSEMBLE_PER_ITEM}/item</span>
+          </div>
+
+          {/* Show Premium toggle — off means the customer never hears "Standard"
+              or "Premium" at all, just one fixed quote. */}
+          <button
+            type="button"
+            onClick={() => showPremium.field.onChange(!showPremium.field.value)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-colors",
+              showPremium.field.value
+                ? "border-brand-purple-200 bg-white"
+                : "border-slate-300 bg-slate-100"
+            )}
+          >
+            <div className="flex items-center gap-2.5">
+              {showPremium.field.value ? <Sparkles className="h-4 w-4 text-brand-purple-700" /> : <EyeOff className="h-4 w-4 text-slate-500" />}
+              <div>
+                <p className="text-sm font-bold text-slate-800">
+                  {showPremium.field.value ? "Customer sees both Standard & Premium" : "Customer sees Standard only"}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {showPremium.field.value
+                    ? "Turn off so they only ever hear about one fixed price."
+                    : "Premium is completely hidden — no mention of packages, just one quote."}
+                </p>
+              </div>
+            </div>
+            <span className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              showPremium.field.value ? "bg-brand-purple-600" : "bg-slate-300"
+            )}>
+              <span className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                showPremium.field.value ? "translate-x-5" : "translate-x-0.5"
+              )} />
+            </span>
+          </button>
+
           {/* System-suggested quote (guidance only) */}
           <div className="rounded-xl border-2 border-brand-purple-200 bg-brand-purple-50/60 p-4">
             <div className="mb-1 flex items-center gap-2">
@@ -246,19 +293,21 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
               This is what the customer would be quoted automatically. Use it to decide what to charge — you can match it or reduce it, for either or both packages.
             </p>
             {preview ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className={cn("grid gap-2", showPremium.field.value ? "grid-cols-2" : "grid-cols-1")}>
                 <Suggestion
                   label={TIER_COPY.standard.name}
                   total={preview.standardTotal}
                   deposit={preview.standardDeposit}
                   onUse={() => standardPrice.field.onChange(String(preview.standardTotal))}
                 />
-                <Suggestion
-                  label={TIER_COPY.premium.name}
-                  total={preview.premiumTotal}
-                  deposit={preview.premiumDeposit}
-                  onUse={() => premiumPrice.field.onChange(String(preview.premiumTotal))}
-                />
+                {showPremium.field.value && (
+                  <Suggestion
+                    label={TIER_COPY.premium.name}
+                    total={preview.premiumTotal}
+                    deposit={preview.premiumDeposit}
+                    onUse={() => premiumPrice.field.onChange(String(preview.premiumTotal))}
+                  />
+                )}
               </div>
             ) : (
               <p className="text-sm text-brand-purple-400">{previewing ? "Calculating…" : "Add the items & addresses to see a suggestion."}</p>
@@ -266,15 +315,18 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
           </div>
 
           {/* The fees actually charged — one box per package. The customer picks
-              which one they want on their own quote page, same as always. */}
+              which one they want on their own quote page, same as always
+              (unless Premium is off, in which case they only ever see one). */}
           <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
-            <label className="block text-sm font-bold text-amber-900">Set the quote prices (admin)</label>
+            <label className="block text-sm font-bold text-amber-900">Set the quote price{showPremium.field.value ? "s" : ""} (admin)</label>
             <p className="mt-0.5 text-xs text-amber-700">
-              Whatever you enter here is exactly what the customer sees and pays for that package. Leave either blank to use its auto-estimate. The customer still chooses which package to book.
+              {showPremium.field.value
+                ? "Whatever you enter here is exactly what the customer sees and pays for that package. Leave either blank to use its auto-estimate. The customer still chooses which package to book."
+                : "This is the one price the customer will see and pay. Leave blank to use the auto-estimate."}
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className={cn("mt-3 grid gap-3", showPremium.field.value ? "grid-cols-2" : "grid-cols-1")}>
               <div>
-                <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Truck className="h-3.5 w-3.5" /> Standard</label>
+                <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Truck className="h-3.5 w-3.5" /> {showPremium.field.value ? "Standard" : "Quote"}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
                   <input
@@ -289,22 +341,24 @@ export function ReviewStep({ sections }: { sections: ReviewSection[] }) {
                   />
                 </div>
               </div>
-              <div>
-                <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Sparkles className="h-3.5 w-3.5" /> Premium</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    inputMode="decimal"
-                    value={(premiumPrice.field.value as string) ?? ""}
-                    onChange={(e) => premiumPrice.field.onChange(e.target.value)}
-                    placeholder="0.00"
-                    className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
-                  />
+              {showPremium.field.value && (
+                <div>
+                  <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-600"><Sparkles className="h-3.5 w-3.5" /> Premium</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">£</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      inputMode="decimal"
+                      value={(premiumPrice.field.value as string) ?? ""}
+                      onChange={(e) => premiumPrice.field.onChange(e.target.value)}
+                      placeholder="0.00"
+                      className="h-11 w-full rounded-xl border-2 border-amber-300 bg-white pl-7 pr-3 text-base outline-none focus:border-amber-500"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

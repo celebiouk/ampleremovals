@@ -29,11 +29,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  const { bookingId, token, standardPrice, premiumPrice } = (body as {
+  const { bookingId, token, standardPrice, premiumPrice, showPremium } = (body as {
     bookingId?: string;
     token?: string;
     standardPrice?: number | string;
     premiumPrice?: number | string;
+    showPremium?: boolean;
   }) ?? {};
   if (!bookingId) {
     return NextResponse.json({ success: false, error: "Missing booking." }, { status: 400 });
@@ -53,7 +54,8 @@ export async function POST(req: NextRequest) {
   const premiumPriceOverride = toNum(premiumPrice);
 
   try {
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride, isAdminFlow: true });
+    const showPremiumFlag = showPremium !== false;
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride, isAdminFlow: true, showPremium: showPremiumFlag });
     const d = parsed.data;
 
     // Record who did this and whether the prices were set by hand.
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
         action: standardPriceOverride != null || premiumPriceOverride != null
           ? `Lead completed by admin — Standard ${formatCurrency(standardPriceOverride ?? quoteTotal)}${premiumPriceOverride != null ? `, Premium ${formatCurrency(premiumPriceOverride)}` : ""}`
           : "Lead completed by admin (auto-estimated prices)",
-        metadata: { standard_price: standardPriceOverride ?? null, premium_price: premiumPriceOverride ?? null, quote_total: quoteTotal },
+        metadata: { standard_price: standardPriceOverride ?? null, premium_price: premiumPriceOverride ?? null, quote_total: quoteTotal, show_premium_quote: showPremiumFlag },
         performed_by: "admin",
       });
     } catch { /* non-critical */ }
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
         phone: d.phone,
         total: quoteTotal,
         inventory: d.inventory,
+        showPremium: showPremiumFlag,
       }),
     ]);
 

@@ -16,7 +16,7 @@
  *    row and cannot remove it.
  *  - Packing: £35 / hour × hours the customer selects.
  *  - Dismantling: £20 / item × quantity.
- *  - Assembling: £20 / item × quantity.
+ *  - Assembling: £30 / item × quantity.
  *  - End-of-tenancy cleaning add-on: by bedroom band.
  *  - Deposit: 25% of the total.
  *
@@ -47,7 +47,7 @@ export interface QuoteEngineInput {
   packingMen?: number;
   /** Number of items to dismantle (£20 each). */
   dismantleCount?: number;
-  /** Number of items to assemble (£20 each). */
+  /** Number of items to assemble (£30 each). */
   assembleCount?: number;
   /** End-of-tenancy cleaning add-on (priced by bedroom band). */
   eotCleaning?: boolean;
@@ -98,7 +98,7 @@ export const PACKING_PER_HOUR = 35;
 
 /** Dismantling / assembling, per item. */
 export const DISMANTLE_PER_ITEM = 20;
-export const ASSEMBLE_PER_ITEM = 20;
+export const ASSEMBLE_PER_ITEM = 30;
 
 /**
  * End-of-tenancy cleaning add-on by bedroom band.
@@ -174,7 +174,7 @@ export function buildQuote(input: QuoteEngineInput): QuoteEngineResult {
     });
   }
 
-  // 4. Assembling (£20/item) — removable.
+  // 4. Assembling (£30/item) — removable.
   const assembleCount = Math.max(0, Math.floor(input.assembleCount ?? 0));
   if (assembleCount > 0) {
     lines.push({

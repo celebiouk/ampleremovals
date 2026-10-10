@@ -31,6 +31,13 @@ export interface CompleteLeadOptions {
    * price — see lib/business-hours.ts's assignment message instead.
    */
   isAdminFlow?: boolean;
+  /**
+   * False: the customer never hears "Standard" or "Premium" at all — just one
+   * fixed quote (always the Standard figures/price). Defaults true. Mirrors
+   * the same `show_premium_quote` toggle the post-booking "Edit Quote" modal
+   * sets, just decided up front instead of after the fact.
+   */
+  showPremium?: boolean;
 }
 
 export interface CompleteLeadResult {
@@ -138,6 +145,7 @@ export async function completeLead(
       quote_subtotal: finalStandardTotal,
       quote_total: finalStandardTotal,
       quote_premium_total: finalPremiumTotal,
+      show_premium_quote: opts?.showPremium ?? true,
     })
     .eq("id", bookingId);
   if (coreErr) throw new Error(`lead completion failed: ${coreErr.message}`);

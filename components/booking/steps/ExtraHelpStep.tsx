@@ -10,7 +10,7 @@ import { StepHeading, QuantityStepper } from "@/components/booking/primitives";
  * this collects QUANTITIES that feed the instant quote:
  *   - packing help  → hours (£35/hr)
  *   - dismantling   → items (£20 each)
- *   - assembling    → items (£20 each)
+ *   - assembling    → items (£30 each)
  * Packing materials stays a simple yes/no. The matching `additionalServices`
  * booleans are kept in sync so the booking's additional_services row is correct.
  */
@@ -149,7 +149,7 @@ export function ExtraHelpStep() {
         <QuantityAddOn
           icon={Hammer}
           title="Furniture assembling"
-          description="We rebuild it at the new place — £20 per item."
+          description="We rebuild it at the new place — £30 per item."
           unit="item"
           value={assembleCount}
           onChange={(n) => setQuantity("assembleCount", "assemble_furniture", n)}
