@@ -29,15 +29,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
   }
 
-  const { bookingId, token, standardPrice, premiumPrice, showPremium } = (body as {
+  const { bookingId, token, standardPrice, premiumPrice, showStandard, showPremium, showHourly } = (body as {
     bookingId?: string;
     token?: string;
     standardPrice?: number | string;
     premiumPrice?: number | string;
+    showStandard?: boolean;
     showPremium?: boolean;
+    showHourly?: boolean;
   }) ?? {};
   if (!bookingId) {
     return NextResponse.json({ success: false, error: "Missing booking." }, { status: 400 });
+  }
+  const showStandardFlag = showStandard !== false;
+  const showPremiumFlag = showPremium !== false;
+  const showHourlyFlag = showHourly === true;
+  if (!showStandardFlag && !showPremiumFlag && !showHourlyFlag) {
+    return NextResponse.json({ success: false, error: "Turn at least one quote option on before sending." }, { status: 400 });
   }
 
   const parsed = RemovalsFormSchema.safeParse(body);
@@ -54,8 +62,10 @@ export async function POST(req: NextRequest) {
   const premiumPriceOverride = toNum(premiumPrice);
 
   try {
-    const showPremiumFlag = showPremium !== false;
-    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, { standardPriceOverride, premiumPriceOverride, isAdminFlow: true, showPremium: showPremiumFlag });
+    const { reference, customerId, quoteTotal } = await completeLead(bookingId, parsed.data, {
+      standardPriceOverride, premiumPriceOverride, isAdminFlow: true,
+      showStandard: showStandardFlag, showPremium: showPremiumFlag, showHourly: showHourlyFlag,
+    });
     const d = parsed.data;
 
     // Record who did this and whether the prices were set by hand.
@@ -65,7 +75,7 @@ export async function POST(req: NextRequest) {
         action: standardPriceOverride != null || premiumPriceOverride != null
           ? `Lead completed by admin — Standard ${formatCurrency(standardPriceOverride ?? quoteTotal)}${premiumPriceOverride != null ? `, Premium ${formatCurrency(premiumPriceOverride)}` : ""}`
           : "Lead completed by admin (auto-estimated prices)",
-        metadata: { standard_price: standardPriceOverride ?? null, premium_price: premiumPriceOverride ?? null, quote_total: quoteTotal, show_premium_quote: showPremiumFlag },
+        metadata: { standard_price: standardPriceOverride ?? null, premium_price: premiumPriceOverride ?? null, quote_total: quoteTotal, show_standard_quote: showStandardFlag, show_premium_quote: showPremiumFlag, show_hourly_quote: showHourlyFlag },
         performed_by: "admin",
       });
     } catch { /* non-critical */ }
@@ -105,7 +115,9 @@ export async function POST(req: NextRequest) {
         phone: d.phone,
         total: quoteTotal,
         inventory: d.inventory,
+        showStandard: showStandardFlag,
         showPremium: showPremiumFlag,
+        showHourly: showHourlyFlag,
       }),
     ]);
 

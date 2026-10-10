@@ -9,6 +9,7 @@ import { resolveCrew } from "@/lib/crew";
 import { loadPricing } from "@/lib/pricing";
 import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
 import { PREMIUM_INCLUDES, STANDARD_INCLUDES, premiumTotalFor } from "@/lib/tiers";
+import { HOURLY_RATE_TWO_MEN_VAN } from "@/lib/quote-engine";
 import { shortenUrl } from "@/lib/short-links";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
 
@@ -156,9 +157,14 @@ export interface ReserveMessageParams {
   total: number;
   /** Customer's selected items — shown as a simple list in the email. */
   inventory?: unknown;
-  /** False = the customer only ever hears about ONE quote (no Standard/
-   *  Premium framing at all). Defaults true (today's behaviour) when omitted. */
+  /** Which quote option(s) to actually tell the customer about. Any combination
+   *  is valid, including showHourly alone with both the others off — the
+   *  caller is responsible for not passing all three false (there'd be
+   *  nothing to send). showStandard/showPremium default true (today's
+   *  behaviour); showHourly defaults false. */
+  showStandard?: boolean;
   showPremium?: boolean;
+  showHourly?: boolean;
 }
 
 /**
@@ -176,7 +182,9 @@ export async function sendReserveMessages({
   phone,
   total,
   inventory,
+  showStandard = true,
   showPremium = true,
+  showHourly = false,
 }: ReserveMessageParams): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
@@ -188,6 +196,7 @@ export async function sendReserveMessages({
   const premiumAmount = formatCurrency(premiumTotal);
   const standardDepositAmount = formatCurrency(depositFor(total, depositPercentage));
   const premiumDepositAmount = formatCurrency(depositFor(premiumTotal, depositPercentage));
+  const hourlyRateText = `£${HOURLY_RATE_TWO_MEN_VAN}/hr`;
   // Two one-click links that pre-select the tier and take the customer straight
   // to reserve + pay on their quote page.
   const standardLink = `${link}?tier=standard`;
@@ -196,54 +205,73 @@ export async function sendReserveMessages({
   const standardList = STANDARD_INCLUDES.map((f) => `<li>${f}</li>`).join("");
   const premiumList = PREMIUM_INCLUDES.slice(1).map((f) => `<li>${f}</li>`).join("");
 
-  // showPremium=false: the customer only ever hears about ONE quote — no
-  // "Standard"/"Premium" framing, one price, one link, one button.
-  const quoteBlockHtml = showPremium
-    ? `
+  const activeCount = [showStandard, showPremium, showHourly].filter(Boolean).length;
+  const multiOption = activeCount > 1;
+
+  // Quote cards — one block per active option. Multi-option mode labels each
+  // card ("Standard Removal", "Premium…"); single-option mode drops the
+  // tier name entirely ("Your Removal") since there's nothing to compare it to.
+  const blocks: string[] = [];
+  if (showStandard) {
+    blocks.push(`
         <div style="border: 2px solid #6b21a8; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
-            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Standard Removal</td>
+            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">${multiOption ? "Standard Removal" : "Your Removal"}</td>
             <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${standardAmount}</td>
           </tr></table>
           <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${standardList}</ul>
-        </div>
+        </div>`);
+  }
+  if (showPremium) {
+    blocks.push(`
         <div style="border: 2px solid #6b21a8; background:#faf5ff; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
-            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Premium — Full Pack &amp; Move</td>
+            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">${multiOption ? "Premium — Full Pack & Move" : "Your Removal (Premium — Full Pack & Move)"}</td>
             <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${premiumAmount}</td>
           </tr></table>
-          <p style="margin: 8px 0 4px; font-size: 13px; font-weight: bold; color:#475569;">Everything in Standard, plus:</p>
+          ${multiOption ? `<p style="margin: 8px 0 4px; font-size: 13px; font-weight: bold; color:#475569;">Everything in Standard, plus:</p>` : ""}
           <ul style="margin: 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${premiumList}</ul>
-        </div>`
-    : `
-        <div style="border: 2px solid #6b21a8; border-radius: 12px; padding: 18px; margin: 20px 0;">
+        </div>`);
+  }
+  if (showHourly) {
+    blocks.push(`
+        <div style="border: 2px solid #0f766e; background:#f0fdfa; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
-            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">Your Removal</td>
-            <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${standardAmount}</td>
+            <td style="font-size: 16px; font-weight: bold; color: #0f766e;">Hourly Rate — 2 Men &amp; a Van</td>
+            <td style="text-align:right; font-size: 22px; font-weight: bold; color: #0f766e;">${hourlyRateText}</td>
           </tr></table>
-          <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${standardList}</ul>
-        </div>`;
+          <p style="margin: 8px 0 0; font-size: 13px; color: #475569;">Pay only for the time it takes — no fixed total. Call us to book at this rate.</p>
+        </div>`);
+  }
+  const quoteBlockHtml = blocks.join("");
 
-  const ctaHtml = showPremium
-    ? `
-        <p style="font-size: 16px; margin: 20px 0 12px;">Ready to secure your date? A small deposit does it — <strong>the rest isn't due until moving day</strong>:</p>
+  // CTAs — a "Pay deposit" button per fixed-price option that's on; Hourly
+  // never gets one (there's no total to deposit against), so if it's the
+  // ONLY option, the CTA is a plain "call to book" instead of any button.
+  const ctaButtons: string[] = [];
+  if (showStandard) {
+    ctaButtons.push(`
         <p style="text-align: center; margin: 0 0 12px;">
           <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            Pay ${standardDepositAmount} deposit — Standard
+            Pay ${standardDepositAmount} deposit${multiOption ? " — Standard" : " to secure your date"}
           </a>
-        </p>
-        <p style="text-align: center; margin: 0 0 24px;">
+        </p>`);
+  }
+  if (showPremium) {
+    ctaButtons.push(`
+        <p style="text-align: center; margin: 0 0 12px;">
           <a href="${premiumLink}" style="background: #6b21a8; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            Pay ${premiumDepositAmount} deposit — Premium
+            Pay ${premiumDepositAmount} deposit${multiOption ? " — Premium" : " to secure your date"}
           </a>
-        </p>`
-    : `
-        <p style="font-size: 16px; margin: 20px 0 12px;"><strong>Ready to secure your date? A small deposit does it — the rest isn't due until moving day.</strong></p>
-        <p style="text-align: center; margin: 0 0 24px;">
-          <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
-            Pay ${standardDepositAmount} deposit to secure your date
-          </a>
-        </p>`;
+        </p>`);
+  }
+  const ctaHtml = ctaButtons.length > 0
+    ? `<p style="font-size: 16px; margin: 20px 0 12px;">Ready to secure your date? A small deposit does it — <strong>the rest isn't due until moving day</strong>:</p>${ctaButtons.join("")}`
+    : `<p style="font-size: 16px; margin: 20px 0 12px; text-align: center;"><strong>Ready to book at the hourly rate?</strong><br/>Call us on <a href="tel:${PHONE.replace(/\s/g, "")}" style="color: #0f766e;">${PHONE}</a> and we'll get your date locked in.</p>`;
+
+  const introLine = showHourly && activeCount === 1
+    ? "Here's your hourly rate for the move. Your full quote is attached as a PDF."
+    : `Here's your quote${multiOption ? " — pick the option that suits you" : ""}. Your full quote is attached as a PDF.`;
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
@@ -252,7 +280,7 @@ export async function sendReserveMessages({
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">Here's your fixed-price quote for your move${showPremium ? " — pick the package that suits you" : ""}. Your full quote is attached as a PDF.</p>
+        <p style="font-size: 16px; margin: 16px 0;">${introLine}</p>
         ${crewHtml}
         ${quoteBlockHtml}
         ${bookingItemsBlockHtml(inventory)}
@@ -263,23 +291,35 @@ export async function sendReserveMessages({
       </div>
     </div>`;
 
-  const smsLink = await shortenUrl(link);
-  const smsText = showPremium
-    ? `Hi ${firstName}, your Ample Removals quote: Standard ${standardAmount} or Premium ${premiumAmount}. Pay a small deposit to secure your date (rest due on moving day): ${smsLink} — Ref ${reference}`
-    : `Hi ${firstName}, your Ample Removals quote is ${standardAmount}. Pay a small deposit to secure your date (rest due on moving day): ${smsLink} — Ref ${reference}`;
+  // Plain-text option list reused by SMS/WhatsApp/subject, e.g. "Standard £500
+  // or Premium £750" / "£75/hr (2 men & van)" / "Standard £500 or £75/hr".
+  const parts: string[] = [];
+  if (showStandard) parts.push(multiOption ? `Standard ${standardAmount}` : standardAmount);
+  if (showPremium) parts.push(multiOption ? `Premium ${premiumAmount}` : premiumAmount);
+  if (showHourly) parts.push(multiOption ? `${hourlyRateText}/hr (2 men & van)` : `${hourlyRateText} (2 men & van)`);
+  const optionsText = parts.join(" or ");
 
-  const whatsappText = showPremium
-    ? `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Standard:* ${standardAmount} (deposit ${standardDepositAmount})\n*Premium (full pack & move):* ${premiumAmount} (deposit ${premiumDepositAmount})\n\nA small deposit secures your date — the rest isn't due until moving day:\n${link}\n\nRef: ${reference}`
-    : `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n*Your quote:* ${standardAmount} (deposit ${standardDepositAmount})\n\nA small deposit secures your date — the rest isn't due until moving day:\n${link}\n\nRef: ${reference}`;
+  const smsLink = await shortenUrl(link);
+  const smsCta = ctaButtons.length > 0
+    ? `Pay a small deposit to secure your date (rest due on moving day): ${smsLink}`
+    : `Call ${PHONE} to book: ${smsLink}`;
+  const smsText = `Hi ${firstName}, your Ample Removals quote: ${optionsText}. ${smsCta} — Ref ${reference}`;
+
+  const whatsappLines: string[] = [];
+  if (showStandard) whatsappLines.push(`*${multiOption ? "Standard:" : "Your quote:"}* ${standardAmount} (deposit ${standardDepositAmount})`);
+  if (showPremium) whatsappLines.push(`*${multiOption ? "Premium (full pack & move):" : "Your quote (full pack & move):"}* ${premiumAmount} (deposit ${premiumDepositAmount})`);
+  if (showHourly) whatsappLines.push(`*Hourly rate (2 men & a van):* ${hourlyRateText} — call to book`);
+  const whatsappCta = ctaButtons.length > 0
+    ? `A small deposit secures your date — the rest isn't due until moving day:\n${link}`
+    : `Call us on ${PHONE} to get your date locked in:\n${link}`;
+  const whatsappText = `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n${whatsappLines.join("\n")}\n\n${whatsappCta}\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails
       .send({
         from: resendFrom,
         to: email,
-        subject: showPremium
-          ? `Your Ample Removals quote — Standard ${standardAmount} or Premium ${premiumAmount} (${reference})`
-          : `Your Ample Removals quote — ${standardAmount} (${reference})`,
+        subject: `Your Ample Removals quote — ${optionsText} (${reference})`,
         html: emailHtml,
         ...(pdf ? { attachments: [{ filename: `Quote-${reference}.pdf`, content: pdf }] } : {}),
       })

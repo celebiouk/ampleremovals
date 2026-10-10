@@ -32,12 +32,17 @@ export interface CompleteLeadOptions {
    */
   isAdminFlow?: boolean;
   /**
-   * False: the customer never hears "Standard" or "Premium" at all — just one
-   * fixed quote (always the Standard figures/price). Defaults true. Mirrors
-   * the same `show_premium_quote` toggle the post-booking "Edit Quote" modal
-   * sets, just decided up front instead of after the fact.
+   * Which quote option(s) the customer is actually told about — any combination
+   * of the three, including Hourly entirely on its own with both fixed-price
+   * tiers off. showStandard/showPremium default true (today's behaviour);
+   * showHourly defaults false (it's the opt-in extra). Standard's own figures
+   * (quote_total/quote_line_items) are always computed and stored regardless
+   * of showStandard, same as Premium already works — these flags only control
+   * what the customer is shown, never what's recorded internally.
    */
+  showStandard?: boolean;
   showPremium?: boolean;
+  showHourly?: boolean;
 }
 
 export interface CompleteLeadResult {
@@ -145,7 +150,9 @@ export async function completeLead(
       quote_subtotal: finalStandardTotal,
       quote_total: finalStandardTotal,
       quote_premium_total: finalPremiumTotal,
+      show_standard_quote: opts?.showStandard ?? true,
       show_premium_quote: opts?.showPremium ?? true,
+      show_hourly_quote: opts?.showHourly ?? false,
     })
     .eq("id", bookingId);
   if (coreErr) throw new Error(`lead completion failed: ${coreErr.message}`);

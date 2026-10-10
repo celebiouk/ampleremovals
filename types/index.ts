@@ -130,6 +130,8 @@ export interface Booking {
   quote_total: number | null;
   quote_premium_total?: number | null;
   show_premium_quote?: boolean;
+  show_standard_quote?: boolean;
+  show_hourly_quote?: boolean;
   quote_valid_until: string | null;
   quote_notes: string | null;
   quote_crew_men: number | null;

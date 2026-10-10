@@ -100,6 +100,12 @@ export const PACKING_PER_HOUR = 35;
 export const DISMANTLE_PER_ITEM = 20;
 export const ASSEMBLE_PER_ITEM = 30;
 
+/** Hourly man-and-van rate — 2 men & a van, billed by the hour instead of a
+ *  fixed quote. Offered as an alternative (or alongside) the fixed Standard/
+ *  Premium prices; the customer is told the rate itself, not a computed total,
+ *  since the job's actual duration isn't known in advance. */
+export const HOURLY_RATE_TWO_MEN_VAN = 75;
+
 /**
  * End-of-tenancy cleaning add-on by bedroom band.
  * Owner gave 2-bed £200 and 3-bed £250 (+£50 per extra bedroom). Studio/1-bed and

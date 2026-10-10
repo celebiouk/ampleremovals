@@ -54,6 +54,14 @@ interface QuoteData {
   premiumMultiplier?: number;
   /** False = admin has turned Premium off for this customer — one quote only. */
   showPremiumQuote?: boolean;
+  /** False = admin has turned the fixed Standard price off entirely (e.g. this
+   *  customer is being quoted Hourly and/or Premium only). */
+  showStandardQuote?: boolean;
+  /** True = also show the hourly man-and-van rate, alongside or instead of
+   *  the fixed-price option(s). */
+  showHourlyQuote?: boolean;
+  /** £/hr for 2 men & a van — only meaningful when showHourlyQuote is true. */
+  hourlyRate?: number;
 }
 
 type Stage = "loading" | "reveal" | "reserving" | "deposit" | "claiming" | "done" | "error";
@@ -308,6 +316,11 @@ function RevealView({
       ? Math.round(liveTotal * quote.premiumMultiplier * 100) / 100
       : premiumTotalFor(liveTotal);
   const showPremium = quote.showPremiumQuote !== false;
+  const showStandard = quote.showStandardQuote !== false;
+  const showHourly = quote.showHourlyQuote === true;
+  // "Only quote" framing (dropping the Standard/Premium tier names) only makes
+  // sense when there's exactly one fixed-price option on screen.
+  const soloFixedPrice = showStandard !== showPremium;
   const premiumDeposit = depositFor(premiumTotal, quote.depositPercentage);
   return (
     <motion.div
@@ -326,13 +339,15 @@ function RevealView({
         </h1>
         <p className="mt-2 text-slate-500">Fixed price, no hidden fees. Pay a small deposit today to secure your date.</p>
       </div>
-      {/* ── Standard (or the only quote, when Premium is off) ── */}
+      {/* ── Standard (or the only fixed-price quote, when Premium is off) —
+          omitted entirely when admin has turned the Standard price off. ── */}
+      {showStandard && (
       <div className="rounded-2xl border-2 border-brand-purple-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-6">
         <div className="mb-3 flex items-center gap-2">
           <Truck className="h-5 w-5 text-brand-purple-700" />
-          <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{showPremium ? TIER_COPY.standard.name : "Your Removal"}</h2>
+          <h2 className="font-display text-lg font-extrabold text-brand-purple-950">{soloFixedPrice ? "Your Removal" : TIER_COPY.standard.name}</h2>
         </div>
-        {showPremium && <p className="mb-3 text-sm text-slate-500">{TIER_COPY.standard.tagline}</p>}
+        {!soloFixedPrice && <p className="mb-3 text-sm text-slate-500">{TIER_COPY.standard.tagline}</p>}
         {/* One fixed price — the breakdown (crew & van, your items, distance) is
             deliberately hidden; the customer sees only what's included and the total. */}
         <ul className="space-y-1.5">
@@ -380,6 +395,7 @@ function RevealView({
           </Button>
         </div>
       </div>
+      )}
 
       {/* ── Premium — omitted entirely when admin has turned it off ── */}
       {showPremium && (
@@ -421,6 +437,26 @@ function RevealView({
               Pay {gbp0(premiumDeposit)} deposit to secure your date
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* ── Hourly rate — a rate, not a fixed total, so no deposit button: a
+          "call to book" CTA instead. Shown alongside or instead of the
+          fixed-price option(s) above. ── */}
+      {showHourly && (
+        <div className="mt-4 rounded-2xl border-2 border-teal-200 bg-teal-50/60 p-5 shadow-xl shadow-slate-200/60 sm:p-6">
+          <div className="mb-2 flex items-center gap-2">
+            <Truck className="h-5 w-5 text-teal-700" />
+            <h2 className="font-display text-lg font-extrabold text-teal-950">Hourly Rate — 2 Men &amp; a Van</h2>
+          </div>
+          <p className="mb-3 text-sm text-slate-500">Pay only for the time it takes — no fixed total.</p>
+          <p className="mb-4 font-display text-3xl font-extrabold tabular-nums text-teal-900">£{quote.hourlyRate ?? 75}<span className="text-base font-semibold text-teal-700">/hr</span></p>
+          <a
+            href={`tel:${PHONE_TEL}`}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-teal-700 text-base font-bold text-white shadow-lg shadow-teal-200 hover:bg-teal-600"
+          >
+            <Phone className="h-5 w-5" /> Call {PHONE_DISPLAY} to book
+          </a>
         </div>
       )}
 
