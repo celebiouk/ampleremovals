@@ -1165,7 +1165,9 @@ export default function BookingDetailPage() {
           bookingReference={data.booking.reference}
           existingStandardTotal={data.booking.quote_total ?? null}
           existingPremiumTotal={data.booking.quote_premium_total ?? null}
+          existingShowStandard={data.booking.show_standard_quote !== false}
           existingShowPremium={data.booking.show_premium_quote !== false}
+          existingShowHourly={data.booking.show_hourly_quote === true}
           isOpen={quoteModalOpen}
           onClose={() => { setQuoteModalOpen(false); notifyEmbedDone(); }}
           onSaved={() => { refresh(); notifyEmbedDone(); }}

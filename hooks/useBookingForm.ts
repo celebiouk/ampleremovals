@@ -125,7 +125,11 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       // with the "you've been assigned" message instead (see
       // lib/business-hours.ts and app/(public)/confirmation/page.tsx).
       if (isAdminCompletion) {
-        router.push(`/quote/${config.completion!.bookingId}/${config.completion!.token}`);
+        // `sent=1` tells the quote page to show a clear "booking request sent
+        // successfully" confirmation the first time it loads — so it's never
+        // ambiguous whether the submit actually went through and the customer's
+        // email/SMS/WhatsApp went out, vs. just previewing their quote page.
+        router.push(`/quote/${config.completion!.bookingId}/${config.completion!.token}?sent=1`);
       } else {
         // bookingId + quoteToken (when we have both) let the confirmation page
         // trigger the customer's confirmation email/SMS itself after a short

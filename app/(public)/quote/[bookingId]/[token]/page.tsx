@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import {
   Loader2, CheckCircle2, Phone, ShieldCheck,
   CalendarCheck, Truck, Sparkles, Landmark, XCircle, Check, Star,
@@ -77,6 +78,7 @@ const MIN_LOADING_MS = 4500;
 
 export default function QuotePage() {
   const params = useParams();
+  const router = useRouter();
   const bookingId = params.bookingId as string;
   const token = params.token as string;
   // The customer's quote/confirmation email+SMS fires from THIS page, ~60s
@@ -103,6 +105,22 @@ export default function QuotePage() {
     if (p.get("tier")) return "tier";
     return "quote";
   });
+
+  // Admin just completed this lead and landed here straight off the submit —
+  // confirm loud and clear that it actually went through, since otherwise this
+  // page looks identical to just opening a customer's link to check it.
+  useEffect(() => {
+    if (stage !== "reveal") return;
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("sent") !== "1") return;
+    toast.success("Booking request sent successfully", {
+      description: "Confirmation email, SMS and WhatsApp have been sent to the customer.",
+      duration: 6000,
+    });
+    // Strip the param so refreshing (or sharing this link) never re-shows it.
+    router.replace(`/quote/${bookingId}/${token}`);
+  }, [stage, bookingId, token, router]);
 
   // Rotate the reassuring loading messages.
   useEffect(() => {

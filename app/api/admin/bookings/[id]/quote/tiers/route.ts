@@ -19,14 +19,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = await req.json().catch(() => null) as {
     standardTotal?: number;
     premiumTotal?: number | null;
+    showStandard?: boolean;
     showPremium?: boolean;
+    showHourly?: boolean;
     send?: boolean;
   } | null;
   const standardTotal = Number(body?.standardTotal);
   if (!Number.isFinite(standardTotal) || standardTotal <= 0) {
     return NextResponse.json({ success: false, error: "Enter a valid Standard price" }, { status: 400 });
   }
+  const showStandard = body?.showStandard !== false;
   const showPremium = body?.showPremium !== false;
+  const showHourly = body?.showHourly === true;
+  if (!showStandard && !showPremium && !showHourly) {
+    return NextResponse.json({ success: false, error: "Turn at least one quote option on" }, { status: 400 });
+  }
   const premiumTotal = showPremium && body?.premiumTotal != null && Number.isFinite(Number(body.premiumTotal)) && Number(body.premiumTotal) > 0
     ? Number(body.premiumTotal)
     : null; // null = fall back to the auto multiplier (see buildQuoteAssets)
@@ -41,14 +48,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { error: updateError } = await supabase
     .from("bookings")
-    .update({ quote_total: standardTotal, quote_premium_total: premiumTotal, show_premium_quote: showPremium })
+    .update({
+      quote_total: standardTotal,
+      quote_premium_total: premiumTotal,
+      show_standard_quote: showStandard,
+      show_premium_quote: showPremium,
+      show_hourly_quote: showHourly,
+    })
     .eq("id", params.id);
   if (updateError) return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
 
+  const optionsLabel = [
+    showStandard ? `Standard £${standardTotal.toFixed(2)}` : null,
+    showPremium ? `Premium ${premiumTotal != null ? `£${premiumTotal.toFixed(2)}` : "(auto)"}` : null,
+    showHourly ? "Hourly rate" : null,
+  ].filter(Boolean).join(" / ");
   await supabase.from("activity_log").insert({
     booking_id: params.id,
-    action: `Quote tiers set: Standard £${standardTotal.toFixed(2)}${showPremium ? ` / Premium ${premiumTotal != null ? `£${premiumTotal.toFixed(2)}` : "(auto)"}` : " (Premium hidden from customer)"}`,
-    metadata: { standardTotal, premiumTotal, showPremium },
+    action: `Quote options set: ${optionsLabel}`,
+    metadata: { standardTotal, premiumTotal, showStandard, showPremium, showHourly },
     performed_by: "admin",
   });
 
@@ -77,7 +95,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       phone: customer.phone,
       total: standardTotal,
       inventory: booking.inventory,
+      showStandard,
       showPremium,
+      showHourly,
     });
   } catch (err) {
     await logError({ message: `quote/tiers send failed: ${err instanceof Error ? err.message : String(err)}`, metadata: { bookingId: params.id } });

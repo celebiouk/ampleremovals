@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Send, Save } from "lucide-react";
+import { X, Loader2, Send, Save, Truck, Sparkles, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { HOURLY_RATE_TWO_MEN_VAN } from "@/lib/quote-engine";
 
 interface EditRemovalsQuoteModalProps {
   bookingId: string;
   bookingReference: string;
   existingStandardTotal: number | null;
   existingPremiumTotal: number | null;
+  existingShowStandard: boolean;
   existingShowPremium: boolean;
+  existingShowHourly: boolean;
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
@@ -18,33 +21,42 @@ interface EditRemovalsQuoteModalProps {
 /**
  * Removals-specific "Edit Quote" — the Standard/Premium tiered model (see
  * app/(public)/quote/[bookingId]/[token]/page.tsx), distinct from the
- * itemized line-item QuoteBuilderModal used for the other services. The
- * "Show Premium" toggle controls whether the customer ever hears about a
- * Premium option at all — off means one quote, no tier framing.
+ * itemized line-item QuoteBuilderModal used for the other services. Three
+ * independent toggles (Hourly/Standard/Premium) control what the customer is
+ * actually told — any combination, including Hourly entirely on its own.
  */
 export function EditRemovalsQuoteModal({
   bookingId,
   bookingReference,
   existingStandardTotal,
   existingPremiumTotal,
+  existingShowStandard,
   existingShowPremium,
+  existingShowHourly,
   isOpen,
   onClose,
   onSaved,
 }: EditRemovalsQuoteModalProps) {
   const [standardTotal, setStandardTotal] = useState(existingStandardTotal != null ? String(existingStandardTotal) : "");
   const [premiumTotal, setPremiumTotal] = useState(existingPremiumTotal != null ? String(existingPremiumTotal) : "");
+  const [showStandard, setShowStandard] = useState(existingShowStandard);
   const [showPremium, setShowPremium] = useState(existingShowPremium);
+  const [showHourly, setShowHourly] = useState(existingShowHourly);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
 
   if (!isOpen) return null;
 
   const std = parseFloat(standardTotal);
-  const canSave = Number.isFinite(std) && std > 0;
+  const noOptionSelected = !showStandard && !showPremium && !showHourly;
+  const canSave = Number.isFinite(std) && std > 0 && !noOptionSelected;
 
   async function submit(send: boolean) {
-    if (!canSave) {
+    if (noOptionSelected) {
+      toast.error("Turn at least one quote option on");
+      return;
+    }
+    if (!(Number.isFinite(std) && std > 0)) {
       toast.error("Enter a valid Standard price");
       return;
     }
@@ -56,7 +68,9 @@ export function EditRemovalsQuoteModal({
         body: JSON.stringify({
           standardTotal: std,
           premiumTotal: showPremium && premiumTotal ? parseFloat(premiumTotal) : null,
+          showStandard,
           showPremium,
+          showHourly,
           send,
         }),
       });
@@ -90,6 +104,24 @@ export function EditRemovalsQuoteModal({
         </div>
 
         <div className="space-y-4">
+          {/* Three independent quote options. */}
+          <div className="grid grid-cols-3 gap-2">
+            <OptionToggle icon={Clock} label="Hourly" on={showHourly} onToggle={() => setShowHourly((v) => !v)} />
+            <OptionToggle icon={Truck} label="Standard" on={showStandard} onToggle={() => setShowStandard((v) => !v)} />
+            <OptionToggle icon={Sparkles} label="Premium" on={showPremium} onToggle={() => setShowPremium((v) => !v)} />
+          </div>
+          {noOptionSelected && (
+            <div className="flex items-center gap-2 rounded-xl border-2 border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Turn at least one of these on.
+            </div>
+          )}
+          {showHourly && (
+            <p className="rounded-xl bg-teal-50 px-3 py-2 text-xs text-teal-700">
+              Hourly: £{HOURLY_RATE_TWO_MEN_VAN}/hr for 2 men &amp; a van — no fixed total, just a &ldquo;call to book&rdquo; CTA.
+            </p>
+          )}
+
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-slate-700">Standard price (£)</label>
             <input
@@ -99,22 +131,9 @@ export function EditRemovalsQuoteModal({
               placeholder="e.g. 450"
               className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:border-brand-purple-500 focus:outline-none focus:ring-2 focus:ring-brand-purple-500/20"
             />
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-slate-800">Show Premium package</p>
-              <p className="text-xs text-slate-500">
-                {showPremium ? "Customer sees both Standard and Premium, Premium highlighted." : "Customer sees only one quote — no Standard/Premium framing."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowPremium(!showPremium)}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${showPremium ? "bg-brand-green-600" : "bg-slate-300"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${showPremium ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
+            {!showStandard && (
+              <p className="mt-1 text-xs text-slate-400">Still used internally (e.g. to work out Premium) even though it&apos;s hidden from the customer.</p>
+            )}
           </div>
 
           {showPremium && (
@@ -155,5 +174,30 @@ export function EditRemovalsQuoteModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function OptionToggle({
+  icon: Icon, label, on, onToggle,
+}: {
+  icon: React.ElementType;
+  label: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 transition-colors ${
+        on ? "border-brand-purple-300 bg-brand-purple-50" : "border-slate-200 bg-slate-50"
+      }`}
+    >
+      <Icon className={`h-4 w-4 ${on ? "text-brand-purple-700" : "text-slate-400"}`} />
+      <span className={`text-xs font-bold ${on ? "text-brand-purple-800" : "text-slate-500"}`}>{label}</span>
+      <span className={`relative h-4 w-8 rounded-full transition-colors ${on ? "bg-brand-purple-600" : "bg-slate-300"}`}>
+        <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${on ? "translate-x-4" : "translate-x-0.5"}`} />
+      </span>
+    </button>
   );
 }
