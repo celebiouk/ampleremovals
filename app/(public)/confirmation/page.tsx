@@ -22,10 +22,10 @@ export default function ConfirmationPage({
         <SuccessCheck />
 
         <h1 className="mt-7 font-display text-3xl font-extrabold tracking-tight text-brand-purple-950 sm:text-4xl">
-          You&apos;re booked in!
+          Booking request sent successfully!
         </h1>
         <p className="mx-auto mt-3 max-w-md text-slate-500">
-          Thank you for choosing Ample Removals — we&apos;re looking forward to helping with your move.
+          Thanks for reaching out to Ample Removals — nothing&apos;s confirmed yet. Here&apos;s what happens next.
         </p>
 
         {reference && (
