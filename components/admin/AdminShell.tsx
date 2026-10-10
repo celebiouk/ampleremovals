@@ -36,19 +36,25 @@ export const NAV_GROUPS = [
     items: [
       { href: "/admin/leads/new", label: "New Lead", icon: UserPlus },
       { href: "/admin/catalog", label: "Item Catalog", icon: Package },
-      { href: "/admin/anyvan", label: "AnyVan Jobs", icon: Truck },
       { href: "/admin/overdue", label: "Items Still Out", icon: PackageCheck },
       { href: "/admin/approvals", label: "Approvals", icon: CheckCheck },
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList, showBadge: true },
-      { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
       { href: "/admin/customers", label: "Customers", icon: Users },
       { href: "/admin/calendar", label: "Job Calendar", icon: CalendarDays },
       { href: "/admin/call-back", label: "Call back", icon: PhoneCall },
+    ],
+  },
+  {
+    label: "WORKFORCE",
+    icon: Truck,
+    items: [
       { href: "/admin/drivers", label: "Drivers", icon: Truck },
       { href: "/admin/porters", label: "Porters", icon: Users },
+      { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
+      { href: "/admin/anyvan", label: "AnyVan Jobs", icon: Truck },
       { href: "/admin/anyvan-jobs", label: "AnyVan Jobs", icon: Package },
-      { href: "/admin/pay-requests", label: "Pay Requests", icon: PoundSterling },
       { href: "/admin/routes", label: "Route Plans", icon: Route },
+      { href: "/admin/pay-requests", label: "Pay Requests", icon: PoundSterling },
     ],
   },
   {
