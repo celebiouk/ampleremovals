@@ -6,6 +6,11 @@ export const resend = new Resend(process.env.RESEND_API_KEY);
 export const resendFrom =
   process.env.RESEND_FROM_EMAIL ?? "Bookings - Ample Removals <bookings@ampleremovals.com>";
 
+// Mail goes out FROM booking@/bookings@, but nobody checks that inbox from a
+// phone — only daniel@ and hello@ are handy day to day. So every customer
+// reply needs to land at daniel@ instead, regardless of which address sent it.
+export const resendReplyTo = "daniel@ampleremovals.com";
+
 // Multiple admin emails for new booking notifications
 // daniel@ampleremovals.com is the MAIN email - must receive ALL notifications
 export const resendAdminEmails = [
@@ -70,9 +75,13 @@ async function logCustomerEmail(p: {
 /**
  * Patch resend.emails.send ONCE so EVERY email — including the dozens of
  * automated flows that call resend.emails.send() directly (confirmations,
- * quotes, invoices, receipts, reminders…) — is logged to the customer inbox.
- * logCustomerEmail skips recipients that aren't customers (admin/driver mail).
- * Guarded so repeated module evaluation never double-wraps.
+ * quotes, invoices, receipts, reminders…) — is logged to the customer inbox
+ * AND gets a Reply-To of daniel@ampleremovals.com by default, so a customer
+ * hitting "Reply" on a booking@/bookings@ email lands somewhere actually
+ * checked from a phone. A call site that sets its own replyTo/reply_to is
+ * left alone. logCustomerEmail skips recipients that aren't customers
+ * (admin/driver mail). Guarded so repeated module evaluation never
+ * double-wraps.
  */
 {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +89,10 @@ async function logCustomerEmail(p: {
   if (!emailsApi.__ampleLogged) {
     const originalSend = resend.emails.send.bind(resend.emails);
     emailsApi.send = async (payload: Record<string, unknown>, options?: unknown) => {
-      const result = await originalSend(payload as never, options as never);
+      const withReplyTo = ("replyTo" in payload || "reply_to" in payload)
+        ? payload
+        : { ...payload, replyTo: resendReplyTo };
+      const result = await originalSend(withReplyTo as never, options as never);
       await logCustomerEmail({
         to: payload.to as string | string[],
         subject: (payload.subject as string) ?? "",
