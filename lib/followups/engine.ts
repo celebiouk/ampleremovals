@@ -12,6 +12,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ampleremovals.
 const MAX_DAY = 14;
 const SMS_CUTOFF_DAY = 5;
 
+// Reduced cadence (Oct 2026) — a cold quote/deposit lead used to get a
+// message on literally every single day for two weeks (up to 14 emails + 5
+// SMS + 14 WhatsApp = 33 touches), which is what produced a real complaint
+// ("11+ texts... blocked on everything"). Content for every day 1-14 still
+// exists in followups/content.ts; these sets just decide which of those days
+// actually go out, so the full copy is there to dial back up later if wanted.
+const EMAIL_DAYS = new Set([1, 4, 9, 14]);
+const TEXT_DAYS = new Set([1, 3, 7]); // governs SMS (still capped at day <= SMS_CUTOFF_DAY) and WhatsApp
+
 /** Calendar-day offset from an anchor timestamp — 0 the day it was sent, 1 the
  * next calendar day, and so on. Deliberately date-based (not 24h-based) so a
  * quote sent at 11pm and one sent at 7am both start their drip the next
@@ -130,13 +139,14 @@ export async function runQuoteFollowupMorning(): Promise<{ sent: number; flagged
       flagged++;
       continue;
     }
+    if (!EMAIL_DAYS.has(day) && !TEXT_DAYS.has(day)) continue; // not one of the reduced touch days
     const content = QUOTE_FOLLOWUP_DAYS[day];
     if (!content) continue;
     const v = quoteVars(b, customer, review);
 
     try {
-      if (customer.email) await sendEmail({ to: customer.email, subject: content.emailSubject(v), html: wrapEmail(content.emailSubject(v), content.emailBody(v)) });
-      if (customer.phone && day <= SMS_CUTOFF_DAY && content.sms) await sendSMS(customer.phone, content.sms(v));
+      if (EMAIL_DAYS.has(day) && customer.email) await sendEmail({ to: customer.email, subject: content.emailSubject(v), html: wrapEmail(content.emailSubject(v), content.emailBody(v)) });
+      if (TEXT_DAYS.has(day) && customer.phone && day <= SMS_CUTOFF_DAY && content.sms) await sendSMS(customer.phone, content.sms(v));
     } catch { /* best-effort, still stamp so we don't retry-storm on a broken address */ }
 
     await supabase.from("bookings").update({ quote_followup_last_morning_sent_on: todayISODate() }).eq("id", b.id);
@@ -156,6 +166,7 @@ export async function runQuoteFollowupEvening(): Promise<{ sent: number }> {
     if (!customer?.phone) continue;
     const day = dayNumberSince(b.quote_sent_at);
     if (day === null || day < 1 || day > MAX_DAY) continue; // >14 already flagged by the morning run
+    if (!TEXT_DAYS.has(day)) continue; // not one of the reduced touch days
     const content = QUOTE_FOLLOWUP_DAYS[day];
     if (!content) continue;
     const v = quoteVars(b, customer, review);
@@ -239,6 +250,7 @@ export async function runDepositFollowupMorning(): Promise<{ sent: number; flagg
       flagged++;
       continue;
     }
+    if (!EMAIL_DAYS.has(day) && !TEXT_DAYS.has(day)) continue; // not one of the reduced touch days
     const invoice = await activeDepositInvoice(supabase, b.id);
     if (!invoice) continue;
     const content = DEPOSIT_FOLLOWUP_DAYS[day];
@@ -246,8 +258,8 @@ export async function runDepositFollowupMorning(): Promise<{ sent: number; flagg
     const v = depositVars(invoice, customer, review);
 
     try {
-      if (customer.email) await sendEmail({ to: customer.email, subject: content.emailSubject(v), html: wrapEmail(content.emailSubject(v), content.emailBody(v)) });
-      if (customer.phone && day <= SMS_CUTOFF_DAY && content.sms) await sendSMS(customer.phone, content.sms(v));
+      if (EMAIL_DAYS.has(day) && customer.email) await sendEmail({ to: customer.email, subject: content.emailSubject(v), html: wrapEmail(content.emailSubject(v), content.emailBody(v)) });
+      if (TEXT_DAYS.has(day) && customer.phone && day <= SMS_CUTOFF_DAY && content.sms) await sendSMS(customer.phone, content.sms(v));
     } catch { /* best-effort */ }
 
     await supabase.from("bookings").update({ deposit_followup_last_morning_sent_on: todayISODate() }).eq("id", b.id);
@@ -267,6 +279,7 @@ export async function runDepositFollowupEvening(): Promise<{ sent: number }> {
     if (!customer?.phone) continue;
     const day = dayNumberSince(b.deposit_followup_started_at);
     if (day === null || day < 1 || day > MAX_DAY) continue;
+    if (!TEXT_DAYS.has(day)) continue; // not one of the reduced touch days
     const invoice = await activeDepositInvoice(supabase, b.id);
     if (!invoice) continue;
     const content = DEPOSIT_FOLLOWUP_DAYS[day];
