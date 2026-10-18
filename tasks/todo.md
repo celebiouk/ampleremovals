@@ -75,4 +75,35 @@
       and can't be scripted from here.
 
 ### Review
-(fill in once built)
+What was done:
+- `settings` gained 4 admin-editable rate columns (item/stairs/distance) with
+  a new "On-the-day extra charge rates" section on the Settings > Company tab.
+- `job_extras` gained structured columns (`extra_type`, `item_key`, `quantity`,
+  `flights`, `distance_meters`, `auto_amount`, `invoice_id`) and `invoice_type`
+  gained a new `'extra'` value — both applied directly to the live DB and
+  verified via `information_schema`.
+- Driver app's "Add extra charge" is now a 2-step picker (reason → details)
+  instead of free text: Item reuses the booking catalog (flattened into
+  `driver-app/lib/extra-catalog.ts` — Metro is scoped to this project only,
+  can't share the main repo's file), Stairs/Distance take a number, Other
+  keeps the old free-text fallback. Price auto-calculates from the rates but
+  is always editable before submitting.
+- `POST /api/drivers/jobs/[bookingId]/charges` computes `auto_amount`
+  server-side from the live settings rates (never trusts the client's math)
+  and stores it alongside the driver's final `amount`.
+- The real gap this closes: approving an extra used to do nothing. Now
+  `lib/bookings/extraCharge.ts` generates its own small invoice (type
+  `'extra'`, own pay code + PDF) and sends the customer email + SMS
+  immediately, with WhatsApp queued via the existing `whatsapp_queue` (no
+  code change needed there — `sendWhatsApp()` already queues, never auto-sends).
+- Verified end-to-end against the live DB with a real booking before
+  shipping: pricing calc for all 3 structured types, invoice line items/total,
+  WhatsApp queue row, activity log, `job_extras.invoice_id` linkage — all
+  correct, then cleaned up the test rows.
+- Typecheck clean on both the main repo (136 pre-existing errors, unchanged)
+  and driver-app (0 errors).
+
+Known gap, not addressed: driver-app UI changes need the user's own
+`eas build`/submit to actually reach phones — that's scripted-deploy's one
+real exception, since it needs their own Apple/Google developer credentials.
+The Next.js/admin side is deployed; the native app is not yet rebuilt.
