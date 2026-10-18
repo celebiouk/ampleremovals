@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
 import { GenerateInvoiceModal } from "@/components/admin/invoices/GenerateInvoiceModal";
 import { GenerateReceiptModal } from "@/components/admin/invoices/GenerateReceiptModal";
+import { AddExtraChargeModal } from "@/components/admin/AddExtraChargeModal";
 import { InvoiceDetailModal } from "@/components/admin/invoices/InvoiceDetailModal";
 import { DeleteInvoiceDialog } from "@/components/admin/invoices/DeleteInvoiceDialog";
 import { QuoteBuilderModal } from "@/components/admin/quotes/QuoteBuilderModal";
@@ -85,6 +86,7 @@ export default function BookingDetailPage() {
   const [smsBody, setSmsBody] = useState("");
   const [generateInvoiceType, setGenerateInvoiceType] = useState<"deposit" | "full_balance" | null>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [extraChargeModalOpen, setExtraChargeModalOpen] = useState(false);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -826,6 +828,13 @@ export default function BookingDetailPage() {
             >
               <Receipt className="h-4 w-4" /> Generate Payment Receipt
             </button>
+            {/* On-the-day extra — admin adding one invoices + sends it immediately */}
+            <button
+              onClick={() => setExtraChargeModalOpen(true)}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+            >
+              <Plus className="h-4 w-4" /> Add Extra Charge
+            </button>
           </Card>
         </div>
 
@@ -1154,6 +1163,17 @@ export default function BookingDetailPage() {
           customerName={data.customer.full_name}
           defaultAmount={data.booking.quote_total}
           onGenerated={refresh}
+        />
+      )}
+
+      {/* Add extra charge — admin adding one invoices + sends it immediately */}
+      {data && (
+        <AddExtraChargeModal
+          isOpen={extraChargeModalOpen}
+          bookingId={bookingId}
+          bookingReference={data.booking.reference}
+          onClose={() => setExtraChargeModalOpen(false)}
+          onSaved={refresh}
         />
       )}
 

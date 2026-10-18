@@ -10,7 +10,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   ArrowLeft, Phone, Mail, MapPin, Navigation, Calendar, ChevronDown, X, Pencil, Receipt,
-  MessageCirclePlus, BellPlus, CheckCircle2, FileText, MessageSquare,
+  MessageCirclePlus, BellPlus, CheckCircle2, FileText, MessageSquare, PlusCircle,
 } from "lucide-react-native";
 import { Card, Button, Input, StatusBadge, ServiceBadge, Skeleton, ErrorState } from "@/components/ui";
 import { MessageComposer } from "@/components/booking/MessageComposer";
@@ -21,6 +21,7 @@ import { QuoteSheet } from "@/components/booking/QuoteSheet";
 import { GenerateInvoiceSheet } from "@/components/booking/GenerateInvoiceSheet";
 import { DistancePanel } from "@/components/booking/DistancePanel";
 import { GenerateReceiptSheet } from "@/components/booking/GenerateReceiptSheet";
+import { AddExtraChargeSheet } from "@/components/booking/AddExtraChargeSheet";
 import { colors } from "@/lib/colors";
 import { useBookingDetail } from "@/hooks/useBookingDetail";
 import { apiFetch } from "@/lib/api";
@@ -69,6 +70,7 @@ export default function BookingDetailScreen() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [extraChargeOpen, setExtraChargeOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
 
@@ -403,6 +405,14 @@ export default function BookingDetailScreen() {
             <Receipt size={16} color="#16a34a" />
             <Text className="text-sm font-semibold text-brand-green-700">Generate Payment Receipt</Text>
           </Pressable>
+          {/* On-the-day extra — admin adding one invoices + sends it immediately */}
+          <Pressable
+            onPress={() => setExtraChargeOpen(true)}
+            className="mt-2 flex-row items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5"
+          >
+            <PlusCircle size={16} color="#ca8a04" />
+            <Text className="text-sm font-semibold text-amber-800">Add Extra Charge</Text>
+          </Pressable>
         </Card>
 
         {/* Notes */}
@@ -629,6 +639,15 @@ export default function BookingDetailScreen() {
         defaultAmount={booking.quote_total}
         onClose={() => setReceiptOpen(false)}
         onDone={() => { setReceiptOpen(false); invalidateAll(); }}
+      />
+
+      <AddExtraChargeSheet
+        visible={extraChargeOpen}
+        bookingId={id!}
+        bookingReference={booking.reference}
+        customerName={customer?.full_name ?? "Customer"}
+        onClose={() => setExtraChargeOpen(false)}
+        onDone={() => { setExtraChargeOpen(false); invalidateAll(); }}
       />
     </Shell>
   );
