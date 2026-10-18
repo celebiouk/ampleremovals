@@ -291,10 +291,38 @@ export function useSubmitLeave() {
 }
 
 // ── On-site extra charge for a job ────────────────────────────────────────────
+export interface ExtraChargeRates {
+  itemRate: number;
+  stairsRatePerFlight: number;
+  distanceFreeMeters: number;
+  distanceRatePer10m: number;
+}
+
+/** Admin-set £ rates for auto-pricing an on-site extra — see Settings > Company. */
+export function useExtraRates() {
+  return useQuery({
+    queryKey: ["extra-rates"],
+    queryFn: async (): Promise<ExtraChargeRates> => {
+      const res = await apiFetch("/api/drivers/extra-rates");
+      const json = (await res.json()) as { success: boolean; rates: ExtraChargeRates };
+      return json.rates;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+export interface AddChargeInput {
+  extraType: "item" | "stairs" | "distance" | "other";
+  itemKey?: string; itemLabel?: string; quantity?: number;
+  flights?: number; distanceMeters?: number;
+  description?: string;
+  amount: number;
+}
+
 export function useAddCharge(bookingId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { description: string; amount: number }) => {
+    mutationFn: async (input: AddChargeInput) => {
       const res = await apiFetch(`/api/drivers/jobs/${bookingId}/charges`, { method: "POST", body: JSON.stringify(input) });
       return res.json();
     },

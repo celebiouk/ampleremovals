@@ -13,6 +13,10 @@ interface Settings {
   notify_move_date_tomorrow: boolean;
   // Quoting
   auto_van_count: boolean;
+  extra_item_rate: number;
+  extra_stairs_rate_per_flight: number;
+  extra_distance_free_meters: number;
+  extra_distance_rate_per_10m: number;
   // Tax & filing
   company_number: string; company_utr: string; financial_year_end: string;
   confirmation_statement_due: string; incorporation_date: string;
@@ -25,6 +29,8 @@ const defaultSettings: Settings = {
   notify_new_booking: true, notify_invoice_paid: true,
   notify_invoice_overdue: true, overdue_days: 7, notify_move_date_tomorrow: true,
   auto_van_count: true,
+  extra_item_rate: 15, extra_stairs_rate_per_flight: 10,
+  extra_distance_free_meters: 20, extra_distance_rate_per_10m: 5,
   company_number: "", company_utr: "", financial_year_end: "03-31",
   confirmation_statement_due: "", incorporation_date: "",
   vat_registered: false, vat_number: "",
@@ -78,6 +84,10 @@ export default function SettingsPage() {
         confirmation_statement_due: data.confirmation_statement_due ?? "",
         incorporation_date: data.incorporation_date ?? "",
         vat_number: data.vat_number ?? "",
+        extra_item_rate: Number(data.extra_item_rate ?? 15),
+        extra_stairs_rate_per_flight: Number(data.extra_stairs_rate_per_flight ?? 10),
+        extra_distance_free_meters: Number(data.extra_distance_free_meters ?? 20),
+        extra_distance_rate_per_10m: Number(data.extra_distance_rate_per_10m ?? 5),
       });
     };
     load();
@@ -158,6 +168,17 @@ export default function SettingsPage() {
                   <p className="mt-0.5 text-xs text-slate-500">When on, big moves quote 2 vans automatically (over 65 items with a white good, or over 70 without). Turn off to always quote a single van.</p>
                 </div>
                 <Toggle checked={settings.auto_van_count} onChange={set("auto_van_count") as (v: boolean) => void} />
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 pt-4">
+              <h3 className="font-semibold text-slate-900">On-the-day extra charge rates</h3>
+              <p className="mb-3 text-xs text-slate-500">What the driver app auto-calculates when a crew flags an extra item, stairs, or long carry on the day — the driver can still override the figure before submitting it for your approval.</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <InputField label="£ per extra item" type="number" value={String(settings.extra_item_rate)} onChange={v => set("extra_item_rate")(Number(v))} />
+                <InputField label="£ per extra flight of stairs" type="number" value={String(settings.extra_stairs_rate_per_flight)} onChange={v => set("extra_stairs_rate_per_flight")(Number(v))} />
+                <InputField label="Free carry distance (metres)" type="number" value={String(settings.extra_distance_free_meters)} onChange={v => set("extra_distance_free_meters")(Number(v))} />
+                <InputField label="£ per extra 10m beyond that" type="number" value={String(settings.extra_distance_rate_per_10m)} onChange={v => set("extra_distance_rate_per_10m")(Number(v))} />
               </div>
             </div>
 

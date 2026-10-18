@@ -15,7 +15,11 @@ const KEY: Record<Kind, string> = { "job-extras": "extras", expenses: "expenses"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const driverName = (d: any) => (d ? d.preferred_name || [d.first_name, d.last_name].filter(Boolean).join(" ") : "");
 function title(kind: Kind, item: any): string {
-  if (kind === "job-extras") return `£${Number(item.amount).toFixed(2)} · ${item.description}`;
+  if (kind === "job-extras") {
+    const overridden = item.auto_amount != null && Number(item.auto_amount) !== Number(item.amount);
+    const autoNote = overridden ? ` (auto-calc: £${Number(item.auto_amount).toFixed(2)})` : "";
+    return `£${Number(item.amount).toFixed(2)} · ${item.description}${autoNote}`;
+  }
   if (kind === "expenses") return `£${Number(item.amount).toFixed(2)} · ${item.category}`;
   return `${item.start_date}${item.end_date && item.end_date !== item.start_date ? ` – ${item.end_date}` : ""}`;
 }
@@ -49,7 +53,11 @@ export default function ApprovalsPage() {
       const res = await fetch(`/api/admin/${tab}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
       const json = await res.json();
       if (!res.ok || json.success === false) throw new Error(json.error || "Couldn't update");
-      toast.success(status === "approved" ? "Approved" : "Rejected");
+      if (status === "approved" && tab === "job-extras" && json.invoiced === false) {
+        toast.warning("Approved, but invoicing/sending failed — check it manually");
+      } else {
+        toast.success(status === "approved" ? (tab === "job-extras" ? "Approved — invoice sent to the customer" : "Approved") : "Rejected");
+      }
       setItems((prev) => prev.filter((i) => i.id !== id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't update");

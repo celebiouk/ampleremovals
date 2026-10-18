@@ -45,7 +45,7 @@ export type BookingStatus =
   | "bad_lead"
   | "not_a_good_fit";
 
-export type InvoiceType = "deposit" | "full_balance";
+export type InvoiceType = "deposit" | "full_balance" | "extra";
 
 export type InvoiceStatus =
   | "draft"
