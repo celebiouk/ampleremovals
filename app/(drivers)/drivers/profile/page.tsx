@@ -4,10 +4,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { User, Mail, Calendar, Loader2, Camera, FileText, ChevronRight } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { User, Mail, Calendar, Loader2, Camera, ChevronRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { DRIVER_NAV_ITEMS } from "@/components/drivers/driverNav";
 
 export default function DriverProfilePage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [driver, setDriver] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,6 +103,11 @@ export default function DriverProfilePage() {
     }
   }
 
+  async function handleSignOut() {
+    await createClient().auth.signOut();
+    router.push("/drivers/login");
+  }
+
   async function handleSave() {
     setSaving(true);
 
@@ -158,6 +167,28 @@ export default function DriverProfilePage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
         <p className="text-slate-600">Manage your personal information</p>
+      </div>
+
+      {/* Full menu — phone only. The bottom bar can't fit every section, and the
+          desktop sidebar (which shows them all) is hidden below md. */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:hidden">
+        <h2 className="px-4 pb-1 pt-4 text-lg font-semibold text-slate-900">Menu</h2>
+        <nav>
+          {DRIVER_NAV_ITEMS.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="flex items-center gap-3 border-t border-slate-100 px-4 py-3.5 first:border-t-0 hover:bg-slate-50"
+              aria-current={pathname === item.href ? "page" : undefined}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-purple-50">
+                <item.icon className="h-5 w-5 text-brand-purple-700" />
+              </div>
+              <span className="flex-1 font-medium text-slate-900">{item.name}</span>
+              <ChevronRight className="h-5 w-5 text-slate-400" />
+            </Link>
+          ))}
+        </nav>
       </div>
 
       {/* Profile Photo */}
@@ -340,16 +371,13 @@ export default function DriverProfilePage() {
         </button>
       </div>
 
-      <Link
-        href="/drivers/documents"
-        className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50"
+      <button
+        onClick={handleSignOut}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 md:hidden"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
-          <FileText className="h-5 w-5 text-slate-600" />
-        </div>
-        <span className="flex-1 font-medium text-slate-900">Documents</span>
-        <ChevronRight className="h-5 w-5 text-slate-400" />
-      </Link>
+        <LogOut className="h-5 w-5" />
+        Sign out
+      </button>
     </div>
   );
 }

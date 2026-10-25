@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Truck } from "lucide-react";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriverLoginPage() {
@@ -83,8 +84,8 @@ export default function DriverLoginPage() {
         {/* Logo & Header */}
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-purple-600">
-              <Truck className="h-8 w-8 text-white" />
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2">
+              <Image src="/logo.png" alt="Ample Removals" width={64} height={64} className="object-contain" priority />
             </div>
           </div>
           <div className="mb-2 inline-block rounded-full bg-brand-purple-600/10 px-4 py-1.5">

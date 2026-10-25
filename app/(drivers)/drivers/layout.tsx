@@ -4,29 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  CalendarCheck,
-  Truck,
-  PoundSterling,
-  User,
-  FileText,
-  LogOut,
-} from "lucide-react";
+import Image from "next/image";
+import { LogOut } from "lucide-react";
 import { Toaster } from "sonner";
-
-// Full set — all of these show on the desktop sidebar. The mobile bottom bar
-// uses a shorter subset (see MOBILE_TABS below) since a phone screen can't
-// fit six tabs; Documents/Dashboard stay one tap away via Profile on mobile.
-const NAV_ITEMS = [
-  { name: "Dashboard", href: "/drivers/dashboard", icon: LayoutDashboard },
-  { name: "Today", href: "/drivers/jobs/today", icon: CalendarCheck },
-  { name: "Jobs", href: "/drivers/jobs", icon: Truck },
-  { name: "Earnings", href: "/drivers/earnings", icon: PoundSterling },
-  { name: "Documents", href: "/drivers/documents", icon: FileText },
-  { name: "Profile", href: "/drivers/profile", icon: User },
-];
-const MOBILE_TABS = NAV_ITEMS.filter((i) => ["Today", "Jobs", "Earnings", "Profile"].includes(i.name));
+import { DRIVER_NAV_ITEMS, DRIVER_MOBILE_TABS } from "@/components/drivers/driverNav";
 
 export default function DriversLayout({
   children,
@@ -110,16 +91,14 @@ export default function DriversLayout({
       {/* Desktop/tablet sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="flex h-16 items-center gap-2.5 border-b border-slate-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-purple-600">
-            <Truck className="h-4.5 w-4.5 text-white" />
-          </div>
+          <Image src="/logo.png" alt="Ample Removals" width={36} height={36} className="shrink-0 object-contain" priority />
           <div>
             <div className="text-sm font-bold text-slate-900">Ample Removals</div>
             <div className="text-xs text-slate-400">Driver Portal</div>
           </div>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV_ITEMS.map((item) => {
+          {DRIVER_NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
@@ -151,9 +130,7 @@ export default function DriversLayout({
         {/* Phone top bar */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 md:hidden">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-purple-600">
-              <Truck className="h-4 w-4 text-white" />
-            </div>
+            <Image src="/logo.png" alt="Ample Removals" width={32} height={32} className="shrink-0 object-contain" priority />
             <span className="text-sm font-bold text-slate-900">Hi, {driverName}</span>
           </div>
           <button
@@ -175,7 +152,7 @@ export default function DriversLayout({
           className="flex shrink-0 items-stretch justify-around border-t border-slate-200 bg-white md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          {MOBILE_TABS.map((tab) => {
+          {DRIVER_MOBILE_TABS.map((tab) => {
             const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");
             return (
               <Link
