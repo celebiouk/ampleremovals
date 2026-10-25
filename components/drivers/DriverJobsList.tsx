@@ -259,8 +259,14 @@ export function DriverJobsList({
                     </div>
 
                     <div className="mb-2 font-semibold text-slate-900">
-                      {booking.customer?.full_name?.split(" ")[0]}{" "}
-                      {booking.customer?.full_name?.split(" ")[1]?.[0]}.
+                      {booking.is_anyvan
+                        ? "AnyVan job"
+                        : booking.customer?.full_name
+                          ? (() => {
+                              const [first, second] = booking.customer.full_name.split(" ");
+                              return second ? `${first} ${second[0]}.` : first;
+                            })()
+                          : "Customer"}
                     </div>
 
                     <div className="space-y-1 text-sm text-slate-600">

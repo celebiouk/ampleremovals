@@ -152,9 +152,11 @@ export default function DriverJobDetailPage() {
     { status: "job_completed", label: "Job Completed ✓", icon: CheckCircle2, color: "green" },
   ];
 
-  const customerName = job.customer?.full_name
-    ? `${job.customer.full_name.split(" ")[0]} ${job.customer.full_name.split(" ")[1]?.[0] ?? ""}.`.trim()
-    : null;
+  const customerName = job.is_anyvan
+    ? "AnyVan job"
+    : job.customer?.full_name
+      ? `${job.customer.full_name.split(" ")[0]} ${job.customer.full_name.split(" ")[1]?.[0] ?? ""}.`.trim()
+      : null;
 
   return (
     <div className="space-y-4 pb-6">

@@ -71,6 +71,9 @@ export function isToday(date: string | Date | null | undefined): boolean {
 /** Privacy-safe customer label: "Jane S." */
 export function customerShortName(fullName?: string | null): string {
   if (!fullName) return "Customer";
+  // The AnyVan placeholder customer ("AnyVan (external job)") truncated to
+  // "AnyVan (." otherwise — not a real person's name, don't try to shorten it.
+  if (fullName.toLowerCase().startsWith("anyvan")) return "AnyVan job";
   const [first, last] = fullName.split(" ");
   return last ? `${first} ${last[0]}.` : first;
 }

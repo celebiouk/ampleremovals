@@ -51,7 +51,15 @@ export default function DriverEarningsPage() {
       .order("created_at", { ascending: false });
 
     if (earningsData) {
-      setEarnings(earningsData);
+      // Sorted by the JOB's date, not when the assignment/earning row was
+      // created — "Earnings History" should read chronologically by when
+      // the work happened, most recent first.
+      const sorted = [...earningsData].sort((a, b) => {
+        const aDate = a.booking?.move_date ?? a.created_at;
+        const bDate = b.booking?.move_date ?? b.created_at;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
+      setEarnings(sorted);
 
       // Calculate stats
       const totalEarned = earningsData
@@ -169,7 +177,7 @@ export default function DriverEarningsPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
-                    Date
+                    Job Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
                     Booking Ref
@@ -195,7 +203,9 @@ export default function DriverEarningsPage() {
                 {earnings.map((earning) => (
                   <tr key={earning.id} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-900">
-                      {new Date(earning.created_at).toLocaleDateString("en-GB")}
+                      {earning.booking?.move_date
+                        ? new Date(earning.booking.move_date).toLocaleDateString("en-GB")
+                        : new Date(earning.created_at).toLocaleDateString("en-GB")}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 font-mono text-sm text-slate-600">
                       {earning.booking?.reference || "—"}
