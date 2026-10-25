@@ -55,7 +55,7 @@ export async function POST(
     // Get driver details
     const { data: driver } = await supabase
       .from("drivers")
-      .select("first_name, last_name, preferred_name, email, phone, default_pay_percentage")
+      .select("first_name, last_name, preferred_name, email, phone, default_pay_percentage, account_type")
       .eq("id", driverId)
       .single();
 
@@ -63,6 +63,15 @@ export async function POST(
       return NextResponse.json(
         { success: false, error: "Driver not found" },
         { status: 404 }
+      );
+    }
+
+    // A porter account can never be assigned the driver role — enforced here
+    // too (not just in the admin UI) since this is the actual source of truth.
+    if (driver.account_type === "porter" && role !== "porter") {
+      return NextResponse.json(
+        { success: false, error: "This is a porter account — it can only be assigned as a porter" },
+        { status: 400 }
       );
     }
 

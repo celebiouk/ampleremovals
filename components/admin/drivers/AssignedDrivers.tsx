@@ -173,6 +173,11 @@ export function AssignedDrivers({ bookingId, bookingReference, moveDate, isAnyva
                         >
                           {assignment.driver?.first_name} {assignment.driver?.last_name}
                         </Link>
+                        {assignment.role === "porter" ? (
+                          <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-semibold text-teal-700">Porter</span>
+                        ) : (
+                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">Driver</span>
+                        )}
                         {assignment.is_lead_driver && (
                           <span className="rounded-full bg-brand-purple-100 px-2 py-0.5 text-xs font-semibold text-brand-purple-700">
                             Lead

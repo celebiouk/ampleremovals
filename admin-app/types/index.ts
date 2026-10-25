@@ -125,6 +125,7 @@ export interface Driver {
   status: DriverStatus;
   default_pay_percentage: number;
   profile_photo_url: string | null;
+  account_type: "driver" | "porter";
   created_at: string;
 }
 

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, Modal, Alert, TextInput, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Truck, Plus, X, PoundSterling } from "lucide-react-native";
+import { Truck, Plus, X, PoundSterling, PersonStanding } from "lucide-react-native";
 import { Card, Button, Avatar } from "@/components/ui";
 import { toast } from "@/components/ui/Toast";
 import { apiFetch } from "@/lib/api";
@@ -15,6 +15,7 @@ export function AssignedDriversSection({ bookingId }: { bookingId: string }) {
   const [pickOpen, setPickOpen] = useState(false);
   const [tipFor, setTipFor] = useState<string | null>(null);
   const [tipAmount, setTipAmount] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "driver" | "porter">("all");
   const { data: driversData } = useDrivers();
 
   const load = useCallback(async () => {
@@ -27,12 +28,18 @@ export function AssignedDriversSection({ bookingId }: { bookingId: string }) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function assign(driverId: string) {
+  async function assign(driverId: string, accountType: string) {
     setPickOpen(false);
     try {
       await apiFetch(`/api/admin/bookings/${bookingId}/assign-driver`, {
         method: "POST",
-        body: JSON.stringify({ driverId, isLeadDriver: assignments.length === 0 }),
+        body: JSON.stringify({
+          driverId,
+          isLeadDriver: assignments.length === 0,
+          // A porter account must always be sent as role "porter" — the
+          // server rejects any other role for one, see assign-driver/route.ts.
+          role: accountType === "porter" ? "porter" : "driver",
+        }),
       });
       toast.success("Driver assigned");
       load();
@@ -136,28 +143,56 @@ export function AssignedDriversSection({ bookingId }: { bookingId: string }) {
             <Text style={[type.h3, { color: colors.slate[900] }]}>Assign a driver</Text>
             <Pressable onPress={() => setPickOpen(false)}><X size={24} color={colors.slate[400]} /></Pressable>
           </View>
+          <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
+            {([
+              { key: "all", label: "Everyone" },
+              { key: "driver", label: "Drivers" },
+              { key: "porter", label: "Porters" },
+            ] as const).map((f) => (
+              <Pressable
+                key={f.key}
+                onPress={() => setTypeFilter(f.key)}
+                style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: typeFilter === f.key ? colors.primary.DEFAULT : colors.slate[100] }}
+              >
+                <Text style={[type.bodySemiBold, { color: typeFilter === f.key ? colors.white : colors.slate[600] }]}>{f.label}</Text>
+              </Pressable>
+            ))}
+          </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}>
-            {activeDrivers.length === 0 ? (
-              <Text style={[type.body, { color: colors.slate[500], textAlign: "center", paddingVertical: 24 }]}>No active drivers.</Text>
+            {activeDrivers.filter((d) => typeFilter === "all" || (d.account_type ?? "driver") === typeFilter).length === 0 ? (
+              <Text style={[type.body, { color: colors.slate[500], textAlign: "center", paddingVertical: 24 }]}>No active {typeFilter === "all" ? "drivers" : typeFilter + "s"}.</Text>
             ) : (
-              activeDrivers.map((d) => {
-                const already = assignedIds.has(d.id);
-                return (
-                  <Pressable
-                    key={d.id}
-                    disabled={already}
-                    onPress={() => assign(d.id)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.slate[100], opacity: already ? 0.4 : 1 }}
-                  >
-                    <Avatar name={`${d.first_name} ${d.last_name}`} size="md" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>{d.first_name} {d.last_name}</Text>
-                      <Text style={[type.bodySmall, { color: colors.slate[500] }]}>Default pay {d.default_pay_percentage}%</Text>
-                    </View>
-                    {already ? <Text style={[type.bodySmall, { color: colors.slate[400] }]}>Assigned</Text> : null}
-                  </Pressable>
-                );
-              })
+              activeDrivers
+                .filter((d) => typeFilter === "all" || (d.account_type ?? "driver") === typeFilter)
+                .map((d) => {
+                  const already = assignedIds.has(d.id);
+                  const isPorter = d.account_type === "porter";
+                  return (
+                    <Pressable
+                      key={d.id}
+                      disabled={already}
+                      onPress={() => assign(d.id, d.account_type ?? "driver")}
+                      style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.slate[100], opacity: already ? 0.4 : 1 }}
+                    >
+                      <Avatar name={`${d.first_name} ${d.last_name}`} size="md" />
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={[type.bodyLargeSemiBold, { color: colors.slate[900] }]}>{d.first_name} {d.last_name}</Text>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 3, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, backgroundColor: isPorter ? "#ccfbf1" : colors.slate[100] }}>
+                            {isPorter ? <PersonStanding size={11} color="#0f766e" /> : <Truck size={11} color={colors.slate[600]} />}
+                            <Text style={{ fontSize: 10, fontWeight: "700", textTransform: "uppercase", color: isPorter ? "#0f766e" : colors.slate[600] }}>
+                              {isPorter ? "Porter" : "Driver"}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={[type.bodySmall, { color: colors.slate[500] }]}>
+                          {isPorter ? "Flat pay, per assignment" : `Default pay ${d.default_pay_percentage}%`}
+                        </Text>
+                      </View>
+                      {already ? <Text style={[type.bodySmall, { color: colors.slate[400] }]}>Assigned</Text> : null}
+                    </Pressable>
+                  );
+                })
             )}
           </ScrollView>
         </SafeAreaView>

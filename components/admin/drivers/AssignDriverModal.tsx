@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Loader2, Search, Sparkles, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, Loader2, Search, Sparkles, AlertTriangle, Truck, PersonStanding } from "lucide-react";
 import { toast } from "sonner";
 
 interface Suggestion {
@@ -35,6 +35,7 @@ export function AssignDriverModal({
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [accountTypeFilter, setAccountTypeFilter] = useState<"all" | "driver" | "porter">("all");
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [payPercentageOverride, setPayPercentageOverride] = useState("");
   const [flatPayAmount, setFlatPayAmount] = useState("");
@@ -50,6 +51,15 @@ export function AssignDriverModal({
       loadSuggestions();
     }
   }, [isOpen]);
+
+  const selectedDriver = useMemo(() => drivers.find((d) => d.id === selectedDriverId), [drivers, selectedDriverId]);
+  const selectedIsPorter = selectedDriver?.account_type === "porter";
+
+  // A porter account can only ever be assigned the porter role — force it the
+  // moment one is selected, regardless of whatever was picked before.
+  useEffect(() => {
+    if (selectedIsPorter) setRole("porter");
+  }, [selectedIsPorter]);
 
   // Cap-aware preview: only meaningful for porters or an AnyVan job's driver
   // (see lib/daily-pay.ts) — regular driver jobs have no daily cap concept.
@@ -105,6 +115,10 @@ export function AssignDriverModal({
       toast.error("Please select a driver");
       return;
     }
+    if (selectedIsPorter && role === "driver") {
+      toast.error("Porter accounts can only be assigned as a porter");
+      return;
+    }
 
     setAssigning(true);
 
@@ -146,6 +160,7 @@ export function AssignDriverModal({
 
   const filteredDrivers = drivers
     .filter((driver) => {
+      if (accountTypeFilter !== "all" && (driver.account_type ?? "driver") !== accountTypeFilter) return false;
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
       return (
@@ -178,6 +193,26 @@ export function AssignDriverModal({
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Quick filter — narrow to just who you actually need */}
+            <div className="flex gap-2">
+              {([
+                { key: "all", label: "Everyone" },
+                { key: "driver", label: "Drivers" },
+                { key: "porter", label: "Porters" },
+              ] as const).map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setAccountTypeFilter(f.key)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    accountTypeFilter === f.key ? "bg-brand-purple-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -212,6 +247,15 @@ export function AssignDriverModal({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-slate-900">{driver.first_name} {driver.last_name}</span>
+                        {driver.account_type === "porter" ? (
+                          <span className="flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold uppercase text-teal-700">
+                            <PersonStanding className="h-3 w-3" /> Porter
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                            <Truck className="h-3 w-3" /> Driver
+                          </span>
+                        )}
                         {topId === driver.id && (
                           <span className="flex items-center gap-1 rounded-full bg-brand-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-green-700">
                             <Sparkles className="h-3 w-3" /> Recommended
@@ -296,22 +340,36 @@ export function AssignDriverModal({
               </label>
             )}
 
-            {/* Role: driver or porter */}
+            {/* Role: driver or porter — locked to porter for a porter account */}
             {selectedDriverId && (
               <div className="rounded-xl border border-slate-200 p-3">
                 <div className="mb-2 text-sm font-medium text-slate-900">Role on this job</div>
                 <div className="flex gap-2">
-                  {(["driver", "porter"] as const).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize ${role === r ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                  {(["driver", "porter"] as const).map((r) => {
+                    const disabled = selectedIsPorter && r === "driver";
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setRole(r)}
+                        title={disabled ? "Porter accounts can only be assigned as a porter" : undefined}
+                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize ${
+                          disabled
+                            ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
+                            : role === r
+                              ? "border-brand-purple-600 bg-brand-purple-50 text-brand-purple-700"
+                              : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
                 </div>
+                {selectedIsPorter && (
+                  <p className="mt-2 text-xs text-slate-500">This is a porter account — it can only be assigned as a porter, never as a driver.</p>
+                )}
               </div>
             )}
 
