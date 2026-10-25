@@ -18,7 +18,7 @@ export async function GET() {
       .select(`
         *,
         driver:drivers(first_name, last_name),
-        booking:bookings(reference)
+        booking:bookings(reference, customer:customers(full_name))
       `)
       .order("created_at", { ascending: false });
 

@@ -418,7 +418,7 @@ export type JobStatusUpdate =
   | "fifteen_mins_to_delivery"
   | "job_completed";
 
-export type EarningsStatus = "pending" | "approved" | "paid" | "disputed";
+export type EarningsStatus = "awaiting_confirmation" | "pending" | "approved" | "paid" | "disputed";
 
 export interface Driver {
   id: string;

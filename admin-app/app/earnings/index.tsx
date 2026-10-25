@@ -50,7 +50,12 @@ export default function EarningsScreen() {
   }
   async function pay(id: string) {
     setBusy(id);
-    try { await apiFetch(`/api/admin/earnings/${id}/pay`, { method: "POST" }); refresh(); }
+    try {
+      const res = await apiFetch("/api/admin/earnings/pay", { method: "POST", body: JSON.stringify({ earningIds: [id] }) });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed");
+      refresh();
+    }
     catch (e) { Alert.alert("Error", e instanceof Error ? e.message : "Failed"); }
     finally { setBusy(null); }
   }

@@ -59,6 +59,14 @@ export function generateReceiptNumber(): string {
 }
 
 /**
+ * Generate a driver/porter payment reference, e.g. `PAY-2026-7F4QK`.
+ */
+export function generatePaymentReference(): string {
+  const year = new Date().getFullYear();
+  return `PAY-${year}-${randomSuffix(5)}`;
+}
+
+/**
  * How a customer's name is *displayed* across the admin CRM and on every
  * invoice, receipt and quote: always full uppercase, whatever case it was
  * entered in. This is a presentation-only transform — the stored name keeps its

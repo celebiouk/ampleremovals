@@ -49,6 +49,12 @@ export interface Job {
   role?: "driver" | "porter" | string | null;
   visibility_phase?: "pending" | "accepted" | "declined" | "completed" | null;
   decline_reason?: string | null;
+  // Pay-confirmation — separate from the customer-facing journey/complete
+  // flow below. See POST /api/drivers/jobs/[bookingId]/mark-done.
+  assignmentId?: string | null;
+  flatPayAmount?: number | null;
+  completionMarkedAt?: string | null;
+  completionConfirmedAt?: string | null;
   hours_until_job?: number | null;
   phone_unlocks_in_hours?: number | null;
   rating?: number | null; // completed jobs: the customer's rating

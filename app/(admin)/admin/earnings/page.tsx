@@ -11,8 +11,10 @@ export default function EarningsPage() {
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
-  const [filterTab, setFilterTab] = useState<"all" | "pending" | "approved" | "paid">("all");
+  const [filterTab, setFilterTab] = useState<"all" | "awaiting_confirmation" | "pending" | "approved" | "paid">("all");
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPaying, setBulkPaying] = useState(false);
 
   useEffect(() => {
     loadEarnings();
@@ -59,23 +61,49 @@ export default function EarningsPage() {
   async function markPaid(earningId: string) {
     setPaying(earningId);
     try {
-      const response = await fetch(`/api/admin/earnings/${earningId}/pay`, {
+      await payEarnings([earningId]);
+      setSelected((prev) => { const next = new Set(prev); next.delete(earningId); return next; });
+    } finally {
+      setPaying(null);
+    }
+  }
+
+  async function payEarnings(earningIds: string[]) {
+    try {
+      const response = await fetch("/api/admin/earnings/pay", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ earningIds }),
       });
-
       const data = await response.json();
-
       if (data.success) {
-        toast.success("Marked as paid!");
+        toast.success(earningIds.length === 1 ? "Paid — they've been emailed" : `Paid ${earningIds.length} jobs — each worker's been emailed`);
         loadEarnings();
       } else {
-        toast.error("Failed to mark as paid");
+        toast.error(data.error || "Failed to mark as paid");
       }
     } catch (error) {
       console.error("Pay error:", error);
       toast.error("Failed to mark as paid");
+    }
+  }
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function paySelected() {
+    if (selected.size === 0) return;
+    setBulkPaying(true);
+    try {
+      await payEarnings(Array.from(selected));
+      setSelected(new Set());
     } finally {
-      setPaying(null);
+      setBulkPaying(false);
     }
   }
 
@@ -138,6 +166,7 @@ export default function EarningsPage() {
     toast.success("CSV exported");
   }
 
+  const awaitingConfirmationEarnings = earnings.filter((e) => e.status === "awaiting_confirmation");
   const pendingEarnings = earnings.filter((e) => e.status === "pending");
   const approvedEarnings = earnings.filter((e) => e.status === "approved");
   const paidEarnings = earnings.filter((e) => e.status === "paid");
@@ -145,6 +174,7 @@ export default function EarningsPage() {
   const totalPending = pendingEarnings.reduce((sum, e) => sum + e.total_earnings, 0);
   const totalApproved = approvedEarnings.reduce((sum, e) => sum + e.total_earnings, 0);
   const totalPaid = paidEarnings.reduce((sum, e) => sum + e.total_earnings, 0);
+  const selectedTotal = earnings.filter((e) => selected.has(e.id)).reduce((sum, e) => sum + e.total_earnings, 0);
 
   // Filter by tab
   const filteredEarnings = earnings.filter((e) => {
@@ -169,6 +199,25 @@ export default function EarningsPage() {
           <p className="text-slate-600">Approve and manage driver payment</p>
         </div>
         <div className="flex gap-3">
+          {selected.size > 0 && (
+            <button
+              onClick={paySelected}
+              disabled={bulkPaying}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {bulkPaying ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Paying...
+                </>
+              ) : (
+                <>
+                  <PoundSterling className="h-5 w-5" />
+                  Pay Selected ({selected.size}) — £{selectedTotal.toFixed(2)}
+                </>
+              )}
+            </button>
+          )}
           {pendingEarnings.length > 0 && (
             <button
               onClick={bulkApprovePending}
@@ -199,7 +248,19 @@ export default function EarningsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-6 sm:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
+              <AlertCircle className="h-6 w-6 text-slate-500" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-2xl font-bold text-slate-900">{awaitingConfirmationEarnings.length}</div>
+            <div className="text-sm text-slate-600">Awaiting job confirmation</div>
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100">
@@ -250,6 +311,16 @@ export default function EarningsPage() {
           All ({earnings.length})
         </button>
         <button
+          onClick={() => setFilterTab("awaiting_confirmation")}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            filterTab === "awaiting_confirmation"
+              ? "bg-slate-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Awaiting confirmation ({awaitingConfirmationEarnings.length})
+        </button>
+        <button
           onClick={() => setFilterTab("pending")}
           className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
             filterTab === "pending"
@@ -287,11 +358,15 @@ export default function EarningsPage() {
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
+                <th className="w-10 px-4 py-3" />
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
                   Driver
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
                   Booking
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600">
+                  Customer
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-600">
                   Pay %
@@ -316,7 +391,7 @@ export default function EarningsPage() {
             <tbody className="divide-y divide-slate-200">
               {filteredEarnings.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-600">
+                  <td colSpan={9} className="px-6 py-12 text-center text-slate-600">
                     {earnings.length === 0
                       ? "No earnings records yet. Earnings are calculated when invoices are paid."
                       : "No earnings match this filter."}
@@ -324,7 +399,17 @@ export default function EarningsPage() {
                 </tr>
               ) : (
                 filteredEarnings.map((earning) => (
-                  <tr key={earning.id} className={earning.status === "pending" ? "bg-amber-50" : ""}>
+                  <tr key={earning.id} className={earning.status === "pending" ? "bg-amber-50" : selected.has(earning.id) ? "bg-blue-50" : ""}>
+                    <td className="px-4 py-4">
+                      {earning.status === "approved" && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(earning.id)}
+                          onChange={() => toggleSelected(earning.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">
                         {earning.driver?.first_name} {earning.driver?.last_name}
@@ -332,6 +417,9 @@ export default function EarningsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-900">{earning.booking?.reference}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600">{earning.booking?.customer?.full_name ?? "—"}</div>
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-slate-900">
                       {earning.pay_percentage}%
@@ -355,6 +443,9 @@ export default function EarningsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
+                      {earning.status === "awaiting_confirmation" && (
+                        <span className="text-sm text-slate-400">See Approvals → Job done</span>
+                      )}
                       {earning.status === "pending" && (
                         <button
                           onClick={() => approveEarning(earning.id)}

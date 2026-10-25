@@ -131,7 +131,14 @@ export async function POST(
       gross_earnings: flatAmount ?? 0,
       tip_amount: 0,
       total_earnings: flatAmount ?? 0,
-      status: "pending",
+      // A flat-pay assignment isn't payable just because it was made — the
+      // worker has to say they did the job and admin has to confirm that
+      // before it counts as real, payable earnings. See
+      // app/api/drivers/jobs/[bookingId]/mark-done and
+      // app/api/admin/bookings/[id]/assignments/[assignmentId]/confirm-done.
+      // A legacy (no flatAmount) assignment keeps the old 'pending' placeholder,
+      // filled in by calculateDriverEarnings once the invoice is paid.
+      status: flatAmount != null ? "awaiting_confirmation" : "pending",
     });
 
     // Log activity

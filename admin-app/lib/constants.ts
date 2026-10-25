@@ -175,6 +175,7 @@ export const JOB_STATUS_LABELS: Record<JobStatusUpdate, string> = {
 
 // ── Earnings status ────────────────────────────────────────────────────────
 export const EARNINGS_STATUS_LABELS: Record<EarningsStatus, string> = {
+  awaiting_confirmation: "Awaiting confirmation",
   pending: "Pending",
   approved: "Approved",
   paid: "Paid",
@@ -182,6 +183,7 @@ export const EARNINGS_STATUS_LABELS: Record<EarningsStatus, string> = {
 };
 
 export const EARNINGS_STATUS_COLOURS: Record<EarningsStatus, string> = {
+  awaiting_confirmation: "bg-slate-100 text-slate-600",
   pending: "bg-amber-100 text-amber-700",
   approved: "bg-green-100 text-green-700",
   paid: "bg-blue-100 text-blue-700",

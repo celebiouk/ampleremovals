@@ -9,7 +9,7 @@ import { Screen, Card, Button, Badge, toast, ErrorState, Skeleton } from "@/comp
 import { ArrivedModal } from "@/components/ArrivedModal";
 import { DistancePanel } from "@/components/DistancePanel";
 import { JobExtraButton } from "@/components/JobExtraButton";
-import { useJob, useJobExtras } from "@/hooks/queries";
+import { useJob, useJobExtras, useMarkJobDone } from "@/hooks/queries";
 import { colors, radius, spacing, shadows, type } from "@/lib/theme";
 import { customerShortName, serviceLabel, formatDate, formatCurrency, formatMoveTimeWindow } from "@/lib/format";
 import { journeyPhase, legDestination, currentEta, minutesUntil, type JourneyPhase } from "@/lib/journey";
@@ -51,6 +51,7 @@ export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const job = useJob(id);
+  const markDone = useMarkJobDone(id);
   const extras = useJobExtras(id);
   const [busy, setBusy] = useState(false);
   const [arrivedDismissed, setArrivedDismissed] = useState(false);
@@ -211,6 +212,39 @@ export default function JobDetailScreen() {
           onConfirmDelivery={() => router.push(`/job/${j.id}/delivery`)}
           onComplete={() => router.push(`/job/${j.id}/complete`)}
         />
+      )}
+
+      {/* Pay confirmation — separate from the journey/Complete Job flow above,
+          which is about the customer side. This is "I did my part, pay me." */}
+      {j.flatPayAmount != null && (
+        <View style={[{ borderRadius: radius.xl, padding: spacing.lg, backgroundColor: colors.white, marginTop: spacing.base }, shadows.sm]}>
+          {j.completionConfirmedAt ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+              <CheckCircle2 size={18} color={colors.accent.DEFAULT} />
+              <Text style={[type.bodySemiBold, { color: colors.slate[700] }]}>Confirmed — ready for payment</Text>
+            </View>
+          ) : j.completionMarkedAt ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+              <Info size={18} color={colors.slate[400]} />
+              <Text style={[type.bodySemiBold, { color: colors.slate[500] }]}>Marked done — waiting for the office to confirm</Text>
+            </View>
+          ) : (
+            <>
+              <Text style={[type.bodySmall, { color: colors.slate[500], marginBottom: spacing.sm }]}>
+                Once you&apos;ve finished your part of this job, mark it done so the office can confirm it and release your pay.
+              </Text>
+              <Button
+                label={`Mark my job done — ${formatCurrency(j.flatPayAmount)}`}
+                icon={<CheckCircle2 size={18} color={colors.white} />}
+                loading={markDone.isPending}
+                onPress={async () => {
+                  try { await markDone.mutateAsync(); toast.success("Marked done", "The office will confirm and release your pay."); }
+                  catch (e) { toast.error("Couldn't mark done", (e as Error)?.message); }
+                }}
+              />
+            </>
+          )}
+        </View>
       )}
 
       {/* On-site extra charge */}

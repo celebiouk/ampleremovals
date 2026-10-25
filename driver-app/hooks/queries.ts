@@ -33,6 +33,24 @@ export function useJob(bookingId: string | undefined) {
   });
 }
 
+/**
+ * The signed-in worker says their part of this job is done — separate from
+ * the lead driver's Complete Job button, which is about the customer side
+ * (delivery/invoice/survey). This is purely "I'm ready to be paid for this."
+ */
+export function useMarkJobDone(bookingId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch(`/api/drivers/jobs/${bookingId}/mark-done`, { method: "POST" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Couldn't mark done");
+      return json;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["job", bookingId] }),
+  });
+}
+
 /** Accept or decline an assigned job. Decline requires a reason. */
 export function useRespondToJob(bookingId: string) {
   const qc = useQueryClient();

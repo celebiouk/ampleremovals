@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import { CheckCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-type Kind = "job-extras" | "expenses" | "leave-requests";
+type Kind = "job-extras" | "expenses" | "leave-requests" | "job-completions";
 const TABS: { kind: Kind; label: string }[] = [
   { kind: "job-extras", label: "Extras" },
   { kind: "expenses", label: "Expenses" },
   { kind: "leave-requests", label: "Time off" },
+  { kind: "job-completions", label: "Job done" },
 ];
-const KEY: Record<Kind, string> = { "job-extras": "extras", expenses: "expenses", "leave-requests": "requests" };
+const KEY: Record<Kind, string> = { "job-extras": "extras", expenses: "expenses", "leave-requests": "requests", "job-completions": "completions" };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const driverName = (d: any) => (d ? d.preferred_name || [d.first_name, d.last_name].filter(Boolean).join(" ") : "");
@@ -21,16 +22,24 @@ function title(kind: Kind, item: any): string {
     return `£${Number(item.amount).toFixed(2)} · ${item.description}${autoNote}`;
   }
   if (kind === "expenses") return `£${Number(item.amount).toFixed(2)} · ${item.category}`;
+  if (kind === "job-completions") {
+    const amount = item.earning?.[0]?.total_earnings;
+    return `${driverName(item.driver)}${item.role === "porter" ? " (porter)" : ""}${amount != null ? ` · £${Number(amount).toFixed(2)}` : ""}`;
+  }
   return `${item.start_date}${item.end_date && item.end_date !== item.start_date ? ` – ${item.end_date}` : ""}`;
 }
 function sub(kind: Kind, item: any): string {
   const d = driverName(item.driver);
   if (kind === "job-extras") return [d, item.booking?.reference].filter(Boolean).join(" · ");
   if (kind === "expenses") return [d, item.note].filter(Boolean).join(" · ");
+  if (kind === "job-completions") {
+    // Customer name, never the address.
+    return [item.booking?.reference, item.booking?.customer?.full_name].filter(Boolean).join(" · ");
+  }
   return [d, item.reason].filter(Boolean).join(" · ");
 }
 
-/** Approvals — pending job extras / expenses / time-off with approve/reject. */
+/** Approvals — pending job extras / expenses / time-off / job-done confirmations. */
 export default function ApprovalsPage() {
   const [tab, setTab] = useState<Kind>("job-extras");
   const [items, setItems] = useState<any[]>([]);
@@ -40,25 +49,36 @@ export default function ApprovalsPage() {
   const load = useCallback(async (kind: Kind) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/${kind}?status=pending`, { cache: "no-store" });
+      const url = kind === "job-completions" ? "/api/admin/job-completions?status=awaiting" : `/api/admin/${kind}?status=pending`;
+      const res = await fetch(url, { cache: "no-store" });
       const json = await res.json();
       setItems((json[KEY[kind]] as any[]) ?? []);
     } catch { setItems([]); } finally { setLoading(false); }
   }, []);
   useEffect(() => { load(tab); }, [tab, load]);
 
-  async function act(id: string, status: "approved" | "rejected") {
-    setBusyId(id);
+  async function act(item: any, decision: "approved" | "rejected") {
+    setBusyId(item.id);
     try {
-      const res = await fetch(`/api/admin/${tab}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
-      const json = await res.json();
-      if (!res.ok || json.success === false) throw new Error(json.error || "Couldn't update");
-      if (status === "approved" && tab === "job-extras" && json.invoiced === false) {
-        toast.warning("Approved, but invoicing/sending failed — check it manually");
+      if (tab === "job-completions") {
+        const res = await fetch(`/api/admin/bookings/${item.booking_id}/assignments/${item.id}/confirm-done`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(decision === "rejected" ? { reject: true } : {}),
+        });
+        const json = await res.json();
+        if (!res.ok || json.success === false) throw new Error(json.error || "Couldn't update");
+        toast.success(decision === "approved" ? "Confirmed — ready to pay" : "Rejected — not marked done");
       } else {
-        toast.success(status === "approved" ? (tab === "job-extras" ? "Approved — invoice sent to the customer" : "Approved") : "Rejected");
+        const res = await fetch(`/api/admin/${tab}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, status: decision }) });
+        const json = await res.json();
+        if (!res.ok || json.success === false) throw new Error(json.error || "Couldn't update");
+        if (decision === "approved" && tab === "job-extras" && json.invoiced === false) {
+          toast.warning("Approved, but invoicing/sending failed — check it manually");
+        } else {
+          toast.success(decision === "approved" ? (tab === "job-extras" ? "Approved — invoice sent to the customer" : "Approved") : "Rejected");
+        }
       }
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't update");
     } finally { setBusyId(null); }
@@ -71,7 +91,7 @@ export default function ApprovalsPage() {
         <p className="text-sm text-slate-500">Pending items awaiting your decision.</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button key={t.kind} onClick={() => setTab(t.kind)}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${tab === t.kind ? "bg-brand-purple-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
@@ -95,11 +115,11 @@ export default function ApprovalsPage() {
               <p className="font-semibold text-slate-900">{title(tab, item)}</p>
               {sub(tab, item) && <p className="mt-0.5 text-sm text-slate-500">{sub(tab, item)}</p>}
               <div className="mt-3 flex gap-2">
-                <button onClick={() => act(item.id, "approved")} disabled={busyId === item.id}
+                <button onClick={() => act(item, "approved")} disabled={busyId === item.id}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-green-600 py-2 text-sm font-bold text-white hover:bg-brand-green-500 disabled:opacity-50">
-                  {busyId === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Approve
+                  {busyId === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {tab === "job-completions" ? "Confirm — pay them" : "Approve"}
                 </button>
-                <button onClick={() => act(item.id, "rejected")} disabled={busyId === item.id}
+                <button onClick={() => act(item, "rejected")} disabled={busyId === item.id}
                   className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
                   Reject
                 </button>

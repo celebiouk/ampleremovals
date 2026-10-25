@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: { params: { bookingId: stri
     const supabase = createAdminClient();
     const { data: assignment } = await supabase
       .from("booking_driver_assignments")
-      .select("acceptance_status, decline_reason")
+      .select("id, role, flat_pay_amount, acceptance_status, decline_reason, completion_marked_at, completion_confirmed_at")
       .eq("booking_id", params.bookingId)
       .eq("driver_id", auth.driver.id)
       .maybeSingle();
@@ -32,6 +32,11 @@ export async function GET(_req: Request, { params }: { params: { bookingId: stri
     const job = {
       ...redactJobForDriver(booking, assignment.acceptance_status),
       decline_reason: assignment.decline_reason ?? null,
+      role: assignment.role ?? "driver",
+      assignmentId: assignment.id,
+      flatPayAmount: assignment.flat_pay_amount,
+      completionMarkedAt: assignment.completion_marked_at,
+      completionConfirmedAt: assignment.completion_confirmed_at,
     };
     return NextResponse.json({ success: true, job });
   } catch (e) {
