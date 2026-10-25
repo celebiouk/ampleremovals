@@ -116,7 +116,7 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
     <div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero — quieter, professional tone, slate+purple */}
-      <section className="bg-slate-900 px-6 py-16 text-white">
+      <section className="bg-slate-900 px-6 pb-16 pt-28 text-white lg:pt-36">
         <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
           <div>
           <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-slate-400">
