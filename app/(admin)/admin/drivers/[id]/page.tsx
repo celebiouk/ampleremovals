@@ -437,7 +437,18 @@ export default function DriverProfilePage() {
                   £{(driver.earnings_summary?.paid || 0).toFixed(2)}
                 </dd>
               </div>
+              {(driver.earnings_summary?.committedUpcoming || 0) > 0 && (
+                <div className="flex justify-between border-t border-slate-100 pt-3">
+                  <dt className="text-slate-500">Committed to upcoming jobs</dt>
+                  <dd className="font-medium text-slate-500">
+                    £{(driver.earnings_summary?.committedUpcoming || 0).toFixed(2)}
+                  </dd>
+                </div>
+              )}
             </dl>
+            {(driver.earnings_summary?.committedUpcoming || 0) > 0 && (
+              <p className="mt-2 text-xs text-slate-400">Not counted in Total Earned above — the job hasn&apos;t happened yet.</p>
+            )}
           </div>
         </div>
       </div>

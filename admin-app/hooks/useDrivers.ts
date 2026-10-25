@@ -31,7 +31,7 @@ export function useDrivers() {
 export interface DriverDetail extends Driver {
   job_count: number;
   date_of_birth?: string | null;
-  earnings_summary: { total: number; pending: number; approved: number; paid: number };
+  earnings_summary: { total: number; pending: number; approved: number; paid: number; committedUpcoming: number };
   ratings?: { average: number | null; count: number; recent: { reference: string; rating: number; feedback: string | null; customerName: string; date: string | null }[] };
 }
 

@@ -39,17 +39,36 @@ export async function GET(
       .select("*", { count: "exact", head: true })
       .eq("driver_id", id);
 
-    // Get earnings summary
+    // Get earnings summary — joined to the booking so we can tell a job that's
+    // ACTUALLY HAPPENED from one that's merely assigned with pay committed for
+    // later. "Earned" must mean the work was done, not just scheduled; an
+    // upcoming job's flat pay is real money but not earned yet, so it's kept
+    // separate (committedUpcoming) rather than folded into the total.
+    const todayISO = new Date().toISOString().slice(0, 10);
     const { data: earnings } = await supabase
       .from("driver_earnings")
-      .select("total_earnings, status")
+      .select("total_earnings, status, booking:bookings(move_date, is_flexible_date, flexible_date_from, status)")
       .eq("driver_id", id);
 
+    type EarningRow = { total_earnings: number; status: string; booking: { move_date: string | null; is_flexible_date: boolean | null; flexible_date_from: string | null; status: string } | { move_date: string | null; is_flexible_date: boolean | null; flexible_date_from: string | null; status: string }[] | null };
+    const earningRows = (earnings ?? []) as unknown as EarningRow[];
+    const hasHappened = (row: EarningRow): boolean => {
+      const b = Array.isArray(row.booking) ? row.booking[0] : row.booking;
+      if (!b) return false;
+      if (b.status === "job_completed") return true;
+      const effectiveDate = b.is_flexible_date ? b.flexible_date_from : b.move_date;
+      return !!effectiveDate && effectiveDate < todayISO;
+    };
+
+    const pastEarnings = earningRows.filter(hasHappened);
+    const futureEarnings = earningRows.filter((r) => !hasHappened(r));
+
     const earningsSummary = {
-      total: earnings?.reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0,
-      pending: earnings?.filter((e) => e.status === "pending").reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0,
-      approved: earnings?.filter((e) => e.status === "approved").reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0,
-      paid: earnings?.filter((e) => e.status === "paid").reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0,
+      total: pastEarnings.reduce((sum, e) => sum + (e.total_earnings || 0), 0),
+      pending: pastEarnings.filter((e) => e.status === "pending").reduce((sum, e) => sum + (e.total_earnings || 0), 0),
+      approved: pastEarnings.filter((e) => e.status === "approved").reduce((sum, e) => sum + (e.total_earnings || 0), 0),
+      paid: pastEarnings.filter((e) => e.status === "paid").reduce((sum, e) => sum + (e.total_earnings || 0), 0),
+      committedUpcoming: futureEarnings.reduce((sum, e) => sum + (e.total_earnings || 0), 0),
     };
 
     // Customer ratings for this driver's jobs (the booking survey is the rating

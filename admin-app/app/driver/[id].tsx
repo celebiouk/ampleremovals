@@ -121,6 +121,13 @@ export default function DriverProfileScreen() {
             <Row label="Pending" value={formatCurrency(driver.earnings_summary.pending)} />
             <Row label="Approved" value={formatCurrency(driver.earnings_summary.approved)} />
             <Row label="Paid out" value={formatCurrency(driver.earnings_summary.paid)} />
+            {driver.earnings_summary.committedUpcoming > 0 ? (
+              <>
+                <View style={{ height: 1, backgroundColor: "#f1f5f9", marginVertical: 8 }} />
+                <Row label="Committed to upcoming jobs" value={formatCurrency(driver.earnings_summary.committedUpcoming)} />
+                <Text style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Not counted in Total above — the job hasn&apos;t happened yet.</Text>
+              </>
+            ) : null}
           </Card>
 
           {/* Details */}
