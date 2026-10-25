@@ -18,11 +18,23 @@ export async function generateMetadata({ params }: { params: Promise<{ hub: stri
   if (!village) return { title: "Not found" };
   const hub = HUB_MAP[village.hubSlug];
   return {
-    title: `House Removals ${village.name} — Full-Home Moving Specialists`,
-    description: `Moving house in ${village.name}, ${village.postcode}? Our ${hub.name}-area team handles the whole move — packing, protection, insurance — start to finish.`,
+    title: `House Removals ${village.name} — Instant Standard & Premium Price`,
+    description: `See your exact ${village.name} house removal price in seconds — Standard or Premium, deposit now, balance later. Our ${hub.name}-area team, fully insured, start to finish.`,
     alternates: { canonical: `https://www.ampleremovals.com/house-removals/${village.hubSlug}/${village.slug}` },
   };
 }
+
+const HEADLINES = (v: string) => [
+  `Your Whole Home in ${v}, Moved Properly — Standard or Premium, Priced Instantly`,
+  `${v} House Removals, Done Right — See Your Price Before You Call Anyone Else`,
+  `Stop Comparing Vague Quotes. Get Your Exact ${v} Moving Price in Seconds.`,
+];
+
+const SUBHEADS = (v: string) => [
+  `Tell us your home size below and watch your Standard and Premium ${v} price appear instantly — then pay a small deposit to lock in your date. No site visit, no "we'll email you a quote."`,
+  `Most removal firms make you wait days for a number that still isn't final. Pick your home size, see both price options for your ${v} move right now, and secure the date before someone else does.`,
+  `Full pack-and-move, or just the heavy lifting — either way, enter your home size and see your exact ${v} price on screen. Deposit now, balance later, nothing hidden.`,
+];
 
 const TIMELINE_SETS = (v: string) => [
   [
@@ -66,9 +78,9 @@ const FAQS = (village: { name: string }, hub: { name: string }) => [
 ];
 
 const CTA_LINES = (v: string) => [
-  { heading: `Moving house in ${v}?`, sub: `Free, no-obligation quote — usually back to you within the hour.` },
-  { heading: `Let's plan your ${v} move`, sub: `Tell us the rooms and the date, we'll handle the rest.` },
-  { heading: `Get your ${v} moving quote`, sub: `No pressure, no pushy follow-ups — just a clear price.` },
+  { heading: `Still comparing quotes for your ${v} move?`, sub: `See your exact price now — it's faster than waiting for the next callback.` },
+  { heading: `Your ${v} move, priced in seconds`, sub: `Pick your home size, see Standard and Premium, lock in your date.` },
+  { heading: `Don't leave your ${v} move to the last minute`, sub: `Get your price now, pay a small deposit, the date's yours.` },
 ];
 
 export default async function HouseRemovalsVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {
@@ -78,6 +90,8 @@ export default async function HouseRemovalsVillagePage({ params }: { params: Pro
   const hub = HUB_MAP[village.hubSlug];
   const siblings = village.nearbyVillages.map((s) => VILLAGE_MAP[s]).filter(Boolean);
 
+  const headline = pickVariant(village.slug, "house-removals-headline", HEADLINES(village.name));
+  const subhead = pickVariant(village.slug, "house-removals-subhead", SUBHEADS(village.name));
   const timeline = pickVariant(village.slug, "house-removals-timeline", TIMELINE_SETS(village.name));
   const proof = pickVariant(village.slug, "house-removals-proof", PROOF_INTROS(hub.name));
   const faqSet = pickVariant(village.slug, "house-removals-faq", FAQS(village, hub));
@@ -113,14 +127,17 @@ export default async function HouseRemovalsVillagePage({ params }: { params: Pro
               House removals · {village.name}, {hub.county}
             </p>
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-              Your whole home in {village.name}, handled properly
+              {headline}
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-brand-purple-100">{village.character}</p>
+            <p className="mt-4 max-w-2xl text-lg text-brand-purple-100">{subhead}</p>
+            <p className="mt-3 max-w-2xl text-sm text-brand-purple-200">{village.character}</p>
             <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
               <Phone className="h-4 w-4" /> Or call 0333 577 2070
             </a>
           </div>
-          <InstantRemovalsQuoteWidget />
+          <div id="get-price">
+            <InstantRemovalsQuoteWidget />
+          </div>
         </div>
       </section>
 
@@ -199,7 +216,7 @@ export default async function HouseRemovalsVillagePage({ params }: { params: Pro
           <h2 className="font-display text-2xl font-bold">{cta.heading}</h2>
           <p className="mt-2 text-brand-green-100">{cta.sub}</p>
           <Button asChild size="lg" className="mt-6 bg-white text-brand-green-800 hover:bg-brand-green-50">
-            <Link href="/booking/removals">Get your free quote <ArrowRight className="h-4 w-4" /></Link>
+            <a href="#get-price">Get my instant price <ArrowRight className="h-4 w-4" /></a>
           </Button>
         </div>
       </section>

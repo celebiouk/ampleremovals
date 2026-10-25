@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ hub: stri
   if (!village) return { title: "Not found" };
   const hub = HUB_MAP[village.hubSlug];
   return {
-    title: `Man and Van in ${village.name}, ${hub.name} (${village.postcode}) — Same-Day Quotes`,
-    description: `Need a van and a crew in ${village.name} today or tomorrow? We're based ${hub.depotDistanceMiles} miles away near ${hub.landmark} — fast quotes, no call-out fee, ${village.postcode} covered.`,
+    title: `Man and Van ${village.name} — Instant Price, Same-Day Availability | £45/hr`,
+    description: `Get your exact ${village.name} man and van price in 60 seconds — no callback, no call-out fee. ${hub.depotDistanceMiles} miles from our depot near ${hub.landmark}. ${village.postcode} covered, often same-day.`,
     alternates: { canonical: `https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug}` },
   };
 }
@@ -30,6 +30,18 @@ const LOAD_SIZES = [
   { label: "A few boxes / one item", vans: "Small van, 1 man", example: "a sofa, a wardrobe, a few boxes for a student move" },
   { label: "A room's worth", vans: "Medium van, 1–2 men", example: "a bedroom or living room, eBay/Marketplace collections" },
   { label: "A small flat", vans: "Large van, 2 men", example: "a 1-bed flat move, light house clearance" },
+];
+
+const HEADLINES = (v: string) => [
+  `Man and Van in ${v} — Your Price in Seconds, Not Days`,
+  `${v} Man and Van, Booked Today — See Your Price Before You Pick Up the Phone`,
+  `The Man and Van ${v} Actually Trusts — Instant Price, No Waiting Around`,
+];
+
+const SUBHEADS = (v: string, miles: number, landmark: string) => [
+  `No more chasing van companies for a quote that doesn't add up. Enter your hours below, watch your exact ${v} price appear, and lock in your date with a small deposit — right now.`,
+  `Most man-and-van outfits make you wait for a callback that never quite comes. We're ${miles} miles away near ${landmark} — pick your hours, see your price instantly, and your ${v} slot's booked before the kettle's boiled.`,
+  `Forget "we'll get back to you." Pick your hours, see your exact ${v} price, and secure your slot today — the whole thing takes under two minutes.`,
 ];
 
 // Several genuinely different ways to say the same underlying fact — picked
@@ -42,9 +54,9 @@ const LOAD_INTROS = (v: string) => [
 ];
 
 const TRUST_LINES = (hubName: string) => [
-  ["Book today, move tomorrow — no 2-week wait", "Priced by load, not by the hour padded out", `Fully insured crew, every job in ${hubName}`],
-  ["Same-week availability, most of the time", "One price, agreed before we load anything", `Our ${hubName} crew knows the roads, not just the postcode`],
-  ["No call-out fee just to get a quote", "You only pay for the space your stuff fills", `Every job covered by goods-in-transit insurance`],
+  ["Book today, move tomorrow — no 2-week wait for a slot", "You see the exact price before you pay a penny", `Fully insured crew, every single job in ${hubName}`],
+  ["Same-week availability, most weeks", "One agreed price — nothing added once we're loading", `Our ${hubName} crew knows the roads, not just the postcode`],
+  ["No call-out fee just to find out what it costs", "You only pay for the hours you actually book", `Every job covered by goods-in-transit insurance`],
 ];
 
 const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceMiles: number; name: string }) => [
@@ -66,9 +78,9 @@ const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceM
 ];
 
 const CTA_HEADINGS = (v: string) => [
-  `Ready for a quote on your ${v} job?`,
-  `Get your ${v} van booked`,
-  `Let's get your ${v} load moved`,
+  `Still "thinking about it"? Get your ${v} price now — it takes less time than reading this.`,
+  `Your ${v} van is one tap away — see the price, lock in the date.`,
+  `Don't let ${v} moving day sneak up on you. Price it now, book in minutes.`,
 ];
 
 export default async function ManAndVanVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {
@@ -78,6 +90,8 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
   const hub = HUB_MAP[village.hubSlug];
   const siblings = village.nearbyVillages.map((s) => VILLAGE_MAP[s]).filter(Boolean);
 
+  const headline = pickVariant(village.slug, "man-van-headline", HEADLINES(village.name));
+  const subhead = pickVariant(village.slug, "man-van-subhead", SUBHEADS(village.name, hub.depotDistanceMiles, hub.landmark));
   const loadIntro = pickVariant(village.slug, "man-van-intro", LOAD_INTROS(village.name));
   const trustLine = pickVariant(village.slug, "man-van-trust", TRUST_LINES(hub.name));
   const faqSet = pickVariant(village.slug, "man-van-faq", FAQS(village, hub));
@@ -113,17 +127,17 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
               {village.postcode} · {hub.name}, {hub.county}
             </p>
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-              Man and Van in {village.name}
+              {headline}
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{village.character}</p>
-            <p className="mt-2 max-w-2xl text-brand-green-100">
-              Our nearest crew is based {hub.depotDistanceMiles} miles away, near {hub.landmark} — so a van's usually in {village.name} faster than you'd think.
-            </p>
+            <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{subhead}</p>
+            <p className="mt-3 max-w-2xl text-sm text-brand-green-200">{village.character}</p>
             <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
               <Phone className="h-4 w-4" /> Or call 0333 577 2070
             </a>
           </div>
-          <InstantHourlyQuoteWidget service="man_and_van" standardRate={MAN_AND_VAN_RATE} accent="green" />
+          <div id="get-price">
+            <InstantHourlyQuoteWidget service="man_and_van" standardRate={MAN_AND_VAN_RATE} accent="green" />
+          </div>
         </div>
       </section>
 
@@ -204,7 +218,7 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
         <div className="container mx-auto max-w-2xl">
           <h2 className="font-display text-2xl font-bold">{ctaHeading}</h2>
           <Button asChild size="lg" className="mt-6 bg-brand-green-600 hover:bg-brand-green-500">
-            <Link href="/booking/man-and-van">Get your free quote <ArrowRight className="h-4 w-4" /></Link>
+            <a href="#get-price">Get my instant price <ArrowRight className="h-4 w-4" /></a>
           </Button>
         </div>
       </section>

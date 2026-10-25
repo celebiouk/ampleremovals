@@ -4,7 +4,8 @@ import Link from "next/link";
 import { VILLAGES, VILLAGE_MAP } from "@/lib/villages";
 import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
-import { Zap, Ban, Phone } from "lucide-react";
+import { Zap, Ban, Phone, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 
 // Same hourly model as House Clearance — rubbish clearance is one of that
@@ -21,16 +22,22 @@ export async function generateMetadata({ params }: { params: Promise<{ hub: stri
   const village = VILLAGE_MAP[slug];
   if (!village) return { title: "Not found" };
   return {
-    title: `Rubbish Removal ${village.name} — Same-Day, Instant Price`,
-    description: `Get rid of bulky rubbish in ${village.name} (${village.postcode}) fast. No skip hire, no permit hassle — instant hourly price, pay a deposit to book.`,
+    title: `Rubbish Removal ${village.name} — Instant Price, Same-Day | £45–£70/hr`,
+    description: `See your exact ${village.name} rubbish removal price in seconds — no skip permit, no council wait. Enter your hours, pay a small deposit, it's gone. ${village.postcode} covered, often same-day.`,
     alternates: { canonical: `https://www.ampleremovals.com/rubbish-removal/${village.hubSlug}/${village.slug}` },
   };
 }
 
+const HEADLINES = (v: string) => [
+  `Rubbish Gone From ${v} — Your Price in Seconds, Not a Skip Permit in Sight`,
+  `${v} Rubbish Removal, Sorted Today — See Your Price Before You Even Book a Skip`,
+  `Stop Living Around That Pile. Get Your ${v} Price Now, Gone This Week.`,
+];
+
 const HERO_SUBS = (v: string) => [
-  `No skip permit, no council wait, no lugging it to the tip yourself. We turn up, you point at what's going, it's in the van.`,
-  `Skip hire means a permit, a wait, and a skip sitting outside for days. We're in and out of ${v} the same day, nothing left behind.`,
-  `Quicker than booking a skip, cheaper than a tip run with a hired van — we do the lifting, you just point.`,
+  `No skip permit, no council wait, no lugging it to the tip yourself. Pick your hours below, see your exact ${v} price, and we turn up and point-and-load it straight into the van.`,
+  `Skip hire means a permit, a wait, and a skip sitting outside for days. Enter your hours, see your ${v} price instantly, and we're in and out the same day — nothing left behind.`,
+  `Quicker than booking a skip, cheaper than a tip run in a hired van. Choose your hours, watch the price appear, lock in your slot — done in under two minutes.`,
 ];
 
 const WE_TAKE_SETS = [
@@ -62,9 +69,9 @@ const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceM
 ];
 
 const CTA_HEADINGS = (v: string) => [
-  `Get ${v}'s rubbish gone`,
-  `Book your ${v} rubbish collection`,
-  `Clear it out of ${v} today`,
+  `That rubbish isn't going anywhere on its own. Get your ${v} price now.`,
+  `Still tripping over it? Your ${v} price is 30 seconds away.`,
+  `Book it gone from ${v} today — see your price first, no obligation.`,
 ];
 
 export default async function RubbishRemovalVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {
@@ -74,6 +81,7 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
   const hub = HUB_MAP[village.hubSlug];
   const siblings = village.nearbyVillages.map((s) => VILLAGE_MAP[s]).filter(Boolean);
 
+  const headline = pickVariant(village.slug, "rubbish-headline", HEADLINES(village.name));
   const heroSub = pickVariant(village.slug, "rubbish-hero", HERO_SUBS(village.name));
   const faqSet = pickVariant(village.slug, "rubbish-faq", FAQS(village, hub));
   const ctaHeading = pickVariant(village.slug, "rubbish-cta", CTA_HEADINGS(village.name));
@@ -107,7 +115,7 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
         <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
           <div>
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-              Rubbish gone from {village.name}, today or tomorrow
+              {headline}
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-brand-green-50">{heroSub}</p>
             <p className="mt-2 text-sm font-semibold text-brand-green-100">{village.postcode} · {village.name}, {hub.county}</p>
@@ -115,7 +123,9 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
               <Phone className="h-4 w-4" /> Or call 0333 577 2070
             </a>
           </div>
-          <InstantHourlyQuoteWidget service="house_clearance" standardRate={RUBBISH_STANDARD_RATE} premiumRate={RUBBISH_PREMIUM_RATE} accent="green" />
+          <div id="get-price">
+            <InstantHourlyQuoteWidget service="house_clearance" standardRate={RUBBISH_STANDARD_RATE} premiumRate={RUBBISH_PREMIUM_RATE} accent="green" />
+          </div>
         </div>
       </section>
 
@@ -179,7 +189,10 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
       <section className="bg-slate-900 px-6 py-14 text-center text-white">
         <div className="container mx-auto max-w-2xl">
           <h2 className="font-display text-2xl font-bold">{ctaHeading}</h2>
-          <p className="mt-2 text-slate-300">Instant price above — pick your hours, pay a small deposit, done.</p>
+          <p className="mt-2 text-slate-300">Pick your hours, see your price, pay a small deposit — done in under two minutes.</p>
+          <Button asChild size="lg" className="mt-6 bg-brand-green-600 hover:bg-brand-green-500">
+            <a href="#get-price">Get my instant price <ArrowRight className="h-4 w-4" /></a>
+          </Button>
         </div>
       </section>
     </div>

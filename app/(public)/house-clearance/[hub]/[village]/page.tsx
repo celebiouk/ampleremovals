@@ -23,11 +23,23 @@ export async function generateMetadata({ params }: { params: Promise<{ hub: stri
   if (!village) return { title: "Not found" };
   const hub = HUB_MAP[village.hubSlug];
   return {
-    title: `House Clearance ${village.name} (${village.postcode}) — Probate & Full Property`,
-    description: `Full or partial house clearance in ${village.name}, near ${hub.landmark}. Licensed waste carrier, respectful of probate and downsizing situations. Free quote.`,
+    title: `House Clearance ${village.name} — Instant Price | £45–£70/hr`,
+    description: `See your exact ${village.name} house clearance price in seconds — garages, lofts, probate, the lot. Licensed waste carrier, ${hub.depotDistanceMiles} miles away near ${hub.landmark}. No home visit required.`,
     alternates: { canonical: `https://www.ampleremovals.com/house-clearance/${village.hubSlug}/${village.slug}` },
   };
 }
+
+const HEADLINES = (v: string) => [
+  `House Clearance in ${v} — Your Price Instantly, No Site Visit Needed`,
+  `${v} House Clearance, Sorted Today — See Your Price Before You Call Anyone Else`,
+  `Stop Dreading the Clear-Out. Get Your ${v} Price in Seconds, Booked in Minutes.`,
+];
+
+const SUBHEADS = (v: string) => [
+  `Garages, sheds, lofts, gardens, building waste, end-of-tenancy, office and general rubbish — pick your hours below and watch your exact ${v} price appear. No home visit, no vague "we'll call you back."`,
+  `Every quote-chasing clearance company makes you wait days for a number. We don't. Tell us the hours, see the price, and your ${v} clearance is booked — before you've finished your coffee.`,
+  `A full house, a single loft, or just the shed — whatever's going, enter your hours and get your exact ${v} price on screen right now. No judgement, no rush, no waiting around for someone to call.`,
+];
 
 const CATEGORY_SETS = (v: string) => [
   [
@@ -75,9 +87,9 @@ const FAQS = (village: { name: string }, hub: { depotDistanceMiles: number }) =>
 ];
 
 const CTA_HEADINGS = (v: string) => [
-  `Clearing a property in ${v}?`,
-  `Get your ${v} clearance quote`,
-  `Talk to us about your ${v} clearance`,
+  `Still putting off that ${v} clear-out? Get your price now — it's faster than deciding not to.`,
+  `Your ${v} clearance price is one tap away. Why wait any longer?`,
+  `Clear it, don't carry it any longer — get your ${v} price now.`,
 ];
 
 export default async function HouseClearanceVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {
@@ -87,6 +99,8 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
   const hub = HUB_MAP[village.hubSlug];
   const siblings = village.nearbyVillages.map((s) => VILLAGE_MAP[s]).filter(Boolean);
 
+  const headline = pickVariant(village.slug, "house-clearance-headline", HEADLINES(village.name));
+  const subhead = pickVariant(village.slug, "house-clearance-subhead", SUBHEADS(village.name));
   const categories = pickVariant(village.slug, "house-clearance-categories", CATEGORY_SETS(village.name));
   const proofLine = pickVariant(village.slug, "house-clearance-proof", PROOF_LINES(village.name));
   const faqSet = pickVariant(village.slug, "house-clearance-faq", FAQS(village, hub));
@@ -123,16 +137,16 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
             {village.name} · {village.postcode}
           </p>
           <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-            House clearance in {village.name}
+            {headline}
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-slate-300">
-            Garage, shed, loft, garden and building waste, end-of-tenancy, office and general rubbish clearance — no judgement, no rush, at a pace that works for your situation.
-          </p>
+          <p className="mt-4 max-w-2xl text-lg text-slate-300">{subhead}</p>
           <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-800">
               <Phone className="h-4 w-4" /> Or call 0333 577 2070
             </a>
           </div>
-          <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" />
+          <div id="get-price">
+            <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" />
+          </div>
         </div>
       </section>
 
@@ -208,7 +222,7 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
         <div className="container mx-auto max-w-2xl">
           <h2 className="font-display text-2xl font-bold">{ctaHeading}</h2>
           <Button asChild size="lg" className="mt-6 bg-white text-brand-purple-900 hover:bg-slate-100">
-            <Link href="/booking/house-clearance">Get your free quote <ArrowRight className="h-4 w-4" /></Link>
+            <a href="#get-price">Get my instant price <ArrowRight className="h-4 w-4" /></a>
           </Button>
         </div>
       </section>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Minus, Plus, Loader2, ArrowRight } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Zap, ShieldCheck, Lock } from "lucide-react";
 
 const MIN_HOURS = 2;
 
@@ -71,7 +71,12 @@ export function InstantHourlyQuoteWidget({ service, standardRate, premiumRate, a
 
   return (
     <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm">
-      <p className="font-display text-xl font-bold text-slate-900">Get your instant price</p>
+      <p className="font-display text-xl font-bold text-slate-900">Your price, right now — no calls, no waiting</p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-semibold text-slate-500">
+        <span className="inline-flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-green-600" /> Instant, no callback</span>
+        <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-brand-green-600" /> Fully insured crew</span>
+        <span className="inline-flex items-center gap-1"><Lock className="h-3.5 w-3.5 text-brand-green-600" /> Small deposit secures it</span>
+      </div>
 
       {premiumRate != null && (
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -119,7 +124,7 @@ export function InstantHourlyQuoteWidget({ service, standardRate, premiumRate, a
           onClick={() => setShowForm(true)}
           className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white ${accentClasses.bg} ${accentClasses.bgHover}`}
         >
-          Book this price <ArrowRight className="h-4 w-4" />
+          Lock in this price <ArrowRight className="h-4 w-4" />
         </button>
       ) : (
         <div className="mt-4 space-y-2.5">

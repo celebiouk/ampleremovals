@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Zap, ShieldCheck, Lock } from "lucide-react";
 
 const BEDROOM_OPTIONS = [
   { value: "studio", label: "Studio" },
@@ -80,7 +80,12 @@ export function InstantRemovalsQuoteWidget() {
 
   return (
     <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm">
-      <p className="font-display text-xl font-bold text-slate-900">Get your instant price</p>
+      <p className="font-display text-xl font-bold text-slate-900">Your moving price, right now — no site visit needed</p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-semibold text-slate-500">
+        <span className="inline-flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand-purple-700" /> Instant, no callback</span>
+        <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-brand-purple-700" /> Fully insured crew</span>
+        <span className="inline-flex items-center gap-1"><Lock className="h-3.5 w-3.5 text-brand-purple-700" /> Small deposit secures it</span>
+      </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {BEDROOM_OPTIONS.map((b) => (
@@ -126,7 +131,7 @@ export function InstantRemovalsQuoteWidget() {
           disabled={!preview}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-purple-800 px-6 py-3 font-semibold text-white hover:bg-brand-purple-900 disabled:opacity-50"
         >
-          Book this price <ArrowRight className="h-4 w-4" />
+          Lock in this price <ArrowRight className="h-4 w-4" />
         </button>
       ) : (
         <div className="mt-4 space-y-2.5">
