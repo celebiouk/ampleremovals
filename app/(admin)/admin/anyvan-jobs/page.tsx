@@ -16,6 +16,8 @@ interface AnyvanBooking {
   status: string;
   customer_id: string | null;
   survey_rating: number | null;
+  origin_address: { postcode: string } | { postcode: string }[] | null;
+  destination_address: { postcode: string } | { postcode: string }[] | null;
   driver_assignments: {
     role: string | null;
     driver: { first_name: string; last_name: string; preferred_name: string | null } | { first_name: string; last_name: string; preferred_name: string | null }[] | null;
@@ -35,8 +37,18 @@ export default function AnyvanJobsPage() {
   const [jobs, setJobs] = useState<AnyvanBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [originLine1, setOriginLine1] = useState("");
+  const [originCity, setOriginCity] = useState("");
+  const [originPostcode, setOriginPostcode] = useState("");
+  const [destLine1, setDestLine1] = useState("");
+  const [destCity, setDestCity] = useState("");
+  const [destPostcode, setDestPostcode] = useState("");
   const [creating, setCreating] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
 
@@ -46,7 +58,7 @@ export default function AnyvanJobsPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("bookings")
-        .select("id, reference, move_date, move_time, status, customer_id, survey_rating, driver_assignments:booking_driver_assignments(role, driver:drivers(first_name, last_name, preferred_name))")
+        .select("id, reference, move_date, move_time, status, customer_id, survey_rating, origin_address:addresses!origin_address_id(postcode), destination_address:addresses!destination_address_id(postcode), driver_assignments:booking_driver_assignments(role, driver:drivers(first_name, last_name, preferred_name))")
         .eq("is_anyvan", true)
         .order("move_date", { ascending: false })
         .limit(100);
@@ -80,6 +92,13 @@ export default function AnyvanJobsPage() {
     }
   }
 
+  function resetForm() {
+    setDate(""); setTime(""); setShowForm(false); setShowDetails(false);
+    setCustomerName(""); setCustomerPhone(""); setCustomerEmail("");
+    setOriginLine1(""); setOriginCity(""); setOriginPostcode("");
+    setDestLine1(""); setDestCity(""); setDestPostcode("");
+  }
+
   async function create() {
     if (!date) { toast.error("Pick a date"); return; }
     setCreating(true);
@@ -87,12 +106,24 @@ export default function AnyvanJobsPage() {
       const res = await fetch("/api/admin/anyvan-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, time: time || null }),
+        body: JSON.stringify({
+          date, time: time || null,
+          ...(customerName.trim() || customerPhone.trim() ? {
+            customerName: customerName.trim(), customerPhone: customerPhone.trim(),
+            customerEmail: customerEmail.trim() || undefined,
+          } : {}),
+          ...(originPostcode.trim() ? {
+            originAddress: { line_1: originLine1.trim(), city: originCity.trim() || undefined, postcode: originPostcode.trim() },
+          } : {}),
+          ...(destPostcode.trim() ? {
+            destinationAddress: { line_1: destLine1.trim(), city: destCity.trim() || undefined, postcode: destPostcode.trim() },
+          } : {}),
+        }),
       });
       const data = await res.json();
       if (data.success) {
         toast.success(`AnyVan job ${data.booking.reference} created`);
-        setDate(""); setTime(""); setShowForm(false);
+        resetForm();
         load();
       } else toast.error(data.error || "Failed to create job");
     } finally {
@@ -105,7 +136,7 @@ export default function AnyvanJobsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900"><Package className="h-6 w-6 text-brand-purple-700" /> AnyVan Jobs</h1>
-          <p className="text-sm text-slate-500">Work handled through AnyVan — no customer or invoice, just a date/time and who's assigned.</p>
+          <p className="text-sm text-slate-500">Work handled through AnyVan — no invoice, just a date/time, who's assigned, and optionally a customer &amp; address.</p>
         </div>
         <button onClick={() => setShowForm((s) => !s)} className="flex items-center gap-2 rounded-xl bg-brand-purple-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-purple-900">
           <Plus className="h-4 w-4" /> New AnyVan Job
@@ -121,7 +152,45 @@ export default function AnyvanJobsPage() {
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create job"}
             </button>
           </div>
-          <p className="mt-2 text-xs text-slate-400">After creating, open the job to assign a driver and porter — each gets a flat amount you set (defaults: £150 driver / £100 porter per day).</p>
+
+          <button
+            type="button"
+            onClick={() => setShowDetails((s) => !s)}
+            className="mt-3 text-xs font-semibold text-brand-purple-700 hover:text-brand-purple-900"
+          >
+            {showDetails ? "− Hide customer & address details" : "+ Add customer & address details (optional)"}
+          </button>
+
+          {showDetails && (
+            <div className="mt-3 space-y-4 border-t border-slate-100 pt-4">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Customer (for the rating request)</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Full name" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Phone" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="Email (optional)" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pickup address</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <input value={originLine1} onChange={(e) => setOriginLine1(e.target.value)} placeholder="Address line 1" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={originCity} onChange={(e) => setOriginCity(e.target.value)} placeholder="City (optional)" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={originPostcode} onChange={(e) => setOriginPostcode(e.target.value)} placeholder="Postcode" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Dropoff address</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <input value={destLine1} onChange={(e) => setDestLine1(e.target.value)} placeholder="Address line 1" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={destCity} onChange={(e) => setDestCity(e.target.value)} placeholder="City (optional)" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                  <input value={destPostcode} onChange={(e) => setDestPostcode(e.target.value)} placeholder="Postcode" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <p className="mt-3 text-xs text-slate-400">After creating, open the job to assign a driver and porter — each gets a flat amount you set (defaults: £150 driver / £100 porter per day).</p>
         </div>
       )}
 
@@ -137,6 +206,7 @@ export default function AnyvanJobsPage() {
                 <th className="px-4 py-3">Reference</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Route</th>
                 <th className="px-4 py-3">Crew</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Rating</th>
@@ -152,6 +222,9 @@ export default function AnyvanJobsPage() {
                   const name = d.preferred_name || d.first_name;
                   return a.role === "porter" ? `${name} (porter)` : name;
                 }).filter(Boolean);
+                const origin = Array.isArray(j.origin_address) ? j.origin_address[0] : j.origin_address;
+                const dest = Array.isArray(j.destination_address) ? j.destination_address[0] : j.destination_address;
+                const route = origin?.postcode ? (dest?.postcode ? `${origin.postcode} → ${dest.postcode}` : origin.postcode) : "—";
                 return (
                   <tr key={j.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
@@ -164,6 +237,7 @@ export default function AnyvanJobsPage() {
                     </td>
                     <td className="px-4 py-3">{j.move_date ?? "—"}</td>
                     <td className="px-4 py-3">{j.move_time ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{route}</td>
                     <td className="px-4 py-3 text-slate-600">{crewNames.length > 0 ? crewNames.join(", ") : <span className="text-slate-400">Unassigned</span>}</td>
                     <td className="px-4 py-3 text-slate-500">{j.status === "job_completed" ? "Completed" : j.status}</td>
                     <td className="px-4 py-3">
