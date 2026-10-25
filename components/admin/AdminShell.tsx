@@ -9,7 +9,7 @@ import {
   Receipt, CreditCard, BarChart2, Zap, Settings, LogOut,
   ChevronLeft, ChevronRight, ChevronDown, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
-  PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star, Wallet, Banknote,
+  PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star, Wallet, Banknote, Activity,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -104,6 +104,7 @@ export const NAV_GROUPS = [
     icon: BarChart2,
     items: [
       { href: "/admin/reports", label: "Reports", icon: BarChart2 },
+      { href: "/admin/traffic", label: "Traffic", icon: Activity },
       { href: "/admin/insights", label: "Insights", icon: TrendingUp },
       { href: "/admin/automations", label: "Automations", icon: Zap },
     ],
