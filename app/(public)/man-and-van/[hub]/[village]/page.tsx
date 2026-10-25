@@ -7,6 +7,7 @@ import { pickVariant } from "@/lib/local-variants";
 import { Truck, Clock, PoundSterling, CheckCircle2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 
 const MAN_AND_VAN_RATE = 45; // £/hr, 1 man + large Luton van
 
@@ -131,9 +132,12 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{subhead}</p>
             <p className="mt-3 max-w-2xl text-sm text-brand-green-200">{village.character}</p>
-            <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
-              <Phone className="h-4 w-4" /> Or call 0333 577 2070
-            </a>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <WhatsAppButton message={`Hi, I need a man and van in ${village.name}, ${hub.name}. Can you give me a quote? (Page: https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug})`} />
+              <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
+                <Phone className="h-4 w-4" /> Or call 0333 577 2070
+              </a>
+            </div>
           </div>
           <div id="get-price">
             <InstantHourlyQuoteWidget service="man_and_van" standardRate={MAN_AND_VAN_RATE} accent="green" />

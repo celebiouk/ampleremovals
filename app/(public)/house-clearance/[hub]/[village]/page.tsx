@@ -7,6 +7,7 @@ import { pickVariant } from "@/lib/local-variants";
 import { Sofa, Refrigerator, TreePine, Archive, FileCheck2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 
 // Garage clearances, shed clearances, loft clearances, garden waste, building
 // waste, end-of-tenancy clearance, office clearance, rubbish clearance.
@@ -140,9 +141,12 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
             {headline}
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-300">{subhead}</p>
-          <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-800">
-              <Phone className="h-4 w-4" /> Or call 0333 577 2070
-            </a>
+          <div className="mt-8 flex flex-wrap gap-3">
+              <WhatsAppButton message={`Hi, I need to clear my property in ${village.name}, ${hub.name}. Can I send a photo and get a quote? (Page: https://www.ampleremovals.com/house-clearance/${village.hubSlug}/${village.slug})`} />
+              <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-800">
+                <Phone className="h-4 w-4" /> Or call 0333 577 2070
+              </a>
+            </div>
           </div>
           <div id="get-price">
             <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" />
