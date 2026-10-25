@@ -3,12 +3,13 @@ import { ScrollView, View, Text, Pressable, Alert, Linking, RefreshControl, Imag
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, CheckCircle2, AlertCircle, PoundSterling, Truck } from "lucide-react-native";
+import { ArrowLeft, Pencil, CheckCircle2, AlertCircle, PoundSterling, Truck, ChevronRight } from "lucide-react-native";
 import { Card, Button, Badge, Skeleton, ErrorState } from "@/components/ui";
-import { useDriverDetail, useDriverDocuments, isPending } from "@/hooks/useDrivers";
+import { useDriverDetail, useDriverDocuments, useDriverJobs, isPending, type DriverJob } from "@/hooks/useDrivers";
 import { apiFetch } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { DRIVER_STATUS_LABELS, DRIVER_STATUS_COLOURS } from "@/lib/constants";
+import { DRIVER_STATUS_LABELS, DRIVER_STATUS_COLOURS, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constants";
+import type { BookingStatus, ServiceType } from "@/types";
 
 export default function DriverProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,7 +17,9 @@ export default function DriverProfileScreen() {
   const qc = useQueryClient();
   const { data, isLoading, isError, refetch, isRefetching } = useDriverDetail(id!);
   const { data: docs } = useDriverDocuments(id!);
+  const { data: jobsData, isLoading: jobsLoading } = useDriverJobs(id!);
   const [approving, setApproving] = useState(false);
+  const [jobsTab, setJobsTab] = useState<"upcoming" | "past">("upcoming");
 
   const driver = data?.driver;
   const pending = driver ? isPending(driver) : false;
@@ -126,6 +129,65 @@ export default function DriverProfileScreen() {
             <Row label="Email" value={driver.email} />
             <Row label="Phone" value={driver.phone} />
             {driver.date_of_birth ? <Row label="DOB" value={formatDate(driver.date_of_birth)} /> : null}
+          </Card>
+
+          {/* Jobs — past and upcoming */}
+          <Card>
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="text-base font-semibold text-slate-900 dark:text-white">Jobs</Text>
+              <View className="flex-row gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                <Pressable onPress={() => setJobsTab("upcoming")} className={`rounded-lg px-3 py-1.5 ${jobsTab === "upcoming" ? "bg-brand-purple-800" : ""}`}>
+                  <Text className={`text-xs font-semibold ${jobsTab === "upcoming" ? "text-white" : "text-slate-600 dark:text-slate-300"}`}>
+                    Upcoming {jobsData ? `(${jobsData.upcoming.length})` : ""}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setJobsTab("past")} className={`rounded-lg px-3 py-1.5 ${jobsTab === "past" ? "bg-brand-purple-800" : ""}`}>
+                  <Text className={`text-xs font-semibold ${jobsTab === "past" ? "text-white" : "text-slate-600 dark:text-slate-300"}`}>
+                    Past {jobsData ? `(${jobsData.past.length})` : ""}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+            {jobsLoading ? (
+              <Skeleton className="h-16" />
+            ) : !jobsData || jobsData[jobsTab].length === 0 ? (
+              <Text className="text-sm text-slate-500">No {jobsTab} jobs.</Text>
+            ) : (
+              <View className="gap-2">
+                {jobsData[jobsTab].map((j: DriverJob) => (
+                  <Pressable
+                    key={j.assignmentId}
+                    onPress={() => router.push(`/booking/${j.bookingId}`)}
+                    className="flex-row items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <View className="min-w-0 flex-1">
+                      <View className="flex-row items-center gap-2">
+                        <Text className="font-mono text-xs font-semibold text-slate-500">{j.reference}</Text>
+                        <View className="rounded-full bg-slate-200 px-2 py-0.5 dark:bg-slate-700">
+                          <Text className="text-[10px] font-semibold uppercase text-slate-600 dark:text-slate-300">
+                            {SERVICE_LABELS_SHORT[j.serviceType as ServiceType] ?? j.serviceType}
+                          </Text>
+                        </View>
+                        {j.role === "porter" ? (
+                          <View className="rounded-full bg-teal-100 px-2 py-0.5">
+                            <Text className="text-[10px] font-semibold uppercase text-teal-700">Porter</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200" numberOfLines={1}>{j.customerName}</Text>
+                      <Text className="text-xs text-slate-500">
+                        {j.isFlexibleDate
+                          ? `Flexible: ${j.flexibleDateFrom ? formatDate(j.flexibleDateFrom) : "TBC"} – ${j.flexibleDateTo ? formatDate(j.flexibleDateTo) : "TBC"}`
+                          : j.moveDate ? formatDate(j.moveDate) : "Date TBC"}
+                        {" · "}{STATUS_LABELS[j.status as BookingStatus] ?? j.status}
+                        {j.acceptanceStatus === "declined" ? <Text className="font-semibold text-red-600"> · Declined</Text> : null}
+                      </Text>
+                    </View>
+                    <ChevronRight size={16} color="#94a3b8" />
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </Card>
 
           {/* Documents */}

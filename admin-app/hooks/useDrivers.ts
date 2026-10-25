@@ -50,6 +50,33 @@ export interface DriverDocuments {
   "licence-back": string | null;
 }
 
+export interface DriverJob {
+  assignmentId: string;
+  bookingId: string;
+  reference: string;
+  serviceType: string;
+  status: string;
+  moveDate: string | null;
+  isFlexibleDate: boolean;
+  flexibleDateFrom: string | null;
+  flexibleDateTo: string | null;
+  customerName: string;
+  role: string;
+  acceptanceStatus: string | null;
+  flatPayAmount: number | null;
+  isPast: boolean;
+}
+
+/** Every booking this driver/porter has been assigned to, split upcoming/past. */
+export function useDriverJobs(driverId: string) {
+  return useQuery({
+    queryKey: ["driver-jobs", driverId],
+    queryFn: async (): Promise<{ success: boolean; upcoming: DriverJob[]; past: DriverJob[] }> =>
+      (await apiFetch(`/api/admin/drivers/${driverId}/jobs`)).json(),
+    enabled: !!driverId,
+  });
+}
+
 export function useDriverDocuments(driverId: string) {
   return useQuery({
     queryKey: ["driver-docs", driverId],

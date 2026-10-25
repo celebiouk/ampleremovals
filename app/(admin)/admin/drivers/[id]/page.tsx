@@ -4,10 +4,29 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Calendar, PoundSterling, Truck, Edit, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, PoundSterling, Truck, Edit, Loader2, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { DRIVER_STATUS_LABELS } from "@/lib/constants";
+import { DRIVER_STATUS_LABELS, STATUS_LABELS, SERVICE_LABELS_SHORT } from "@/lib/constants";
 import { DriverDocuments } from "@/components/admin/drivers/DriverDocuments";
+import { formatDate } from "@/lib/utils";
+import type { BookingStatus, ServiceType } from "@/types";
+
+interface DriverJob {
+  assignmentId: string;
+  bookingId: string;
+  reference: string;
+  serviceType: string;
+  status: string;
+  moveDate: string | null;
+  isFlexibleDate: boolean;
+  flexibleDateFrom: string | null;
+  flexibleDateTo: string | null;
+  customerName: string;
+  role: string;
+  acceptanceStatus: string | null;
+  flatPayAmount: number | null;
+  isPast: boolean;
+}
 
 export default function DriverProfilePage() {
   const params = useParams();
@@ -16,10 +35,27 @@ export default function DriverProfilePage() {
   const [driver, setDriver] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
+  const [jobs, setJobs] = useState<{ upcoming: DriverJob[]; past: DriverJob[] } | null>(null);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsTab, setJobsTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => {
     loadDriver();
+    loadJobs();
   }, [driverId]);
+
+  async function loadJobs() {
+    setJobsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/drivers/${driverId}/jobs`);
+      const data = await response.json();
+      if (data.success) setJobs({ upcoming: data.upcoming, past: data.past });
+    } catch (error) {
+      console.error("Failed to load driver jobs:", error);
+    } finally {
+      setJobsLoading(false);
+    }
+  }
 
   async function loadDriver() {
     try {
@@ -261,6 +297,63 @@ export default function DriverProfilePage() {
                     <p className="mt-1 text-xs font-medium text-slate-600">{r.customerName}</p>
                     {r.feedback && <p className="mt-1 text-sm italic text-slate-700">“{r.feedback}”</p>}
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Jobs — past and upcoming */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Jobs</h3>
+              <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  onClick={() => setJobsTab("upcoming")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${jobsTab === "upcoming" ? "bg-brand-purple-800 text-white" : "text-slate-600 hover:bg-slate-200"}`}
+                >
+                  Upcoming {jobs ? `(${jobs.upcoming.length})` : ""}
+                </button>
+                <button
+                  onClick={() => setJobsTab("past")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${jobsTab === "past" ? "bg-brand-purple-800 text-white" : "text-slate-600 hover:bg-slate-200"}`}
+                >
+                  Past {jobs ? `(${jobs.past.length})` : ""}
+                </button>
+              </div>
+            </div>
+            {jobsLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
+            ) : !jobs || jobs[jobsTab].length === 0 ? (
+              <p className="text-sm text-slate-500">No {jobsTab} jobs.</p>
+            ) : (
+              <div className="space-y-2">
+                {jobs[jobsTab].map((j) => (
+                  <Link
+                    key={j.assignmentId}
+                    href={`/admin/bookings/${j.bookingId}`}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 hover:border-brand-purple-200 hover:bg-brand-purple-50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-slate-500">{j.reference}</span>
+                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                          {SERVICE_LABELS_SHORT[j.serviceType as ServiceType] ?? j.serviceType}
+                        </span>
+                        {j.role === "porter" && (
+                          <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-teal-700">Porter</span>
+                        )}
+                      </div>
+                      <p className="mt-1 truncate text-sm font-medium text-slate-800">{j.customerName}</p>
+                      <p className="text-xs text-slate-500">
+                        {j.isFlexibleDate
+                          ? `Flexible: ${j.flexibleDateFrom ? formatDate(j.flexibleDateFrom) : "TBC"} – ${j.flexibleDateTo ? formatDate(j.flexibleDateTo) : "TBC"}`
+                          : j.moveDate ? formatDate(j.moveDate) : "Date TBC"}
+                        {" · "}{STATUS_LABELS[j.status as BookingStatus] ?? j.status}
+                        {j.acceptanceStatus === "declined" && <span className="font-semibold text-red-600"> · Declined</span>}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                  </Link>
                 ))}
               </div>
             )}
