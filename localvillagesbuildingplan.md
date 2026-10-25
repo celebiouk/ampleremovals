@@ -166,8 +166,14 @@ First batch: **Wash Common, Speen, Donnington, Greenham, Cold Ash** (first 5 of 
 - [x] Research complete — all 165 villages compiled and cross-deduplicated.
 - [x] Plan approved — full scope, Phase 2 confirmed for later.
 - [x] Batch 1 (Newbury: Wash Common, Speen, Donnington, Greenham, Cold Ash) — built, 20 pages (5 villages × 4 services), deployed.
-- [ ] Batches 2–33 (remaining ~160 villages, 5 at a time).
-- [ ] Phase 2: rewrite the original 32 `lib/locations.ts` pages.
+- [x] Batches 2–34 — ALL 17 HUBS COMPLETE. 169 villages total (Basingstoke has 9, not 10 — the real list of notable settlements there, not padded to a round number). 169 × 4 services = 676 location pages, all deployed.
+- [x] Instant-quote widgets added to all 4 templates (Standard/Premium for removals; hourly for man-and-van, house-clearance, rubbish-removal) — self-serve quote → deposit payment, no admin in the loop.
+- [x] JSON-LD structured data (MovingCompany + FAQPage) on all 4 templates.
+- [x] Traffic tracking (page_views table, PageViewTracker, admin Traffic page) — site-wide + per-page, monthly.
+- [x] WhatsApp button on all 4 templates, pre-filled with service + village + page URL — inherited by every village automatically.
+- [x] Direct-response copy pass on all 4 templates (headlines, subheads, CTAs) — benefit-led, instant-mechanism-led, no fake scarcity.
+- [x] Fixed a real bug: all 4 hero sections had less top padding (64px) than the fixed navbar's height (72px), clipping the eyebrow label — matched the homepage's `pt-28 lg:pt-36` convention.
+- [ ] Phase 2: rewrite the original 32 `lib/locations.ts` pages (deferred, not started — confirmed with owner as a later follow-up).
 
 ### Batch 1 — measured similarity, honestly reported
 
