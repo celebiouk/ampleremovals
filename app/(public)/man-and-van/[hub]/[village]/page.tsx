@@ -6,6 +6,9 @@ import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
 import { Truck, Clock, PoundSterling, CheckCircle2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
+
+const MAN_AND_VAN_RATE = 45; // £/hr, 1 man + large Luton van
 
 export async function generateStaticParams() {
   return VILLAGES.map((v) => ({ hub: v.hubSlug, village: v.slug }));
@@ -80,29 +83,47 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
   const faqSet = pickVariant(village.slug, "man-van-faq", FAQS(village, hub));
   const ctaHeading = pickVariant(village.slug, "man-van-cta", CTA_HEADINGS(village.name));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MovingCompany",
+        name: `Ample Removals — Man and Van, ${village.name}`,
+        areaServed: { "@type": "Place", name: `${village.name}, ${hub.county}`, address: { "@type": "PostalAddress", addressLocality: village.name, postalCode: village.postcode, addressRegion: hub.county, addressCountry: "GB" } },
+        geo: { "@type": "GeoCoordinates", latitude: village.lat, longitude: village.lng },
+        telephone: "+443335772070",
+        priceRange: "££",
+        url: `https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug}`,
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero — speed-led, green accent */}
       <section className="bg-gradient-to-br from-brand-green-700 to-brand-green-900 px-6 py-16 text-white">
-        <div className="container mx-auto max-w-4xl">
-          <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-green-200">
-            {village.postcode} · {hub.name}, {hub.county}
-          </p>
-          <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-            Man and Van in {village.name}
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{village.character}</p>
-          <p className="mt-2 max-w-2xl text-brand-green-100">
-            Our nearest crew is based {hub.depotDistanceMiles} miles away, near {hub.landmark} — so a van's usually in {village.name} faster than you'd think.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-white text-brand-green-800 hover:bg-brand-green-50">
-              <Link href="/booking/man-and-van">Get a quote <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-              <a href="tel:03335772070"><Phone className="h-4 w-4" /> 0333 577 2070</a>
-            </Button>
+        <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-green-200">
+              {village.postcode} · {hub.name}, {hub.county}
+            </p>
+            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+              Man and Van in {village.name}
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{village.character}</p>
+            <p className="mt-2 max-w-2xl text-brand-green-100">
+              Our nearest crew is based {hub.depotDistanceMiles} miles away, near {hub.landmark} — so a van's usually in {village.name} faster than you'd think.
+            </p>
+            <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
+              <Phone className="h-4 w-4" /> Or call 0333 577 2070
+            </a>
           </div>
+          <InstantHourlyQuoteWidget service="man_and_van" standardRate={MAN_AND_VAN_RATE} accent="green" />
         </div>
       </section>
 

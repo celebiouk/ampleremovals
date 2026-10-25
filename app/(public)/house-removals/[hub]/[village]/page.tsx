@@ -6,6 +6,7 @@ import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
 import { ShieldCheck, Package, Home, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstantRemovalsQuoteWidget } from "@/components/local/InstantRemovalsQuoteWidget";
 
 export async function generateStaticParams() {
   return VILLAGES.map((v) => ({ hub: v.hubSlug, village: v.slug }));
@@ -82,26 +83,44 @@ export default async function HouseRemovalsVillagePage({ params }: { params: Pro
   const faqSet = pickVariant(village.slug, "house-removals-faq", FAQS(village, hub));
   const cta = pickVariant(village.slug, "house-removals-cta", CTA_LINES(village.name));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MovingCompany",
+        name: `Ample Removals — House Removals, ${village.name}`,
+        areaServed: { "@type": "Place", name: `${village.name}, ${hub.county}`, address: { "@type": "PostalAddress", addressLocality: village.name, postalCode: village.postcode, addressRegion: hub.county, addressCountry: "GB" } },
+        geo: { "@type": "GeoCoordinates", latitude: village.lat, longitude: village.lng },
+        telephone: "+443335772070",
+        priceRange: "££",
+        url: `https://www.ampleremovals.com/house-removals/${village.hubSlug}/${village.slug}`,
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero — trust-led, purple */}
       <section className="bg-gradient-to-br from-brand-purple-800 to-brand-purple-950 px-6 py-20 text-white">
-        <div className="container mx-auto max-w-4xl text-center">
-          <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-purple-200">
-            House removals · {village.name}, {hub.county}
-          </p>
-          <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-            Your whole home in {village.name}, handled properly
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-brand-purple-100">{village.character}</p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg" className="bg-brand-green-600 hover:bg-brand-green-500">
-              <Link href="/booking/removals">Get your free quote <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-              <a href="tel:03335772070"><Phone className="h-4 w-4" /> 0333 577 2070</a>
-            </Button>
+        <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-purple-200">
+              House removals · {village.name}, {hub.county}
+            </p>
+            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+              Your whole home in {village.name}, handled properly
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-brand-purple-100">{village.character}</p>
+            <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
+              <Phone className="h-4 w-4" /> Or call 0333 577 2070
+            </a>
           </div>
+          <InstantRemovalsQuoteWidget />
         </div>
       </section>
 

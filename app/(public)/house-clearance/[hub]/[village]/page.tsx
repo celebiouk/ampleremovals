@@ -6,6 +6,12 @@ import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
 import { Sofa, Refrigerator, TreePine, Archive, FileCheck2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
+
+// Garage clearances, shed clearances, loft clearances, garden waste, building
+// waste, end-of-tenancy clearance, office clearance, rubbish clearance.
+const CLEARANCE_STANDARD_RATE = 45; // £/hr, 1 man + van
+const CLEARANCE_PREMIUM_RATE = 70; // £/hr, 2 men
 
 export async function generateStaticParams() {
   return VILLAGES.map((v) => ({ hub: v.hubSlug, village: v.slug }));
@@ -86,11 +92,33 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
   const faqSet = pickVariant(village.slug, "house-clearance-faq", FAQS(village, hub));
   const ctaHeading = pickVariant(village.slug, "house-clearance-cta", CTA_HEADINGS(village.name));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MovingCompany",
+        name: `Ample Removals — House Clearance, ${village.name}`,
+        description: "Garage, shed, loft, garden, building waste, end-of-tenancy and office clearances.",
+        areaServed: { "@type": "Place", name: `${village.name}, ${hub.county}`, address: { "@type": "PostalAddress", addressLocality: village.name, postalCode: village.postcode, addressRegion: hub.county, addressCountry: "GB" } },
+        geo: { "@type": "GeoCoordinates", latitude: village.lat, longitude: village.lng },
+        telephone: "+443335772070",
+        priceRange: "££",
+        url: `https://www.ampleremovals.com/house-clearance/${village.hubSlug}/${village.slug}`,
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero — quieter, professional tone, slate+purple */}
       <section className="bg-slate-900 px-6 py-16 text-white">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
           <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-slate-400">
             {village.name} · {village.postcode}
           </p>
@@ -98,16 +126,13 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
             House clearance in {village.name}
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-300">
-            Probate, downsizing, or just a property that needs clearing — we handle it with no judgement and no rush, at a pace that works for your situation.
+            Garage, shed, loft, garden and building waste, end-of-tenancy, office and general rubbish clearance — no judgement, no rush, at a pace that works for your situation.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-brand-purple-700 hover:bg-brand-purple-600">
-              <Link href="/booking/house-clearance">Get a quote <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="border-slate-600 text-white hover:bg-slate-800">
-              <a href="tel:03335772070"><Phone className="h-4 w-4" /> 0333 577 2070</a>
-            </Button>
+          <a href="tel:03335772070" className="mt-8 inline-flex items-center gap-2 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-800">
+              <Phone className="h-4 w-4" /> Or call 0333 577 2070
+            </a>
           </div>
+          <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" />
         </div>
       </section>
 
