@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { User, Mail, Calendar, Loader2, Camera } from "lucide-react";
+import { User, Mail, Calendar, Loader2, Camera, FileText, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriverProfilePage() {
@@ -338,6 +339,17 @@ export default function DriverProfilePage() {
           )}
         </button>
       </div>
+
+      <Link
+        href="/drivers/documents"
+        className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+          <FileText className="h-5 w-5 text-slate-600" />
+        </div>
+        <span className="flex-1 font-medium text-slate-900">Documents</span>
+        <ChevronRight className="h-5 w-5 text-slate-400" />
+      </Link>
     </div>
   );
 }

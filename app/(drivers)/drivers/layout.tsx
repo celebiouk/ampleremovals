@@ -5,25 +5,19 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
-  LayoutDashboard,
-  Truck,
   CalendarCheck,
+  Truck,
   PoundSterling,
   User,
-  FileText,
   LogOut,
-  Menu,
-  X,
 } from "lucide-react";
 import { Toaster } from "sonner";
 
-const navigation = [
-  { name: "My Dashboard", href: "/drivers/dashboard", icon: LayoutDashboard },
-  { name: "My Jobs", href: "/drivers/jobs", icon: Truck },
-  { name: "Today's Jobs", href: "/drivers/jobs/today", icon: CalendarCheck },
+const TABS = [
+  { name: "Today", href: "/drivers/jobs/today", icon: CalendarCheck },
+  { name: "Jobs", href: "/drivers/jobs", icon: Truck },
   { name: "Earnings", href: "/drivers/earnings", icon: PoundSterling },
-  { name: "My Profile", href: "/drivers/profile", icon: User },
-  { name: "Documents", href: "/drivers/documents", icon: FileText },
+  { name: "Profile", href: "/drivers/profile", icon: User },
 ];
 
 export default function DriversLayout({
@@ -33,18 +27,16 @@ export default function DriversLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [driverName, setDriverName] = useState("Driver");
   const [loading, setLoading] = useState(true);
 
-  // Public, chrome-less driver pages (no sidebar, no auth gate)
+  // Public, chrome-less driver pages (no nav, no auth gate)
   const isPublicPage =
     pathname === "/drivers/login" ||
     pathname === "/drivers/register" ||
     pathname.startsWith("/drivers/reset-password");
 
   useEffect(() => {
-    // Don't check auth on public pages
     if (isPublicPage) {
       setLoading(false);
       return;
@@ -64,7 +56,6 @@ export default function DriversLayout({
       return;
     }
 
-    // Fetch driver details
     const { data: driver } = await supabase
       .from("drivers")
       .select("first_name, preferred_name")
@@ -84,11 +75,10 @@ export default function DriversLayout({
     router.push("/drivers/login");
   }
 
-  // Public pages (login, register, reset-password) render without sidebar
   if (isPublicPage) {
     return (
       <>
-        <Toaster position="top-right" />
+        <Toaster position="top-center" />
         {children}
       </>
     );
@@ -96,114 +86,62 @@ export default function DriversLayout({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="text-white">Loading...</div>
+      <div className="flex h-dvh items-center justify-center bg-slate-950">
+        <div className="text-white">Loading…</div>
       </div>
     );
   }
 
+  // App-shell layout: fixed top bar, scrollable content, fixed bottom tab
+  // bar — no sidebar/hamburger. Reads like a native app rather than a
+  // desktop admin panel squeezed onto a phone.
   return (
-    <div className="flex h-screen bg-slate-50">
-      <Toaster position="top-right" />
+    <div className="flex h-dvh flex-col bg-slate-50" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <Toaster position="top-center" />
 
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/80 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-slate-950 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex h-full flex-col">
-          {/* Header */}
-          <div className="flex h-16 items-center justify-between border-b border-slate-800 px-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-purple-600">
-                <Truck className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-white">Ample Removals</div>
-                <div className="text-xs text-slate-400">Driver Portal</div>
-              </div>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-slate-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
+      {/* Top bar */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-purple-600">
+            <Truck className="h-4 w-4 text-white" />
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-gradient-to-r from-brand-purple-600 to-brand-purple-700 text-white shadow-lg"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="border-t border-slate-800 p-4">
-            <div className="mb-3 rounded-xl bg-slate-900 px-4 py-3">
-              <div className="text-sm font-semibold text-white">{driverName}</div>
-              <div className="text-xs text-slate-400">Driver</div>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-            >
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </button>
-          </div>
+          <span className="text-sm font-bold text-slate-900">Hi, {driverName}</span>
         </div>
-      </aside>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </header>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-slate-600 hover:text-slate-900"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <div className="hidden lg:block text-lg font-semibold text-slate-900">
-            {navigation.find((item) => pathname === item.href)?.name || "Driver Portal"}
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-sm text-slate-600">
-              {driverName}
-            </span>
-          </div>
-        </header>
+      {/* Page content */}
+      <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">
+        {children}
+      </main>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-6">
-          {children}
-        </main>
-      </div>
+      {/* Bottom tab bar */}
+      <nav
+        className="flex shrink-0 items-stretch justify-around border-t border-slate-200 bg-white"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {TABS.map((tab) => {
+          const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");
+          return (
+            <Link
+              key={tab.name}
+              href={tab.href}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition-colors ${
+                isActive ? "text-brand-purple-700" : "text-slate-400"
+              }`}
+            >
+              <tab.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+              {tab.name}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
