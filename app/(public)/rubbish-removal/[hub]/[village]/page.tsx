@@ -8,6 +8,7 @@ import { Zap, Ban, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 
 // Same hourly model as House Clearance — rubbish clearance is one of that
 // service's own keyword targets, so the pricing must match, not contradict it.
@@ -108,9 +109,12 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
     ],
   };
 
+  const whatsappMessage = `Hi, I have rubbish to remove in ${village.name}, ${hub.name}. Can I send a photo and get a quote? (Page: https://www.ampleremovals.com/rubbish-removal/${village.hubSlug}/${village.slug})`;
+
   return (
-    <div>
+    <div className="pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <StickyQuoteBar quoteHref="#get-price" whatsappMessage={whatsappMessage} />
       {/* Hero — bold, punchy, price-led */}
       <section className="bg-brand-green-600 px-6 pb-16 pt-28 text-white lg:pt-36">
         <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
@@ -121,7 +125,7 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
             <p className="mt-4 max-w-2xl text-lg text-brand-green-50">{heroSub}</p>
             <p className="mt-2 text-sm font-semibold text-brand-green-100">{village.postcode} · {village.name}, {hub.county}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <WhatsAppButton message={`Hi, I have rubbish to remove in ${village.name}, ${hub.name}. Can I send a photo and get a quote? (Page: https://www.ampleremovals.com/rubbish-removal/${village.hubSlug}/${village.slug})`} variant="outline" />
+              <WhatsAppButton message={whatsappMessage} variant="outline" />
               <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
                 <Phone className="h-4 w-4" /> Or call 0333 577 2070
               </a>

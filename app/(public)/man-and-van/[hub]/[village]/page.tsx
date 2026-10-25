@@ -6,10 +6,8 @@ import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
 import { Truck, Clock, PoundSterling, CheckCircle2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
-
-const MAN_AND_VAN_RATE = 45; // £/hr, 1 man + large Luton van
+import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 
 export async function generateStaticParams() {
   return VILLAGES.map((v) => ({ hub: v.hubSlug, village: v.slug }));
@@ -117,30 +115,31 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
     ],
   };
 
+  const whatsappMessage = `Hi, I need a man and van in ${village.name}, ${hub.name}. Can you give me a quote? (Page: https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug})`;
+
   return (
-    <div>
+    <div className="pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <StickyQuoteBar quoteHref="/booking/man-and-van" whatsappMessage={whatsappMessage} />
       {/* Hero — speed-led, green accent */}
       <section className="bg-gradient-to-br from-brand-green-700 to-brand-green-900 px-6 pb-16 pt-28 text-white lg:pt-36">
-        <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-          <div>
-            <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-green-200">
-              {village.postcode} · {hub.name}, {hub.county}
-            </p>
-            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-              {headline}
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{subhead}</p>
-            <p className="mt-3 max-w-2xl text-sm text-brand-green-200">{village.character}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <WhatsAppButton message={`Hi, I need a man and van in ${village.name}, ${hub.name}. Can you give me a quote? (Page: https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug})`} />
-              <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
-                <Phone className="h-4 w-4" /> Or call 0333 577 2070
-              </a>
-            </div>
-          </div>
-          <div id="get-price">
-            <InstantHourlyQuoteWidget service="man_and_van" standardRate={MAN_AND_VAN_RATE} accent="green" />
+        <div className="container mx-auto max-w-3xl">
+          <p className="mb-3 font-sans text-sm font-semibold uppercase tracking-wide text-brand-green-200">
+            {village.postcode} · {hub.name}, {hub.county}
+          </p>
+          <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+            {headline}
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg text-brand-green-100">{subhead}</p>
+          <p className="mt-3 max-w-2xl text-sm text-brand-green-200">{village.character}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg" className="bg-white text-brand-green-800 hover:bg-slate-100">
+              <Link href="/booking/man-and-van">Get a free Quote <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
+            <WhatsAppButton message={whatsappMessage} />
+            <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold text-white hover:bg-white/10">
+              <Phone className="h-4 w-4" /> Or call 0333 577 2070
+            </a>
           </div>
         </div>
       </section>
@@ -222,7 +221,7 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
         <div className="container mx-auto max-w-2xl">
           <h2 className="font-display text-2xl font-bold">{ctaHeading}</h2>
           <Button asChild size="lg" className="mt-6 bg-brand-green-600 hover:bg-brand-green-500">
-            <a href="#get-price">Get my instant price <ArrowRight className="h-4 w-4" /></a>
+            <Link href="/booking/man-and-van">Get a free Quote <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </section>

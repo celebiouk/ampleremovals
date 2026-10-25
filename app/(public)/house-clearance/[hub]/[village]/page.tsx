@@ -8,6 +8,7 @@ import { Sofa, Refrigerator, TreePine, Archive, FileCheck2, ArrowRight, Phone } 
 import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 
 // Garage clearances, shed clearances, loft clearances, garden waste, building
 // waste, end-of-tenancy clearance, office clearance, rubbish clearance.
@@ -127,9 +128,12 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
     ],
   };
 
+  const whatsappMessage = `Hi, I need to clear my property in ${village.name}, ${hub.name}. Can I send a photo and get a quote? (Page: https://www.ampleremovals.com/house-clearance/${village.hubSlug}/${village.slug})`;
+
   return (
-    <div>
+    <div className="pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <StickyQuoteBar quoteHref="#get-price" whatsappMessage={whatsappMessage} />
       {/* Hero — quieter, professional tone, slate+purple */}
       <section className="bg-slate-900 px-6 pb-16 pt-28 text-white lg:pt-36">
         <div className="container mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
@@ -142,7 +146,7 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-300">{subhead}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-              <WhatsAppButton message={`Hi, I need to clear my property in ${village.name}, ${hub.name}. Can I send a photo and get a quote? (Page: https://www.ampleremovals.com/house-clearance/${village.hubSlug}/${village.slug})`} />
+              <WhatsAppButton message={whatsappMessage} />
               <a href="tel:03335772070" className="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-800">
                 <Phone className="h-4 w-4" /> Or call 0333 577 2070
               </a>

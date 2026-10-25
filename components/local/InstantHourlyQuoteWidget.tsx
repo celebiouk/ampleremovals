@@ -128,17 +128,17 @@ export function InstantHourlyQuoteWidget({ service, standardRate, premiumRate, a
         </button>
       ) : (
         <div className="mt-4 space-y-2.5">
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
           <div className="grid grid-cols-2 gap-2.5">
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" type="tel" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" type="tel" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
           </div>
-          <input value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Address line 1" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          <input value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Address line 1" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
           <div className="grid grid-cols-2 gap-2.5">
-            <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Town (optional)" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
-            <input value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="Postcode" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+            <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Town (optional)" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
+            <input value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="Postcode" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
           </div>
-          <input value={moveDate} onChange={(e) => setMoveDate(e.target.value)} type="date" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          <input value={moveDate} onChange={(e) => setMoveDate(e.target.value)} type="date" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
           {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
           <button
             type="button"

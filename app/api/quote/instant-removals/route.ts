@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { insertAddress } from "@/lib/bookings/createBooking";
-import { markQuoteSent } from "@/lib/bookings/quoteDelivery";
+import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { buildQuote } from "@/lib/quote-engine";
 import { premiumTotalFor } from "@/lib/tiers";
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       reference,
       service_type: "removals",
       customer_id: customer.id,
-      status: "pending",
+      status: "inquiry",
       origin_address_id: originAddressId,
       move_date: body.moveDate,
       quote_total: standardTotal,
@@ -98,7 +98,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Quote links aren't configured" }, { status: 500 });
   }
 
-  await markQuoteSent(supabase, booking.id, "pending");
+  await markQuoteSent(supabase, booking.id, "inquiry");
+
+  await sendReserveMessages({
+    bookingId: booking.id,
+    token,
+    reference,
+    firstName: body.fullName.trim().split(/\s+/)[0] || body.fullName.trim(),
+    email: body.email.trim().toLowerCase(),
+    phone: body.phone.trim(),
+    total: standardTotal,
+    showStandard: true,
+    showPremium: true,
+  }).catch((e) => console.warn("instant-removals reserve messages failed:", e));
 
   return NextResponse.json({ success: true, bookingId: booking.id, token, reference });
 }
