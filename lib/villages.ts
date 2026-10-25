@@ -1746,6 +1746,58 @@ export const VILLAGES: Village[] = [
     character: "A market town at the western edge of Salisbury Plain, close to both Longleat and the Army training grounds — a genuine working town rather than a tourist stop.",
     nearbyVillages: ["westbury"],
   },
+
+  // ── Wiltshire (remaining county towns) — batch 34, completing the hub ───
+  {
+    slug: "calne",
+    name: "Calne",
+    hubSlug: "wiltshire",
+    postcode: "SN11",
+    lat: 51.439,
+    lng: -2.007,
+    character: "A market town that grew up around bacon-curing and sausage production for over a century — the factory's long gone, but the town's Georgian core around the church remains.",
+    nearbyVillages: ["chippenham"],
+  },
+  {
+    slug: "westbury",
+    name: "Westbury",
+    hubSlug: "wiltshire",
+    postcode: "BA13",
+    lat: 51.263,
+    lng: -2.191,
+    character: "A town sitting below the Westbury White Horse, a chalk hill figure cut into the escarpment above it — one of several white horses across Wiltshire, but among the oldest and best known.",
+    nearbyVillages: ["warminster", "trowbridge"],
+  },
+  {
+    slug: "marlborough",
+    name: "Marlborough",
+    hubSlug: "wiltshire",
+    postcode: "SN8",
+    lat: 51.419,
+    lng: -1.733,
+    character: "A historic market town with one of the widest high streets in England, overlooked by Marlborough College — the width was deliberately laid out for the medieval market that still echoes in the Saturday stalls.",
+    nearbyVillages: ["pewsey"],
+  },
+  {
+    slug: "pewsey",
+    name: "Pewsey",
+    hubSlug: "wiltshire",
+    postcode: "SN9",
+    lat: 51.343,
+    lng: -1.766,
+    character: "A small town in the Vale of Pewsey, with its own white horse carved into the hillside above it and the Kennet and Avon Canal running along the valley floor.",
+    nearbyVillages: ["marlborough", "devizes"],
+  },
+  {
+    slug: "mere",
+    name: "Mere",
+    hubSlug: "wiltshire",
+    postcode: "BA12",
+    lat: 51.09,
+    lng: -2.267,
+    character: "A small town in the far south-west of Wiltshire near Stourhead, with the ruins of a 13th-century castle on the hill above it — quieter and more remote than the county's larger towns.",
+    nearbyVillages: ["warminster"],
+  },
 ];
 
 export const VILLAGE_MAP: Record<string, Village> = VILLAGES.reduce((acc, v) => {
