@@ -1,9 +1,25 @@
 import { MetadataRoute } from "next";
+import { VILLAGES } from "@/lib/villages";
+
+const VILLAGE_SERVICES = ["man-and-van", "house-removals", "house-clearance", "rubbish-removal"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
+  // Local village pages (see localvillagesbuildingplan.md) — previously these
+  // lived only in the orphaned locations-sitemap.xml, never actually wired
+  // into the sitemap Google reads via robots.ts. Generated here instead.
+  const villagePages: MetadataRoute.Sitemap = VILLAGES.flatMap((v) =>
+    VILLAGE_SERVICES.map((service) => ({
+      url: `${baseUrl}/${service}/${v.hubSlug}/${v.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }))
+  );
+
   return [
+    ...villagePages,
     {
       url: baseUrl,
       lastModified: new Date(),

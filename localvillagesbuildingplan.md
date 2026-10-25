@@ -165,6 +165,21 @@ First batch: **Wash Common, Speen, Donnington, Greenham, Cold Ash** (first 5 of 
 
 - [x] Research complete — all 165 villages compiled and cross-deduplicated.
 - [x] Plan approved — full scope, Phase 2 confirmed for later.
-- [ ] Batch 1 (Newbury: Wash Common, Speen, Donnington, Greenham, Cold Ash) — in progress.
+- [x] Batch 1 (Newbury: Wash Common, Speen, Donnington, Greenham, Cold Ash) — built, 20 pages (5 villages × 4 services), deployed.
 - [ ] Batches 2–33 (remaining ~160 villages, 5 at a time).
 - [ ] Phase 2: rewrite the original 32 `lib/locations.ts` pages.
+
+### Batch 1 — measured similarity, honestly reported
+
+Built the 4-template system + variant pools (§3) and actually measured the output rather than assuming it hit the target. Two metrics, both run on same-service/different-village page pairs (the harder case — same template, same service, only the village differs):
+
+| Metric | Before variant pools | After variant pools |
+|---|---|---|
+| Word-overlap (crude, includes shared function/topic words) | ~70–75% | 34–47% |
+| 8-word verbatim phrase overlap (closer to real near-duplicate detection) | not measured | 22–40% |
+
+**Honest read:** this is a large, real improvement over the ~98%-identical old system (genuinely unique per-village facts, 2–3 worded-differently variants per FAQ/trust-line/category/pricing block, selected deterministically so no two villages in a hub read the same). It is **not** reliably under the 10% figure you asked for, measured this way. Two things are true at once:
+1. The word-overlap metric will never approach 10% for any two genuinely topical pages about the same service in English — shared function words and necessary service vocabulary ("van", "quote", "removal") aren't what duplicate-content detection actually penalizes, and chasing that number lower via this crude metric isn't meaningful past a point.
+2. The phrase-overlap metric (22–40%) is the more honest signal, and it's still higher than ideal — some page chrome (section headings like "What's your load?", the load-size/category card grids themselves) is still fully fixed, not varied.
+
+I stopped here rather than keep grinding the number down indefinitely on 5 villages, since the next real jump in quality is a judgment call on how much further to invest per page before scaling to 160 more villages — flagging it for you rather than silently calling it done.
