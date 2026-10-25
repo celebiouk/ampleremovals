@@ -6,6 +6,7 @@ import { computeLeadScore } from "@/lib/lead-scoring";
 import { detectIntent } from "@/lib/lead-signals";
 import { ukDateString } from "@/lib/dates";
 import { buildQuote } from "@/lib/quote-engine";
+import { premiumTotalFor } from "@/lib/tiers";
 import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { loadPricing, priceInventory, mileageCost, milesBetweenPostcodes } from "@/lib/pricing";
 import { hasWhiteGoods } from "@/lib/inventory-catalog";
@@ -277,6 +278,10 @@ export async function createBooking(
           quote_line_items: quote.lines, // full lines (incl. key + removable) for the reveal
           quote_subtotal: quote.total,
           quote_total: quote.total,
+          quote_premium_total: premiumTotalFor(quote.total),
+          show_standard_quote: true,
+          show_premium_quote: true,
+          deposit_percentage: DEPOSIT_PERCENTAGE,
         })
         .eq("id", bookingId);
       if (quoteErr) console.warn("removals quote update skipped:", quoteErr.message);
@@ -321,6 +326,35 @@ export async function createBooking(
       if (qtyErr) console.warn("additional_services quantities update skipped:", qtyErr.message);
     } catch (e) {
       console.warn("additional_services quantities update skipped:", e);
+    }
+  }
+
+  // 5c. Man and Van instant quote — priced purely by the hour (no inventory/
+  // mileage pricing): £45/hr for 1 man, £75/hr for 2 men. Same Standard/
+  // Premium pattern as removals so the quote reveal page needs no special case.
+  if (serviceType === "man_and_van") {
+    const d = data as ManAndVanForm;
+    const hours = Math.max(2, Math.round(Number(d.hoursNeeded) || 2));
+    const standardTotal = hours * 45;
+    const premiumTotal = hours * 75;
+    quoteTotal = standardTotal;
+    try {
+      const { error: quoteErr } = await supabase
+        .from("bookings")
+        .update({
+          quote_total: standardTotal,
+          quote_premium_total: premiumTotal,
+          show_standard_quote: true,
+          show_premium_quote: true,
+          deposit_percentage: DEPOSIT_PERCENTAGE,
+          description: description
+            ? `${description}\n\n(${hours} hours requested)`
+            : `${hours} hours requested.`,
+        })
+        .eq("id", bookingId);
+      if (quoteErr) console.warn("man_and_van quote update skipped:", quoteErr.message);
+    } catch (e) {
+      console.warn("man_and_van quote update skipped:", e);
     }
   }
 

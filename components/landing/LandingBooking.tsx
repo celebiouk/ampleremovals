@@ -173,11 +173,15 @@ export function LandingBooking() {
       });
       const data = await res.json();
       if (!res.ok || !data.success || !data.bookingId || !data.quoteToken) throw new Error(data.error || "Something went wrong. Please try again.");
-      // No price shown here — a real person calls with one instead. See
-      // lib/business-hours.ts and app/(public)/confirmation/page.tsx.
-      router.push(
-        `/confirmation?ref=${encodeURIComponent(data.reference)}&service=removals&bid=${encodeURIComponent(data.bookingId)}&t=${encodeURIComponent(data.quoteToken)}`
-      );
+      if (data.quoteReady) {
+        // Instant price computed — straight to the Standard/Premium reveal +
+        // deposit page.
+        router.push(`/quote/${data.bookingId}/${data.quoteToken}?sent=1`);
+      } else {
+        router.push(
+          `/confirmation?ref=${encodeURIComponent(data.reference)}&service=removals&bid=${encodeURIComponent(data.bookingId)}&t=${encodeURIComponent(data.quoteToken)}`
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setBusy(false);

@@ -164,6 +164,7 @@ export const ManAndVanFormSchema = z
     vanType: z.enum(["small", "medium", "large"], {
       message: "Select a van size",
     }),
+    hoursNeeded: z.coerce.number().int().min(2, "Minimum booking is 2 hours").max(24, "For jobs over 24 hours, please call us"),
     additionalServices: AdditionalServicesSchema,
     description: z.string().trim().min(20, "Please give us at least 20 characters of detail"),
     wantsEotCleaning: z.boolean().optional(),

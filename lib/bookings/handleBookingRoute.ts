@@ -4,8 +4,16 @@ import { createBooking } from "@/lib/bookings/createBooking";
 import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { logError } from "@/lib/log-error";
 import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
+import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
+import { createAdminClient } from "@/lib/supabase/server";
 import type { ServiceType } from "@/types";
 import type { AnyBookingForm } from "@/lib/schemas/booking";
+
+/** Services that now get an instant price at the end of the main wizard
+ *  (reversing the earlier "never show a price on the main wizard" decision —
+ *  see createBooking.ts 5b/5c). Every other service keeps the old behaviour:
+ *  plain confirmation, price comes later from an admin-built quote. */
+const INSTANT_QUOTE_SERVICES = new Set<ServiceType>(["removals", "man_and_van"]);
 
 /**
  * Shared booking-submission handler: validates, persists, fires notifications,
@@ -43,9 +51,10 @@ export async function handleBookingRoute(
   let reference: string;
   let bookingId: string;
   let customerId: string;
+  let quoteTotal: number | null | undefined;
 
   try {
-    ({ reference, bookingId, customerId } = await createBooking(serviceType, data, rawAttribution));
+    ({ reference, bookingId, customerId, quoteTotal } = await createBooking(serviceType, data, rawAttribution));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await logError({
@@ -95,5 +104,31 @@ export async function handleBookingRoute(
   // rest of the booking screen, not the instant they hit submit.
   await sendAdminNewBookingEmail(notifPayload);
 
-  return NextResponse.json({ success: true, reference, bookingId, quoteToken });
+  // Removals and Man and Van now get an instant price: mark the quote sent
+  // and fire the "your quote is ready" email/SMS (+ queued WhatsApp) right
+  // away, same as the location-page instant-quote routes, then tell the
+  // client to land on the quote page instead of the plain confirmation page.
+  let quoteReady = false;
+  if (INSTANT_QUOTE_SERVICES.has(serviceType) && quoteToken && quoteTotal != null) {
+    try {
+      const supabase = createAdminClient();
+      await markQuoteSent(supabase, bookingId, "inquiry");
+      await sendReserveMessages({
+        bookingId,
+        token: quoteToken,
+        reference,
+        firstName: data.fullName.trim().split(/\s+/)[0] || data.fullName.trim(),
+        email: data.email,
+        phone: data.phone,
+        total: quoteTotal,
+        showStandard: true,
+        showPremium: true,
+      });
+      quoteReady = true;
+    } catch (e) {
+      console.warn(`instant quote notify failed (${serviceType}):`, e);
+    }
+  }
+
+  return NextResponse.json({ success: true, reference, bookingId, quoteToken, quoteReady });
 }

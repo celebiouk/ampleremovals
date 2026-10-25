@@ -7,6 +7,7 @@ import { PropertyDetailsStep } from "@/components/booking/steps/PropertyDetailsS
 import { AdditionalServicesStep } from "@/components/booking/steps/AdditionalServicesStep";
 import { ExtraHelpStep } from "@/components/booking/steps/ExtraHelpStep";
 import { InventoryStep } from "@/components/booking/steps/InventoryStep";
+import { HoursNeededStep } from "@/components/booking/steps/HoursNeededStep";
 import { AccessStep } from "@/components/booking/steps/AccessStep";
 import { CleaningUpsellStep } from "@/components/booking/steps/CleaningUpsellStep";
 import { DescriptionStep } from "@/components/booking/steps/DescriptionStep";
@@ -139,6 +140,7 @@ const manAndVan: Builder = (initialPostcode) => ({
     destinationPostcode: "",
     destinationAddress: undefined,
     vanType: undefined,
+    hoursNeeded: 2,
     additionalServices: NO_EXTRAS,
     description: "",
     isFlexibleDate: false,
@@ -154,6 +156,7 @@ const manAndVan: Builder = (initialPostcode) => ({
     step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
     step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="Where are you going?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
     step("vanType", "Van size", ["vanType"], <VanTypeStep />),
+    step("hours", "Hours needed", ["hoursNeeded"], <HoursNeededStep />),
     step("extras", "Additional services", [], <AdditionalServicesStep />),
     step("description", "About your move", ["description"], <DescriptionStep />),
     step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
@@ -163,10 +166,11 @@ const manAndVan: Builder = (initialPostcode) => ({
       { title: "From", editStep: 0, rows: [{ label: "Address", key: "originAddress" }] },
       { title: "To", editStep: 1, rows: [{ label: "Address", key: "destinationAddress" }] },
       { title: "Van", editStep: 2, rows: [{ label: "Size", key: "vanType" }] },
-      { title: "Extras", editStep: 3, rows: [{ label: "Services", key: "additionalServices" }] },
-      { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 5, rows: dateRows },
-      { title: "Contact", editStep: 7, rows: contactRows },
+      { title: "Hours", editStep: 3, rows: [{ label: "Hours needed", key: "hoursNeeded" }] },
+      { title: "Extras", editStep: 4, rows: [{ label: "Services", key: "additionalServices" }] },
+      { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
+      { title: "Date", editStep: 6, rows: dateRows },
+      { title: "Contact", editStep: 8, rows: contactRows },
     ]),
   ],
 });

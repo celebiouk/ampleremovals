@@ -4,6 +4,8 @@ import { createBooking } from "@/lib/bookings/createBooking";
 import { completeLead } from "@/lib/bookings/completeLead";
 import { generateQuoteConfirmToken, verifyQuoteConfirmToken } from "@/lib/tokens";
 import { sendAdminNewBookingEmail, sendCustomerConfirmationEmail, sendCustomerConfirmationSMS, sendCustomerConfirmationWhatsApp, type NotificationPayload } from "@/lib/notifications";
+import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
+import { createAdminClient } from "@/lib/supabase/server";
 import { RemovalsFormSchema, InventorySelectionSchema, AddressOptionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
 import { logError } from "@/lib/log-error";
 import type { RemovalsForm } from "@/lib/schemas/booking";
@@ -103,13 +105,13 @@ export async function POST(req: NextRequest) {
   // Complete the pre-created enquiry (status → quote sent) when we have its id +
   // a valid token; otherwise create a fresh booking (fallback).
   const completing = Boolean(d.bookingId && d.token && verifyQuoteConfirmToken(d.bookingId, d.token, TOKEN_EXPIRY_HOURS));
-  let reference: string, bookingId: string, customerId: string;
+  let reference: string, bookingId: string, customerId: string, quoteTotal: number | null | undefined;
   try {
     if (completing) {
       const r = await completeLead(d.bookingId!, form);
-      ({ reference, bookingId, customerId } = r);
+      ({ reference, bookingId, customerId, quoteTotal } = r);
     } else {
-      ({ reference, bookingId, customerId } = await createBooking("removals", form, rawAttribution));
+      ({ reference, bookingId, customerId, quoteTotal } = await createBooking("removals", form, rawAttribution));
     }
   } catch (err) {
     await logError({ message: `landing booking failed: ${err instanceof Error ? err.message : "unknown"}`, metadata: {} });
@@ -139,7 +141,32 @@ export async function POST(req: NextRequest) {
   // ~60s (or sooner via a page-unload beacon). If we couldn't sign a token (no
   // page to trigger from), fall back to sending it immediately instead.
   await sendAdminNewBookingEmail(notifPayload);
-  if (!quoteToken) {
+
+  // Instant quote: mark it sent and fire the "your quote is ready" email/SMS
+  // (+ queued WhatsApp) right away, then tell the client to land on the quote
+  // page instead of the plain confirmation page.
+  let quoteReady = false;
+  if (quoteToken && quoteTotal != null) {
+    try {
+      const supabase = createAdminClient();
+      await markQuoteSent(supabase, bookingId, "inquiry");
+      await sendReserveMessages({
+        bookingId,
+        token: quoteToken,
+        reference,
+        firstName: d.fullName.trim().split(/\s+/)[0] || d.fullName.trim(),
+        email: d.email,
+        phone: d.phone,
+        total: quoteTotal,
+        inventory: d.inventory,
+        showStandard: true,
+        showPremium: true,
+      });
+      quoteReady = true;
+    } catch (e) {
+      console.warn("landing booking instant quote notify failed:", e);
+    }
+  } else if (!quoteToken) {
     await Promise.allSettled([
       sendCustomerConfirmationEmail(notifPayload),
       sendCustomerConfirmationSMS(notifPayload),
@@ -147,5 +174,5 @@ export async function POST(req: NextRequest) {
     ]);
   }
 
-  return NextResponse.json({ success: true, reference, bookingId, quoteToken });
+  return NextResponse.json({ success: true, reference, bookingId, quoteToken, quoteReady });
 }

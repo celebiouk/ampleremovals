@@ -107,6 +107,7 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
         reference?: string;
         bookingId?: string;
         quoteToken?: string | null;
+        quoteReady?: boolean;
         error?: string;
       };
 
@@ -117,19 +118,21 @@ export function useBookingForm<T extends FieldValues>(config: WizardConfig<T>) {
       // Fire conversion pixels (no-ops if pixels aren't configured).
       trackLead({ reference: data.reference, service: config.slug });
 
-      // Admin's "fill it for them" is the one real exception: they already
-      // built a real price with the customer on the phone, so they go
-      // straight to that priced quote page as before. Every customer-facing
-      // path — a fresh submission, or a customer finishing their OWN partial
-      // lead — never shows a price; they land on the plain confirmation page
-      // with the "you've been assigned" message instead (see
-      // lib/business-hours.ts and app/(public)/confirmation/page.tsx).
+      // Admin's "fill it for them" is one case that always lands on the priced
+      // quote page. The other is `quoteReady` — Removals and Man and Van now
+      // compute an instant price at submit (see handleBookingRoute.ts), so a
+      // fresh customer submission goes straight there too. Every other
+      // service still lands on the plain confirmation page with the "you've
+      // been assigned" message — price comes later from an admin-built quote
+      // (see lib/business-hours.ts and app/(public)/confirmation/page.tsx).
       if (isAdminCompletion) {
         // `sent=1` tells the quote page to show a clear "booking request sent
         // successfully" confirmation the first time it loads — so it's never
         // ambiguous whether the submit actually went through and the customer's
         // email/SMS/WhatsApp went out, vs. just previewing their quote page.
         router.push(`/quote/${config.completion!.bookingId}/${config.completion!.token}?sent=1`);
+      } else if (data.quoteReady && data.bookingId && data.quoteToken) {
+        router.push(`/quote/${data.bookingId}/${data.quoteToken}?sent=1`);
       } else {
         // bookingId + quoteToken (when we have both) let the confirmation page
         // trigger the customer's confirmation email/SMS itself after a short
