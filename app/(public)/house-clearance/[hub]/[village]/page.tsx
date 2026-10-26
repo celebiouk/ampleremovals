@@ -153,7 +153,7 @@ export default async function HouseClearanceVillagePage({ params }: { params: Pr
             </div>
           </div>
           <div id="get-price">
-            <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" />
+            <InstantHourlyQuoteWidget service="house_clearance" standardRate={CLEARANCE_STANDARD_RATE} premiumRate={CLEARANCE_PREMIUM_RATE} accent="purple" minHours={1} allowFixedPrice />
           </div>
         </div>
       </section>

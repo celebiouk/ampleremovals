@@ -132,7 +132,7 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
             </div>
           </div>
           <div id="get-price">
-            <InstantHourlyQuoteWidget service="house_clearance" standardRate={RUBBISH_STANDARD_RATE} premiumRate={RUBBISH_PREMIUM_RATE} accent="green" />
+            <InstantHourlyQuoteWidget service="house_clearance" standardRate={RUBBISH_STANDARD_RATE} premiumRate={RUBBISH_PREMIUM_RATE} accent="green" minHours={1} allowFixedPrice />
           </div>
         </div>
       </section>

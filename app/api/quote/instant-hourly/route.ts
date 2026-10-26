@@ -19,7 +19,12 @@ import type { AddressOption } from "@/types";
 
 export const runtime = "nodejs";
 
-const MIN_HOURS = 2;
+// Man and Van keeps a 2-hour minimum; House Clearance / Rubbish Removal allow
+// 1 hour — plenty of clearance jobs genuinely are that quick.
+const MIN_HOURS: Record<string, number> = {
+  man_and_van: 2,
+  house_clearance: 1,
+};
 const RATES = {
   man_and_van: { standard: 45, premium: 75 }, // £/hr: 1 man + van / 2 men + van
   house_clearance: { standard: 45, premium: 70 }, // £/hr: 1 man + van / 2 men
@@ -39,9 +44,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as Body | null;
   if (!body) return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
 
+  const minHours = MIN_HOURS[body.service] ?? 2;
   const hours = Math.round(Number(body.hours));
-  if (!Number.isFinite(hours) || hours < MIN_HOURS) {
-    return NextResponse.json({ success: false, error: `Minimum booking is ${MIN_HOURS} hours` }, { status: 400 });
+  if (!Number.isFinite(hours) || hours < minHours) {
+    return NextResponse.json({ success: false, error: `Minimum booking is ${minHours} hour${minHours === 1 ? "" : "s"}` }, { status: 400 });
   }
   if (!body.fullName?.trim() || !body.email?.trim() || !body.phone?.trim()) {
     return NextResponse.json({ success: false, error: "Name, email and phone are required" }, { status: 400 });
