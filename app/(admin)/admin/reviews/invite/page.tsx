@@ -13,7 +13,7 @@ interface Invite {
   created_at: string;
 }
 
-const SERVICES = ["Removals", "Man & Van", "House Clearance", "House Cleaning", "End of Tenancy Cleaning"];
+const SERVICES = ["Removals", "Man & Van", "House Clearance", "End of Tenancy Cleaning"];
 
 /**
  * Admin "Invite for Review" — enter a name + email and send a review invite for

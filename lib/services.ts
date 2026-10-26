@@ -2,7 +2,6 @@ import {
   Truck,
   PackageOpen,
   Sofa,
-  Sparkles,
   KeyRound,
   type LucideIcon,
 } from "lucide-react";
@@ -45,15 +44,6 @@ export const SERVICES: ServiceMeta[] = [
     description:
       "Flexible, affordable help for smaller moves and deliveries — choose the van size that fits the job.",
     icon: Sofa,
-  },
-  {
-    service: "house_cleaning",
-    slug: "house-cleaning",
-    title: "House Cleaning",
-    shortTitle: "House Cleaning",
-    description:
-      "Regular, deep or one-off cleaning by vetted professionals, scheduled around your routine.",
-    icon: Sparkles,
   },
   {
     service: "end_of_tenancy",

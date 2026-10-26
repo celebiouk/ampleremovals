@@ -92,12 +92,6 @@ export default async function LocationPage({ params }: { params: Promise<{ locat
       keywords: SERVICE_KEYWORDS.house_clearance,
     },
     {
-      title: "House Cleaning",
-      slug: "house-cleaning",
-      description: `Professional house cleaning services in ${location.name}. Deep cleaning, regular cleaning, and one-off cleans available.`,
-      keywords: SERVICE_KEYWORDS.house_cleaning,
-    },
-    {
       title: "End of Tenancy Cleaning",
       slug: "end-of-tenancy",
       description: `End of tenancy cleaning in ${location.name}. Guaranteed to meet landlord standards and help you get your deposit back.`,
