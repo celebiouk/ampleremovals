@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { VILLAGES } from "@/lib/villages";
+import { LOCATIONS } from "@/lib/locations";
 
 const VILLAGE_SERVICES = ["man-and-van", "house-removals", "house-clearance", "rubbish-removal"] as const;
 
@@ -18,8 +19,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
+  // The original 32 location pages — never wired into the sitemap at all
+  // previously. Newbury and Thatcham get the top priority on the whole
+  // site: they're the two bespoke, long-form flagship pages (see
+  // components/local/flagship) built around the real Thatcham office.
+  const locationPages: MetadataRoute.Sitemap = LOCATIONS.map((loc) => ({
+    url: `${baseUrl}/locations/${loc.slug}`,
+    lastModified: new Date(),
+    changeFrequency: loc.slug === "newbury" || loc.slug === "thatcham" ? "weekly" : "monthly",
+    priority: loc.slug === "newbury" || loc.slug === "thatcham" ? 1 : 0.65,
+  }));
+
   return [
     ...villagePages,
+    ...locationPages,
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -46,12 +59,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/booking/house-clearance`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/booking/house-cleaning`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,

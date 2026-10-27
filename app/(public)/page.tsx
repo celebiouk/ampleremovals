@@ -15,6 +15,7 @@ import {
   PhoneCall,
   Truck,
   Quote,
+  MapPin,
 } from "lucide-react";
 import { PostcodeSearch } from "@/components/shared/PostcodeSearch";
 import { SERVICES } from "@/lib/services";
@@ -259,6 +260,45 @@ export default function HomePage() {
               </Link>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* ════════════════ HOME TOWNS ════════════════ */}
+      <section className="bg-brand-purple-950 py-16">
+        <div className="container">
+          <motion.div {...inView} className="mx-auto max-w-3xl text-center">
+            <p className="mb-3 inline-flex items-center gap-1.5 font-bold uppercase tracking-[0.18em] text-brand-green-400">
+              <MapPin className="h-4 w-4" /> Our home patch
+            </p>
+            <h2 className="font-display text-3xl font-extrabold text-white sm:text-4xl">
+              Based in Thatcham, Serving Newbury — for Over 7 Years
+            </h2>
+            <p className="mt-4 text-lg text-brand-purple-100">
+              Ample Removals isn&apos;t a national firm that happens to cover this area — we&apos;re based right here, and we&apos;ve been moving local families and businesses for more than 7 years.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/locations/newbury"
+                className="group flex w-full max-w-xs flex-col items-start gap-2 rounded-2xl border border-white/15 bg-white/5 p-6 text-left transition-colors hover:bg-white/10 sm:w-auto"
+              >
+                <span className="font-display text-xl font-bold text-white">Removals in Newbury</span>
+                <span className="text-sm text-brand-purple-200">A few miles from our Thatcham base — local knowledge, honest pricing.</span>
+                <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-green-400 group-hover:underline">
+                  Read our Newbury guide <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+              <Link
+                href="/locations/thatcham"
+                className="group flex w-full max-w-xs flex-col items-start gap-2 rounded-2xl border border-white/15 bg-white/5 p-6 text-left transition-colors hover:bg-white/10 sm:w-auto"
+              >
+                <span className="font-display text-xl font-bold text-white">Removals in Thatcham</span>
+                <span className="text-sm text-brand-purple-200">Our home town — 41 Rosedale Garden, Thatcham.</span>
+                <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-green-400 group-hover:underline">
+                  Read our Thatcham guide <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 

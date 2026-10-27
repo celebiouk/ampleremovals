@@ -1,10 +1,22 @@
 import { Metadata } from "next";
+import type { ComponentType } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { LOCATIONS, LOCATION_MAP, SERVICE_KEYWORDS } from "@/lib/locations";
 import { Phone, Mail, MapPin, CheckCircle2, ArrowRight, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NewburyPage } from "@/components/local/flagship/NewburyPage";
+import { ThatchamPage } from "@/components/local/flagship/ThatchamPage";
+
+// Newbury and Thatcham are the two most important pages on the site — fully
+// bespoke, long-form, with embedded local guides — rather than the generic
+// templated location page every other town gets. Same URL as before (keeps
+// any existing SEO equity); the content is entirely different.
+const FLAGSHIP_PAGES: Record<string, ComponentType> = {
+  newbury: NewburyPage,
+  thatcham: ThatchamPage,
+};
 
 export async function generateStaticParams() {
   return LOCATIONS.map((location) => ({
@@ -14,6 +26,28 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ location: string }> }): Promise<Metadata> {
   const { location: slug } = await params;
+
+  if (slug === "newbury" || slug === "thatcham") {
+    const isThatcham = slug === "thatcham";
+    const title = isThatcham
+      ? "Removals in Thatcham — Based Right Here, 7+ Years Local | Ample Removals"
+      : "Removals in Newbury — Based Nearby in Thatcham, 7+ Years Local | Ample Removals";
+    const description = isThatcham
+      ? "Ample Removals is based in Thatcham, Berkshire — house removals, man and van, house clearance and end-of-tenancy cleaning, serving Thatcham and Newbury for over 7 years. Get your free quote."
+      : "Ample Removals serves Newbury from our base a few miles away in Thatcham — house removals, man and van, house clearance and end-of-tenancy cleaning, 7+ years local. Get your free quote.";
+    const url = `https://www.ampleremovals.com/locations/${slug}`;
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title, description, url, siteName: "Ample Removals", type: "website", locale: "en_GB",
+        images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Ample Removals" }],
+      },
+      twitter: { card: "summary_large_image", title, description, images: ["/opengraph-image"] },
+    };
+  }
+
   const location = LOCATION_MAP[slug];
 
   if (!location) {
@@ -66,6 +100,10 @@ export async function generateMetadata({ params }: { params: Promise<{ location:
 
 export default async function LocationPage({ params }: { params: Promise<{ location: string }> }) {
   const { location: slug } = await params;
+
+  const Flagship = FLAGSHIP_PAGES[slug];
+  if (Flagship) return <Flagship />;
+
   const location = LOCATION_MAP[slug];
 
   if (!location) {

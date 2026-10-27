@@ -20,11 +20,13 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 export function Footer() {
   const year = new Date().getFullYear();
 
-  // Featured locations (top 12 most popular)
-  const featuredLocations = LOCATIONS.filter((loc) =>
-    ["london", "southampton", "portsmouth", "basingstoke", "reading", "oxford",
-     "bristol", "bath", "bournemouth", "brighton", "guildford", "winchester"].includes(loc.slug)
-  );
+  // Featured locations — Newbury and Thatcham first (our home towns), then
+  // the next most popular.
+  const featuredSlugs = ["newbury", "thatcham", "london", "southampton", "portsmouth", "basingstoke",
+    "reading", "oxford", "bristol", "bath", "bournemouth", "brighton", "guildford", "winchester"];
+  const featuredLocations = featuredSlugs
+    .map((slug) => LOCATIONS.find((loc) => loc.slug === slug))
+    .filter((loc): loc is NonNullable<typeof loc> => Boolean(loc));
 
   return (
     <footer className="bg-brand-purple-900 text-white">
