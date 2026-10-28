@@ -35,12 +35,18 @@ const HEADLINES = (v: string) => [
   `Man and Van in ${v} — Your Price in Seconds, Not Days`,
   `${v} Man and Van, Booked Today — See Your Price Before You Pick Up the Phone`,
   `The Man and Van ${v} Actually Trusts — Instant Price, No Waiting Around`,
+  `Need a Van in ${v}? Get Your Exact Price Before You've Finished Your Coffee`,
+  `${v}'s Man and Van, Priced Honestly — No Quote-Chasing, No Callbacks`,
+  `Man and Van, ${v} — One Man, One Van, One Honest Price`,
 ];
 
 const SUBHEADS = (v: string, miles: number, landmark: string) => [
   `No more chasing van companies for a quote that doesn't add up. Enter your hours below, watch your exact ${v} price appear, and lock in your date with a small deposit — right now.`,
   `Most man-and-van outfits make you wait for a callback that never quite comes. We're ${miles} miles away near ${landmark} — pick your hours, see your price instantly, and your ${v} slot's booked before the kettle's boiled.`,
   `Forget "we'll get back to you." Pick your hours, see your exact ${v} price, and secure your slot today — the whole thing takes under two minutes.`,
+  `Tired of three different quotes for the same ${v} job? Pick your hours below and see the actual number — not an estimate that changes on the day.`,
+  `We're ${miles} miles from ${v}, near ${landmark} — close enough that a van's usually on your street faster than a national firm could even call you back.`,
+  `No site visit, no "we'll email you a quote" — just pick your hours, see your ${v} price, and book.`,
 ];
 
 // Several genuinely different ways to say the same underlying fact — picked
@@ -50,12 +56,16 @@ const LOAD_INTROS = (v: string) => [
   `Most jobs around ${v} land in one of these three sizes — tell us which, and we'll quote on the spot.`,
   `Jobs we do in and around ${v} are almost always one of these three — pick the closest match to get a price fast.`,
   `No need to describe every item — in ${v} it's nearly always a quarter-van, half-van, or full-van job.`,
+  `Not sure how to describe your load? Most ${v} customers fit into one of these three without much thought.`,
+  `Here's roughly what a ${v} job looks like, size-wise — pick the closest match and we'll take it from there.`,
 ];
 
 const TRUST_LINES = (hubName: string) => [
   ["Book today, move tomorrow — no 2-week wait for a slot", "You see the exact price before you pay a penny", `Fully insured crew, every single job in ${hubName}`],
   ["Same-week availability, most weeks", "One agreed price — nothing added once we're loading", `Our ${hubName} crew knows the roads, not just the postcode`],
   ["No call-out fee just to find out what it costs", "You only pay for the hours you actually book", `Every job covered by goods-in-transit insurance`],
+  ["No waiting days for a callback that never comes", "Nothing added once the van's loaded — the price you saw is the price you pay", `Local crew who actually know ${hubName}, not a dispatcher reading a postcode`],
+  ["Same-day slots most weeks, not a 2-week queue", "Pay for the hours you book, nothing more", `Fully insured on every single ${hubName} job, no exceptions`],
 ];
 
 const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceMiles: number; name: string }) => [
@@ -74,12 +84,25 @@ const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceM
     { q: `Do you dismantle furniture if it won't fit through the door?`, a: `Yes, for an extra charge we'll dismantle and reassemble beds, wardrobes and tables on-site — just mention it when you book.` },
     { q: `What's included in the price?`, a: `The van, the crew, fuel, and careful loading/unloading at both ends. No hidden mileage charge once you're in ${hub.name}.` },
   ],
+  [
+    { q: `Is the price you quote in ${village.name} actually final?`, a: `Yes — the hourly rate you see on screen is exactly what you pay for the hours booked, nothing added once we're loading.` },
+    { q: `Can you move things between two ${village.name} addresses, like a garage to a house?`, a: `Yes — any two points in or around ${village.name}, not just a full house move.` },
+    { q: `What if my job in ${village.name} runs over the hours I booked?`, a: `We'll tell you honestly as we get close, so there's no surprise — you can top up on the day if needed.` },
+  ],
+  [
+    { q: `Do you need much notice for a ${village.name} job?`, a: `Not usually — same-week, sometimes same-day, is realistic depending on the crew's schedule that day.` },
+    { q: `Can two men handle a bigger load in ${village.name}?`, a: `Yes, we can send two men and a larger van for bigger jobs — just let us know the size when you book.` },
+    { q: `Do you cover student moves in ${village.name}?`, a: `Regularly — end-of-term and start-of-term are some of our busiest weeks for exactly that.` },
+  ],
 ];
 
 const CTA_HEADINGS = (v: string) => [
   `Still "thinking about it"? Get your ${v} price now — it takes less time than reading this.`,
   `Your ${v} van is one tap away — see the price, lock in the date.`,
   `Don't let ${v} moving day sneak up on you. Price it now, book in minutes.`,
+  `Stop comparing quotes for your ${v} job — see the real number and book it.`,
+  `Your ${v} price is already calculated. All that's left is booking it.`,
+  `One tap, one honest price — get your ${v} van sorted now.`,
 ];
 
 export default async function ManAndVanVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {

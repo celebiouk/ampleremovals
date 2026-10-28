@@ -29,12 +29,18 @@ const HEADLINES = (v: string) => [
   `Your Whole Home in ${v}, Moved Properly — Standard or Premium, Priced Instantly`,
   `${v} House Removals, Done Right — See Your Price Before You Call Anyone Else`,
   `Stop Comparing Vague Quotes. Get Your Exact ${v} Moving Price in Seconds.`,
+  `${v} House Removals, Priced Honestly — Standard or Premium, Your Choice`,
+  `Moving House in ${v}? See Your Real Price Before You Call a Single Removal Firm`,
+  `House Removals, ${v} — One Price, No Surprises on the Day`,
 ];
 
 const SUBHEADS = (v: string) => [
   `Tell us your home size below and watch your Standard and Premium ${v} price appear instantly — then pay a small deposit to lock in your date. No site visit, no "we'll email you a quote."`,
   `Most removal firms make you wait days for a number that still isn't final. Pick your home size, see both price options for your ${v} move right now, and secure the date before someone else does.`,
   `Full pack-and-move, or just the heavy lifting — either way, enter your home size and see your exact ${v} price on screen. Deposit now, balance later, nothing hidden.`,
+  `No more chasing three quotes for the same ${v} move. Enter your home size, see Standard and Premium side by side, and book the one that suits you.`,
+  `Enter your home size and watch your exact ${v} price appear — then decide between Standard and a full pack-and-move Premium service, whichever fits your move.`,
+  `Skip the site visit and the "we'll be in touch." Pick your home size, see your ${v} price instantly, and secure your date with a small deposit today.`,
 ];
 
 const TIMELINE_SETS = (v: string) => [
@@ -53,11 +59,23 @@ const TIMELINE_SETS = (v: string) => [
     { step: "2", title: "Packed to survive the journey", body: "Proper materials for fragile items, blankets for furniture, labelled boxes if you want them room-sorted." },
     { step: "3", title: "Moved in, not just delivered", body: `Furniture placed, boxes stacked where you want them — your ${v} move finished properly, not half-done.` },
   ],
+  [
+    { step: "1", title: "A price that matches the job", body: `Standard or Premium, based on what's actually in your ${v} home — not a flat rate that under- or over-charges you.` },
+    { step: "2", title: "Careful handling, start to finish", body: "Fragile items boxed properly, furniture blanketed, everything loaded so nothing shifts on the road." },
+    { step: "3", title: "Placed, not just dropped off", body: "Boxes and furniture go to the rooms you point at, with packaging taken away if you want it gone." },
+  ],
+  [
+    { step: "1", title: "No guessing on the price", body: `Tell us your ${v} home size and see Standard and Premium instantly — the number you see is the number you pay.` },
+    { step: "2", title: "A plan for the awkward stuff", body: "Pianos, narrow stairs, tight parking — tell us in advance and we'll have the right approach ready." },
+    { step: "3", title: "Settled in, not just unloaded", body: "We carry everything to the right room and leave your new place liveable, not a pile of boxes in the hallway." },
+  ],
 ];
 
 const PROOF_INTROS = (hubName: string) => [
   [`Fully insured`, `Goods-in-transit cover on every move.`, `Packing materials included`, `Boxes, tape and wrap, or we pack it all for you.`, `Stairs and access, no surprise fee`, `We ask about access upfront so the quote's the final price.`],
   [`Properly insured, every job`, `Cover that protects what actually matters to you.`, `Materials sorted, no extra trip to the shop`, `We bring what's needed, or do the packing ourselves.`, `No last-minute access charges`, `Flagged and priced before the day, not added after.`],
+  [`Insured, no exceptions`, `Every item covered, every single job.`, `All the materials included`, `Boxes and wrap ready, or full packing on request.`, `Access sorted before the day`, `Stairs, lifts and parking priced in upfront, not added later.`],
+  [`Cover that actually protects you`, `Not just a box-tick — real goods-in-transit insurance.`, `Nothing extra to buy`, `Packing materials are part of the price, not an add-on.`, `What you're quoted is what you pay`, `We ask the awkward access questions before quoting, not after.`],
 ];
 
 const FAQS = (village: { name: string }, hub: { name: string }) => [
@@ -76,12 +94,24 @@ const FAQS = (village: { name: string }, hub: { name: string }) => [
     { q: `Do I need to empty drawers and wardrobes first?`, a: `Not fully — lighter items can usually stay in drawers, we'll let you know what to clear when we survey.` },
     { q: `What's your coverage area around ${hub.name}?`, a: `Anywhere within reasonable reach of ${hub.name}, including every village we've listed nearby below.` },
   ],
+  [
+    { q: `What's the difference between Standard and Premium for a ${village.name} move?`, a: `Standard covers loading, transport and careful offloading. Premium adds full packing, materials and furniture dismantle/reassembly.` },
+    { q: `Can I change my mind on the tier after booking?`, a: `Yes — just let us know before moving day and we'll adjust the quote accordingly.` },
+    { q: `Do you offer weekend moves in ${village.name}?`, a: `Yes, though weekends book up fastest — worth securing your date a little earlier if you need one.` },
+  ],
+  [
+    { q: `Is the deposit refundable if my ${village.name} move falls through?`, a: `We'll talk it through with you — plans changing is common with house moves, and we're reasonable about it.` },
+    { q: `Do you move pianos or other specialist items?`, a: `Usually, yes — just flag it when you book so we bring the right equipment and experienced hands.` },
+    { q: `How is the final balance paid?`, a: `A small deposit secures your date, with the balance due on moving day — no surprises either side.` },
+  ],
 ];
 
 const CTA_LINES = (v: string) => [
   { heading: `Still comparing quotes for your ${v} move?`, sub: `See your exact price now — it's faster than waiting for the next callback.` },
   { heading: `Your ${v} move, priced in seconds`, sub: `Pick your home size, see Standard and Premium, lock in your date.` },
   { heading: `Don't leave your ${v} move to the last minute`, sub: `Get your price now, pay a small deposit, the date's yours.` },
+  { heading: `Your ${v} move doesn't need three more quotes`, sub: `See the real price now, Standard or Premium, and book the one that suits you.` },
+  { heading: `Ready when you are — your ${v} move, priced instantly`, sub: `Enter your home size, see the number, lock in your date today.` },
 ];
 
 export default async function HouseRemovalsVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {

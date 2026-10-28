@@ -34,22 +34,31 @@ const HEADLINES = (v: string) => [
   `Rubbish Gone From ${v} — Your Price in Seconds, Not a Skip Permit in Sight`,
   `${v} Rubbish Removal, Sorted Today — See Your Price Before You Even Book a Skip`,
   `Stop Living Around That Pile. Get Your ${v} Price Now, Gone This Week.`,
+  `${v} Rubbish Removal, Priced by the Hour — No Permits, No Waiting`,
+  `Skip the Skip. Get Your ${v} Rubbish Price Right Now.`,
+  `Rubbish Removal, ${v} — Point at It, We Load It, Gone Today`,
 ];
 
 const HERO_SUBS = (v: string) => [
   `No skip permit, no council wait, no lugging it to the tip yourself. Pick your hours below, see your exact ${v} price, and we turn up and point-and-load it straight into the van.`,
   `Skip hire means a permit, a wait, and a skip sitting outside for days. Enter your hours, see your ${v} price instantly, and we're in and out the same day — nothing left behind.`,
   `Quicker than booking a skip, cheaper than a tip run in a hired van. Choose your hours, watch the price appear, lock in your slot — done in under two minutes.`,
+  `Forget the council's skip permit paperwork. Pick your hours, see your exact ${v} price, and it's gone — often the same day.`,
+  `A hired van, a trip to the tip, hours of your weekend — or just pick your hours below and let us deal with the whole ${v} job instead.`,
+  `No waiting days for a quote. Enter your hours, see your ${v} price appear instantly, and book — the rubbish is gone before the weekend.`,
 ];
 
 const WE_TAKE_SETS = [
   ["Furniture", "Mattresses", "Garden waste", "Old appliances", "General household junk", "Builders' waste (small amounts)"],
   ["Sofas and beds", "Fridges, washers, old white goods", "Shed and garden clear-outs", "Boxes of general clutter", "Broken or unwanted furniture", "Small amounts of rubble or offcuts"],
   ["Anything too big for your bin", "Mattresses and bed frames", "Garden rubbish and cuttings", "Old electricals", "Household junk you've been putting off", "Light trade waste"],
+  ["Old sofas and mattresses", "Broken white goods", "Garden and shed clear-outs", "General household waste", "Boxes and clutter you've been storing", "Small builders' offcuts"],
+  ["Whatever's too big for the bin lorry", "Beds, sofas, wardrobes", "Fridges and freezers", "Garden waste and old fencing", "General clutter, no questions asked", "Light trade or office waste"],
 ];
 const CANT_TAKE_SETS = [
   ["Asbestos", "Gas canisters", "Hazardous chemicals", "Paint tins (part-full)"],
   ["Asbestos sheeting", "Pressurised canisters", "Chemical waste", "Part-used paint or solvents"],
+  ["Asbestos in any form", "Compressed gas canisters", "Hazardous or chemical waste", "Half-used tins of paint"],
 ];
 
 const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceMiles: number }) => [
@@ -68,12 +77,25 @@ const FAQS = (village: { name: string; postcode: string }, hub: { depotDistanceM
     { q: `Is there a call-out charge if I change my mind?`, a: `No — a small deposit secures your slot, and the rest is only for the hours worked.` },
     { q: `What's your coverage area around ${village.postcode}?`, a: `We cover ${village.name} and the villages listed near it below — just ask if you're unsure.` },
   ],
+  [
+    { q: `Do you recycle what you take from ${village.name}?`, a: `Where we can, yes — we sort as we go so recyclable material doesn't just go to landfill.` },
+    { q: `Can you collect from a block of flats in ${village.name}?`, a: `Yes, just let us know about stairs or lift access when you book so we bring the right approach.` },
+    { q: `How quickly can you get to ${village.name}?`, a: `Often the same day, sometimes next — call and we'll tell you honestly what's realistic.` },
+  ],
+  [
+    { q: `Is there a minimum amount of rubbish?`, a: `No — a single item or a full house clear-out, we quote on the hours it actually takes.` },
+    { q: `Do I need to be home for the collection in ${village.name}?`, a: `Not necessarily, as long as we can access what's being collected — tell us the arrangement when you book.` },
+    { q: `What happens to furniture that's still in good condition?`, a: `Where possible it goes to charity rather than waste — we'll let you know what's been donated.` },
+  ],
 ];
 
 const CTA_HEADINGS = (v: string) => [
   `That rubbish isn't going anywhere on its own. Get your ${v} price now.`,
   `Still tripping over it? Your ${v} price is 30 seconds away.`,
   `Book it gone from ${v} today — see your price first, no obligation.`,
+  `Stop stepping around it. Get your ${v} rubbish price now.`,
+  `Your ${v} rubbish, gone — see the price before you book anything.`,
+  `One tap for your ${v} rubbish price. No skip, no hassle.`,
 ];
 
 export default async function RubbishRemovalVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {

@@ -35,12 +35,18 @@ const HEADLINES = (v: string) => [
   `House Clearance in ${v} — Your Price Instantly, No Site Visit Needed`,
   `${v} House Clearance, Sorted Today — See Your Price Before You Call Anyone Else`,
   `Stop Dreading the Clear-Out. Get Your ${v} Price in Seconds, Booked in Minutes.`,
+  `${v} House Clearance, Priced Honestly — No Estimates, No Waiting on a Callback`,
+  `Garage Full? Loft Full? Get Your ${v} Clearance Price Right Now`,
+  `House Clearance, ${v} — One Call, One Honest Price, Sorted`,
 ];
 
 const SUBHEADS = (v: string) => [
   `Garages, sheds, lofts, gardens, building waste, end-of-tenancy, office and general rubbish — pick your hours below and watch your exact ${v} price appear. No home visit, no vague "we'll call you back."`,
   `Every quote-chasing clearance company makes you wait days for a number. We don't. Tell us the hours, see the price, and your ${v} clearance is booked — before you've finished your coffee.`,
   `A full house, a single loft, or just the shed — whatever's going, enter your hours and get your exact ${v} price on screen right now. No judgement, no rush, no waiting around for someone to call.`,
+  `Whether it's one room or the whole ${v} property, pick your hours below and see the real price — not a guess that changes once someone's actually looked at it.`,
+  `Probate, downsizing, or just years of clutter finally dealt with — tell us the hours and get your exact ${v} price before you've even made the decision to call anyone else.`,
+  `No waiting for a quote that never comes. Enter your hours, see your ${v} price, and book — the whole thing takes less time than describing the job over the phone would.`,
 ];
 
 const CATEGORY_SETS = (v: string) => [
@@ -62,12 +68,26 @@ const CATEGORY_SETS = (v: string) => [
     { icon: Refrigerator, label: "Appliances, safely disposed", body: "Fridges and freezers degassed and recycled correctly, not dumped." },
     { icon: TreePine, label: "Gardens and outbuildings", body: "Sheds, greenhouses, years of garden clutter, all included." },
   ],
+  [
+    { icon: Sofa, label: "Sofas, beds and wardrobes", body: "Any condition, any floor — we carry it, you don't." },
+    { icon: Archive, label: "Garages and sheds", body: `Years of stored-away stuff in ${v} garages, cleared properly.` },
+    { icon: Refrigerator, label: "White goods", body: "Fridges, freezers, washing machines — WEEE-compliant disposal, not landfill." },
+    { icon: TreePine, label: "Garden clearances", body: "Old fencing, overgrown beds, garden furniture — sorted and gone." },
+  ],
+  [
+    { icon: Archive, label: "Loft to garage, everything between", body: `Every forgotten corner of a ${v} property, properly cleared.` },
+    { icon: Sofa, label: "Furniture, any size", body: "From a single chair to a full house of it." },
+    { icon: TreePine, label: "Outbuildings and gardens", body: "Sheds, greenhouses and garden waste, all in the same job." },
+    { icon: Refrigerator, label: "Appliances", body: "Safely disposed of through licensed channels, not dumped." },
+  ],
 ];
 
 const PROOF_LINES = (v: string) => [
   `Everything we take from a ${v} property is disposed of or recycled properly — never fly-tipped. We'll tell you honestly what's going to charity, what's recyclable, and what genuinely has to go to waste.`,
   `We hold a full waste carrier's licence, and it shows in how we handle a ${v} clearance — proper sorting, proper disposal, a paper trail if you ever need one.`,
   `No corners cut on disposal just to clear a ${v} property faster. Reusable items go to charity where we can, everything else goes through licensed channels.`,
+  `A ${v} clearance done the right way means knowing where everything actually ends up — we can tell you, because we're a fully licensed waste carrier, not a van and a tip run.`,
+  `Reusable furniture from a ${v} job goes to charity wherever we can manage it, and everything else is sorted and disposed of through properly licensed routes — never just dumped.`,
 ];
 
 const FAQS = (village: { name: string }, hub: { depotDistanceMiles: number }) => [
@@ -86,12 +106,25 @@ const FAQS = (village: { name: string }, hub: { depotDistanceMiles: number }) =>
     { q: `Is there anything you can't clear?`, a: `Hazardous materials like asbestos need a specialist — everything else, we can usually take.` },
     { q: `Do you clear for landlords between tenants?`, a: `Yes, that's a regular job for us around ${village.name} — quick turnaround so the property's ready to re-let.` },
   ],
+  [
+    { q: `Do I need to be there for the whole ${village.name} clearance?`, a: `Not necessarily — many customers give us access and a list, and we handle the rest, checking in if anything's unclear.` },
+    { q: `Can you clear just the garden, not the house?`, a: `Yes — sheds, fencing, old furniture, garden waste, as a standalone job if that's all you need.` },
+    { q: `How far in advance should I book a ${village.name} clearance?`, a: `A few days' notice usually works, but we can often manage same-week or even same-day depending on the size.` },
+  ],
+  [
+    { q: `Do you take items for recycling as well as disposal?`, a: `Yes — we sort as we go, so recyclable material and reusable furniture are separated from genuine waste.` },
+    { q: `What size job counts as a "full clearance" in ${village.name}?`, a: `Anything from a single room to an entire property — the price simply reflects the hours it takes.` },
+    { q: `Can you work around other tradespeople on site?`, a: `Yes, we regularly coordinate around builders, cleaners or an estate agent's schedule for a ${village.name} job.` },
+  ],
 ];
 
 const CTA_HEADINGS = (v: string) => [
   `Still putting off that ${v} clear-out? Get your price now — it's faster than deciding not to.`,
   `Your ${v} clearance price is one tap away. Why wait any longer?`,
   `Clear it, don't carry it any longer — get your ${v} price now.`,
+  `The clutter isn't clearing itself. Get your ${v} price and book it.`,
+  `One tap for your ${v} clearance price — no site visit required.`,
+  `Stop putting it off. See your ${v} clearance price right now.`,
 ];
 
 export default async function HouseClearanceVillagePage({ params }: { params: Promise<{ hub: string; village: string }> }) {
