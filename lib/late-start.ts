@@ -78,8 +78,24 @@ export async function runDueLateStartChecks(supabase: any): Promise<{ lateAlerts
 
     const latestStartMin = hhmmToMin(b.move_time) - Math.round(travelSec / 60);
     if (nowMin >= latestStartMin) {
+      // Atomically CLAIM this booking before sending anything — conditioned on
+      // the guard still being null, so exactly one invocation (even an
+      // overlapping or retried one) can ever win it. This runs every minute;
+      // the previous version sent the notification THEN set the guard as a
+      // separate step, so if that second write didn't land before the next
+      // minute's run read the row, it looked eligible again and re-sent —
+      // which is exactly what happened to one customer (900+ duplicate
+      // messages over 15 hours) before this fix.
+      const { data: claimed } = await supabase
+        .from("bookings")
+        .update({ late_start_alert_sent_at: new Date().toISOString() })
+        .eq("id", b.id)
+        .is("late_start_alert_sent_at", null)
+        .select("id")
+        .maybeSingle();
+      if (!claimed) continue; // someone else already claimed/sent it
+
       await notifyLateStart(customer, b.reference, b.live_tracking_token);
-      await supabase.from("bookings").update({ late_start_alert_sent_at: new Date().toISOString() }).eq("id", b.id);
       await supabase.from("activity_log").insert({
         booking_id: b.id,
         action: `Customer alerted: driver late to start (pickup ${b.move_time}, ~${Math.round(travelSec / 60)} min away)`,

@@ -58,9 +58,19 @@ export async function GET(req: Request) {
     const lateBy = nowMin - targetMin;
     if (lateBy <= GRACE_MIN) continue;                       // not late enough
 
-    const { data: prior } = await supabase
-      .from("activity_log").select("id").eq("booking_id", b.id).eq("action", "Running late notice sent").limit(1).maybeSingle();
-    if (prior) continue;
+    // Atomically CLAIM this booking before sending anything — conditioned on
+    // the guard column still being null, so exactly one invocation (even an
+    // overlapping or retried one) can ever win it. An activity_log-based
+    // check-then-send-then-insert isn't atomic; a near-identical gap in
+    // late-start.ts sent one customer 900+ duplicate messages over 15 hours.
+    const { data: claimed } = await supabase
+      .from("bookings")
+      .update({ late_notice_sent_at: new Date().toISOString() })
+      .eq("id", b.id)
+      .is("late_notice_sent_at", null)
+      .select("id")
+      .maybeSingle();
+    if (!claimed) continue; // someone else already claimed/sent it
 
     const customer = Array.isArray(b.customer) ? b.customer[0] : b.customer;
     if (!customer) continue;
