@@ -33,8 +33,8 @@ export interface AssignmentMessage {
  * varying by whether we're inside business hours (8am-6pm, 7 days —
  * lib/company.ts) right now.
  */
-export function getAssignmentMessage(): AssignmentMessage {
-  const phoneNote = `We'll be calling from ${COMPANY_PHONE} — do save it, so you know it's us!`;
+export function getAssignmentMessage(phone: string = COMPANY_PHONE): AssignmentMessage {
+  const phoneNote = `We'll be calling from ${phone} — do save it, so you know it's us!`;
   if (isWithinBusinessHours()) {
     return {
       heading: "Your dedicated move coordinator is on it!",

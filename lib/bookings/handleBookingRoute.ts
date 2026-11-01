@@ -71,6 +71,8 @@ export async function handleBookingRoute(
     );
   }
 
+  const bookingBrand = await getCurrentBrand();
+
   // Build notification payload from validated form data
   const notifPayload: NotificationPayload = {
     bookingId,
@@ -91,6 +93,7 @@ export async function handleBookingRoute(
     additionalServices: "additionalServices" in data
       ? (data.additionalServices as NotificationPayload["additionalServices"])
       : null,
+    brand: bookingBrand.slug,
   };
 
   // A signed token lets the customer view + reserve their quote and claim the
@@ -113,7 +116,6 @@ export async function handleBookingRoute(
   if (INSTANT_QUOTE_SERVICES.has(serviceType) && quoteToken && quoteTotal != null) {
     try {
       const supabase = createAdminClient();
-      const brand = await getCurrentBrand();
       await markQuoteSent(supabase, bookingId, "inquiry");
       await sendReserveMessages({
         bookingId,
@@ -125,7 +127,7 @@ export async function handleBookingRoute(
         total: quoteTotal,
         showStandard: true,
         showPremium: true,
-        brand: brand.slug,
+        brand: bookingBrand.slug,
       });
       quoteReady = true;
     } catch (e) {

@@ -10,10 +10,17 @@ order — each step points at the real file to copy/edit.
 
 One Next.js app, one Supabase database, one admin dashboard — all shared.
 A "brand" is just: its own domain, its own design (colours/logo), its own
-copy on 9 pages, and its own contact details. Nothing about bookings,
-payments, the database, or `/admin` changes per brand — those are
+copy on marketing pages, and its own contact details. Nothing about the
+booking engine, the database, or `/admin` changes per brand — those are
 deliberately shared, which is *why* this is one Vercel project and not a
-separate one per brand.
+separate one per brand. **But the booking journey the customer actually
+sees (the wizard, the deposit/payment page, the confirmation page, and
+every email/SMS/WhatsApp message that comes out of it) must still look
+and sound like the brand they booked with, start to finish — see "The
+shared booking journey" below.** Adding a brand to `lib/brands.ts`
+automatically covers this with zero extra work, as long as that brand's
+colours/phone/email are filled in correctly — this is the entire point
+of having built it this way.
 
 ## Step 1 — Register the config: `lib/brands.ts`
 
@@ -126,6 +133,63 @@ Then spot-check the built HTML directly (`grep -o "Ample Removals"
 Brand pages render dynamically (see lesson 6 below), so after this build
 there's no static `.html` to grep under the bare slug — use `next dev`
 and `curl` the route instead to check rendered output (see lesson 6).
+
+## The shared booking journey (/booking, /quote, /confirmation)
+
+This is the part a new brand gets **automatically** — nothing to build
+per brand here, but it's worth understanding, since it's the part that
+was wrong for the first 3 brands and had to be fixed after launch (the
+"why does Get a free Quote lead to Ample's booking page" bug report).
+
+**What it is**: `/booking/[service]` (the wizard), `/quote/[bookingId]/
+[token]` (the deposit/payment page), and `/confirmation` live in their
+own route group, `app/(shared-booking)/`, with their own layout
+(`app/(shared-booking)/layout.tsx`). That layout resolves the current
+brand via `getCurrentBrand()` and either renders Ample's own Navbar/
+Footer unchanged (`brand.slug === "ample"`) or a lightweight brand header
+(logo + phone, no distracting nav mid-booking) with the booking wizard's
+colours re-themed to match.
+
+**How the colour theming works**: the wizard's ~40 Tailwind
+`brand-purple-*`/`brand-green-*` classes compile to fixed hex values at
+build time — they can't vary per request on their own. `lib/brand-
+theme.ts`'s `brandThemeCssVars(brand)` generates a CSS-variable version
+of that same colour ramp from the brand's own `colors.primary`/
+`primaryDark`/`accent`/`accentLight`, and `app/globals.css` has a block
+of `[data-brand-theme] .bg-brand-purple-800 { ... !important }`-style
+rules (one per exact utility class actually used in the journey) that
+redirect to those variables. The layout sets `data-brand-theme` + the
+variables on a wrapper div only for non-Ample brands, so Ample's own
+flow is completely unaffected.
+
+**Adding a new brand needs zero changes here** — the layout, the CSS
+override rules, and the ramp generator are all brand-agnostic; they read
+whatever `lib/brands.ts` says. The only way this breaks for a new brand
+is if a *new* booking-wizard component introduces a `brand-purple-*` or
+`brand-green-*` shade that isn't in the override list yet — if a new
+wizard step looks unthemed (still purple/green on a non-Ample brand),
+grep the component for `brand-(purple|green)-[0-9]+` and add any missing
+shade to `app/globals.css`'s override block.
+
+**Emails/SMS/WhatsApp from this journey**: `lib/notifications.ts`
+resolves the brand from `payload.brand` (a slug stored on the booking
+itself, not re-derived from the request) and uses `brand.name`/
+`brand.phone`/`brand.emailFrom`+`brand.emailAddress` throughout —
+including the HTML email template, which used to hardcode "Ample
+Removals" and `#6b21a8` everywhere. SMS is still gated behind
+`brand.allowAutomatedSms` (false for every brand except Ample, per the
+existing policy). Any NEW code path that creates a booking must set
+`brand: <resolved slug>` on the `NotificationPayload`/booking record, the
+same way `lib/bookings/createBooking.ts` and `handleBookingRoute.ts`
+already do — if that field is left out, the notification functions
+default to Ample.
+
+**Known gap, not yet fixed**: `app/api/booking/landing/route.ts` (the
+paid-ad landing-page wizard, separate from the main `/booking` flow) does
+not yet resolve or pass `brand` into its notification calls, so it will
+default to Ample's branding regardless of which domain it's reached from.
+Low priority today since no ad campaigns run for the new brands yet, but
+fix it the same way before that changes.
 
 ## Daily blog posts (future, once brands are live)
 

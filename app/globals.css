@@ -187,3 +187,71 @@
     animation: marquee 32s linear infinite;
   }
 }
+
+/*
+ * Brand theming for the shared booking journey (booking wizard, deposit
+ * payment page, confirmation page). Those components use Tailwind's
+ * brand-purple / brand-green utility classes, which compile to fixed
+ * hex values at build time — they can't vary per request on their own.
+ * This redirects each exact class used in that journey to a CSS variable
+ * instead, scoped under [data-brand-theme] so Ample's own flow (which
+ * never gets this attribute) is completely unaffected. The variables
+ * themselves (--bp-50..--bp-950, --bg-50..--bg-800) are computed per
+ * brand by lib/brand-theme.ts and set inline on the wrapper element.
+ */
+[data-brand-theme] {
+  --bp-50: #faf5ff; --bp-100: #f3e8ff; --bp-200: #e9d5ff; --bp-300: #d8b4fe;
+  --bp-400: #c084fc; --bp-500: #a855f7; --bp-600: #9333ea; --bp-700: #7e22ce;
+  --bp-800: #6b21a8; --bp-900: #581c87; --bp-950: #3b0764;
+  --bg-50: #f0fdf4; --bg-100: #dcfce7; --bg-200: #bbf7d0; --bg-500: #22c55e;
+  --bg-600: #16a34a; --bg-700: #15803d; --bg-800: #166534;
+}
+
+[data-brand-theme] .bg-brand-purple-50 { background-color: var(--bp-50) !important; }
+[data-brand-theme] [class~="bg-brand-purple-50/60"] { background-color: color-mix(in srgb, var(--bp-50) 60%, transparent) !important; }
+[data-brand-theme] [class~="bg-brand-purple-50/70"] { background-color: color-mix(in srgb, var(--bp-50) 70%, transparent) !important; }
+[data-brand-theme] .bg-brand-purple-100 { background-color: var(--bp-100) !important; }
+[data-brand-theme] [class~="bg-brand-purple-100/70"] { background-color: color-mix(in srgb, var(--bp-100) 70%, transparent) !important; }
+[data-brand-theme] .bg-brand-purple-600 { background-color: var(--bp-600) !important; }
+[data-brand-theme] .bg-brand-purple-700 { background-color: var(--bp-700) !important; }
+[data-brand-theme] .bg-brand-purple-800 { background-color: var(--bp-800) !important; }
+[data-brand-theme] .bg-brand-purple-900 { background-color: var(--bp-900) !important; }
+[data-brand-theme] .text-brand-purple-400 { color: var(--bp-400) !important; }
+[data-brand-theme] .text-brand-purple-500 { color: var(--bp-500) !important; }
+[data-brand-theme] .text-brand-purple-600 { color: var(--bp-600) !important; }
+[data-brand-theme] .text-brand-purple-700 { color: var(--bp-700) !important; }
+[data-brand-theme] .text-brand-purple-800 { color: var(--bp-800) !important; }
+[data-brand-theme] .text-brand-purple-900 { color: var(--bp-900) !important; }
+[data-brand-theme] .text-brand-purple-950 { color: var(--bp-950) !important; }
+[data-brand-theme] .border-brand-purple-100 { border-color: var(--bp-100) !important; }
+[data-brand-theme] .border-brand-purple-200 { border-color: var(--bp-200) !important; }
+[data-brand-theme] .border-brand-purple-300 { border-color: var(--bp-300) !important; }
+[data-brand-theme] .border-brand-purple-400 { border-color: var(--bp-400) !important; }
+[data-brand-theme] .border-brand-purple-600 { border-color: var(--bp-600) !important; }
+[data-brand-theme] .border-brand-purple-700 { border-color: var(--bp-700) !important; }
+[data-brand-theme] .ring-brand-purple-100 { --tw-ring-color: var(--bp-100) !important; }
+[data-brand-theme] .ring-brand-purple-600 { --tw-ring-color: var(--bp-600) !important; }
+[data-brand-theme] .shadow-brand-purple-200 { --tw-shadow-color: var(--bp-200) !important; }
+[data-brand-theme] [class~="shadow-brand-purple-200/50"] { --tw-shadow-color: color-mix(in srgb, var(--bp-200) 50%, transparent) !important; }
+[data-brand-theme] [class~="shadow-brand-purple-800/25"] { --tw-shadow-color: color-mix(in srgb, var(--bp-800) 25%, transparent) !important; }
+[data-brand-theme] [class~="shadow-brand-purple-900/10"] { --tw-shadow-color: color-mix(in srgb, var(--bp-900) 10%, transparent) !important; }
+[data-brand-theme] .from-brand-purple-50 { --tw-gradient-from: var(--bp-50) var(--tw-gradient-from-position) !important; }
+[data-brand-theme] .from-brand-purple-700 { --tw-gradient-from: var(--bp-700) var(--tw-gradient-from-position) !important; }
+[data-brand-theme] .to-brand-purple-500 { --tw-gradient-to: var(--bp-500) var(--tw-gradient-to-position) !important; }
+
+[data-brand-theme] .bg-brand-green-50 { background-color: var(--bg-50) !important; }
+[data-brand-theme] [class~="bg-brand-green-50/60"] { background-color: color-mix(in srgb, var(--bg-50) 60%, transparent) !important; }
+[data-brand-theme] .bg-brand-green-100 { background-color: var(--bg-100) !important; }
+[data-brand-theme] .bg-brand-green-500 { background-color: var(--bg-500) !important; }
+[data-brand-theme] .bg-brand-green-600 { background-color: var(--bg-600) !important; }
+[data-brand-theme] .text-brand-green-600 { color: var(--bg-600) !important; }
+[data-brand-theme] .text-brand-green-700 { color: var(--bg-700) !important; }
+[data-brand-theme] .text-brand-green-800 { color: var(--bg-800) !important; }
+[data-brand-theme] .border-brand-green-100 { border-color: var(--bg-100) !important; }
+[data-brand-theme] .border-brand-green-200 { border-color: var(--bg-200) !important; }
+[data-brand-theme] .border-brand-green-500 { border-color: var(--bg-500) !important; }
+[data-brand-theme] .border-brand-green-600 { border-color: var(--bg-600) !important; }
+[data-brand-theme] .shadow-brand-green-200 { --tw-shadow-color: var(--bg-200) !important; }
+[data-brand-theme] [class~="shadow-brand-green-600/25"] { --tw-shadow-color: color-mix(in srgb, var(--bg-600) 25%, transparent) !important; }
+[data-brand-theme] .from-brand-green-50 { --tw-gradient-from: var(--bg-50) var(--tw-gradient-from-position) !important; }
+[data-brand-theme] .to-brand-green-50 { --tw-gradient-to: var(--bg-50) var(--tw-gradient-to-position) !important; }

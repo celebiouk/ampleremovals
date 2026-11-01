@@ -5,7 +5,12 @@ import { logError } from "@/lib/log-error";
 import { formatDate, normaliseUKPhone } from "@/lib/utils";
 import { formatMoveTimeWindow } from "@/lib/dates";
 import { getAssignmentMessage } from "@/lib/business-hours";
+import { BRAND_BY_SLUG, AMPLE_BRAND, type Brand } from "@/lib/brands";
 import type { ServiceType, AddressOption } from "@/types";
+
+function resolveBrand(slug?: string | null): Brand {
+  return (slug && BRAND_BY_SLUG[slug]) || AMPLE_BRAND;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -63,8 +68,11 @@ function customerEmailHtml(params: {
   assignmentHeading: string;
   assignmentLine: string;
   phoneNote: string;
+  brand: Brand;
 }): string {
-  const { customerName, reference, serviceLabel, dateText, originAddress, assignmentHeading, assignmentLine, phoneNote } = params;
+  const { customerName, reference, serviceLabel, dateText, originAddress, assignmentHeading, assignmentLine, phoneNote, brand } = params;
+  const primary = brand.colors.primary;
+  const accent = brand.colors.accent;
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Booking Request Received</title></head>
@@ -74,30 +82,30 @@ function customerEmailHtml(params: {
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
         <!-- Header -->
-        <tr><td style="background:#6b21a8;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Ample Removals</h1>
-          <p style="margin:8px 0 0;color:#d8b4fe;font-size:14px;">Booking Request Received</p>
+        <tr><td style="background:${primary};border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">${brand.name}</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:14px;">Booking Request Received</p>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="background:#ffffff;padding:40px;">
           <p style="margin:0 0 16px;font-size:16px;color:#1e1b4b;">Hi <strong>${customerName}</strong>,</p>
           <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-            Thank you for choosing Ample Removals. We have received your <strong>${serviceLabel}</strong> request.
+            Thank you for choosing ${brand.name}. We have received your <strong>${serviceLabel}</strong> request.
           </p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-            <tr><td style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:18px 20px;">
-              <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">${assignmentHeading}</p>
-              <p style="margin:8px 0 0;font-size:14px;color:#15803d;line-height:1.6;">${assignmentLine}</p>
-              <p style="margin:12px 0 0;font-size:13px;font-weight:600;color:#166534;">📞 ${phoneNote}</p>
+            <tr><td style="background:#f8fafc;border:2px solid ${accent};border-radius:10px;padding:18px 20px;">
+              <p style="margin:0;font-size:15px;font-weight:700;color:${accent};">${assignmentHeading}</p>
+              <p style="margin:8px 0 0;font-size:14px;color:#475569;line-height:1.6;">${assignmentLine}</p>
+              <p style="margin:12px 0 0;font-size:13px;font-weight:600;color:${accent};">📞 ${phoneNote}</p>
             </td></tr>
           </table>
 
           <!-- Reference box -->
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-            <tr><td style="background:#faf5ff;border:2px solid #6b21a8;border-radius:10px;padding:20px 24px;text-align:center;">
-              <p style="margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#7c3aed;">Your Booking Reference</p>
-              <p style="margin:0;font-size:28px;font-weight:800;color:#6b21a8;letter-spacing:1px;">${reference}</p>
+            <tr><td style="background:#f8fafc;border:2px solid ${primary};border-radius:10px;padding:20px 24px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:${primary};">Your Booking Reference</p>
+              <p style="margin:0;font-size:28px;font-weight:800;color:${primary};letter-spacing:1px;">${reference}</p>
             </td></tr>
           </table>
 
@@ -129,7 +137,7 @@ function customerEmailHtml(params: {
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
             ${["Your move coordinator reviews your request", "They call you to talk through your move and give you a quote", "Your booking is confirmed by email"].map((step, i) => `
             <tr><td style="padding:8px 0;font-size:14px;color:#475569;">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#6b21a8;border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:10px;">${i + 1}</span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:${primary};border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:10px;">${i + 1}</span>
               ${step}
             </td></tr>`).join("")}
           </table>
@@ -137,16 +145,16 @@ function customerEmailHtml(params: {
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <span style="display:inline-block;background:#16a34a;border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">We&rsquo;ll Call You Soon</span>
+              <span style="display:inline-block;background:${accent};border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">We&rsquo;ll Call You Soon</span>
             </td></tr>
           </table>
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="background:#6b21a8;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#ffffff;">Ample Removals</p>
-          <p style="margin:0 0 4px;font-size:13px;color:#d8b4fe;">Tel: 0333 577 2070</p>
-          <p style="margin:12px 0 0;font-size:12px;color:#c4b5fd;line-height:1.5;">
+        <tr><td style="background:${primary};border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;">
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#ffffff;">${brand.name}</p>
+          <p style="margin:0 0 4px;font-size:13px;color:rgba(255,255,255,0.75);">Tel: ${brand.phone}</p>
+          <p style="margin:12px 0 0;font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;">
             You are receiving this email because you submitted a booking request on our website.
           </p>
         </td></tr>
@@ -171,15 +179,17 @@ function adminEmailHtml(params: {
   description: string;
   bookingId: string;
   submittedAt: string;
+  brandName: string;
 }): string {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const {
     reference, serviceLabel, customerName, email, phone,
     dateText, originAddress, destinationAddress,
-    additionalServices, description, bookingId, submittedAt,
+    additionalServices, description, bookingId, submittedAt, brandName,
   } = params;
 
   const rows = [
+    ["Brand", brandName],
     ["Reference", reference],
     ["Service", serviceLabel],
     ["Date", dateText],
@@ -206,7 +216,7 @@ function adminEmailHtml(params: {
         <!-- Alert -->
         <tr><td style="background:#fef9c3;border-left:4px solid #eab308;padding:16px 40px;">
           <p style="margin:0;font-size:14px;color:#713f12;font-weight:600;">
-            A new <strong>${serviceLabel}</strong> booking has just been submitted.
+            A new <strong>${serviceLabel}</strong> booking has just been submitted via <strong>${brandName}</strong>.
           </p>
         </td></tr>
 
@@ -300,6 +310,9 @@ export interface NotificationPayload {
     disassembleFurniture?: boolean;
     assembleFurniture?: boolean;
   } | null;
+  /** Which white-label brand this booking belongs to (see lib/brands.ts) —
+   *  defaults to Ample when omitted, for any caller not yet passing it. */
+  brand?: string | null;
 }
 
 function buildDateText(payload: NotificationPayload): string {
@@ -331,13 +344,14 @@ export async function sendCustomerConfirmationEmail(
   payload: NotificationPayload
 ): Promise<void> {
   try {
+    const brand = resolveBrand(payload.brand);
     const serviceLabel = SERVICE_LABEL[payload.serviceType];
     const dateText = buildDateText(payload);
     const originAddress = formatAddress(payload.originAddress);
 
-    const assignment = getAssignmentMessage();
+    const assignment = getAssignmentMessage(brand.phone);
     const { error } = await resend.emails.send({
-      from: resendFrom,
+      from: brand.slug === "ample" ? resendFrom : `${brand.emailFrom} <${brand.emailAddress}>`,
       to: payload.email,
       subject: `We've received your booking request — Ref: ${payload.reference}`,
       html: customerEmailHtml({
@@ -349,6 +363,7 @@ export async function sendCustomerConfirmationEmail(
         assignmentHeading: assignment.heading,
         assignmentLine: assignment.line,
         phoneNote: assignment.phoneNote,
+        brand,
       }),
     });
 
@@ -374,6 +389,7 @@ export async function sendAdminNewBookingEmail(
   payload: NotificationPayload
 ): Promise<void> {
   try {
+    const brand = resolveBrand(payload.brand);
     const serviceLabel = SERVICE_LABEL[payload.serviceType];
     const dateText = buildDateText(payload);
     const submittedAt = new Date().toLocaleString("en-GB", {
@@ -384,7 +400,7 @@ export async function sendAdminNewBookingEmail(
     const { error } = await resend.emails.send({
       from: resendFrom,
       to: resendAdminEmails,
-      subject: `🔔 New Booking — ${SERVICE_LABEL_SHORT[payload.serviceType]} — Ref: ${payload.reference}`,
+      subject: `🔔 New Booking — ${brand.name} — ${SERVICE_LABEL_SHORT[payload.serviceType]} — Ref: ${payload.reference}`,
       html: adminEmailHtml({
         reference: payload.reference,
         serviceLabel,
@@ -398,6 +414,7 @@ export async function sendAdminNewBookingEmail(
         description: payload.description ?? "None provided",
         bookingId: payload.bookingId,
         submittedAt,
+        brandName: brand.name,
       }),
     });
 
@@ -423,6 +440,13 @@ export async function sendAdminNewBookingEmail(
 export async function sendCustomerConfirmationSMS(
   payload: NotificationPayload
 ): Promise<void> {
+  const brand = resolveBrand(payload.brand);
+  if (!brand.allowAutomatedSms) {
+    // Only Ample sends automated SMS — other brands rely on email + the
+    // manual WhatsApp queue (see lib/twilio.ts).
+    return;
+  }
+
   if (!twilioClient) {
     // Twilio not configured — log as info and skip
     await logError({
@@ -440,7 +464,7 @@ export async function sendCustomerConfirmationSMS(
     // Keep under 160 chars
     const body =
       `Hi ${payload.customerName}, we've received your ${serviceLabel} request (Ref: ${payload.reference}). ` +
-      `${getAssignmentMessage().short} – Ample Removals`;
+      `${getAssignmentMessage(brand.phone).short} – ${brand.name}`;
 
     await twilioClient.messages.create({
       from: twilioFrom,
@@ -469,15 +493,17 @@ export async function sendCustomerConfirmationWhatsApp(
   payload: NotificationPayload
 ): Promise<void> {
   try {
+    const brand = resolveBrand(payload.brand);
     const serviceLabel = SERVICE_LABEL_SHORT[payload.serviceType];
-    const assignment = getAssignmentMessage();
+    const assignment = getAssignmentMessage(brand.phone);
     const body =
-      `Hi ${payload.customerName}! We've received your ${serviceLabel} request (Ref: *${payload.reference}*).\n\n` +
+      `Hi ${payload.customerName}! We've received your ${serviceLabel} request (Ref: *${payload.reference}*) with ${brand.name}.\n\n` +
       `${assignment.short}\n\n📞 ${assignment.phoneNote}`;
 
     await sendWhatsApp(payload.phone, body, undefined, {
       bookingId: payload.bookingId,
       title: `Booking received — ${payload.reference}`,
+      brand: brand.slug,
     });
 
     await logActivity(payload.bookingId, payload.customerId, "Customer WhatsApp confirmation queued", {

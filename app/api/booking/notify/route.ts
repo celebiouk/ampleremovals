@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       id, reference, service_type, customer_id, quote_total, description, inventory,
       floor, has_lift, parking_within_20m, special_instructions,
       dest_floor, dest_has_lift, dest_parking_within_20m, dest_access_notes,
-      move_date, move_time, is_flexible_date, flexible_date_from, flexible_date_to,
+      move_date, move_time, is_flexible_date, flexible_date_from, flexible_date_to, brand,
       customer:customers!inner(full_name, email, phone),
       origin:addresses!origin_address_id(line_1, line_2, city, postcode),
       destination:addresses!destination_address_id(line_1, line_2, city, postcode),
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
     flexibleDateTo: booking.flexible_date_to,
     description: booking.description,
     additionalServices: null,
+    brand: booking.brand as string | undefined,
   };
   await Promise.allSettled([
     sendCustomerConfirmationEmail(notif),
