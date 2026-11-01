@@ -37,6 +37,11 @@ export interface Brand {
   allowBankTransfer: boolean;
   /** Ample only, for now — other brands never trigger an automated SMS. */
   allowAutomatedSms: boolean;
+  /** Extra hostnames that should also resolve to this brand — e.g. a free
+   *  <slug>.vercel.app alias used to preview/share the brand before its
+   *  real domain's DNS is pointed. Not customer-facing; remove once the
+   *  real domain is live if you want to retire the alias. */
+  previewDomains?: string[];
 }
 
 export const AMPLE_BRAND: Brand = {
@@ -74,6 +79,7 @@ export const BRANDS: Brand[] = [
     colors: { primary: "#1e3a5f", primaryDark: "#13263f", accent: "#d97706", accentLight: "#f59e0b" },
     allowBankTransfer: false,
     allowAutomatedSms: false,
+    previewDomains: ["thatchammovers.vercel.app"],
   },
   {
     slug: "newbury-removals",
@@ -92,6 +98,7 @@ export const BRANDS: Brand[] = [
     colors: { primary: "#14532d", primaryDark: "#0d3a1f", accent: "#ca8a04", accentLight: "#eab308" },
     allowBankTransfer: false,
     allowAutomatedSms: false,
+    previewDomains: ["newburyremovals.vercel.app"],
   },
   {
     slug: "manyvans",
@@ -110,6 +117,7 @@ export const BRANDS: Brand[] = [
     colors: { primary: "#dc2626", primaryDark: "#991b1b", accent: "#1e293b", accentLight: "#334155" },
     allowBankTransfer: false,
     allowAutomatedSms: false,
+    previewDomains: ["manyvans.vercel.app"],
   },
 ];
 
@@ -120,7 +128,9 @@ export const BRAND_BY_SLUG: Record<string, Brand> = Object.fromEntries(BRANDS.ma
 export function brandForHost(host: string | null | undefined): Brand {
   if (!host) return AMPLE_BRAND;
   const clean = host.toLowerCase().replace(/:\d+$/, "").replace(/^www\./, "");
-  const match = BRANDS.find((b) => b.domain.replace(/^www\./, "") === clean);
+  const match = BRANDS.find(
+    (b) => b.domain.replace(/^www\./, "") === clean || b.previewDomains?.includes(clean)
+  );
   return match ?? AMPLE_BRAND;
 }
 
