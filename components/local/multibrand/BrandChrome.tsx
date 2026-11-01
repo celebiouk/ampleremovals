@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 import { BrandNavbar, type BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
 import { standardBrandNavLinks } from "@/components/local/multibrand/brand-nav-links";
+import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType, ReactNode } from "react";
 
@@ -12,7 +13,7 @@ import type { ComponentType, ReactNode } from "react";
  * About/Contact/Tips pages. Deliberately has no link anywhere back to Ample
  * Removals: these brands are meant to look fully independent.
  */
-export function BrandChrome({
+export async function BrandChrome({
   brand,
   logo: Logo,
   navLinks,
@@ -27,7 +28,9 @@ export function BrandChrome({
   whatsappMessage: string;
   children: ReactNode;
 }) {
-  const links = navLinks ?? standardBrandNavLinks();
+  const basePath = await resolveBrandBasePath(brand);
+  const links = (navLinks ?? standardBrandNavLinks()).map((l) => ({ ...l, href: brandHref(basePath, l.href) }));
+  const homeHref = basePath || "/";
 
   return (
     <div className="pb-20">
@@ -39,7 +42,7 @@ export function BrandChrome({
         accentColor={brand.colors.accent}
         hideQuotePill
       />
-      <BrandNavbar brand={brand} logo={<Logo />} links={links} quoteHref={quoteHref} />
+      <BrandNavbar brand={brand} logo={<Logo />} homeHref={homeHref} links={links} quoteHref={quoteHref} />
 
       {children}
 

@@ -27,6 +27,7 @@ export interface BrandNavLink {
 export function BrandNavbar({
   brand,
   logo,
+  homeHref,
   links,
   quoteHref,
 }: {
@@ -34,6 +35,10 @@ export function BrandNavbar({
   /** A rendered logo element, not the component itself — a bare component
    *  function can't cross the server→client boundary, only JSX can. */
   logo: ReactNode;
+  /** Where clicking the logo goes — already resolved for the current
+   *  request (see resolveBrandBasePath in brand-links.ts). */
+  homeHref: string;
+  /** Already resolved for the current request — see brand-links.ts. */
   links: BrandNavLink[];
   quoteHref: string;
 }) {
@@ -42,7 +47,7 @@ export function BrandNavbar({
   return (
     <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur">
       <div className="container mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <Link href="/" className="shrink-0" onClick={() => setOpen(false)}>
+        <Link href={homeHref} className="shrink-0" onClick={() => setOpen(false)}>
           {logo}
         </Link>
 

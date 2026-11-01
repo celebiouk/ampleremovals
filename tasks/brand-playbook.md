@@ -123,6 +123,9 @@ rm -rf .next && npx next build   # must complete with only the pre-existing /ope
 ```
 Then spot-check the built HTML directly (`grep -o "Ample Removals"
 .next/server/app/<slug>.html` should return nothing) before committing.
+Brand pages render dynamically (see lesson 6 below), so after this build
+there's no static `.html` to grep under the bare slug — use `next dev`
+and `curl` the route instead to check rendered output (see lesson 6).
 
 ## Daily blog posts (future, once brands are live)
 
@@ -162,6 +165,34 @@ all 4 (eventually more) brands' arrays on the same day.
    function that returns a plain array. `standardBrandNavLinks()` had to
    move out of `BrandNavbar.tsx` into its own plain module
    (`brand-nav-links.ts`) for exactly this reason.
+5. **Internal brand links (nav, footer, services grid, tips articles)
+   must resolve correctly in TWO contexts**: once a brand's own domain is
+   connected, plain root-relative links ("/", "/about") are exactly
+   right — middleware's rewrite means the Host already matches the
+   brand. But before DNS is pointed, the only way to preview a brand is
+   by path on another domain (`ampleremovals.com/thatcham-movers`), where
+   a plain `/about` link would resolve to THAT domain's own `/about`
+   (a 404) instead of staying on the preview path. `brand-links.ts`
+   (`resolveBrandBasePath` + `brandHref`) fixes this by checking the
+   current request's resolved brand (via `getCurrentBrand()`, which
+   reads the `x-brand` header middleware already sets from Host) against
+   the page's own brand, and prefixing internal links only when they
+   differ. Every component that renders an internal brand link
+   (`BrandChrome`, `BrandPageShell`, `BrandTipsPages`) needs to call this
+   — it's not optional for a new page type with its own internal links.
+6. **This link-prefixing fix costs static generation for brand pages.**
+   `resolveBrandBasePath()` calls `getCurrentBrand()`, which reads
+   `headers()` — and `headers()` forces whatever uses it out of static
+   prerendering into per-request dynamic rendering. Unlike lesson 2
+   (which broke the ENTIRE site), this is scoped to just the brand pages
+   themselves, which is an acceptable, deliberate trade: the two
+   requirements (working preview-by-path links today, zero Ample
+   linkage) are genuinely incompatible with a single static HTML file,
+   since the same prerendered file can't contain different hrefs
+   depending on which domain requested it. After a `next build`, these
+   pages show up as `.js` only under `.next/server/app/(brands)/...`
+   (no sibling `.html`) — that's expected, not a bug. Verify them with
+   `next dev` + `curl` instead of grepping static output.
 5. **Always verify with a real `next build`, not just `tsc --noEmit`.**
    All 4 bugs above passed typecheck cleanly — none of them are type
    errors, they're React Server Components runtime rules. A full build

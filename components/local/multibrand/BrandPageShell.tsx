@@ -3,6 +3,7 @@ import { Phone, ArrowRight, ShieldCheck, Clock, MapPin, Award } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
 import type { BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
@@ -35,7 +36,7 @@ export interface BrandPageContent {
   heroAction: ComponentType;
 }
 
-export function BrandPageShell({
+export async function BrandPageShell({
   brand,
   logo: Logo,
   content,
@@ -49,6 +50,7 @@ export function BrandPageShell({
    *  genuinely differs. */
   navLinks?: BrandNavLink[];
 }) {
+  const basePath = await resolveBrandBasePath(brand);
   const HeroAction = content.heroAction;
   const { primary, primaryDark, accent } = brand.colors;
 
@@ -155,7 +157,7 @@ export function BrandPageShell({
               <div key={s.title} className="rounded-2xl border border-slate-200 bg-white p-6">
                 <h3 className="font-display text-lg font-bold text-slate-900">{s.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">{s.body}</p>
-                <Link href={s.href} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline" style={{ color: primary }}>
+                <Link href={brandHref(basePath, s.href)} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline" style={{ color: primary }}>
                   Learn more <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>

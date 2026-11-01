@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock, CalendarDays } from "lucide-react";
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -16,7 +17,7 @@ export interface TipArticle {
 /** /tips — the index of every article for this brand. Future daily posts
  *  get added to the brand's articles array (see lib/brand-page-content/
  *  *-tips.tsx) and show up here automatically — no page changes needed. */
-export function BrandTipsIndexPage({
+export async function BrandTipsIndexPage({
   brand,
   logo: Logo,
   articles,
@@ -29,6 +30,7 @@ export function BrandTipsIndexPage({
   quoteHref: string;
   whatsappMessage: string;
 }) {
+  const basePath = await resolveBrandBasePath(brand);
   return (
     <BrandChrome brand={brand} logo={Logo} quoteHref={quoteHref} whatsappMessage={whatsappMessage}>
       <section className="px-6 pb-16 pt-14 text-white" style={{ background: `linear-gradient(135deg, ${brand.colors.primary}, ${brand.colors.primaryDark})` }}>
@@ -48,7 +50,7 @@ export function BrandTipsIndexPage({
           {articles.map((a) => (
             <Link
               key={a.slug}
-              href={`/tips/${a.slug}`}
+              href={brandHref(basePath, `/tips/${a.slug}`)}
               className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-slate-300"
             >
               <h2 className="font-display text-xl font-bold text-slate-900">{a.title}</h2>
@@ -69,7 +71,7 @@ export function BrandTipsIndexPage({
 }
 
 /** /tips/[slug] — a single article. */
-export function BrandTipsArticlePage({
+export async function BrandTipsArticlePage({
   brand,
   logo: Logo,
   article,
@@ -82,11 +84,12 @@ export function BrandTipsArticlePage({
   quoteHref: string;
   whatsappMessage: string;
 }) {
+  const basePath = await resolveBrandBasePath(brand);
   return (
     <BrandChrome brand={brand} logo={Logo} quoteHref={quoteHref} whatsappMessage={whatsappMessage}>
       <article className="px-6 py-16">
         <div className="container mx-auto max-w-2xl">
-          <Link href="/tips" className="text-sm font-semibold" style={{ color: brand.colors.primary }}>← Back to Tips & Advice</Link>
+          <Link href={brandHref(basePath, "/tips")} className="text-sm font-semibold" style={{ color: brand.colors.primary }}>← Back to Tips & Advice</Link>
           <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">{article.title}</h1>
           <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
             <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> {article.publishedAt}</span>
