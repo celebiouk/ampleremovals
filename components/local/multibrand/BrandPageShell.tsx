@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Phone, ArrowRight, ShieldCheck, Clock, MapPin, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
-import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
+import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import type { BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -38,10 +39,15 @@ export function BrandPageShell({
   brand,
   logo: Logo,
   content,
+  navLinks,
 }: {
   brand: Brand;
   logo: ComponentType<{ className?: string; variant?: "color" | "white" }>;
   content: BrandPageContent;
+  /** Defaults to the standard Removals/Man and Van/House Clearance/Tips &
+   *  Advice/About Us/Contact Us set — override only if a brand's page set
+   *  genuinely differs. */
+  navLinks?: BrandNavLink[];
 }) {
   const HeroAction = content.heroAction;
   const { primary, primaryDark, accent } = brand.colors;
@@ -74,22 +80,8 @@ export function BrandPageShell({
   };
 
   return (
-    <div className="pb-20" style={{ ["--brand-primary" as string]: primary, ["--brand-accent" as string]: accent }}>
+    <BrandChrome brand={brand} logo={Logo} navLinks={navLinks} quoteHref={content.quoteHref} whatsappMessage={content.whatsappMessage}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <StickyQuoteBar
-        quoteHref={content.quoteHref}
-        whatsappMessage={content.whatsappMessage}
-        whatsappNumber={brand.whatsappNumber}
-        phoneHref={brand.phoneHref}
-        accentColor={accent}
-      />
-
-      {/* Minimal top bar — logo only, these are single-purpose landing pages */}
-      <div className="border-b border-slate-100 px-6 py-4">
-        <div className="container mx-auto max-w-5xl">
-          <Logo />
-        </div>
-      </div>
 
       {/* Hero — 3 structurally different layouts */}
       {content.layout === "classic" && (
@@ -208,6 +200,6 @@ export function BrandPageShell({
           </div>
         </div>
       </section>
-    </div>
+    </BrandChrome>
   );
 }

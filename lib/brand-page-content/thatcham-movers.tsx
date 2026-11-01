@@ -1,4 +1,6 @@
 import type { BrandPageContent } from "@/components/local/multibrand/BrandPageShell";
+import type { BrandAboutContent } from "@/components/local/multibrand/BrandAboutPage";
+import type { TipArticle } from "@/components/local/multibrand/BrandTipsPages";
 import { HeroCtaButtons } from "@/components/local/multibrand/HeroCtaButtons";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 import { BRAND_BY_SLUG } from "@/lib/brands";
@@ -36,6 +38,12 @@ export const thatchamMoversRemovals: BrandPageContent = {
     { q: "Are you insured?", a: "Yes — fully insured on every single job, no exceptions. Your belongings are covered from the moment we load the van to the moment the last box is in your new home." },
     { q: "Can you move me the same week?", a: "Usually, yes. Thatcham's a small enough patch that we can often slot in a move within a few days — call us on " + brand.phone + " and we'll tell you straight away if we're free." },
     { q: "Do you cover villages near Thatcham, not just the town centre?", a: "Yes — Crookham, Cold Ash, Henwick Worthy, Midgham and everywhere else within a few miles of Thatcham is core territory for us." },
+    { q: "Do you dismantle and reassemble furniture?", a: "Yes — wardrobes, bed frames, flat-pack units, the usual culprits. Let us know what needs taking apart when you book so we bring the right tools." },
+    { q: "What if my move date changes?", a: "Tell us as early as you can and we'll move your slot — no fee for a reschedule with reasonable notice." },
+    { q: "Do you provide boxes and packing materials?", a: "Yes, boxes, tape and wrap are available — just mention it when you book and we'll sort you out in advance." },
+    { q: "What happens if something gets damaged?", a: "It's rare, but if it happens, our insurance covers it. Tell us straight away and we'll sort it properly — no arguments." },
+    { q: "Can you move on a weekend?", a: "Yes, weekends are some of our busiest days precisely because that's when most people move. Book ahead to guarantee your preferred day." },
+    { q: "Do you charge extra for stairs or a long carry?", a: "No hidden stair or distance fees within the fixed price you're quoted — we ask about access when you book so there's no surprise on the day." },
   ],
   ctaHeading: "Get your fixed price for a Thatcham move",
   ctaSub: "Takes under 2 minutes. No pushy sales call — just your price.",
@@ -68,6 +76,10 @@ export const thatchamMoversManAndVan: BrandPageContent = {
     { q: "What's the minimum booking?", a: "2 hours, whether it's one man and a van or two. Most single-item or small-flat jobs fit comfortably inside that." },
     { q: "Do I need 1 man or 2?", a: "If it's one or two medium items with easy access, 1 man and van (£45/hr) is usually plenty. Stairs, heavy furniture, or multiple rooms — go with 2 men and van (£75/hr)." },
     { q: "Can you do same-day bookings?", a: "Often, yes — being local to Thatcham means we can usually fit in a short job the same day if we have a van free. Call " + brand.phone + " to check." },
+    { q: "What size van do you use?", a: "A long-wheelbase Luton van as standard — enough for most flat-share moves, single large items, or a few rooms' worth of furniture." },
+    { q: "Can you help with a single item, like a sofa or wardrobe?", a: "Yes — single-item jobs are exactly what this service is for. Most take well under the 2-hour minimum, so you're only billed for the minimum." },
+    { q: "Do you charge for the time getting to me?", a: "No — the clock starts when we arrive and start working, not before." },
+    { q: "Can I book for the same day?", a: "If we've got a van free, yes. The earlier in the day you call, the better the odds." },
   ],
   ctaHeading: "Book your Man and Van slot",
   ctaSub: "Pick your hours and get an instant price — no admin, no waiting for a callback.",
@@ -99,6 +111,10 @@ export const thatchamMoversHouseClearance: BrandPageContent = {
     { q: "How is the price worked out?", a: "For straightforward jobs, pick your hours below for an instant price. For anything bigger — a full house, a hoarding situation, probate — send photos and we'll give you a fair fixed price, no visit needed." },
     { q: "What happens to the items you clear?", a: "Wherever possible, usable items are donated or recycled rather than landfilled. We handle disposal responsibly and in line with waste regulations." },
     { q: "Can you do probate clearances?", a: "Yes, regularly. We're used to working sensitively and at whatever pace the family needs, including coordinating with executors and solicitors where helpful." },
+    { q: "Do you clear garages, sheds and lofts too?", a: "Yes — any part of the property, not just the main living areas." },
+    { q: "How quickly can you clear a property?", a: "Most single-room clearances are done same day. A full house usually takes a day, sometimes two for a particularly full property." },
+    { q: "Can you give a price without a home visit?", a: "Yes — for most jobs, photos are enough for a fair fixed price. We only need to visit for genuinely unusual or very large jobs." },
+    { q: "Do I need to be present during the clearance?", a: "Not necessarily, as long as we've agreed exactly what's being cleared beforehand — many landlords and executors aren't present." },
   ],
   ctaHeading: "Get your fixed clearance price",
   ctaSub: "Instant estimate below, or send photos for a bigger job.",
@@ -110,3 +126,81 @@ export const thatchamMoversHouseClearance: BrandPageContent = {
     </div>
   ),
 };
+
+export const thatchamMoversAbout: BrandAboutContent = {
+  h1: "A Removal Company That's Actually From Thatcham",
+  intro: "Thatcham Movers exists because the town deserved better than a call centre reading a postcode off a screen.",
+  paragraphs: [
+    "We're based at 17 Thatcham Broadway, RG19 3HX — not a regional depot an hour away, an actual address in the town we move people around. The crew behind Thatcham Movers has spent 7+ years moving homes and businesses in and around Thatcham, which means we already know the roads, the parking, and the blocks of flats with lifts too small for a sofa before we even turn up.",
+    "There's no head office script here. When you call, you get someone who can actually answer your question about your move, not read you a policy. When we quote a price, it's the price you pay — no creeping extras for stairs, for a slightly longer carry, for anything we should have accounted for when we quoted you in the first place.",
+    "We're small enough to care about getting your specific move right, and experienced enough to handle whatever that move throws at us — a tight staircase, an awkward parking restriction, a piano nobody mentioned until moving day. That combination is the whole reason this company exists.",
+  ],
+  values: [
+    { title: "Fixed price, no surprises", body: "The price we quote is the price you pay — stairs, distance and access are all accounted for upfront." },
+    { title: "Genuinely local", body: "Based on Thatcham Broadway, not a depot somewhere else with Thatcham added to a coverage map." },
+    { title: "Treat your home like ours", body: "Dust sheets down, furniture wrapped, care taken — every job, not just the big ones." },
+  ],
+  quoteHref: "/booking",
+  whatsappMessage: "Hi, I'd like to know more about Thatcham Movers.",
+};
+
+export const thatchamMoversTips: TipArticle[] = [
+  {
+    slug: "how-much-does-a-house-removal-cost-in-thatcham",
+    title: "How Much Does a House Removal Cost in Thatcham? A Real Price Guide",
+    excerpt: "The honest breakdown of what drives the price of a move in Thatcham, with real ranges by home size.",
+    readingTime: "4 min read",
+    publishedAt: "1 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Every removal company says \"it depends\" when you ask for a price, which is true but not very useful. Here's what it actually depends on, and what it typically costs for a move within Thatcham.",
+        ],
+      },
+      {
+        heading: "The 3 things that actually set the price",
+        paragraphs: [
+          "First, how much you're moving — a 1-bed flat and a 5-bed house are obviously different jobs, so crew size and van size scale with it. Second, distance — a move within Thatcham costs less than one to, say, Reading, simply because of the extra driving time. Third, access — stairs, narrow lanes, permit parking and long carries from the van to your front door all add time, which is why we ask about them when you book rather than guessing.",
+        ],
+      },
+      {
+        heading: "Typical price ranges",
+        paragraphs: [
+          "As a rough guide: a 1-bed flat move within Thatcham usually lands around £200–£300. A 2-3 bed house is typically £250–£550. A larger 4-5 bed home can run £450–£800+, depending on how much needs moving. These are ranges, not promises — the only way to get your actual number is a 2-minute quote, which gives you a fixed price before you book, not an estimate that creeps up on the day.",
+        ],
+      },
+      {
+        heading: "What makes a quote cheaper",
+        paragraphs: [
+          "Decluttering before moving day is the single biggest lever you control — fewer items means a smaller van and less time, which means a lower price. Booking a weekday instead of a weekend can also help, since weekends are our busiest days. And having everything boxed and ready before we arrive (rather than packing while we wait) keeps the job moving at the pace it's quoted for.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "thatcham-moving-day-checklist",
+    title: "The Thatcham Moving Day Checklist: 10 Things People Forget",
+    excerpt: "The small, boring details that turn moving day from chaos into a non-event.",
+    readingTime: "3 min read",
+    publishedAt: "31 October 2026",
+    sections: [
+      {
+        paragraphs: [
+          "After enough moves in Thatcham, you start noticing the same few things get forgotten over and over. None of them are complicated — they're just easy to miss when you're focused on the bigger stuff.",
+        ],
+      },
+      {
+        heading: "Before the van arrives",
+        paragraphs: [
+          "1. Confirm parking is available right outside, or that you've told us about restrictions. 2. Take meter readings for gas, electric and water before you leave. 3. Charge your phone — you'll need it more than you think. 4. Set aside a \"first night\" box: chargers, toiletries, bedding, kettle, so you're not digging through 40 boxes at 9pm. 5. Keep important documents (passports, ID, paperwork) with you, not in the van.",
+        ],
+      },
+      {
+        heading: "On the day",
+        paragraphs: [
+          "6. Defrost the freezer the night before — nobody remembers this until there's a puddle. 7. Label boxes by room, not by contents, so they land in the right place straight away. 8. Walk the house one last time before the van pulls away — check lofts, sheds, and the back of cupboards. 9. Leave keys and any meter/alarm info for the new owners or landlord somewhere obvious. 10. Have cash or card ready for a tip if the crew's done a good job — never expected, always appreciated.",
+        ],
+      },
+    ],
+  },
+];

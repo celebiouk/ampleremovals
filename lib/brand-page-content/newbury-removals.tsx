@@ -1,4 +1,6 @@
 import type { BrandPageContent } from "@/components/local/multibrand/BrandPageShell";
+import type { BrandAboutContent } from "@/components/local/multibrand/BrandAboutPage";
+import type { TipArticle } from "@/components/local/multibrand/BrandTipsPages";
 import { HeroCtaButtons } from "@/components/local/multibrand/HeroCtaButtons";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
 import { BRAND_BY_SLUG } from "@/lib/brands";
@@ -36,6 +38,12 @@ export const newburyRemovalsRemovals: BrandPageContent = {
     { q: "Do you cover villages around Newbury too?", a: "Yes — Speen, Thatcham, Hungerford, Kintbury and the villages around Newbury are all within our normal working area." },
     { q: "Are you insured for the move?", a: "Fully insured on every job, with no exceptions — your belongings are covered the whole way through." },
     { q: "How soon can you move me?", a: "Often within the same week. Call " + brand.phone + " and we'll tell you honestly whether we've got a van free when you need it." },
+    { q: "Do you dismantle and reassemble furniture?", a: "Yes — wardrobes, beds, flat-pack units. Mention it when you book so we bring the right tools." },
+    { q: "Can I reschedule my move date?", a: "Yes, with reasonable notice and no fee — just let us know as early as you can." },
+    { q: "Do you supply boxes and packing materials?", a: "Yes — ask when you book and we'll sort boxes, tape and wrap in advance." },
+    { q: "What happens if something's damaged during the move?", a: "It's rare, but you're covered — we're fully insured and will put it right properly, no arguments." },
+    { q: "Do you move on race weekends?", a: "Yes, though traffic around the racecourse can be heavier — we plan around it and factor it into timing when we quote you." },
+    { q: "Is there an extra charge for stairs or a long carry?", a: "No hidden extras — access is accounted for in your fixed price upfront, not added on the day." },
   ],
   ctaHeading: "Get your fixed price for a Newbury move",
   ctaSub: "Under 2 minutes, no obligation, no pushy follow-up call.",
@@ -68,6 +76,9 @@ export const newburyRemovalsManAndVan: BrandPageContent = {
     { q: "What's the minimum booking length?", a: "2 hours — enough for the vast majority of single-item or small-flat jobs in Newbury." },
     { q: "Should I book 1 man or 2?", a: "1 man and van (£45/hr) suits light items with easy access. 2 men and van (£75/hr) is the better call for stairs, heavy furniture, or several rooms' worth." },
     { q: "Can I get a same-day Man and Van?", a: "Often, yes — being local to Newbury means we can usually find a slot quickly. Call " + brand.phone + " to check availability." },
+    { q: "What size van do you use?", a: "A long-wheelbase Luton van — enough for most single-room or flat-share moves." },
+    { q: "Is there a call-out charge before the clock starts?", a: "No — you're only billed from when the crew arrives and starts working." },
+    { q: "Can you help move just one or two large items?", a: "Yes, that's exactly what this service is built for — most single-item jobs fall within the 2-hour minimum." },
   ],
   ctaHeading: "Book your Man and Van slot",
   ctaSub: "Pick your hours, get an instant price, no waiting on a callback.",
@@ -99,6 +110,9 @@ export const newburyRemovalsHouseClearance: BrandPageContent = {
     { q: "How does pricing work?", a: "Pick your hours below for an instant price on straightforward jobs. For anything bigger, send photos and we'll give you a fair fixed price with no visit needed." },
     { q: "Where do cleared items go?", a: "Wherever possible, usable items are donated or recycled rather than binned — we dispose of everything responsibly and in line with waste regulations." },
     { q: "Do you handle probate clearances?", a: "Yes, regularly — working sensitively, at whatever pace the family needs, including liaising with executors or solicitors where it helps." },
+    { q: "Do you clear garages, sheds and lofts?", a: "Yes — every part of the property, not just living areas." },
+    { q: "How long does a clearance take?", a: "Most single rooms are same day; a full house usually takes a day, occasionally two for a very full property." },
+    { q: "Do I need to be there during the clearance?", a: "Not necessarily, provided we've agreed exactly what's being cleared beforehand — common for landlords and executors." },
   ],
   ctaHeading: "Get your fixed clearance price",
   ctaSub: "Instant estimate below, or send photos for a bigger job.",
@@ -110,3 +124,93 @@ export const newburyRemovalsHouseClearance: BrandPageContent = {
     </div>
   ),
 };
+
+export const newburyRemovalsAbout: BrandAboutContent = {
+  h1: "Newbury's Own Removal Specialists",
+  intro: "Newbury Removals was built for one town, by people who already knew it inside out.",
+  paragraphs: [
+    "We're based at 4 Market Place, right in Newbury — not a regional depot with Newbury added to a coverage map after the fact. The team behind Newbury Removals has spent 7+ years moving homes and businesses in and around the town, which means the racecourse-weekend traffic, the permit-parking streets near the centre, and the new-build flats with lifts a touch too small for a sofa are all things we've already planned around before you even call.",
+    "We quote a fixed price before anything's booked, and that's the price you pay — not an estimate that grows once the van's loaded. One crew, one van, one invoice, with stairs, distance and awkward access all accounted for up front.",
+    "Newbury's a town where word travels — which is exactly why we treat a studio flat move with the same care as a five-bedroom family home. Reputation here is earned one move at a time.",
+  ],
+  values: [
+    { title: "Fixed price, no surprises", body: "Stairs, distance and access are priced in from the start, not added once you've already booked." },
+    { title: "Genuinely local", body: "Based at 4 Market Place, Newbury — not a depot elsewhere with the town added to a map." },
+    { title: "Care on every job", body: "The same attention to detail whether it's a studio flat or a five-bedroom house." },
+  ],
+  quoteHref: "/booking",
+  whatsappMessage: "Hi, I'd like to know more about Newbury Removals.",
+};
+
+export const newburyRemovalsTips: TipArticle[] = [
+  {
+    slug: "moving-house-in-newbury-race-weekends-and-parking",
+    title: "Moving House in Newbury: What to Expect on Race Weekends and Parking Permit Streets",
+    excerpt: "The two things that trip up most Newbury moves — timing around the racecourse, and permit parking.",
+    readingTime: "4 min read",
+    publishedAt: "1 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Two things catch people out when moving in Newbury more than anything else: race days, and permit parking near the town centre. Neither is a big deal if you plan for it — both can genuinely slow a move down if you don't.",
+        ],
+      },
+      {
+        heading: "Race weekends",
+        paragraphs: [
+          "Newbury Racecourse pulls serious traffic on race days, particularly around the A339 and routes into town. If your move date happens to land on a race day, it's not a reason to panic — it just means we build in extra time for the drive and plan the route around it in advance rather than discovering the queue on the day. Worth mentioning when you book if you know your date coincides.",
+        ],
+      },
+      {
+        heading: "Permit parking",
+        paragraphs: [
+          "Several streets close to the town centre run resident permit schemes, which matters because a removal van needs somewhere legal to park directly outside for the duration of the job. If you're on one of these streets, it's worth checking with the council about a temporary visitor permit or dispensation for moving day — and definitely worth telling us in advance, since it changes how we plan parking and access, not the price you've been quoted.",
+        ],
+      },
+      {
+        heading: "The simple fix",
+        paragraphs: [
+          "Tell us your postcode and move date when you get your quote, and we'll flag anything we already know about that street or that date. It takes thirty seconds and avoids any surprises on the day.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "how-to-pack-a-house-in-newbury-in-one-weekend",
+    title: "How to Pack a House in Newbury in One Weekend (Room-by-Room Guide)",
+    excerpt: "A realistic plan for getting a whole house packed in two days, without losing your mind.",
+    readingTime: "5 min read",
+    publishedAt: "31 October 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Packing an entire house in a weekend sounds impossible until you break it down room by room with a plan. Here's the order that actually works, based on what we see go smoothly versus what causes last-minute chaos.",
+        ],
+      },
+      {
+        heading: "Saturday morning: the rooms you don't use daily",
+        paragraphs: [
+          "Start with the spare room, loft, garage and anywhere storing things you won't touch before moving day — decorations, seasonal items, books. There's no downside to packing these first since nothing there is in daily use.",
+        ],
+      },
+      {
+        heading: "Saturday afternoon: living areas",
+        paragraphs: [
+          "Living room and dining room next — ornaments, books, non-essential electronics, anything that isn't the TV you'll watch that evening. Leave one box open and unsealed for last-minute additions.",
+        ],
+      },
+      {
+        heading: "Sunday: kitchen and bedrooms last",
+        paragraphs: [
+          "Kitchen and bedrooms go last because you need them functioning right up until moving day. Pack everything except what you'll use for breakfast and one night's sleep — that goes in a clearly labelled \"last box,\" loaded onto the van last and unloaded first at the other end.",
+        ],
+      },
+      {
+        heading: "The one rule that saves everyone's sanity",
+        paragraphs: [
+          "Label every box with the room it's going to, not a detailed inventory of contents — \"Kitchen\" beats \"mugs, plates, random drawer stuff.\" It means boxes land in the right room straight away instead of cluttering the hallway while you work out where everything goes.",
+        ],
+      },
+    ],
+  },
+];

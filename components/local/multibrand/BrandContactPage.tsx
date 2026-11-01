@@ -1,0 +1,75 @@
+import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import type { Brand } from "@/lib/brands";
+import type { ComponentType } from "react";
+
+export function BrandContactPage({
+  brand,
+  logo: Logo,
+  quoteHref,
+  whatsappMessage,
+}: {
+  brand: Brand;
+  logo: ComponentType<{ className?: string; variant?: "color" | "white" }>;
+  quoteHref: string;
+  whatsappMessage: string;
+}) {
+  const mapQuery = encodeURIComponent(`${brand.address.line1}, ${brand.address.town}, ${brand.address.postcode}`);
+
+  return (
+    <BrandChrome brand={brand} logo={Logo} quoteHref={quoteHref} whatsappMessage={whatsappMessage}>
+      <section className="px-6 pb-16 pt-14 text-white" style={{ background: `linear-gradient(135deg, ${brand.colors.primary}, ${brand.colors.primaryDark})` }}>
+        <div className="container mx-auto max-w-3xl text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wide opacity-80">Contact Us</p>
+          <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">Talk to {brand.name} Directly</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg opacity-90">
+            Call, WhatsApp, or email — a real person answers, not a call centre. Most questions get a straight answer in minutes.
+          </p>
+        </div>
+      </section>
+
+      <section className="px-6 py-16">
+        <div className="container mx-auto grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <a href={brand.phoneHref} className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center hover:border-slate-300">
+            <Phone className="h-6 w-6" style={{ color: brand.colors.primary }} />
+            <p className="font-display font-bold text-slate-900">Call</p>
+            <p className="text-sm text-slate-600">{brand.phone}</p>
+          </a>
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center">
+            <Mail className="h-6 w-6" style={{ color: brand.colors.primary }} />
+            <p className="font-display font-bold text-slate-900">Email</p>
+            <a href={`mailto:${brand.emailAddress}`} className="text-sm text-slate-600 hover:underline">{brand.emailAddress}</a>
+          </div>
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center">
+            <MapPin className="h-6 w-6" style={{ color: brand.colors.primary }} />
+            <p className="font-display font-bold text-slate-900">Based at</p>
+            <p className="text-sm text-slate-600">{brand.address.line1}, {brand.address.town}, {brand.address.postcode}</p>
+          </div>
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center">
+            <Clock className="h-6 w-6" style={{ color: brand.colors.primary }} />
+            <p className="font-display font-bold text-slate-900">Serving</p>
+            <p className="text-sm text-slate-600">{brand.towns.join(" & ")}</p>
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <WhatsAppButton message={whatsappMessage} whatsappNumber={brand.whatsappNumber} />
+        </div>
+      </section>
+
+      <section className="px-6 pb-16">
+        <div className="container mx-auto max-w-5xl overflow-hidden rounded-2xl border border-slate-200">
+          <iframe
+            title={`${brand.name} location`}
+            src={`https://maps.google.com/maps?q=${mapQuery}&output=embed`}
+            width="100%"
+            height="360"
+            style={{ border: 0 }}
+            loading="lazy"
+          />
+        </div>
+      </section>
+    </BrandChrome>
+  );
+}
