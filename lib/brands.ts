@@ -123,3 +123,34 @@ export function brandForHost(host: string | null | undefined): Brand {
   const match = BRANDS.find((b) => b.domain.replace(/^www\./, "") === clean);
   return match ?? AMPLE_BRAND;
 }
+
+/**
+ * A brand marketing page's full <head> metadata (title, description, OG,
+ * Twitter, author). The root layout's own metadata defaults to Ample, so
+ * without this override a shared Thatcham Movers/Newbury Removals/ManyVans
+ * link would preview as "Ample Removals" everywhere it's shared.
+ */
+export function brandPageMetadata(brand: Brand, title: string, description: string, path: string) {
+  const url = `https://${brand.domain}${path}`;
+  return {
+    title: { absolute: title },
+    description,
+    authors: [{ name: brand.name }],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website" as const,
+      locale: "en_GB",
+      url,
+      siteName: brand.name,
+      title,
+      description,
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${brand.name} — ${brand.tagline}` }],
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
+  };
+}

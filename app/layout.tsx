@@ -4,7 +4,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
-import { SOCIAL_LINKS, OPENING_HOURS_SPEC, SEO_KEYWORDS } from "@/lib/company";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -93,34 +92,19 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+// Ample's own MovingCompany JSON-LD lives in app/(public)/layout.tsx, not
+// here — the root layout also wraps the white-label brand pages (which emit
+// their own correct MovingCompany + FAQPage schema via BrandPageShell) and
+// the admin, so putting Ample's business schema here would tell Google two
+// different businesses own the same page.
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ampleremovals.com";
-  // SEO: MovingCompany structured data — opening hours, social profiles, services.
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "MovingCompany",
-    name: "Ample Removals",
-    description:
-      "Professional home removals, man and van, business & commercial moves and long distance removals across the UK.",
-    url: site,
-    telephone: "+443335772070",
-    email: "hello@ampleremovals.com",
-    image: `${site}/og-image.png`,
-    areaServed: "United Kingdom",
-    priceRange: "££",
-    sameAs: [SOCIAL_LINKS.facebook, SOCIAL_LINKS.tiktok],
-    openingHoursSpecification: OPENING_HOURS_SPEC,
-    knowsAbout: SEO_KEYWORDS,
-  };
-
   return (
     <html lang="en" className={cn(bricolage.variable, jakarta.variable)}>
       <body className="font-sans antialiased">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <GoogleAnalytics />
         {children}
         <Toaster richColors position="top-right" />
