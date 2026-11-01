@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Wallet, Check, Loader2, Phone, X, ArrowRight } from "lucide-react";
+import { Wallet, Check, Loader2, Phone, X, ArrowRight, PartyPopper } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDate, upperName } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT } from "@/lib/constants";
@@ -27,8 +27,11 @@ interface PendingDeposit {
  * nothing when there's nothing waiting, so it only shows up when there's work.
  *
  * `onConfirmed` lets the parent refresh its KPIs after a deposit is confirmed.
+ * `showEmptyState` renders a "nothing waiting" message instead of nothing at
+ * all — used on the dedicated /admin/deposits page so it never looks blank;
+ * the dashboard's compact link card still wants the "render nothing" default.
  */
-export function DepositsToConfirm({ onConfirmed }: { onConfirmed?: () => void }) {
+export function DepositsToConfirm({ onConfirmed, showEmptyState = false }: { onConfirmed?: () => void; showEmptyState?: boolean }) {
   const router = useRouter();
   const [items, setItems] = useState<PendingDeposit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +72,17 @@ export function DepositsToConfirm({ onConfirmed }: { onConfirmed?: () => void })
   }
 
   // Nothing to show until there's actually work waiting.
-  if (loading || items.length === 0) return null;
+  if (loading) return null;
+  if (items.length === 0) {
+    if (!showEmptyState) return null;
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 text-center shadow-sm">
+        <PartyPopper className="mb-3 h-10 w-10 text-slate-200" />
+        <p className="font-medium text-slate-600">All caught up!</p>
+        <p className="mt-1 text-sm text-slate-400">No deposits waiting to be confirmed right now.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/50 shadow-sm">

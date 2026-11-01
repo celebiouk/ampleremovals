@@ -4,6 +4,9 @@ interface Props {
   message: string;
   className?: string;
   variant?: "solid" | "outline";
+  /** Override the wa.me target — pass a brand's own number so a Thatcham
+   *  Movers / Newbury Removals / ManyVans page never messages Ample's line. */
+  whatsappNumber?: string;
 }
 
 /**
@@ -11,8 +14,8 @@ interface Props {
  * visitor came from (plus the page URL), so a reply like "check this photo"
  * still carries full context — no guessing which page a lead landed on.
  */
-export function WhatsAppButton({ message, className = "", variant = "solid" }: Props) {
-  const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+export function WhatsAppButton({ message, className = "", variant = "solid", whatsappNumber }: Props) {
+  const href = `https://wa.me/${whatsappNumber ?? WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   const base = "inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-colors";
   const styles = variant === "solid"
     ? "bg-[#25D366] text-white hover:bg-[#1ebe57]"

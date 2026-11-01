@@ -6,6 +6,7 @@ import { logError } from "@/lib/log-error";
 import { sendAdminNewBookingEmail, type NotificationPayload } from "@/lib/notifications";
 import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getCurrentBrand } from "@/lib/brand-context";
 import type { ServiceType } from "@/types";
 import type { AnyBookingForm } from "@/lib/schemas/booking";
 
@@ -112,6 +113,7 @@ export async function handleBookingRoute(
   if (INSTANT_QUOTE_SERVICES.has(serviceType) && quoteToken && quoteTotal != null) {
     try {
       const supabase = createAdminClient();
+      const brand = await getCurrentBrand();
       await markQuoteSent(supabase, bookingId, "inquiry");
       await sendReserveMessages({
         bookingId,
@@ -123,6 +125,7 @@ export async function handleBookingRoute(
         total: quoteTotal,
         showStandard: true,
         showPremium: true,
+        brand: brand.slug,
       });
       quoteReady = true;
     } catch (e) {

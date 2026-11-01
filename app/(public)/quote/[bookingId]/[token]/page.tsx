@@ -63,6 +63,9 @@ interface QuoteData {
   showHourlyQuote?: boolean;
   /** £/hr for 2 men & a van — only meaningful when showHourlyQuote is true. */
   hourlyRate?: number;
+  /** Which white-label storefront this booking came through — see
+   *  lib/brands.ts. Only Ample offers bank transfer. */
+  brand?: string;
 }
 
 type Stage = "loading" | "reveal" | "reserving" | "deposit" | "claiming" | "done" | "error";
@@ -264,6 +267,7 @@ export default function QuotePage() {
               reference={quote.reference}
               deposit={reserved.deposit || liveDeposit || quote.deposit}
               fullTotal={reserved.total || liveTotal || quote.total}
+              brand={quote.brand}
               onClaim={claimDeposit}
               onError={(m) => { setError(m); setStage("error"); }}
             />
@@ -487,13 +491,14 @@ function RevealView({
 
 /* ── Deposit / payment (card · Klarna · bank) ─────────────── */
 function DepositView({
-  bookingId, token, reference, deposit, fullTotal, onClaim, onError,
+  bookingId, token, reference, deposit, fullTotal, brand, onClaim, onError,
 }: {
   bookingId: string;
   token: string;
   reference: string;
   deposit: number;
   fullTotal: number;
+  brand?: string;
   onClaim: () => void;
   onError: (message: string) => void;
 }) {
@@ -577,27 +582,30 @@ function DepositView({
           <span className="font-display text-lg font-extrabold tabular-nums text-brand-purple-900">{gbp0(fullTotal)}</span>
         </button>
 
-        {/* Bank transfer — deposit */}
-        <button
-          type="button"
-          onClick={() => setShowBank((s) => !s)}
-          disabled={busy !== null}
-          className="flex w-full items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-slate-300 disabled:opacity-60"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-            <Landmark className="h-5 w-5" />
-          </span>
-          <span className="flex-1">
-            <span className="block font-display text-base font-bold text-brand-purple-950">Pay deposit by bank transfer</span>
-            <span className="block text-sm text-slate-500">Send {gbp(deposit)} manually — no card fee.</span>
-          </span>
-          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${showBank ? "rotate-180" : ""}`} />
-        </button>
+        {/* Bank transfer — deposit. Ample Removals only; the white-label
+            brands are card (+ Klarna) only, per the owner's instruction. */}
+        {(brand ?? "ample") === "ample" && (
+          <button
+            type="button"
+            onClick={() => setShowBank((s) => !s)}
+            disabled={busy !== null}
+            className="flex w-full items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-slate-300 disabled:opacity-60"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <Landmark className="h-5 w-5" />
+            </span>
+            <span className="flex-1">
+              <span className="block font-display text-base font-bold text-brand-purple-950">Pay deposit by bank transfer</span>
+              <span className="block text-sm text-slate-500">Send {gbp(deposit)} manually — no card fee.</span>
+            </span>
+            <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${showBank ? "rotate-180" : ""}`} />
+          </button>
+        )}
       </div>
 
       {/* Bank details (revealed) */}
       <AnimatePresence>
-        {showBank && (
+        {showBank && (brand ?? "ample") === "ample" && (
           <motion.div
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"

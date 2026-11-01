@@ -1,129 +1,126 @@
-## Task: Worker-confirmed job completion + flexible bulk pay + payment email
+## Task: Multi-Brand White-Label System (Newbury Removals, ManyVans, Thatcham Movers)
 
-### Context / decisions made with the user
-- Applies to EVERYONE (drivers and porters, including a lead driver on a
-  normal booking) — not porters-only. Decided via AskUserQuestion.
-- Scope is specifically the flat-pay model (the model going forward for
-  every assignment per earlier session work) — a worker's pay is gated on
-  them saying "I did this" + admin confirming, not on journey-tracking or
-  invoice payment. The EXISTING lead-driver journey/"Complete Job"/delivery-
-  confirmation flow (customer-facing: triggers invoice + survey) is left
-  completely untouched — this is a separate, payroll-only signal.
-- Admin's confirmation IS the approval — skips straight from the new
-  "awaiting_confirmation" state to "approved" (ready to pay), not back
-  through the existing pending→approve step.
-- Bulk pay must support picking ANY combination of specific jobs (not a
-  rigid date-range auto-group like the existing payslip/pay-run system,
-  which the audit confirmed can't hand-pick individual earnings) — admin can
-  select across multiple workers in one action; the backend fans that out
-  into one payment record + one email PER worker.
-- Payment email: "we've paid you, check your bank, raise an issue within
-  48 hours or we treat it as settled" — itemised job list for a batch.
-- Any job list built for this (awaiting-confirmation queue, earnings table)
-  shows the customer's name, never the address.
+### What this is
+One shared app, one shared Supabase database, one shared admin backend and
+booking pipeline — but three additional public-facing "storefronts" that look
+and feel like entirely separate companies to a customer: their own domain,
+their own fully distinct design, their own name/logo/contact details, and
+emails that arrive "from" that brand. Every lead, regardless of which domain
+it came through, lands in the same admin system you already use, tagged with
+which brand it came from.
 
-### What already exists (confirmed by a research pass — not rebuilding)
-- `driver_earnings` pending→approved→paid lifecycle, `/admin/earnings` page
-  (global, all workers), individual approve/pay endpoints that already email.
-- `pay_extra_amount` already folds into `total_earnings` — no double-counting
-  needed when summing a payment.
-- Payslip/pay-run system exists but is too rigid for this ask (date-range
-  auto-group only) — intentionally NOT using it; building a lighter, more
-  flexible "select earnings, pay them" path instead.
+Confirmed scope (your answers):
+- DNS is at a non-Cloudflare registrar → I hand you exact records to paste in
+  yourself for each domain; I can't script that part.
+- Each of the 3 new brands gets a **fully distinct design**, not a reskin —
+  same bar as the Newbury/Thatcham flagship pages.
+- manyvans.com covers the full service range (removals, man and van, house
+  clearance, rubbish removal, end of tenancy), not just man-and-van jobs.
+- Email: brand-specific "from" name/address on every brand.
+- WhatsApp: brand-specific wording, but still queue-only (admin sends
+  manually) — no change to that existing behaviour, just correct branding in
+  the queued text.
+- SMS: **only Ample Removals sends automated SMS.** The 3 new brands never
+  trigger an SMS send at all — not even with their own branding.
 
 ### Plan
-**A. Database**
-- [ ] `booking_driver_assignments`: add `completion_marked_at`,
-      `completion_confirmed_at`, `completion_confirmed_by`.
-- [ ] New `driver_payments` (id, driver_id, reference, amount, method,
-      paid_at) + `driver_payment_earnings` (payment_id, earning_id) join —
-      lets one payment cover many jobs, and the email know exactly what it covered.
+- [ ] **Phase 1 — Data model & brand foundation**
+  - [ ] `brands` table: slug, domain, display_name, tagline, logo, colour
+        tokens, company_phone, company_email (the real "from" address),
+        resend_from, founded/story copy, socials.
+  - [ ] Seed it with `ample` (existing identity) + 3 new rows for Newbury
+        Removals, ManyVans, Thatcham Movers (placeholder copy/branding until
+        Phase 5 content is written).
+  - [ ] `bookings.brand_id` (nullable FK, defaults to `ample` for every
+        existing row — zero impact on current data).
+- [ ] **Phase 2 — Domains & host-based routing**
+  - [ ] Add all 3 domains to this Vercel project (`vercel domains add`) —
+        I can do this part. You'll get back exact DNS records (A/CNAME) to
+        add at your registrar for each domain — I'll hand you those exactly.
+  - [ ] Next.js middleware resolves `brand` from the request's `host` header
+        on every request, makes it available to layouts/pages.
+- [ ] **Phase 3 — Branded email sending**
+  - [ ] Verify each of the 3 domains as a sending domain in Resend (SPF/DKIM/
+        DMARC) — I can create the domain resource via the Resend API and
+        fetch the required records, but adding those records at your
+        registrar is the same "you" step as Phase 2's DNS.
+  - [ ] Swap every hardcoded `resendFrom`/"Ample Removals" string across the
+        notification code (quoteDelivery.ts, notifications.ts,
+        followups/content.ts, confirmation/receipt emails, etc.) for a
+        brand-resolved name + address, driven by the booking's `brand_id`.
+- [ ] **Phase 4 — SMS/WhatsApp brand gating**
+  - [ ] `sendSMS()` call sites: no-op unless the booking's brand is `ample`.
+  - [ ] WhatsApp queue content (title + message body) uses the correct brand
+        name/phone per booking — still queue-only, no behaviour change to
+        the manual-send flow itself.
+- [ ] **Phase 5 — Three fully distinct brand designs**
+  - [ ] One real design pass per brand (name confirmation if needed, logo,
+        colour palette, typography, hero/voice) — same craft level as the
+        Newbury/Thatcham flagship pages, not templated.
+  - [ ] Each brand gets its own homepage, service pages and booking entry
+        points, all driven by the **same shared booking wizard/payment/admin
+        backend** underneath.
+  - [ ] Needs your input per brand before I design: any existing logo/brand
+        assets, or starting from nothing; any name/tagline preference beyond
+        the domain name itself.
+- [ ] **Phase 6 — Admin brand visibility**
+  - [ ] Brand filter across bookings/leads/reports ("All brands" / Ample /
+        Newbury Removals / ManyVans / Thatcham Movers).
+  - [ ] `/admin` works identically on all 4 domains (same login, same data)
+        — defaults to that domain's brand when you're on a branded domain,
+        always lets you switch to "All brands" or any other brand from
+        there, including from ampleremovals.com.
 
-**B. Backend**
-- [ ] `assign-driver/route.ts`: when `flatAmount` is set, insert
-      `driver_earnings` as `'awaiting_confirmation'` instead of `'pending'`
-      (legacy no-flat-amount path, filled in by `calculateDriverEarnings` on
-      invoice-paid, is untouched).
-- [ ] New `POST /api/drivers/jobs/[bookingId]/mark-done` — worker marks their
-      own assignment done; push-notifies admin.
-- [ ] New `POST /api/admin/bookings/[id]/assignments/[assignmentId]/confirm-done`
-      — admin confirms; flips that assignment's earnings to `'approved'`.
-- [ ] New `GET /api/admin/job-completions?status=awaiting` — everything
-      marked-done-but-not-confirmed, with customer name (no address).
-- [ ] New `POST /api/admin/earnings/pay` — takes `earningIds[]`, validates
-      all `'approved'`, groups by driver, marks all paid, writes one
-      `driver_payments` row + links per driver, emails each worker their own
-      itemised list + total + the bank-check/48h language. Replaces the old
-      single-earning `/pay` endpoint's job (UI switches to call this with a
-      1-element array too, so single and bulk pay behave identically).
+### Confirmed brand specs (from owner, 2026-11-01)
 
-**C. Web admin**
-- [ ] Approvals page: 4th tab "Job completions" — list + Confirm action.
-- [ ] Earnings page: add a Customer column; checkboxes on approved rows;
-      "Pay selected (£X)" bulk action calling the new endpoint; remove the
-      now-redundant old single-pay call path.
+**Thatcham Movers** — thatchammovers.co.uk
+- Address: 17 Thatcham Broadway, RG19 3HX
+- Phone: 07958623678 (temporary)
+- Coverage: Thatcham only
+- Pages: Removals in Thatcham (main/home), Man and Van in Thatcham, House Clearance in Thatcham
 
-**D. Driver app**
-- [ ] Job detail screen: "Mark my job done (for pay)" button for the
-      signed-in worker's own assignment (any role), separate from the
-      existing lead-driver Complete Job button. Shows "Waiting for
-      confirmation" once tapped.
+**Newbury Removals** — newburyremovals.co.uk
+- Address: 4 Market Place, Newbury, RG14 5BD
+- Phone: 0333 577 2070 (same as Ample, temporary)
+- Coverage: Newbury only
+- Pages: Removals in Newbury (main/home), Man and Van in Newbury, House Clearance in Newbury
 
-**E. Native admin app**
-- [ ] Flagged as a later batch (same pattern as recent sessions) unless
-      asked for now — the web side is the primary surface and covers the
-      full workflow end to end.
+**ManyVans** — manyvans.com
+- Address: 20 Market Street, Newbury, RG14 5DP
+- Phone: 0333 577 2070 (same as Ample, temporary)
+- Coverage: Newbury AND Thatcham (both towns)
+- Pages: Removals covering Newbury & Thatcham (main/home), Man and Van (Newbury & Thatcham), House Clearance (Newbury & Thatcham)
 
-### Verification
-- [ ] Typecheck main repo (baseline 136) + driver-app, unchanged.
-- [ ] Scripted DB test: mark-done → confirm-done → status flip verified;
-      pay-batch across 2+ earnings for one driver → one driver_payments row,
-      both earnings flip to paid, email content checked.
-- [ ] Commit, push, deploy web; driver-app change needs its own EAS build
-      (flag as usual, ask before triggering).
+**Payments (all 3 new brands):** card via Stripe only, Klarna promoted prominently. No bank transfer — that stays Ample-only.
+
+**WhatsApp:** every brand's queued messages need a visible brand label/badge in admin so the owner never sends a ManyVans lead's message from the Ample WhatsApp number by mistake.
+
+**More brands coming later** (readingremovals.co.uk, didcotremovals.co.uk, abingdonremovals.co.uk, basingstokemovers.co.uk, etc.) — the brand system must be config-driven, not three one-off hardcoded sites, so adding #5 is cheap.
+
+### Phase 7 — Three logos
+- [ ] Design a distinct SVG mark + wordmark per brand (no stock icons/fake
+      photography) — genuinely different palette and feel from Ample and
+      from each other.
+
+### Phase 8 — The 9 new pages
+- [ ] 3 pages per brand (main Removals + Man and Van + House Clearance),
+      each with its own copy — not reworded templates — written at the same
+      direct-response + modern-SEO bar as the Newbury/Thatcham Ample pages.
+- [ ] Real NAP (name/address/phone) + LocalBusiness JSON-LD per brand, using
+      the confirmed addresses/phones above.
+
+### Phase 9 — Blog + daily content-reminder system (DEFERRED)
+Not started this round — sequenced after Phases 1-8 are live, since a blog
+needs real sites to attach to first. Scope for when we get there:
+- [ ] A real blog-post content model (DB-backed, not hardcoded pages) with
+      brand + service-topic tagging.
+- [ ] A daily cron that rotates topic = Removals -> Man and Van -> House
+      Clearance -> repeat, and emails the owner a ready-to-paste prompt.
+- [ ] When that prompt is pasted into a conversation: research the topic,
+      write one strong post, and publish it to all 4 live brands that day
+      (Ample, Thatcham Movers, Newbury Removals, ManyVans), each framed for
+      that brand's own area/voice.
+- [ ] Designed to extend cleanly to future brands as they're added.
 
 ### Review
-What was done:
-- New `earnings_status` enum value `awaiting_confirmation` (separate migration
-  — enum additions can't share a transaction with other DDL, per earlier
-  session lesson). A flat-pay assignment now starts there instead of
-  `pending`, so it's invisible as "owed money" until the worker says they
-  did it and admin agrees.
-- Two new assignment-level timestamps (`completion_marked_at`,
-  `completion_confirmed_at` + `completion_confirmed_by`) drive the gate.
-  Admin's confirm action skips straight to `approved` (admin confirming IS
-  the approval) — doesn't route back through the legacy pending→approve step.
-- New `driver_payments` + `driver_payment_earnings` tables let ONE payment
-  cover an arbitrary set of jobs — not a rigid date-range like the existing
-  (untouched) payslip system. `lib/payroll/payEarnings.ts` groups a mixed
-  selection by worker automatically: one payment record + one email per
-  worker, even if admin pays several people in a single action. This is the
-  whole "pay weekly" workflow — it's this same action, just run on a
-  schedule, not a separate feature.
-- Replaced the old single-earning `/api/admin/earnings/[id]/pay` (deleted)
-  with `/api/admin/earnings/pay`, used for both single and bulk pay on both
-  the web earnings page (new checkboxes + "Pay Selected" action) and the
-  native admin-app earnings screen (updated in place).
-- Approvals page gained a 4th "Job done" tab for the confirm/reject queue —
-  shows customer name, never the address, per the ask.
-- Driver-app: found and fixed a real pre-existing bug while wiring this in —
-  the single-job API route never actually attached `role` to the response,
-  so the existing "porters skip the journey engine" UI branch had likely
-  never fired correctly. Added a "Mark my job done" button (any role, any
-  job with flat pay) separate from the lead driver's existing Complete Job
-  button, which is untouched and still drives the customer-facing
-  invoice/survey flow.
-- Verified the new status-transition logic end-to-end against the live DB
-  (awaiting_confirmation → marked done → confirmed → approved, across two
-  real bookings for a real porter). Deliberately did NOT script-test the
-  actual payment/email step — that would mean sending a real "you've been
-  paid" email to a real person with no real payment behind it; correctly
-  blocked by the sandbox's safety guard. The payment code itself reuses the
-  exact pattern already proven for `extraCharge.ts` earlier this session.
-- Typecheck clean on main repo (136 baseline, unchanged), admin-app (0),
-  driver-app (0).
-
-Known gap: existing assignments made before this shipped stay on the old
-`pending` status (not retroactively migrated) — only new assignments get
-the new gate. Native admin-app doesn't have the "Job done" confirmation
-queue or multi-select bulk-pay UI yet (web covers the full workflow).
+(Filled in as each phase ships below.)

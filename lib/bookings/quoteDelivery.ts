@@ -11,7 +11,10 @@ import { generateQuotePDF } from "@/lib/pdf/generate-quote-pdf";
 import { PREMIUM_INCLUDES, STANDARD_INCLUDES, premiumTotalFor } from "@/lib/tiers";
 import { HOURLY_RATE_TWO_MEN_VAN } from "@/lib/quote-engine";
 import { shortenUrl } from "@/lib/short-links";
+import { BRAND_BY_SLUG, AMPLE_BRAND, type Brand } from "@/lib/brands";
 import type { QuotePDFData, QuoteLineItem } from "@/types";
+
+const brandOrAmple = (slug?: string | null): Brand => (slug && BRAND_BY_SLUG[slug]) || AMPLE_BRAND;
 
 /** Build the quote PDF + Standard/Premium figures for a booking. Best-effort:
  *  returns a null buffer if anything is missing so the email still sends. */
@@ -165,6 +168,10 @@ export interface ReserveMessageParams {
   showStandard?: boolean;
   showPremium?: boolean;
   showHourly?: boolean;
+  /** Which white-label storefront this booking came through (see
+   *  lib/brands.ts) — drives the email "from" name/address and whether an
+   *  SMS goes out at all. Defaults to Ample. */
+  brand?: string;
 }
 
 /**
@@ -185,7 +192,9 @@ export async function sendReserveMessages({
   showStandard = true,
   showPremium = true,
   showHourly = false,
+  brand: brandSlug,
 }: ReserveMessageParams): Promise<void> {
+  const brand = brandOrAmple(brandSlug);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
   const standardAmount = formatCurrency(total);
@@ -286,7 +295,7 @@ export async function sendReserveMessages({
         ${bookingItemsBlockHtml(inventory)}
         ${ctaHtml}
         <p style="font-size: 14px; color: #64748b;">Or open your quote any time: <a href="${link}" style="color: #6b21a8;">${link}</a></p>
-        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${PHONE}.<br><br>Daniel<br>Ample Removals</p>
+        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${PHONE}.<br><br>Daniel<br>${brand.name}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
@@ -303,7 +312,7 @@ export async function sendReserveMessages({
   const smsCta = ctaButtons.length > 0
     ? `Pay a small deposit to secure your date (rest due on moving day): ${smsLink}`
     : `Call ${PHONE} to book: ${smsLink}`;
-  const smsText = `Hi ${firstName}, your Ample Removals quote: ${optionsText}. ${smsCta} — Ref ${reference}`;
+  const smsText = `Hi ${firstName}, your ${brand.name} quote: ${optionsText}. ${smsCta} — Ref ${reference}`;
 
   const whatsappLines: string[] = [];
   if (showStandard) whatsappLines.push(`*${multiOption ? "Standard:" : "Your quote:"}* ${standardAmount} (deposit ${standardDepositAmount})`);
@@ -312,20 +321,20 @@ export async function sendReserveMessages({
   const whatsappCta = ctaButtons.length > 0
     ? `A small deposit secures your date — the rest isn't due until moving day:\n${link}`
     : `Call us on ${PHONE} to get your date locked in:\n${link}`;
-  const whatsappText = `Hi ${firstName}, your Ample Removals quote is ready 🚚\n\n${whatsappLines.join("\n")}\n\n${whatsappCta}\n\nRef: ${reference}`;
+  const whatsappText = `Hi ${firstName}, your ${brand.name} quote is ready 🚚\n\n${whatsappLines.join("\n")}\n\n${whatsappCta}\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails
       .send({
-        from: resendFrom,
+        from: brand.slug === "ample" ? resendFrom : `${brand.emailFrom} <${brand.emailAddress}>`,
         to: email,
-        subject: `Your Ample Removals quote — ${optionsText} (${reference})`,
+        subject: `Your ${brand.name} quote — ${optionsText} (${reference})`,
         html: emailHtml,
         ...(pdf ? { attachments: [{ filename: `Quote-${reference}.pdf`, content: pdf }] } : {}),
       })
       .catch((e) => console.warn("reserve email failed:", e)),
-    sendSMS(phone, smsText),
-    sendWhatsApp(phone, whatsappText),
+    ...(brand.allowAutomatedSms ? [sendSMS(phone, smsText)] : []),
+    sendWhatsApp(phone, whatsappText, undefined, { bookingId, title: `${brand.name} — quote ready`, brand: brand.slug }),
   ]);
 }
 
@@ -337,6 +346,8 @@ export interface DepositMessageParams {
   email: string;
   phone: string;
   deposit: number;
+  /** See ReserveMessageParams.brand. */
+  brand?: string;
 }
 
 /**
@@ -352,7 +363,9 @@ export async function sendDepositMessages({
   email,
   phone,
   deposit,
+  brand: brandSlug,
 }: DepositMessageParams): Promise<void> {
+  const brand = brandOrAmple(brandSlug);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
   const amount = formatCurrency(deposit);
@@ -366,45 +379,62 @@ export async function sendDepositMessages({
        </table>`
     : `<p style="font-size:15px;">Please call us on ${PHONE} to pay your deposit.</p>`;
 
+  // Bank transfer is Ample Removals only — the white-label brands are card
+  // (+ Klarna) only.
+  const bankBlock = brand.allowBankTransfer
+    ? `<p style="margin: 0; font-size: 15px;">🏦 <strong>Pay your ${amount} deposit by bank transfer</strong> — no card fee:</p>${bankRows}`
+    : "";
+  const payChoiceLine = brand.allowBankTransfer
+    ? "To lock in your moving date, choose how you'd like to pay — all three options are on your booking page:"
+    : "To lock in your moving date, pay your deposit by card or split it with Klarna — both are on your booking page:";
+  const bankSmsNote = brand.allowBankTransfer
+    ? `For bank transfer, use <strong>${reference}</strong> as the payment reference so we can match it, then tap "I've made the bank transfer" on your booking page. Card and Klarna are confirmed automatically.`
+    : `Card and Klarna payments are confirmed automatically.`;
+
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="background: ${brand.colors.primary}; padding: 24px; border-radius: 12px 12px 0 0;">
         <h1 style="color: #fff; margin: 0; font-size: 22px;">You've reserved your date 🎉</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">To lock in your moving date, choose how you'd like to pay — all three options are on your booking page:</p>
-        <div style="background: #f5f3ff; border-left: 4px solid #6b21a8; padding: 16px; margin: 16px 0; border-radius: 4px;">
+        <p style="font-size: 16px; margin: 16px 0;">${payChoiceLine}</p>
+        <div style="background: #f5f3ff; border-left: 4px solid ${brand.colors.primary}; padding: 16px; margin: 16px 0; border-radius: 4px;">
           <p style="margin: 0 0 6px; font-size: 15px;">💳 <strong>Pay your ${amount} deposit by card</strong> — instant, reserves your date.</p>
           <p style="margin: 0 0 6px; font-size: 15px;">🅺 <strong>Pay in 3 with Klarna</strong> — split your whole move into 3 interest-free instalments.</p>
-          <p style="margin: 0; font-size: 15px;">🏦 <strong>Pay your ${amount} deposit by bank transfer</strong> — no card fee:</p>
-          ${bankRows}
+          ${bankBlock}
         </div>
-        <p style="font-size: 14px; color: #475569;">For bank transfer, use <strong>${reference}</strong> as the payment reference so we can match it, then tap "I've made the bank transfer" on your booking page. Card and Klarna are confirmed automatically.</p>
+        <p style="font-size: 14px; color: #475569;">${bankSmsNote}</p>
         <p style="text-align: center; margin: 24px 0;">
           <a href="${link}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
             Pay &amp; lock in my date
           </a>
         </p>
         <p style="font-size: 14px; color: #64748b;"><strong>Don't worry — you can still change your date later.</strong> Any questions? Call us on ${PHONE}.</p>
-        <p style="font-size: 15px; margin-top: 16px;">Daniel<br>Ample Removals</p>
+        <p style="font-size: 15px; margin-top: 16px;">Daniel<br>${brand.name}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
 
   const smsLink = await shortenUrl(link);
+  const smsPayWay = brand.allowBankTransfer ? "by card or bank transfer" : "by card";
   const smsText =
-    `Ample Removals: your date is reserved! Lock it in on your booking page — pay the ${amount} deposit by card or bank transfer, or spread your whole move over 3 with Klarna: ${smsLink} (Ref ${reference}). You can still change your date later.`;
+    `${brand.name}: your date is reserved! Lock it in on your booking page — pay the ${amount} deposit ${smsPayWay}, or spread your whole move over 3 with Klarna: ${smsLink} (Ref ${reference}). You can still change your date later.`;
 
   const whatsappText =
-    `Hi ${firstName}, your date is reserved! 🎉\n\nTo lock it in, choose how to pay on your booking page:\n\n💳 ${amount} deposit by card\n🅺 Pay in 3 with Klarna (whole move)\n🏦 ${amount} deposit by bank transfer\n\n${link}\n\nRef: ${reference}. Don't worry — you can still change your date later.`;
+    `Hi ${firstName}, your date is reserved! 🎉\n\nTo lock it in, choose how to pay on your booking page:\n\n💳 ${amount} deposit by card\n🅺 Pay in 3 with Klarna (whole move)${brand.allowBankTransfer ? `\n🏦 ${amount} deposit by bank transfer` : ""}\n\n${link}\n\nRef: ${reference}. Don't worry — you can still change your date later.`;
 
   await Promise.allSettled([
     resend.emails
-      .send({ from: resendFrom, to: email, subject: `Reserve confirmed — pay your deposit to lock in your date (${reference})`, html: emailHtml })
+      .send({
+        from: brand.slug === "ample" ? resendFrom : `${brand.emailFrom} <${brand.emailAddress}>`,
+        to: email,
+        subject: `Reserve confirmed — pay your deposit to lock in your date (${reference})`,
+        html: emailHtml,
+      })
       .catch((e) => console.warn("deposit email failed:", e)),
-    sendSMS(phone, smsText),
-    sendWhatsApp(phone, whatsappText),
+    ...(brand.allowAutomatedSms ? [sendSMS(phone, smsText)] : []),
+    sendWhatsApp(phone, whatsappText, undefined, { bookingId, title: `${brand.name} — deposit reserved`, brand: brand.slug }),
   ]);
 }
 

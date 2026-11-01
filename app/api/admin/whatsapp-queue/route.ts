@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   let query = supabase
     .from("whatsapp_queue")
-    .select("id, booking_id, customer_phone, customer_name, title, message, status, created_at, expires_at, bookings(reference)")
+    .select("id, booking_id, customer_phone, customer_name, title, message, status, created_at, expires_at, brand, bookings(reference)")
     .eq("status", "pending")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: true });

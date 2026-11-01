@@ -15,6 +15,7 @@ import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery
 import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
 import { buildQuote } from "@/lib/quote-engine";
 import { premiumTotalFor } from "@/lib/tiers";
+import { getCurrentBrand } from "@/lib/brand-context";
 import type { AddressOption } from "@/types";
 
 export const runtime = "nodejs";
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const brand = await getCurrentBrand();
 
   const { data: customer, error: customerError } = await supabase
     .from("customers")
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
       deposit_percentage: DEPOSIT_PERCENTAGE,
       source: "location_page_instant_quote",
       description: `Instant quote: ${body.bedrooms === "studio" ? "studio" : `${body.bedrooms} bedroom`} removal.`,
+      brand: brand.slug,
     })
     .select("id")
     .single();
@@ -110,6 +113,7 @@ export async function POST(req: NextRequest) {
     total: standardTotal,
     showStandard: true,
     showPremium: true,
+    brand: brand.slug,
   }).catch((e) => console.warn("instant-removals reserve messages failed:", e));
 
   return NextResponse.json({ success: true, bookingId: booking.id, token, reference });

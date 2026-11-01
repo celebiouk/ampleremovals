@@ -12,8 +12,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
 import { insertAddress } from "@/lib/bookings/createBooking";
-import { sendEmail } from "@/lib/resend";
+import { sendEmail, resendFrom } from "@/lib/resend";
 import { sendWhatsApp } from "@/lib/twilio";
+import { getCurrentBrand } from "@/lib/brand-context";
 import type { AddressOption } from "@/types";
 
 export const runtime = "nodejs";
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const brand = await getCurrentBrand();
 
   const { data: customer, error: customerError } = await supabase
     .from("customers")
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
       move_date: body.moveDate,
       source: "location_page_fixed_price_request",
       description: `Fixed-price quote requested — what needs clearing: ${body.itemsDescription.trim()}`,
+      brand: brand.slug,
     })
     .select("id")
     .single();
@@ -102,25 +105,30 @@ export async function POST(req: NextRequest) {
   });
 
   // Queue a WhatsApp asking for photos (admin fires it manually from the
-  // business number — see /admin/whatsapp-queue) and email the same ask.
+  // right brand's number — see /admin/whatsapp-queue) and email the same ask.
   const whatsappAsk = `Hi ${firstName}, thanks for your clearance request (ref ${reference})! To give you a fair fixed price, could you send a few photos of what needs clearing? Reply here with the photos whenever's convenient.`;
-  await sendWhatsApp(phone, whatsappAsk, undefined, { bookingId: booking.id, title: "Fixed-price quote — ask for photos" }).catch((e) => console.warn("fixed-price-request whatsapp queue failed:", e));
+  await sendWhatsApp(phone, whatsappAsk, undefined, { bookingId: booking.id, title: `${brand.name} — ask for photos`, brand: brand.slug }).catch((e) => console.warn("fixed-price-request whatsapp queue failed:", e));
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
+      <div style="background: ${brand.colors.primary}; padding: 24px; border-radius: 12px 12px 0 0;">
         <h1 style="color: #fff; margin: 0; font-size: 22px;">One more thing — send us a few photos 📸</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
         <p style="font-size: 16px; margin: 16px 0;">Thanks for your clearance request (ref ${reference}). You told us: <em>"${body.itemsDescription.trim()}"</em></p>
-        <p style="font-size: 16px; margin: 16px 0;">To give you a fair, fixed price, we just need a few photos of what needs clearing. Reply to this email with the photos attached, or WhatsApp them to <strong>0333 577 2070</strong> — whichever's easier.</p>
+        <p style="font-size: 16px; margin: 16px 0;">To give you a fair, fixed price, we just need a few photos of what needs clearing. Reply to this email with the photos attached, or WhatsApp them to <strong>${brand.phone}</strong> — whichever's easier.</p>
         <p style="font-size: 16px; margin: 16px 0;">Once we've seen them, we'll send your fixed price quote.</p>
-        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on 0333 577 2070.<br><br>Daniel<br>Ample Removals</p>
+        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${brand.phone}.<br><br>Daniel<br>${brand.name}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
-  await sendEmail({ to: email, subject: `Send us a few photos for your fixed price — ${reference}`, html: emailHtml }).catch((e) => console.warn("fixed-price-request email failed:", e));
+  await sendEmail({
+    to: email,
+    subject: `Send us a few photos for your fixed price — ${reference}`,
+    html: emailHtml,
+    from: brand.slug === "ample" ? resendFrom : `${brand.emailFrom} <${brand.emailAddress}>`,
+  }).catch((e) => console.warn("fixed-price-request email failed:", e));
 
   return NextResponse.json({ success: true, bookingId: booking.id, reference });
 }

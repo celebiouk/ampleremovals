@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Copy, MessageCircle, Loader2, Check, X, Clock } from "lucide-react";
+import { BRAND_BY_SLUG, AMPLE_BRAND } from "@/lib/brands";
 
 interface QueueItem {
   id: string;
@@ -13,6 +14,7 @@ interface QueueItem {
   message: string;
   created_at: string;
   expires_at: string;
+  brand?: string | null;
   bookings?: { reference: string } | { reference: string }[] | null;
 }
 
@@ -77,8 +79,17 @@ function QueueRow({ item, onHandled }: { item: QueueItem; onHandled: (id: string
     }
   };
 
+  const brand = BRAND_BY_SLUG[item.brand ?? "ample"] ?? AMPLE_BRAND;
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border-2 bg-white p-4 shadow-sm" style={{ borderColor: brand.colors.primary }}>
+      <div
+        className="mb-3 -mt-4 -ml-4 -mr-4 flex items-center justify-between gap-2 rounded-t-xl px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-white"
+        style={{ backgroundColor: brand.colors.primary }}
+      >
+        <span>{brand.name}</span>
+        <span className="font-normal normal-case tracking-normal opacity-90">Send from {brand.phone}</span>
+      </div>
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 break-words">
           <p className="font-display text-sm font-bold text-brand-purple-950">{item.title}</p>

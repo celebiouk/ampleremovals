@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateBookingReference } from "@/lib/utils";
+import { getCurrentBrand } from "@/lib/brand-context";
 import { geocodePostcode } from "@/lib/postcode";
 import { deriveSource, type Attribution } from "@/lib/attribution";
 import { computeLeadScore } from "@/lib/lead-scoring";
@@ -71,6 +72,7 @@ export async function createBooking(
   attribution?: Attribution | null
 ): Promise<BookingResult> {
   const supabase = createServiceClient();
+  const brand = await getCurrentBrand();
 
   // 1. Customer (upsert by unique email).
   const { data: customer, error: customerError } = await supabase
@@ -155,6 +157,7 @@ export async function createBooking(
       flexible_date_to: flexTo,
       description,
       source: derivedSource,
+      brand: brand.slug,
     })
     .select("id")
     .single();

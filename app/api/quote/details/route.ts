@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       .select(`
         reference, service_type, status, quote_line_items, quote_total, quote_premium_total,
         show_premium_quote, show_standard_quote, show_hourly_quote, deposit_percentage,
-        deposit_amount, deposit_status, move_date, inventory, has_white_goods,
+        deposit_amount, deposit_status, move_date, inventory, has_white_goods, brand,
         quote_crew_men, quote_crew_blurb, quote_van_size, quote_van_count,
         customer:customers!inner(full_name)
       `)
@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
       serviceType: booking.service_type,
       firstName,
       status: booking.status,
+      brand: booking.brand || "ample",
       lines,
       total,
       crew,

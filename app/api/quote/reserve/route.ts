@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const { data: booking, error } = await supabase
       .from("bookings")
-      .select("status, reference, customer_id, quote_line_items, quote_total, quote_premium_total, deposit_percentage, customer:customers!inner(full_name, email, phone)")
+      .select("status, reference, customer_id, quote_line_items, quote_total, quote_premium_total, deposit_percentage, brand, customer:customers!inner(full_name, email, phone)")
       .eq("id", bookingId)
       .single();
     if (error || !booking) {
@@ -151,6 +151,7 @@ export async function POST(req: NextRequest) {
         email: customer.email,
         phone: customer.phone,
         deposit,
+        brand: booking.brand as string | undefined,
       });
     }
 

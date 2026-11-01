@@ -226,7 +226,7 @@ export async function sendWhatsApp(
   to: string,
   body: string,
   template?: { name: WhatsAppTemplate; variables: Record<string, string> },
-  opts?: { bookingId?: string; title?: string },
+  opts?: { bookingId?: string; title?: string; brand?: string },
 ): Promise<SendResult> {
   const dest = normalisePhone(to) || to;
   if (isAdminNotify(dest)) return { success: true, skipped: true }; // admin notifications off
@@ -259,9 +259,19 @@ export async function sendWhatsApp(
 
     const title = opts?.title ?? (template ? WHATSAPP_TEMPLATE_TITLES[template.name] : "WhatsApp message");
 
+    // Brand the queue row so admin never sends a lead's message from the
+    // wrong brand's number — prefer an explicit opts.brand, else look it up
+    // from whichever booking this message is tied to, else Ample (the
+    // original single-brand default).
+    let brand = opts?.brand ?? null;
+    if (!brand && bookingId) {
+      const { data: bk } = await supabase.from("bookings").select("brand").eq("id", bookingId).maybeSingle();
+      brand = bk?.brand ?? null;
+    }
+
     const { data: row, error } = await supabase
       .from("whatsapp_queue")
-      .insert({ booking_id: bookingId, customer_phone: dest, customer_name: customerName, title, message: body })
+      .insert({ booking_id: bookingId, customer_phone: dest, customer_name: customerName, title, message: body, brand: brand ?? "ample" })
       .select("id")
       .single();
     if (error) throw error;

@@ -15,6 +15,7 @@ import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { insertAddress } from "@/lib/bookings/createBooking";
 import { markQuoteSent, sendReserveMessages } from "@/lib/bookings/quoteDelivery";
 import { DEPOSIT_PERCENTAGE } from "@/lib/deposit";
+import { getCurrentBrand } from "@/lib/brand-context";
 import type { AddressOption } from "@/types";
 
 export const runtime = "nodejs";
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
   if (!rates) return NextResponse.json({ success: false, error: "Unknown service" }, { status: 400 });
 
   const supabase = createAdminClient();
+  const brand = await getCurrentBrand();
 
   const { data: customer, error: customerError } = await supabase
     .from("customers")
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
       deposit_percentage: DEPOSIT_PERCENTAGE,
       source: "location_page_instant_quote",
       description: `Instant hourly quote: ${hours} hours at £${rates.standard}/hr${premiumRate != null ? ` (£${premiumRate}/hr for 2 men)` : ""}.`,
+      brand: brand.slug,
     })
     .select("id")
     .single();
@@ -126,6 +129,7 @@ export async function POST(req: NextRequest) {
     total: standardTotal,
     showStandard: true,
     showPremium: premiumTotal != null,
+    brand: brand.slug,
   }).catch((e) => console.warn("instant-hourly reserve messages failed:", e));
 
   return NextResponse.json({ success: true, bookingId: booking.id, token, reference });

@@ -4,21 +4,19 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  TrendingUp, TrendingDown, ClipboardList, CalendarCheck,
-  Target, Eye, RefreshCw,
-  ArrowRight, Phone,
+  ClipboardList, CalendarCheck, Target, Eye, RefreshCw,
+  ArrowRight, Phone, Wallet, Truck, Briefcase, ArrowUpRight,
 } from "lucide-react";
 import {
-  LineChart, Line, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
+  LineChart, Line, ResponsiveContainer, Tooltip, XAxis,
+  BarChart, Bar, YAxis, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ServiceBadge } from "@/components/admin/ServiceBadge";
-import { DepositsToConfirm } from "@/components/admin/DepositsToConfirm";
 import { Skeleton } from "@/components/admin/AdminSkeleton";
-import { formatDate, upperName } from "@/lib/utils";
+import { formatCurrency, formatDate, upperName } from "@/lib/utils";
 import { SERVICE_LABELS_SHORT, IN_PROGRESS_STATUSES } from "@/lib/constants";
 import type { BookingStatus, ServiceType } from "@/types";
 
@@ -41,15 +39,18 @@ function useCountUp(target: number, duration = 800) {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface KpiData {
-  todayBookings: number;
-  yesterdayBookings: number;
-  weekJobs: number;
-  monthRevenue: number;
-  lastMonthRevenue: number;
-  conversionRate: number;
+interface RevenuePoint { date: string; label: string; amount: number }
+
+interface HeroData {
+  revenueSeries: RevenuePoint[]; // last 30 days, sliced client-side per toggle
   outstanding: number;
-  sparkline: { day: string; count: number }[];
+  bookings14d: number;
+  bookings14dSparkline: { day: string; count: number }[];
+  jobsToday: number;
+  activeDrivers: number;
+  depositsToConfirm: number;
+  attention: number;
+  newEnquiriesToday: number;
 }
 
 interface ActivityEntry {
@@ -66,47 +67,53 @@ interface UpcomingJob {
 interface WeeklyBar { day: string; [key: string]: number | string }
 interface PipelineSlice { name: string; value: number; colour: string }
 
-// ── KPI Card ───────────────────────────────────────────────────────────────
+type RevenueWindow = 7 | 14 | 30;
 
-function KpiCard({
-  label, value, prefix = "", suffix = "", trend, sparkData, isLoading,
-  colour = "purple",
-}: {
-  label: string; value: number; prefix?: string; suffix?: string;
-  trend?: number; sparkData?: { day: string; count: number }[];
-  isLoading?: boolean; colour?: "purple" | "green" | "amber" | "blue";
-}) {
-  const animated = useCountUp(value);
-  const colours = {
-    purple: { text: "text-purple-700", bg: "from-purple-50 to-white", stroke: "#6b21a8" },
-    green: { text: "text-green-700", bg: "from-green-50 to-white", stroke: "#16a34a" },
-    amber: { text: "text-amber-700", bg: "from-amber-50 to-white", stroke: "#d97706" },
-    blue: { text: "text-blue-700", bg: "from-blue-50 to-white", stroke: "#2563eb" },
-  }[colour];
+// ── Small building blocks ───────────────────────────────────────────────────
 
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function AlertPill({ href, count, label, tone }: { href: string; count: number; label: string; tone: "red" | "blue" }) {
+  if (count === 0) return null;
+  const dot = tone === "red" ? "bg-red-400" : "bg-sky-400";
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-gradient-to-br ${colours.bg} p-5 shadow-sm transition-shadow hover:shadow-md`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        {trend !== undefined && (
-          <span className={`flex items-center gap-0.5 text-xs font-semibold ${trend >= 0 ? "text-green-600" : "text-red-500"}`}>
-            {trend >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-            {Math.abs(trend)}%
-          </span>
-        )}
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-2 text-sm font-medium text-white ring-1 ring-white/15 backdrop-blur-sm transition-colors hover:bg-white/15"
+    >
+      <span className={`h-2 w-2 rounded-full ${dot}`} />
+      {count} {label}
+      <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+    </Link>
+  );
+}
+
+function SideStat({
+  icon, label, value, sub, sparkData,
+}: {
+  icon: React.ReactNode; label: string; value: string; sub?: string;
+  sparkData?: { day: string; count: number }[];
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-white/8 px-4 py-3.5 ring-1 ring-white/10">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 text-white/60">
+          {icon}
+          <span className="text-xs font-medium">{label}</span>
+        </div>
+        <p className="mt-1 font-display text-xl font-bold text-white">{value}</p>
+        {sub && <p className="text-xs text-white/50">{sub}</p>}
       </div>
-      {isLoading ? (
-        <Skeleton className="mt-3 h-9 w-24" />
-      ) : (
-        <p className={`mt-2 font-display text-3xl font-bold ${colours.text}`}>
-          {prefix}{typeof value === "number" && value >= 1000 ? animated.toLocaleString() : animated}{suffix}
-        </p>
-      )}
-      {sparkData && sparkData.length > 0 && !isLoading && (
-        <div className="mt-3 h-10">
+      {sparkData && sparkData.length > 0 && (
+        <div className="h-9 w-16 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData}>
-              <Line type="monotone" dataKey="count" stroke={colours.stroke} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="count" stroke="#5eead4" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -119,7 +126,8 @@ function KpiCard({
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [kpi, setKpi] = useState<KpiData | null>(null);
+  const [hero, setHero] = useState<HeroData | null>(null);
+  const [revenueWindow, setRevenueWindow] = useState<RevenueWindow>(14);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingJob[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeeklyBar[]>([]);
@@ -133,49 +141,81 @@ export default function AdminDashboardPage() {
     const supabase = createClient();
     const now = new Date();
     const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
-    const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(todayStart.getDate() - 1);
+    const todayKey = now.toISOString().slice(0, 10);
     const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const last7 = new Date(now); last7.setDate(now.getDate() - 7);
+    const last14 = new Date(now); last14.setDate(now.getDate() - 14);
+    const last30 = new Date(now); last30.setDate(now.getDate() - 30);
 
     const [
-      { count: todayCount },
-      { count: yesterdayCount },
-      { count: weekCount },
-      { data: paidInvoices },
-      { data: lastMonthInvoices },
-      { count: totalCount },
-      { count: completedCount },
+      { data: revenueInvoices },
+      { count: outstandingCount },
       { data: outstandingInvoices },
+      { count: bookings14dCount },
       { data: sparkData },
+      { count: jobsTodayCount },
+      { count: activeDriversCount },
+      { count: depositsCount },
+      { count: attentionCount },
+      { count: newEnquiriesCount },
       { data: activityData },
       { data: upcomingData },
       { data: allBookings },
     ] = await Promise.all([
-      supabase.from("bookings").select("*", { count: "exact", head: true }).gte("created_at", todayStart.toISOString()),
-      supabase.from("bookings").select("*", { count: "exact", head: true }).gte("created_at", yesterdayStart.toISOString()).lt("created_at", todayStart.toISOString()),
-      supabase.from("bookings").select("*", { count: "exact", head: true }).gte("move_date", weekStart.toISOString().slice(0, 10)),
-      supabase.from("invoices").select("total").eq("status", "paid").gte("paid_at", monthStart.toISOString()),
-      supabase.from("invoices").select("total").eq("status", "paid").gte("paid_at", lastMonthStart.toISOString()).lt("paid_at", monthStart.toISOString()),
-      supabase.from("bookings").select("*", { count: "exact", head: true }),
-      supabase.from("bookings").select("*", { count: "exact", head: true }).eq("status", "job_completed"),
+      supabase.from("invoices").select("total, paid_at").eq("status", "paid").gte("paid_at", last30.toISOString()),
+      supabase.from("invoices").select("*", { count: "exact", head: true }).in("status", ["sent", "overdue"]),
       supabase.from("invoices").select("total").in("status", ["sent", "overdue"]),
-      supabase.from("bookings").select("created_at").gte("created_at", last7.toISOString()).order("created_at"),
+      supabase.from("bookings").select("*", { count: "exact", head: true }).gte("created_at", last14.toISOString()),
+      supabase.from("bookings").select("created_at").gte("created_at", last14.toISOString()).order("created_at"),
+      supabase.from("bookings").select("*", { count: "exact", head: true }).eq("move_date", todayKey).eq("status", "deposit_paid_job_confirmed"),
+      supabase.from("drivers").select("*", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("bookings").select("*", { count: "exact", head: true }).eq("status", "deposit_invoice_sent"),
+      supabase.from("bookings").select("*", { count: "exact", head: true }).eq("is_flagged", true).not("status", "in", "(job_completed,bad_lead,not_a_good_fit)"),
+      supabase.from("bookings").select("*", { count: "exact", head: true }).eq("status", "inquiry").gte("created_at", todayStart.toISOString()),
       supabase.from("activity_log").select("id, action, created_at, booking_id, performed_by").order("created_at", { ascending: false }).limit(20),
       supabase.from("bookings").select("id, reference, service_type, status, move_date, customers!inner(full_name), origin_addr:addresses!origin_address_id(postcode)").gte("move_date", now.toISOString().slice(0, 10)).lte("move_date", new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10)).order("move_date"),
       supabase.from("bookings").select("status, service_type, move_date").gte("created_at", weekStart.toISOString()),
     ]);
 
-    // Sparkline: group by day
+    // Outstanding total (separate from the head:true count query above).
+    const outstandingTotal = (outstandingInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
+    void outstandingCount; // count not needed once we have the summed total
+
+    // Revenue series: last 30 days, one point per day — the 7D/14D/30D toggle
+    // just slices this client-side so switching windows is instant.
+    const revByDay: Record<string, number> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now); d.setDate(now.getDate() - i);
+      revByDay[d.toISOString().slice(0, 10)] = 0;
+    }
+    (revenueInvoices ?? []).forEach((inv: { total: number; paid_at: string }) => {
+      const day = inv.paid_at?.slice(0, 10);
+      if (day && day in revByDay) revByDay[day] += inv.total;
+    });
+    const revenueSeries: RevenuePoint[] = Object.entries(revByDay).map(([date, amount]) => ({
+      date, amount, label: date.slice(8, 10) + "/" + date.slice(5, 7),
+    }));
+
+    // Bookings (14d) sparkline
     const sparks: Record<string, number> = {};
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 13; i >= 0; i--) {
       const d = new Date(now); d.setDate(now.getDate() - i);
       sparks[d.toISOString().slice(0, 10)] = 0;
     }
     (sparkData ?? []).forEach((b: { created_at: string }) => {
       const day = b.created_at.slice(0, 10);
       if (day in sparks) sparks[day] = (sparks[day] ?? 0) + 1;
+    });
+
+    setHero({
+      revenueSeries,
+      outstanding: outstandingTotal,
+      bookings14d: bookings14dCount ?? 0,
+      bookings14dSparkline: Object.entries(sparks).map(([day, count]) => ({ day: day.slice(5), count })),
+      jobsToday: jobsTodayCount ?? 0,
+      activeDrivers: activeDriversCount ?? 0,
+      depositsToConfirm: depositsCount ?? 0,
+      attention: attentionCount ?? 0,
+      newEnquiriesToday: newEnquiriesCount ?? 0,
     });
 
     // Weekly bar chart
@@ -204,21 +244,6 @@ export default function AdminDashboardPage() {
     });
     const PIE_COLS = ["#6b21a8", "#2563eb", "#16a34a", "#10b981", "#ef4444"];
     setPipelineData(Object.entries(pipeline).filter(([, v]) => v > 0).map(([name, value], i) => ({ name, value, colour: PIE_COLS[i % PIE_COLS.length] })));
-
-    const monthRev = (paidInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
-    const lastRev = (lastMonthInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
-    const outstanding = (outstandingInvoices ?? []).reduce((a: number, i: { total: number }) => a + i.total, 0);
-    const convRate = (totalCount ?? 0) > 0 ? Math.round(((completedCount ?? 0) / (totalCount ?? 1)) * 100) : 0;
-    setKpi({
-      todayBookings: todayCount ?? 0,
-      yesterdayBookings: yesterdayCount ?? 0,
-      weekJobs: weekCount ?? 0,
-      monthRevenue: monthRev,
-      lastMonthRevenue: lastRev,
-      conversionRate: convRate,
-      outstanding,
-      sparkline: Object.entries(sparks).map(([day, count]) => ({ day: day.slice(5), count })),
-    });
 
     setActivity((activityData ?? []) as ActivityEntry[]);
     setUpcoming((upcomingData ?? []).map((b: Record<string, unknown>) => ({
@@ -254,11 +279,6 @@ export default function AdminDashboardPage() {
     return () => { supabase.removeChannel(channel); };
   }, [load]);
 
-  const dayTrend = kpi && kpi.yesterdayBookings > 0
-    ? Math.round(((kpi.todayBookings - kpi.yesterdayBookings) / kpi.yesterdayBookings) * 100) : 0;
-  const revTrend = kpi && kpi.lastMonthRevenue > 0
-    ? Math.round(((kpi.monthRevenue - kpi.lastMonthRevenue) / kpi.lastMonthRevenue) * 100) : 0;
-
   const SERVICE_COLOURS_HEX: Partial<Record<ServiceType, string>> = {
     removals: "#6b21a8", man_and_van: "#2563eb", house_clearance: "#f97316",
     house_cleaning: "#0d9488", end_of_tenancy: "#db2777",
@@ -275,34 +295,95 @@ export default function AdminDashboardPage() {
     return { label: formatDate(dateStr), colour: "bg-slate-100 text-slate-700" };
   }
 
+  const windowedSeries = hero?.revenueSeries.slice(-revenueWindow) ?? [];
+  const windowedTotal = windowedSeries.reduce((a, p) => a + p.amount, 0);
+  const revenueAnimated = useCountUp(windowedTotal);
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-slate-900">Dashboard</h2>
-          <p className="text-sm text-slate-500">Live overview of your business</p>
+      {/* ── Hero overview ───────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-purple-950 via-brand-purple-900 to-brand-purple-800 p-6 shadow-lg sm:p-8">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/5" />
+        <div className="absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-white/5" />
+
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-white/60">{today}</p>
+            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">{greeting()}, Ample</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-white/40">Updated {secondsAgo}s ago</span>
+            <button onClick={load} className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white/70 ring-1 ring-white/15 hover:bg-white/15">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400">Updated {secondsAgo}s ago</span>
-          <button onClick={load} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50">
-            <RefreshCw className="h-3.5 w-3.5" />
-          </button>
+
+        {/* Alert pills */}
+        {!isLoading && hero && (hero.depositsToConfirm > 0 || hero.attention > 0 || hero.newEnquiriesToday > 0) && (
+          <div className="relative mt-4 flex flex-wrap gap-2.5">
+            <AlertPill href="/admin/deposits" count={hero.depositsToConfirm} label="deposits to confirm" tone="red" />
+            <AlertPill href="/admin/bookings" count={hero.attention} label="bookings need attention" tone="red" />
+            <AlertPill href="/admin/bookings?status=inquiry" count={hero.newEnquiriesToday} label="new enquiries today" tone="blue" />
+          </div>
+        )}
+
+        <div className="relative mt-6 grid gap-5 lg:grid-cols-[65fr_35fr]">
+          {/* Revenue + chart */}
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-white/60">Revenue received · last {revenueWindow} days</p>
+                {isLoading ? (
+                  <div className="mt-2 h-11 w-40 animate-pulse rounded-lg bg-white/10" />
+                ) : (
+                  <p className="font-display text-4xl font-bold text-white">{formatCurrency(revenueAnimated)}</p>
+                )}
+              </div>
+              <div className="flex rounded-xl bg-white/10 p-1 ring-1 ring-white/10">
+                {([7, 14, 30] as RevenueWindow[]).map((w) => (
+                  <button
+                    key={w}
+                    onClick={() => setRevenueWindow(w)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${revenueWindow === w ? "bg-white text-brand-purple-900" : "text-white/70 hover:text-white"}`}
+                  >
+                    {w}D
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 h-40">
+              {isLoading ? (
+                <div className="h-full w-full animate-pulse rounded-xl bg-white/5" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={windowedSeries} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                    <Tooltip
+                      formatter={(v) => [formatCurrency(Number(v)), "Revenue"]}
+                      contentStyle={{ background: "rgba(15,8,30,0.9)", border: "none", borderRadius: 10, fontSize: 12 }}
+                      labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+                      itemStyle={{ color: "#fff" }}
+                    />
+                    <Line type="monotone" dataKey="amount" stroke="#5eead4" strokeWidth={2.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Side stats */}
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-1">
+            <SideStat icon={<Wallet className="h-3.5 w-3.5" />} label="Outstanding" value={isLoading ? "—" : formatCurrency(hero?.outstanding ?? 0)} sub={!isLoading && hero?.outstanding === 0 ? "Nothing unpaid" : undefined} />
+            <SideStat icon={<ClipboardList className="h-3.5 w-3.5" />} label={`Bookings, 14 days`} value={isLoading ? "—" : String(hero?.bookings14d ?? 0)} sub="received" sparkData={hero?.bookings14dSparkline} />
+            <SideStat icon={<Briefcase className="h-3.5 w-3.5" />} label="Jobs today" value={isLoading ? "—" : String(hero?.jobsToday ?? 0)} sub="confirmed for today" />
+            <SideStat icon={<Truck className="h-3.5 w-3.5" />} label="Active drivers" value={isLoading ? "—" : String(hero?.activeDrivers ?? 0)} sub="on the roster" />
+          </div>
         </div>
       </div>
 
-      {/* KPI row */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard label="Today's Bookings" value={kpi?.todayBookings ?? 0} trend={dayTrend} sparkData={kpi?.sparkline} isLoading={isLoading} colour="purple" />
-        <KpiCard label="Jobs This Week" value={kpi?.weekJobs ?? 0} isLoading={isLoading} colour="blue" />
-        <KpiCard label="Monthly Revenue" value={kpi?.monthRevenue ?? 0} prefix="£" trend={revTrend} isLoading={isLoading} colour="green" />
-        <KpiCard label="Conversion Rate" value={kpi?.conversionRate ?? 0} suffix="%" isLoading={isLoading} colour="purple" />
-        <KpiCard label="Outstanding" value={kpi?.outstanding ?? 0} prefix="£" isLoading={isLoading} colour="amber" />
-      </div>
-
-      {/* Deposits waiting to be confirmed — appears only when there's work to do */}
-      <DepositsToConfirm onConfirmed={load} />
-
-      {/* Row 2: Charts */}
+      {/* Row: Charts */}
       <div className="grid gap-6 lg:grid-cols-[65fr_35fr]">
         {/* Weekly bar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -349,7 +430,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Row 3: Activity + Upcoming */}
+      {/* Row: Activity + Upcoming */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Activity feed */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
