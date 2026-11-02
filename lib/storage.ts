@@ -4,6 +4,7 @@ const BUCKET = "invoices";
 const QUOTES_BUCKET = "quotes";
 const DOCUMENTS_BUCKET = "booking-documents";
 const DRIVER_DOCUMENTS_BUCKET = "driver-documents";
+const LOGISTICS_CVS_BUCKET = "logistics-cvs";
 
 /** The three document slots a driver record can hold. */
 export type DriverDocumentType =
@@ -284,4 +285,57 @@ export async function deleteDriverDocument(filePath: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete driver document: ${error.message}`);
   }
+}
+
+// ──────────────────────────────────────────────────────────
+// AMPLE LOGISTICS — driver application CVs (public upload)
+// ──────────────────────────────────────────────────────────
+
+/**
+ * Uploads a driver application's CV to Supabase Storage.
+ * Path: logistics-cvs/[applicationReference]/[sanitizedFileName]
+ * Returns the storage path (store this in logistics_driver_applications.cv_path).
+ */
+export async function uploadLogisticsCV(
+  applicationReference: string,
+  file: File
+): Promise<string> {
+  const supabase = createAdminClient();
+
+  const sanitizedName = sanitizeFileName(file.name);
+  const path = `${applicationReference}/${sanitizedName}`;
+
+  const { error } = await supabase.storage
+    .from(LOGISTICS_CVS_BUCKET)
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload CV: ${error.message}`);
+  }
+
+  return path;
+}
+
+/**
+ * Generates a signed URL for a stored driver application CV.
+ * Default expiry: 1 hour (3600 seconds).
+ */
+export async function getLogisticsCVSignedURL(
+  filePath: string,
+  expiresInSeconds = 3600
+): Promise<string> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase.storage
+    .from(LOGISTICS_CVS_BUCKET)
+    .createSignedUrl(filePath, expiresInSeconds);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to generate CV signed URL: ${error?.message ?? "Unknown error"}`);
+  }
+
+  return data.signedUrl;
 }
