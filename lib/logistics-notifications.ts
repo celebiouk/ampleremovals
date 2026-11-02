@@ -107,12 +107,16 @@ export async function sendDriverRequestNotification(payload: DriverRequestEmailP
 
     const html = emailShell(LOGISTICS.colors.navy, "🚚", "New HGV Driver Request", body);
 
-    await sendEmail({
+    // Resend's SDK returns { data, error } rather than throwing on a
+    // rejected send (e.g. an unverified sending domain) — check it
+    // explicitly, or a failed notification goes completely unnoticed.
+    const { error } = await sendEmail({
       to: LOGISTICS.notifyEmail,
       from: LOGISTICS_FROM,
       subject: `${isUrgent ? "URGENT: " : ""}New HGV Driver Request — Ample Logistics — ${urgency}`,
       html,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     await logError({
       message: `sendDriverRequestNotification failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -171,12 +175,13 @@ export async function sendDriverApplicationNotification(payload: DriverApplicati
 
     const html = emailShell(LOGISTICS.colors.navy, "🧑‍✈️", "New HGV Driver Application", body);
 
-    await sendEmail({
+    const { error } = await sendEmail({
       to: LOGISTICS.notifyEmail,
       from: LOGISTICS_FROM,
       subject: `New HGV Driver Application — ${payload.fullName} — ${payload.licenceCategory}`,
       html,
     });
+    if (error) throw new Error(error.message);
   } catch (err) {
     await logError({
       message: `sendDriverApplicationNotification failed: ${err instanceof Error ? err.message : String(err)}`,

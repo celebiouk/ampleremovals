@@ -322,3 +322,78 @@ all 4 (eventually more) brands' arrays on the same day.
    All 4 bugs above passed typecheck cleanly — none of them are type
    errors, they're React Server Components runtime rules. A full build
    that actually prerenders every brand page is the only real proof.
+
+## Ample Logistics — a different business line, NOT a removals brand
+
+`amplelogistics.co.uk` is an HGV driver recruitment agency — a separate
+business from removals, sharing only the same Vercel project, Supabase
+database, and admin dashboard. It deliberately does **not** go through
+`lib/brands.ts`'s `Brand`/`BRANDS` system: that system carries removals-
+specific fields (`towns`, `allowBankTransfer`, the booking wizard's
+`whatsappNumber`) that don't apply here, and Ample Logistics has its own
+completely separate page set, forms, and database tables — bolting it
+onto the removals `Brand` type would mean half the fields on every
+`Brand` object meaning nothing for three-quarters of the `BRANDS` array.
+
+**Architecture**:
+- `lib/logistics.ts` — the brand's own constants (name, colours,
+  Berkshire towns list, licence categories, status enums), parallel to
+  but independent of `lib/brands.ts`.
+- `middleware.ts` has a dedicated `amplelogistics.co.uk` branch, checked
+  *before* the removals brand-rewrite logic, rewriting its 7 known paths
+  (`/`, `/businesses`, `/drivers`, `/about`, `/contact`,
+  `/privacy-notice`, `/terms`) to `/logistics/*`. Adding an 8th page
+  means adding its path to `LOGISTICS_PAGE_PATHS` in `middleware.ts` —
+  forgetting this is exactly the kind of mistake that 404s silently on
+  the live domain while working fine on localhost (no host check there).
+- `app/(logistics)/` — its own route group, own layout
+  (`LogisticsHeader`/`LogisticsFooter` in `components/logistics/
+  LogisticsChrome.tsx`), no shared chrome with removals or any white-
+  label brand.
+- Two new tables, `logistics_driver_requests` and
+  `logistics_driver_applications` (migration:
+  `supabase/migrations/add_ample_logistics.sql`), completely separate
+  from the `bookings` table/`ServiceType` — public-insert-only + admin-
+  full-access RLS, the same pattern as every other public-facing table.
+  A private `logistics-cvs` storage bucket holds uploaded CVs
+  (`lib/storage.ts`'s `uploadLogisticsCV`/`getLogisticsCVSignedURL`).
+- Admin: a new "AMPLE LOGISTICS" nav group in
+  `components/admin/AdminShell.tsx`'s `NAV_GROUPS`, with list+detail
+  pages under `app/(admin)/admin/logistics/`. Unlike the removals
+  `bookings` list page (which fetches via the browser Supabase client,
+  relying on `FOR ALL TO authenticated` RLS), these fetch through proper
+  `requireAdmin()`-gated API routes (`app/api/admin/logistics/*`) — this
+  data is applicant PII, and the existing `authenticated USING (true)`
+  RLS pattern would let *any* logged-in user (including a driver's
+  mobile-app login, which is also `authenticated`) read it directly,
+  not just admin staff. Follow this stricter pattern for any future
+  table holding this kind of sensitive data, rather than the bookings
+  list page's looser one.
+- Email notifications (`lib/logistics-notifications.ts`) go to
+  `daniel@ampleremovals.com` from `hello@amplelogistics.co.uk`, reusing
+  the existing `sendEmail()` helper in `lib/resend.ts` — same Resend
+  account, no new API key needed.
+
+**The one thing that needs doing outside the code, before this actually
+sends email**: `amplelogistics.co.uk` must be added and verified as a
+sending domain in the Resend dashboard (Settings → Domains →
+SPF/DKIM/DMARC records at the registrar). This was confirmed NOT done
+yet by actually submitting a live test request and reading back
+`server_logs`: `"The amplelogistics.co.uk domain is not verified."`
+Until that's done, every submission still saves correctly (the
+non-negotiable requirement), the failure is logged, and the visitor
+still gets their confirmation — only the owner's email notification
+silently fails, exactly as intended for a best-effort send. Don't
+re-attempt this with the current `RESEND_API_KEY` — it's scoped
+send-only and returns 401 on any domain-management call, confirmed
+earlier for the other 3 brands' domains too.
+
+**Lesson repeated from the removals brands, because it happened again
+here too**: `sendEmail()`/`resend.emails.send()` returns `{ data, error
+}` — it does **not** throw on a rejected send. The first version of
+`lib/logistics-notifications.ts` only had a `try/catch` around the call
+and never checked `error`, so the Resend rejection above was completely
+silent — no log, nothing. Caught only by actually submitting a real
+test request end-to-end and checking `server_logs` afterward, not by
+reading the code. Always destructure and check `{ error }` explicitly,
+the same way `lib/notifications.ts` already does.

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Clock, MessageSquareText, Handshake, FileCheck2, UserCheck, IdCard, Gauge } from "lucide-react";
-import { LOGISTICS } from "@/lib/logistics";
+import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 
-export const metadata: Metadata = {
-  title: "About Us | Ample Logistics",
-  description: "Ample Logistics helps bridge the gap between businesses that need HGV drivers and drivers seeking suitable work opportunities across Berkshire England.",
-  alternates: { canonical: "https://amplelogistics.co.uk/about" },
-};
+export const metadata: Metadata = logisticsPageMetadata(
+  "About Us | Ample Logistics",
+  "Ample Logistics helps bridge the gap between businesses that need HGV drivers and drivers seeking suitable work opportunities across Berkshire England.",
+  "/about"
+);
 
 const VALUES = [
   { icon: ShieldCheck, title: "Reliability", body: "Taking staffing requirements seriously and communicating clearly." },

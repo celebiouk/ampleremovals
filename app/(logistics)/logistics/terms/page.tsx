@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { LOGISTICS } from "@/lib/logistics";
+import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 
 export const metadata: Metadata = {
-  title: "Terms and Conditions | Ample Logistics",
+  ...logisticsPageMetadata("Terms and Conditions | Ample Logistics", "Ample Logistics' website terms and conditions.", "/terms"),
   robots: { index: false, follow: true },
 };
 

@@ -118,6 +118,36 @@ export function statusLabel(status: string): string {
     .join(" ");
 }
 
+/**
+ * Full <head> metadata for a logistics page — title set via `absolute` so
+ * it bypasses the root layout's "%s | Ample Removals" template entirely
+ * (the same leak class hit earlier with the removal brands' pages — see
+ * tasks/brand-playbook.md). Also overrides OG/Twitter/author, which
+ * otherwise default to Ample Removals' own values.
+ */
+export function logisticsPageMetadata(title: string, description: string, path: string) {
+  const url = `https://${LOGISTICS.domain}${path}`;
+  return {
+    title: { absolute: title },
+    description,
+    authors: [{ name: LOGISTICS.name }],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website" as const,
+      locale: "en_GB",
+      url,
+      siteName: LOGISTICS.name,
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title,
+      description,
+    },
+  };
+}
+
 /** LOG-2026-X8K4P style reference, distinct from removals' service-prefixed ones. */
 export function generateLogisticsReference(): string {
   const year = new Date().getFullYear();

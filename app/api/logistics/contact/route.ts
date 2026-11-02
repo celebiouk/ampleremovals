@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   try {
-    await sendEmail({
+    const { error } = await sendEmail({
       to: LOGISTICS.notifyEmail,
       from: `${LOGISTICS.emailFrom} <${LOGISTICS.emailAddress}>`,
       subject: `${ENQUIRY_LABELS[data.enquiryType]} — ${data.subject}`,
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
           </div>
         </div>`,
     });
+    if (error) throw new Error(error.message);
   } catch (e) {
     await logError({ message: `logistics contact email failed: ${e instanceof Error ? e.message : String(e)}` });
     return NextResponse.json({ success: false, error: "We couldn't send your message right now. Please call us instead." }, { status: 500 });

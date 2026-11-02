@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, AlertCircle, TrendingUp, Clock, FileText, Truck, Repeat, Zap, Calendar } from "lucide-react";
-import { LOGISTICS } from "@/lib/logistics";
+import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 import { BusinessRequestForm } from "@/components/logistics/BusinessRequestForm";
 
-export const metadata: Metadata = {
-  title: "For Businesses — Hire an HGV Driver | Ample Logistics",
-  description: "Find temporary and short-notice HGV driver staffing solutions for your transport or logistics operation across Berkshire England.",
-  alternates: { canonical: "https://amplelogistics.co.uk/businesses" },
-};
+export const metadata: Metadata = logisticsPageMetadata(
+  "For Businesses — Hire an HGV Driver | Ample Logistics",
+  "Find temporary and short-notice HGV driver staffing solutions for your transport or logistics operation across Berkshire England.",
+  "/businesses"
+);
 
 const CHALLENGES = [
   { icon: AlertCircle, label: "Unexpected driver absences" },

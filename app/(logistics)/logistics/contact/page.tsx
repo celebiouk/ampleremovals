@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Truck, UserPlus, MessageCircle, Mail, Clock, MapPin } from "lucide-react";
-import { LOGISTICS, BERKSHIRE_TOWNS } from "@/lib/logistics";
+import { LOGISTICS, BERKSHIRE_TOWNS, logisticsPageMetadata } from "@/lib/logistics";
 import { GeneralContactForm } from "@/components/logistics/GeneralContactForm";
 
-export const metadata: Metadata = {
-  title: "Contact Us | Ample Logistics",
-  description: "Whether you need HGV driver cover or want to register as a driver, our team welcomes your enquiry.",
-  alternates: { canonical: "https://amplelogistics.co.uk/contact" },
-};
+export const metadata: Metadata = logisticsPageMetadata(
+  "Contact Us | Ample Logistics",
+  "Whether you need HGV driver cover or want to register as a driver, our team welcomes your enquiry.",
+  "/contact"
+);
 
 export default function ContactPage() {
   return (

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { LOGISTICS } from "@/lib/logistics";
+import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 
 export const metadata: Metadata = {
-  title: "Privacy Notice | Ample Logistics",
+  ...logisticsPageMetadata("Privacy Notice | Ample Logistics", "Ample Logistics' privacy notice.", "/privacy-notice"),
   robots: { index: false, follow: true },
 };
 

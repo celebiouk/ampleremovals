@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarClock, Layers, MessageCircle, HeartHandshake, ChevronDown } from "lucide-react";
-import { LOGISTICS } from "@/lib/logistics";
+import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 import { DriverApplicationForm } from "@/components/logistics/DriverApplicationForm";
 
-export const metadata: Metadata = {
-  title: "For Drivers — Find HGV Driving Work | Ample Logistics",
-  description: "Register your interest with Ample Logistics for temporary HGV driving assignments and potential ongoing opportunities across Berkshire England.",
-  alternates: { canonical: "https://amplelogistics.co.uk/drivers" },
-};
+export const metadata: Metadata = logisticsPageMetadata(
+  "For Drivers — Find HGV Driving Work | Ample Logistics",
+  "Register your interest with Ample Logistics for temporary HGV driving assignments and potential ongoing opportunities across Berkshire England.",
+  "/drivers"
+);
 
 const BENEFITS = [
   { icon: CalendarClock, title: "Flexible Opportunities", body: "Register your availability for temporary assignments that may suit your schedule." },

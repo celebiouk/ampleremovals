@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Truck, Zap, Users2, ShieldCheck, MessageSquareText, Repeat, ArrowRight, Building2, Warehouse, Package, Store } from "lucide-react";
-import { LOGISTICS, BERKSHIRE_TOWNS } from "@/lib/logistics";
+import { LOGISTICS, BERKSHIRE_TOWNS, logisticsPageMetadata } from "@/lib/logistics";
 
-export const metadata: Metadata = {
-  title: "Ample Logistics | HGV Driver Agency Berkshire",
-  description: "Ample Logistics connects businesses across Berkshire with qualified HGV drivers for temporary cover, urgent staffing requirements, and flexible logistics support.",
-  alternates: { canonical: "https://amplelogistics.co.uk/" },
-};
+export const metadata: Metadata = logisticsPageMetadata(
+  "Ample Logistics | HGV Driver Agency Berkshire",
+  "Ample Logistics connects businesses across Berkshire with qualified HGV drivers for temporary cover, urgent staffing requirements, and flexible logistics support.",
+  "/"
+);
 
 const SERVICES = [
   { icon: Repeat, title: "Temporary HGV Driver Cover", body: "Access drivers for temporary assignments, staff absences, seasonal demand, and additional workload." },
