@@ -4,6 +4,7 @@ import Link from "next/link";
 import { VILLAGES, VILLAGE_MAP } from "@/lib/villages";
 import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
+import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 import { Truck, Clock, PoundSterling, CheckCircle2, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
@@ -135,6 +136,11 @@ export default async function ManAndVanVillagePage({ params }: { params: Promise
         "@type": "FAQPage",
         mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
+      breadcrumbSchema([
+        { name: "Home", url: "https://www.ampleremovals.com" },
+        { name: "Man and Van", url: "https://www.ampleremovals.com/man-and-van" },
+        { name: village.name, url: `https://www.ampleremovals.com/man-and-van/${village.hubSlug}/${village.slug}` },
+      ]),
     ],
   };
 

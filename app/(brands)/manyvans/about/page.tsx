@@ -8,7 +8,7 @@ const brand = BRAND_BY_SLUG["manyvans"];
 export const metadata = brandPageMetadata(
   brand,
   "About Us | ManyVans",
-  "ManyVans — covering removals, man and van and house clearance across both Newbury and Thatcham, backed by 7+ years' experience.",
+  "ManyVans — a full fleet covering removals, man and van and house clearance across Newbury and Thatcham, backed by 7+ years' experience.",
   "/about"
 );
 

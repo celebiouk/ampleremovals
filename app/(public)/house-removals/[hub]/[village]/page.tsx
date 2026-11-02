@@ -4,6 +4,7 @@ import Link from "next/link";
 import { VILLAGES, VILLAGE_MAP } from "@/lib/villages";
 import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
+import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 import { ShieldCheck, Package, Home, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
@@ -144,6 +145,11 @@ export default async function HouseRemovalsVillagePage({ params }: { params: Pro
         "@type": "FAQPage",
         mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
+      breadcrumbSchema([
+        { name: "Home", url: "https://www.ampleremovals.com" },
+        { name: "House Removals", url: "https://www.ampleremovals.com/house-removals" },
+        { name: village.name, url: `https://www.ampleremovals.com/house-removals/${village.hubSlug}/${village.slug}` },
+      ]),
     ],
   };
 

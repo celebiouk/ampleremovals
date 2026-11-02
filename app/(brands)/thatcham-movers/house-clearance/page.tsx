@@ -13,5 +13,5 @@ export const metadata = brandPageMetadata(
 );
 
 export default function ThatchamMoversHouseClearancePage() {
-  return <BrandPageShell brand={brand} logo={ThatchamMoversLogo} content={thatchamMoversHouseClearance} />;
+  return <BrandPageShell brand={brand} logo={ThatchamMoversLogo} content={thatchamMoversHouseClearance} path="/house-clearance" />;
 }

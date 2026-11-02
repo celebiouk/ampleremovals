@@ -4,6 +4,7 @@ import Link from "next/link";
 import { VILLAGES, VILLAGE_MAP } from "@/lib/villages";
 import { HUB_MAP } from "@/lib/hubs";
 import { pickVariant } from "@/lib/local-variants";
+import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 import { Zap, Ban, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstantHourlyQuoteWidget } from "@/components/local/InstantHourlyQuoteWidget";
@@ -128,6 +129,11 @@ export default async function RubbishRemovalVillagePage({ params }: { params: Pr
         "@type": "FAQPage",
         mainEntity: faqSet.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
+      breadcrumbSchema([
+        { name: "Home", url: "https://www.ampleremovals.com" },
+        { name: "Rubbish Removal", url: "https://www.ampleremovals.com/rubbish-removal" },
+        { name: village.name, url: `https://www.ampleremovals.com/rubbish-removal/${village.hubSlug}/${village.slug}` },
+      ]),
     ],
   };
 

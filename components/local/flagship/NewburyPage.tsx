@@ -3,6 +3,9 @@ import { Phone, ArrowRight, Truck, PackageOpen, Sofa, KeyRound, Sparkles } from 
 import { Button } from "@/components/ui/button";
 import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 import { TrustBar, GuideArticle, ContactSection, FaqSection, COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY, type Guide } from "@/components/local/flagship/FlagshipShared";
+import { ReviewBadge } from "@/components/local/flagship/ReviewBadge";
+import { getAggregateRatingStats, getGoogleReviewLink } from "@/lib/reviews-stats";
+import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 
 const GUIDES: Guide[] = [
   {
@@ -58,8 +61,9 @@ const FAQS = [
   { q: "Is there a minimum job size?", a: "No — from a single item to a full house, we quote on what you actually need moved." },
 ];
 
-export function NewburyPage() {
+export async function NewburyPage() {
   const whatsappMessage = "Hi, I'm looking to book a removal in Newbury. Can you help?";
+  const [ratingStats, googleReviewLink] = await Promise.all([getAggregateRatingStats(), getGoogleReviewLink()]);
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -74,11 +78,26 @@ export function NewburyPage() {
         priceRange: "££",
         url: "https://www.ampleremovals.com/locations/newbury",
         foundingDate: "2019",
+        ...(ratingStats
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: ratingStats.ratingValue,
+                reviewCount: ratingStats.reviewCount,
+                bestRating: 5,
+                worstRating: 1,
+              },
+            }
+          : {}),
       },
       {
         "@type": "FAQPage",
         mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
+      breadcrumbSchema([
+        { name: "Home", url: "https://www.ampleremovals.com" },
+        { name: "Newbury", url: "https://www.ampleremovals.com/locations/newbury" },
+      ]),
       ...GUIDES.map((g) => ({
         "@type": "Article",
         headline: g.title,
@@ -117,6 +136,9 @@ export function NewburyPage() {
           </div>
           <div className="mt-10">
             <TrustBar />
+          </div>
+          <div className="mt-6 flex justify-center">
+            <ReviewBadge stats={ratingStats} googleReviewLink={googleReviewLink} />
           </div>
         </div>
       </section>

@@ -13,5 +13,5 @@ export const metadata = brandPageMetadata(
 );
 
 export default function NewburyRemovalsManAndVanPage() {
-  return <BrandPageShell brand={brand} logo={NewburyRemovalsLogo} content={newburyRemovalsManAndVan} />;
+  return <BrandPageShell brand={brand} logo={NewburyRemovalsLogo} content={newburyRemovalsManAndVan} path="/man-and-van" />;
 }

@@ -19,20 +19,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
-  // The original 32 location pages — never wired into the sitemap at all
-  // previously. Newbury and Thatcham get the top priority on the whole
-  // site: they're the two bespoke, long-form flagship pages (see
-  // components/local/flagship) built around the real Thatcham office.
-  const locationPages: MetadataRoute.Sitemap = LOCATIONS.map((loc) => ({
+  // Only Newbury and Thatcham — the two bespoke flagship pages — belong in
+  // the sitemap. The other 30 /locations/[location] pages are thin,
+  // near-duplicate templated content now marked noindex (see that page's
+  // generateMetadata), so advertising them here would be contradictory and
+  // could dilute perceived site quality.
+  const locationPages: MetadataRoute.Sitemap = LOCATIONS.filter(
+    (loc) => loc.slug === "newbury" || loc.slug === "thatcham"
+  ).map((loc) => ({
     url: `${baseUrl}/locations/${loc.slug}`,
     lastModified: new Date(),
-    changeFrequency: loc.slug === "newbury" || loc.slug === "thatcham" ? "weekly" : "monthly",
-    priority: loc.slug === "newbury" || loc.slug === "thatcham" ? 1 : 0.65,
+    changeFrequency: "weekly",
+    priority: 1,
+  }));
+
+  // Top-level service index pages — give the villages (3 levels deep) a
+  // real, crawlable parent instead of being orphaned under /[service]/.
+  const serviceIndexPages: MetadataRoute.Sitemap = VILLAGE_SERVICES.map((service) => ({
+    url: `${baseUrl}/${service}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
   }));
 
   return [
     ...villagePages,
     ...locationPages,
+    ...serviceIndexPages,
     {
       url: baseUrl,
       lastModified: new Date(),

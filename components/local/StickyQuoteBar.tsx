@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { trackQuoteClick, trackPhoneClick } from "@/lib/analytics/track";
 
 interface Props {
   /** Where "Get a free Quote" goes — an absolute path (/booking, /booking/man-and-van)
@@ -37,6 +40,7 @@ export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsapp
             <a
               href={quoteHref}
               style={pillStyle}
+              onClick={() => trackQuoteClick("sticky_bar")}
               className="inline-flex items-center gap-1.5 rounded-full bg-brand-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-green-600/30 transition-transform hover:-translate-y-0.5 hover:bg-brand-green-500 sm:px-5 sm:py-3 sm:text-base"
             >
               Get a free Quote <ArrowRight className="h-4 w-4" />
@@ -45,6 +49,7 @@ export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsapp
             <Link
               href={quoteHref}
               style={pillStyle}
+              onClick={() => trackQuoteClick("sticky_bar")}
               className="inline-flex items-center gap-1.5 rounded-full bg-brand-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-green-600/30 transition-transform hover:-translate-y-0.5 hover:bg-brand-green-500 sm:px-5 sm:py-3 sm:text-base"
             >
               Get a free Quote <ArrowRight className="h-4 w-4" />
@@ -57,6 +62,7 @@ export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsapp
         <WhatsAppButton message={whatsappMessage} whatsappNumber={whatsappNumber} className="flex-1 justify-center text-sm sm:flex-none sm:text-base" />
         <a
           href={hrefPhone}
+          onClick={() => trackPhoneClick("sticky_bar")}
           className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-purple-800 px-4 py-3 text-sm font-bold text-brand-purple-800 transition-colors hover:bg-brand-purple-50 sm:flex-none sm:px-6 sm:text-base"
         >
           Call us

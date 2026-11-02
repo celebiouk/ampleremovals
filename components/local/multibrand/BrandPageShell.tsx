@@ -2,8 +2,10 @@ import Link from "next/link";
 import { Phone, ArrowRight, ShieldCheck, Clock, MapPin, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { ContactCtaRow } from "@/components/local/multibrand/ContactCtaRow";
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
 import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
+import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 import type { BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
@@ -21,6 +23,10 @@ export interface BrandPageContent {
   trustPoints: string[];
   storyHeading: string;
   storyParagraphs: string[];
+  /** Optional illustration/graphic rendered under the story copy — used by
+   *  brands that want extra visual proof (e.g. ManyVans' fleet graphic).
+   *  Omit for brands with no such asset; layout is unaffected either way. */
+  storyVisual?: ComponentType;
   servicesHeading: string;
   services: { title: string; body: string; href: string }[];
   faqHeading: string;
@@ -41,6 +47,7 @@ export async function BrandPageShell({
   logo: Logo,
   content,
   navLinks,
+  path = "/",
 }: {
   brand: Brand;
   logo: ComponentType<{ className?: string; variant?: "color" | "white" }>;
@@ -49,6 +56,10 @@ export async function BrandPageShell({
    *  Advice/About Us/Contact Us set — override only if a brand's page set
    *  genuinely differs. */
   navLinks?: BrandNavLink[];
+  /** This page's path relative to the brand's own domain ("/", "/man-and-van",
+   *  "/house-clearance") — used only to build an accurate BreadcrumbList;
+   *  defaults to "/" (the brand's homepage, which renders no breadcrumb). */
+  path?: string;
 }) {
   const basePath = await resolveBrandBasePath(brand);
   const HeroAction = content.heroAction;
@@ -78,6 +89,14 @@ export async function BrandPageShell({
         "@type": "FAQPage",
         mainEntity: content.faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
+      ...(path === "/"
+        ? []
+        : [
+            breadcrumbSchema([
+              { name: "Home", url: `https://${brand.domain}` },
+              { name: path === "/man-and-van" ? "Man and Van" : path === "/house-clearance" ? "House Clearance" : content.eyebrow, url: `https://${brand.domain}${path}` },
+            ]),
+          ]),
     ],
   };
 
@@ -145,6 +164,11 @@ export async function BrandPageShell({
           <div className="mt-6 space-y-4 text-slate-700">
             {content.storyParagraphs.map((p, i) => <p key={i}>{p}</p>)}
           </div>
+          {content.storyVisual && (
+            <div className="mt-10">
+              <content.storyVisual />
+            </div>
+          )}
         </div>
       </section>
 
@@ -186,15 +210,15 @@ export async function BrandPageShell({
         <div className="container mx-auto max-w-3xl text-center">
           <h2 className="font-display text-3xl font-bold">{content.ctaHeading}</h2>
           <p className="mt-2 opacity-90">{content.ctaSub}</p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg" style={{ background: accent }} className="text-white hover:opacity-90">
-              <Link href={content.quoteHref}>Get a free Quote <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-            <WhatsAppButton message={content.whatsappMessage} whatsappNumber={brand.whatsappNumber} />
-            <a href={brand.phoneHref} className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold hover:bg-white/10">
-              <Phone className="h-4 w-4" /> {brand.phone}
-            </a>
-          </div>
+          <ContactCtaRow
+            quoteHref={content.quoteHref}
+            whatsappMessage={content.whatsappMessage}
+            whatsappNumber={brand.whatsappNumber}
+            phone={brand.phone}
+            phoneHref={brand.phoneHref}
+            accent={accent}
+            source={`${brand.slug}_bottom_cta`}
+          />
           <div className="mt-8 flex flex-col items-center gap-1 text-sm opacity-80">
             <p className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {brand.address.line1}, {brand.address.town}, {brand.address.postcode}</p>
             <p className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Serving {brand.towns.join(" & ")}</p>

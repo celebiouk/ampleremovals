@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Phone, Mail, MapPin, ArrowRight, ShieldCheck, Clock, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { trackPhoneClick } from "@/lib/analytics/track";
 
 export const COMPANY_ADDRESS = "41 Rosedale Garden, Thatcham, RG19 3LE";
 export const COMPANY_PHONE_DISPLAY = "0333 577 2070";
@@ -59,7 +62,7 @@ export function ContactSection({ town, whatsappMessage }: { town: string; whatsa
             No call centre, no chatbot — when you call or message Ample Removals about your {town} move, you&apos;re talking to the same local team that&apos;ll turn up on the day.
           </p>
           <div className="mt-6 space-y-4">
-            <a href={COMPANY_PHONE_HREF} className="flex items-center gap-3 text-lg font-semibold hover:text-brand-green-400">
+            <a href={COMPANY_PHONE_HREF} onClick={() => trackPhoneClick("flagship_contact")} className="flex items-center gap-3 text-lg font-semibold hover:text-brand-green-400">
               <Phone className="h-5 w-5 text-brand-green-400" /> {COMPANY_PHONE_DISPLAY}
             </a>
             <a href={`mailto:${COMPANY_EMAIL}`} className="flex items-center gap-3 text-lg font-semibold hover:text-brand-green-400">

@@ -9,6 +9,10 @@ export interface BrandAboutContent {
   values: { title: string; body: string }[];
   quoteHref: string;
   whatsappMessage: string;
+  /** Optional illustration/graphic shown above the story paragraphs — used
+   *  by brands with an extra visual asset (e.g. ManyVans' fleet graphic).
+   *  Omit for brands with no such asset; layout is unaffected either way. */
+  visual?: ComponentType;
 }
 
 export function BrandAboutPage({
@@ -32,6 +36,11 @@ export function BrandAboutPage({
 
       <section className="px-6 py-16">
         <div className="container mx-auto max-w-3xl space-y-4 text-slate-700">
+          {content.visual && (
+            <div className="mb-10">
+              <content.visual />
+            </div>
+          )}
           {content.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
         </div>
       </section>

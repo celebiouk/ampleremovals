@@ -1,6 +1,7 @@
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import { PhoneTile } from "@/components/local/multibrand/PhoneTile";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -31,11 +32,7 @@ export function BrandContactPage({
 
       <section className="px-6 py-16">
         <div className="container mx-auto grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <a href={brand.phoneHref} className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center hover:border-slate-300">
-            <Phone className="h-6 w-6" style={{ color: brand.colors.primary }} />
-            <p className="font-display font-bold text-slate-900">Call</p>
-            <p className="text-sm text-slate-600">{brand.phone}</p>
-          </a>
+          <PhoneTile phone={brand.phone} phoneHref={brand.phoneHref} color={brand.colors.primary} source={`${brand.slug}_contact_page`} />
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center">
             <Mail className="h-6 w-6" style={{ color: brand.colors.primary }} />
             <p className="font-display font-bold text-slate-900">Email</p>

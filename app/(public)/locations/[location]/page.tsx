@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import type { ComponentType } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,10 +12,17 @@ import { ThatchamPage } from "@/components/local/flagship/ThatchamPage";
 // bespoke, long-form, with embedded local guides — rather than the generic
 // templated location page every other town gets. Same URL as before (keeps
 // any existing SEO equity); the content is entirely different.
-const FLAGSHIP_PAGES: Record<string, ComponentType> = {
+// Both are async Server Components (they fetch real review stats) — Next's
+// app router renders async function components the same way via `<X />`.
+const FLAGSHIP_PAGES: Record<string, () => Promise<JSX.Element>> = {
   newbury: NewburyPage,
   thatcham: ThatchamPage,
 };
+
+// Hourly ISR — the real AggregateRating (lib/reviews-stats.ts) changes as
+// new customer ratings come in; this keeps it fresh without needing a full
+// redeploy every time a review lands. Everything else on the page is static.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return LOCATIONS.map((location) => ({
@@ -95,6 +101,14 @@ export async function generateMetadata({ params }: { params: Promise<{ location:
     alternates: {
       canonical: `https://www.ampleremovals.com/locations/${slug}`,
     },
+    // These 30 generic templated town pages are thin, near-duplicate content
+    // (same copy with the town name swapped in) compared to the 5 real
+    // service pages and the bespoke Newbury/Thatcham flagship pages. Keeping
+    // them indexed risks Google treating the whole /locations/ path as
+    // low-quality/duplicate, which drags down ranking everywhere else.
+    // Still fully linked and crawlable (follow: true) so link equity flows
+    // through to the real pages — just excluded from Google's index.
+    robots: { index: false, follow: true },
   };
 }
 

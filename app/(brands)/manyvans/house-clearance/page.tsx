@@ -13,5 +13,5 @@ export const metadata = brandPageMetadata(
 );
 
 export default function ManyVansHouseClearancePage() {
-  return <BrandPageShell brand={brand} logo={ManyVansLogo} content={manyVansHouseClearance} />;
+  return <BrandPageShell brand={brand} logo={ManyVansLogo} content={manyVansHouseClearance} path="/house-clearance" />;
 }
