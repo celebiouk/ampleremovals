@@ -131,9 +131,14 @@ export function statusLabel(status: string): string {
  */
 export function logisticsPageMetadata(title: string, description: string, path: string) {
   const url = `https://${LOGISTICS.domain}${path}`;
+  // The root layout sets an explicit favicon (icons.icon = "/fav.png"), which
+  // takes priority over this site's icon.tsx file-convention favicon unless
+  // we override it here too — so every Logistics page explicitly points
+  // back at its own generated /logistics/icon route.
   return {
     title: { absolute: title },
     description,
+    icons: { icon: "/logistics/icon", apple: "/logistics/icon" },
     authors: [{ name: LOGISTICS.name }],
     alternates: { canonical: url },
     openGraph: {
