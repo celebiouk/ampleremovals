@@ -6,6 +6,7 @@ export const revalidate = 0;
 export const metadata = {
   title: "Admin — Ample Removals",
   robots: { index: false, follow: false },
+  icons: { icon: "/fav.png", apple: "/fav.png" },
 };
 
 export default function AdminLayout({

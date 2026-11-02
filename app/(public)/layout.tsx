@@ -6,6 +6,13 @@ import { AttributionCapture } from "@/components/analytics/AttributionCapture";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 import { SOCIAL_LINKS, OPENING_HOURS_SPEC, SEO_KEYWORDS } from "@/lib/company";
 
+// Ample's own favicon — set here rather than the root layout, since the
+// root also wraps the brands/logistics route groups, which have their own
+// icon.tsx file-convention favicons that this would otherwise override.
+export const metadata = {
+  icons: { icon: "/fav.png", apple: "/fav.png" },
+};
+
 export default function PublicLayout({
   children,
 }: {

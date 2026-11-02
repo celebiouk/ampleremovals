@@ -142,15 +142,9 @@ export function brandForHost(host: string | null | undefined): Brand {
  */
 export function brandPageMetadata(brand: Brand, title: string, description: string, path: string) {
   const url = `https://${brand.domain}${path}`;
-  // The root layout sets an explicit favicon (icons.icon = "/fav.png"), which
-  // takes priority over this brand's icon.tsx file-convention favicon unless
-  // we override it here too — so every brand page explicitly points back at
-  // its own generated /<slug>/icon route.
-  const iconPath = `/${brand.slug}/icon`;
   return {
     title: { absolute: title },
     description,
-    icons: { icon: iconPath, apple: iconPath },
     authors: [{ name: brand.name }],
     alternates: { canonical: url },
     openGraph: {

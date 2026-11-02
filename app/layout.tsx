@@ -85,10 +85,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  icons: {
-    icon: "/fav.png",
-    apple: "/fav.png",
-  },
+  // No icons field here — it would override every nested icon.tsx
+  // file-convention favicon (brands, logistics) with Ample's own /fav.png,
+  // and Next appends a content hash to those generated routes that a
+  // hardcoded override can't match. Ample's own pages set it explicitly
+  // below, in (public)/layout.tsx and (admin)/admin/layout.tsx instead.
   manifest: "/site.webmanifest",
 };
 
