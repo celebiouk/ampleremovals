@@ -9,11 +9,13 @@ export function FadeIn({
   delay = 0,
   y = 16,
   className,
+  style,
 }: {
   children: ReactNode;
   delay?: number;
   y?: number;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <motion.div
@@ -22,6 +24,7 @@ export function FadeIn({
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>

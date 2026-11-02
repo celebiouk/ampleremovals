@@ -255,3 +255,13 @@
 [data-brand-theme] [class~="shadow-brand-green-600/25"] { --tw-shadow-color: color-mix(in srgb, var(--bg-600) 25%, transparent) !important; }
 [data-brand-theme] .from-brand-green-50 { --tw-gradient-from: var(--bg-50) var(--tw-gradient-from-position) !important; }
 [data-brand-theme] .to-brand-green-50 { --tw-gradient-to: var(--bg-50) var(--tw-gradient-to-position) !important; }
+
+/* Ample Logistics form fields — sharp corners, green focus ring (not Tailwind's default blue). */
+.logistics-input {
+  border-color: rgba(17, 17, 19, 0.18);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.logistics-input:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}

@@ -20,17 +20,26 @@ export const LOGISTICS = {
   // Logistics is deliberately presented as part of the same company.
   phone: "0333 577 2070",
   phoneHref: "tel:03335772070",
-  // Ample's own purple/green — same reasoning as the phone number above:
-  // this brand is meant to visibly tie back to Ample, not disguise it.
-  // Property names kept as navy/blue/charcoal/amber so nothing else
-  // needs to change — only the values moved to Ample's palette.
+  // Ample's purple/green, deployed as sharp SIGNAL accents on a neutral
+  // ink/paper base rather than as wall-to-wall gradients — the "despatch
+  // board" system (see components/logistics/LogisticsHero.tsx). Property
+  // names kept as navy/blue/charcoal/amber/lightGrey so existing call
+  // sites don't need to change, even though their role has shifted:
+  // - navy   = the violet signal accent (tags, rules, hover states)
+  // - blue   = the green "go/available" signal accent (CTAs, status)
+  // - charcoal/ink = the dominant dark panel colour (near-black, not purple)
+  // - amber  = a third, rarer accent (warning/priority marks)
+  // - lightGrey = warm paper, not cold grey
   colors: {
-    navy: "#581c87", // Ample purple-900 — headings, dark hero background
-    blue: "#16a34a", // Ample green-600 — CTAs, links, accents
+    navy: "#5B1F8C",
+    blue: "#15803D",
     white: "#FFFFFF",
-    lightGrey: "#F4F6F8",
-    charcoal: "#3b0764", // Ample purple-950 — deepest end of hero gradients
-    amber: "#22c55e", // Ample green-500 — lighter highlight variant
+    lightGrey: "#F3F1EA",
+    charcoal: "#121214",
+    amber: "#C98A1F",
+    ink: "#121214",
+    line: "rgba(17,17,19,0.12)",
+    lineOnDark: "rgba(255,255,255,0.14)",
   },
 } as const;
 

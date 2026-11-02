@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight, AlertCircle, TrendingUp, Clock, FileText, Truck, Repeat, Zap, Calendar } from "lucide-react";
+import { AlertCircle, TrendingUp, Clock, FileText, Truck, Repeat, Zap, Calendar } from "lucide-react";
 import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 import { BusinessRequestForm } from "@/components/logistics/BusinessRequestForm";
+import { PageHero, SectionHeading, ManifestRow, PrimaryButton, GhostButton } from "@/components/logistics/LogisticsKit";
+import { FadeIn } from "@/components/logistics/FadeIn";
 
 export const metadata: Metadata = logisticsPageMetadata(
   "For Businesses — Hire an HGV Driver | Ample Logistics",
@@ -26,76 +27,74 @@ const SOLUTIONS = [
   { title: "Recurring Driver Staffing Requirements", body: "For businesses that need ongoing flexible cover rather than a one-off placement." },
 ];
 
+const REQUEST_STEPS = [
+  { title: "Submit Your Requirements", body: "Tell us the vehicle category, location, and shift pattern you need covering." },
+  { title: "We Check Availability", body: "Our team reviews the details and checks suitable driver availability." },
+  { title: "We Agree Terms", body: "We discuss rates, assignment terms, and any necessary arrangements." },
+  { title: "Driver Scheduled", body: "Once agreed, the driver is scheduled for the assignment." },
+];
+
 export default function BusinessesPage() {
   return (
     <>
-      <section className="px-6 py-20 text-white" style={{ background: `linear-gradient(135deg, ${LOGISTICS.colors.navy}, ${LOGISTICS.colors.charcoal})` }}>
-        <div className="container mx-auto grid max-w-5xl gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h1 className="font-display text-4xl font-extrabold leading-tight">Your Next HGV Driver Starts Here.</h1>
-            <p className="mt-4 text-lg text-slate-300">Find temporary and short-notice HGV driver staffing solutions for your transport or logistics operation across Berkshire England.</p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href="#request-form" className="inline-flex items-center gap-1.5 rounded-xl px-7 py-3.5 font-bold text-white" style={{ background: LOGISTICS.colors.blue }}>Request a Driver <ArrowRight className="h-4 w-4" /></a>
-              <Link href="/contact" className="inline-flex items-center gap-1.5 rounded-xl border border-white/40 px-7 py-3.5 font-semibold text-white hover:bg-white/10">Speak to Our Team</Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="For Businesses"
+        title={<>Your Next HGV<br />Driver Starts Here.</>}
+        subtitle="Find temporary and short-notice HGV driver staffing solutions for your transport or logistics operation across Berkshire England."
+        cta={<>
+          <PrimaryButton href="#request-form">Request a Driver</PrimaryButton>
+          <GhostButton href="/contact">Speak to Our Team</GhostButton>
+        </>}
+      />
 
-      <section className="px-6 py-16">
+      <section className="px-6 py-20">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>When You Need Drivers, Every Shift Matters.</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <SectionHeading eyebrow="The Problem" title="Every Shift Matters" />
+          <div className="mt-10 grid gap-x-10 sm:grid-cols-2">
             {CHALLENGES.map((c) => (
-              <div key={c.label} className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
-                <c.icon className="h-5 w-5 shrink-0" style={{ color: LOGISTICS.colors.blue }} />
-                <span className="font-medium text-slate-700">{c.label}</span>
-              </div>
+              <FadeIn key={c.label}>
+                <div className="flex items-center gap-3 border-t py-4" style={{ borderColor: LOGISTICS.colors.line }}>
+                  <c.icon className="h-5 w-5 shrink-0" style={{ color: LOGISTICS.colors.blue }} />
+                  <span className="font-medium text-slate-700">{c.label}</span>
+                </div>
+              </FadeIn>
             ))}
           </div>
           <p className="mt-6 text-sm text-slate-500">Ample Logistics works as a staffing partner to help businesses respond to these challenges.</p>
         </div>
       </section>
 
-      <section className="px-6 py-16" style={{ background: LOGISTICS.colors.lightGrey }}>
+      <section className="px-6 py-20" style={{ background: LOGISTICS.colors.lightGrey }}>
         <div className="container mx-auto max-w-5xl">
-          <h2 className="font-display text-3xl font-bold text-center" style={{ color: LOGISTICS.colors.navy }}>Staffing Solutions</h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          <SectionHeading eyebrow="Solutions" title="How We Can Help" align="center" />
+          <div className="mx-auto mt-12 max-w-3xl">
             {SOLUTIONS.map((s, i) => (
-              <div key={s.title} className="rounded-2xl bg-white p-6">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: LOGISTICS.colors.blue }}>{i + 1}</span>
-                <h3 className="mt-3 font-display text-lg font-bold" style={{ color: LOGISTICS.colors.navy }}>{s.title}</h3>
+              <ManifestRow key={s.title} index={i + 1} title={s.title} body={s.body} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-20">
+        <div className="container mx-auto max-w-5xl">
+          <SectionHeading eyebrow="Process" title="How to Request a Driver" align="center" />
+          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {REQUEST_STEPS.map((s, i) => (
+              <FadeIn key={s.title} delay={i * 0.08}>
+                <p className="text-4xl font-black" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.blue }}>
+                  {String(i + 1).padStart(2, "0")}
+                </p>
                 <p className="mt-2 text-sm text-slate-600">{s.body}</p>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-16">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>How to Request a Driver</h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-4">
-            {[
-              { icon: FileText, body: "Submit your staffing requirements." },
-              { icon: Zap, body: "Our team reviews the details and checks suitable driver availability." },
-              { icon: Repeat, body: "We discuss rates, assignment terms, and any necessary arrangements." },
-              { icon: Truck, body: "Once agreed, the driver is scheduled for the assignment." },
-            ].map((s, i) => (
-              <div key={i} className="text-left">
-                <s.icon className="h-6 w-6" style={{ color: LOGISTICS.colors.blue }} />
-                <p className="mt-3 text-sm text-slate-600">{s.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="request-form" className="px-6 py-20" style={{ background: LOGISTICS.colors.lightGrey }}>
+      <section id="request-form" className="px-6 py-24" style={{ background: LOGISTICS.colors.ink }}>
         <div className="container mx-auto max-w-3xl">
-          <h2 className="font-display text-3xl font-bold text-center" style={{ color: LOGISTICS.colors.navy }}>Submit a Driver Request</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-slate-500">Tell us what you need and our team will review it and come back to you.</p>
-          <div className="mt-10 rounded-2xl bg-white p-6 sm:p-10">
+          <SectionHeading eyebrow="Submit a Request" title="Driver Request Form" body="Tell us what you need and our team will review it and come back to you." dark align="center" />
+          <div className="mt-10 bg-white p-6 sm:p-10">
             <BusinessRequestForm />
           </div>
         </div>

@@ -45,9 +45,9 @@ export function DriverApplicationForm() {
 
   if (reference) {
     return (
-      <div className="rounded-2xl border-2 p-8 text-center" style={{ borderColor: LOGISTICS.colors.blue }}>
+      <div className="border-2 p-8 text-center" style={{ borderColor: LOGISTICS.colors.blue }}>
         <CheckCircle2 className="mx-auto h-10 w-10" style={{ color: LOGISTICS.colors.blue }} />
-        <h3 className="mt-4 font-display text-xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Thanks for registering</h3>
+        <h3 className="mt-4 font-display uppercase tracking-wide text-xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Thanks for registering</h3>
         <p className="mt-2 text-sm text-slate-600">
           Your interest has been registered (ref <strong>{reference}</strong>). Registering doesn&apos;t guarantee an
           assignment — our team will be in touch if a suitable opportunity comes up.
@@ -76,11 +76,11 @@ export function DriverApplicationForm() {
 
       <div>
         <label className="block text-sm font-semibold text-slate-700">Relevant Driving Experience</label>
-        <textarea name="experienceNotes" rows={3} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+        <textarea name="experienceNotes" rows={3} className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
       </div>
       <div>
         <label className="block text-sm font-semibold text-slate-700">Additional Information</label>
-        <textarea name="additionalInfo" rows={3} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+        <textarea name="additionalInfo" rows={3} className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
       </div>
 
       <div>
@@ -102,7 +102,7 @@ export function DriverApplicationForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-bold text-white transition-colors disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold text-white transition-colors disabled:opacity-60"
         style={{ backgroundColor: LOGISTICS.colors.blue }}
       >
         {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -116,7 +116,7 @@ function Field({ label, name, type = "text", required, placeholder }: { label: s
   return (
     <div>
       <label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required && <span className="text-red-500"> *</span>}</label>
-      <input id={name} name={name} type={type} required={required} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+      <input id={name} name={name} type={type} required={required} placeholder={placeholder} className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
     </div>
   );
 }
@@ -125,7 +125,7 @@ function SelectField({ label, name, required, options }: { label: string; name: 
   return (
     <div>
       <label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required && <span className="text-red-500"> *</span>}</label>
-      <select id={name} name={name} required={required} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+      <select id={name} name={name} required={required} className="mt-1.5 w-full border border-slate-300 bg-white px-3 py-2.5 text-sm logistics-input focus:outline-none">
         <option value="">Select…</option>
         {options.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
       </select>

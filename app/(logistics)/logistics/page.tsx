@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Truck, Zap, Users2, ShieldCheck, MessageSquareText, Repeat, ArrowRight, Building2, Warehouse, Package, Store, Phone } from "lucide-react";
+import { Truck, Zap, Users2, ShieldCheck, MessageSquareText, Repeat, Building2, Warehouse, Package, Store, Phone } from "lucide-react";
 import { LOGISTICS, BERKSHIRE_TOWNS, logisticsPageMetadata } from "@/lib/logistics";
 import { FadeIn } from "@/components/logistics/FadeIn";
 import { LogisticsHero } from "@/components/logistics/LogisticsHero";
+import { Eyebrow, SectionHeading, ManifestRow, PrimaryButton, GhostButton, Tag, HazardCorner } from "@/components/logistics/LogisticsKit";
 
 export const metadata: Metadata = logisticsPageMetadata(
   "Ample Logistics | HGV Driver Agency Berkshire",
@@ -33,48 +34,41 @@ const WHY = [
   { icon: Zap, title: "Clear Communication", body: "You'll always know where a request stands — no chasing for updates." },
 ];
 
+const STEPS = [
+  { title: "Tell Us What You Need", body: "Share your location, vehicle category, shift times, assignment duration, and staffing requirements." },
+  { title: "We Identify Suitable Drivers", body: "Our team reviews the requirements and works to match your business with appropriately qualified and available drivers." },
+  { title: "Get Your Staffing Covered", body: "Once the assignment and terms are agreed, the selected driver can be scheduled to support your operation." },
+];
+
 export default function LogisticsHomePage() {
   return (
     <>
       <LogisticsHero />
 
-      {/* Service overview */}
-      <section className="px-6 py-20">
-        <div className="container mx-auto max-w-5xl text-center">
-          <FadeIn>
-            <h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>HGV Driver Staffing Made Simple</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-slate-600">When driver shortages disrupt your operation, Ample Logistics helps you find suitable drivers for your staffing requirements.</p>
-          </FadeIn>
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+      {/* Service overview — manifest rows, not a card grid */}
+      <section className="relative overflow-hidden px-6 py-24">
+        <HazardCorner className="-left-20 -top-20 right-auto" />
+        <div className="container relative mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <SectionHeading eyebrow="What We Do" title="Staffing, Made Straightforward" body="When driver shortages disrupt your operation, Ample Logistics helps you find suitable drivers for your staffing requirements." />
+          <div>
             {SERVICES.map((s, i) => (
-              <FadeIn key={s.title} delay={i * 0.08}>
-                <div className="group h-full rounded-2xl border border-slate-200 p-6 text-left transition-all hover:-translate-y-1 hover:border-transparent hover:shadow-xl">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: `linear-gradient(135deg, ${LOGISTICS.colors.navy}1a, ${LOGISTICS.colors.blue}1a)` }}>
-                    <s.icon className="h-6 w-6" style={{ color: LOGISTICS.colors.blue }} />
-                  </span>
-                  <h3 className="mt-4 font-display text-lg font-bold" style={{ color: LOGISTICS.colors.navy }}>{s.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{s.body}</p>
-                  <Link href="/businesses" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: LOGISTICS.colors.blue }}>Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></Link>
-                </div>
-              </FadeIn>
+              <ManifestRow key={s.title} index={i + 1} title={s.title} body={s.body} icon={<s.icon className="h-5 w-5" style={{ color: LOGISTICS.colors.blue }} />} />
             ))}
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="px-6 py-20" style={{ background: LOGISTICS.colors.lightGrey }}>
-        <div className="container mx-auto max-w-5xl text-center">
-          <FadeIn><h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Getting the Right Driver Should Be Simple</h2></FadeIn>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
-            {[
-              { n: 1, title: "Tell Us What You Need", body: "Share your location, vehicle category, shift times, assignment duration, and staffing requirements." },
-              { n: 2, title: "We Identify Suitable Drivers", body: "Our team reviews the requirements and works to match your business with appropriately qualified and available drivers." },
-              { n: 3, title: "Get Your Staffing Covered", body: "Once the assignment and terms are agreed, the selected driver can be scheduled to support your operation." },
-            ].map((s, i) => (
-              <FadeIn key={s.n} delay={i * 0.1} className="text-left">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full font-display text-lg font-bold text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${LOGISTICS.colors.navy}, ${LOGISTICS.colors.blue})` }}>{s.n}</span>
-                <h3 className="mt-4 font-display text-lg font-bold" style={{ color: LOGISTICS.colors.navy }}>{s.title}</h3>
+      <section className="px-6 py-24" style={{ background: LOGISTICS.colors.lightGrey }}>
+        <div className="container mx-auto max-w-5xl">
+          <SectionHeading eyebrow="Process" title="Three Steps To Covered Shifts" align="center" />
+          <div className="mt-14 grid gap-10 sm:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <FadeIn key={s.title} delay={i * 0.1}>
+                <p className="text-5xl font-black" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.blue }}>
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-3 text-lg font-bold" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.ink }}>{s.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">{s.body}</p>
               </FadeIn>
             ))}
@@ -83,16 +77,13 @@ export default function LogisticsHomePage() {
       </section>
 
       {/* Who we support */}
-      <section className="px-6 py-20">
-        <div className="container mx-auto max-w-5xl text-center">
-          <FadeIn>
-            <h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Who We Support</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-500">Actual service availability depends on the assignment and the drivers available.</p>
-          </FadeIn>
-          <div className="mt-10 grid gap-5 sm:grid-cols-3">
+      <section className="px-6 py-24">
+        <div className="container mx-auto max-w-5xl">
+          <SectionHeading eyebrow="Who We Support" title="Built For Operators Who Can't Afford Downtime" body="Actual service availability depends on the assignment and the drivers available." align="center" />
+          <div className="mx-auto mt-12 grid max-w-3xl gap-x-10">
             {INDUSTRIES.map((i, idx) => (
-              <FadeIn key={i.label} delay={idx * 0.05}>
-                <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 text-left transition-colors hover:border-slate-300">
+              <FadeIn key={i.label} delay={idx * 0.04}>
+                <div className="flex items-center gap-4 border-t py-4" style={{ borderColor: LOGISTICS.colors.line }}>
                   <i.icon className="h-5 w-5 shrink-0" style={{ color: LOGISTICS.colors.blue }} />
                   <span className="font-semibold text-slate-800">{i.label}</span>
                 </div>
@@ -102,18 +93,17 @@ export default function LogisticsHomePage() {
         </div>
       </section>
 
-      {/* Why choose us */}
-      <section className="px-6 py-20 text-white" style={{ background: `linear-gradient(160deg, ${LOGISTICS.colors.navy}, ${LOGISTICS.colors.charcoal})` }}>
-        <div className="container mx-auto max-w-5xl text-center">
-          <FadeIn><h2 className="font-display text-3xl font-bold">Why Choose Ample Logistics?</h2></FadeIn>
-          <div className="mt-10 grid gap-6 sm:grid-cols-4">
+      {/* Why choose us — dark ink panel */}
+      <section className="relative overflow-hidden px-6 py-24 text-white" style={{ background: LOGISTICS.colors.ink }}>
+        <HazardCorner />
+        <div className="container relative mx-auto max-w-5xl">
+          <SectionHeading eyebrow="Why Ample Logistics" title="Run Like An Operations Desk, Not A Call Centre" dark align="center" />
+          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {WHY.map((w, i) => (
-              <FadeIn key={w.title} delay={i * 0.08} className="text-left">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "rgba(255,255,255,0.1)" }}>
-                  <w.icon className="h-5 w-5" style={{ color: LOGISTICS.colors.amber }} />
-                </span>
-                <h3 className="mt-3 font-display text-base font-bold">{w.title}</h3>
-                <p className="mt-1.5 text-sm text-slate-300">{w.body}</p>
+              <FadeIn key={w.title} delay={i * 0.07} className="border-t pt-5" style={{ borderColor: LOGISTICS.colors.lineOnDark }}>
+                <w.icon className="h-5 w-5" style={{ color: LOGISTICS.colors.blue }} />
+                <h3 className="mt-3 text-base font-bold" style={{ fontFamily: "var(--font-logistics-display)" }}>{w.title}</h3>
+                <p className="mt-1.5 text-sm text-white/60">{w.body}</p>
               </FadeIn>
             ))}
           </div>
@@ -121,32 +111,37 @@ export default function LogisticsHomePage() {
       </section>
 
       {/* Service area */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-24">
         <div className="container mx-auto max-w-4xl text-center">
-          <FadeIn>
-            <h2 className="font-display text-3xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Supporting Logistics Across Berkshire England</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-slate-600">Ample Logistics works with businesses seeking HGV driver staffing support across Berkshire England.</p>
-          </FadeIn>
+          <SectionHeading eyebrow="Service Area" title="Covering Berkshire, England" body="Ample Logistics works with businesses seeking HGV driver staffing support across Berkshire." align="center" />
           <FadeIn delay={0.1}>
-            <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2">
-              {BERKSHIRE_TOWNS.map((t) => (
-                <span key={t} className="rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors hover:text-white" style={{ borderColor: `${LOGISTICS.colors.blue}55`, color: LOGISTICS.colors.navy }}>{t}</span>
-              ))}
+            <div className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-2">
+              {BERKSHIRE_TOWNS.map((t) => (<Tag key={t}>{t}</Tag>))}
             </div>
           </FadeIn>
-          <p className="mt-6 text-xs text-slate-400">These are proposed coverage locations, subject to confirmed availability.</p>
-          <Link href="/businesses" className="mt-8 inline-flex items-center gap-1.5 rounded-xl px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5" style={{ background: `linear-gradient(135deg, ${LOGISTICS.colors.navy}, ${LOGISTICS.colors.blue})` }}>Discuss Your Driver Requirements <ArrowRight className="h-4 w-4" /></Link>
+          <p className="mt-6 text-xs text-slate-400" style={{ fontFamily: "var(--font-logistics-mono)" }}>These are proposed coverage locations, subject to confirmed availability.</p>
+          <div className="mt-8 flex justify-center">
+            <PrimaryButton href="/businesses">Discuss Your Driver Requirements</PrimaryButton>
+          </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="relative overflow-hidden px-6 py-20 text-center text-white" style={{ background: `linear-gradient(160deg, ${LOGISTICS.colors.charcoal}, ${LOGISTICS.colors.navy})` }}>
+      <section className="relative overflow-hidden px-6 py-24 text-center text-white" style={{ background: LOGISTICS.colors.ink }}>
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-1.5"
+          style={{ backgroundImage: `repeating-linear-gradient(135deg, ${LOGISTICS.colors.blue} 0 14px, ${LOGISTICS.colors.navy} 14px 28px)` }}
+        />
         <FadeIn className="container relative mx-auto max-w-2xl">
-          <h2 className="font-display text-3xl font-bold">Need an HGV Driver for Your Next Shift?</h2>
-          <p className="mt-3 text-slate-300">Tell us about your staffing requirements and let our team explore the right solution for your business.</p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/businesses" className="inline-flex items-center gap-1.5 rounded-xl px-7 py-3.5 font-bold text-white shadow-lg" style={{ background: LOGISTICS.colors.blue }}>Request a Driver</Link>
-            <a href={LOGISTICS.phoneHref} className="inline-flex items-center gap-1.5 rounded-xl border border-white/40 px-7 py-3.5 font-semibold text-white hover:bg-white/10"><Phone className="h-4 w-4" /> {LOGISTICS.phone}</a>
+          <Eyebrow dark>Get Started</Eyebrow>
+          <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[0.98] tracking-tight sm:text-5xl" style={{ fontFamily: "var(--font-logistics-display)" }}>
+            Need A Driver For Your Next Shift?
+          </h2>
+          <p className="mt-4 text-white/65">Tell us about your staffing requirements and let our team explore the right solution for your business.</p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <PrimaryButton href="/businesses">Request a Driver</PrimaryButton>
+            <GhostButton href={LOGISTICS.phoneHref}><Phone className="h-4 w-4" /> {LOGISTICS.phone}</GhostButton>
           </div>
         </FadeIn>
       </section>

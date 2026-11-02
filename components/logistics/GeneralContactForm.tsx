@@ -53,9 +53,9 @@ export function GeneralContactForm() {
 
   if (sent) {
     return (
-      <div className="rounded-2xl border-2 p-8 text-center" style={{ borderColor: LOGISTICS.colors.blue }}>
+      <div className="border-2 p-8 text-center" style={{ borderColor: LOGISTICS.colors.blue }}>
         <CheckCircle2 className="mx-auto h-10 w-10" style={{ color: LOGISTICS.colors.blue }} />
-        <h3 className="mt-4 font-display text-xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Message sent</h3>
+        <h3 className="mt-4 font-display uppercase tracking-wide text-xl font-bold" style={{ color: LOGISTICS.colors.navy }}>Message sent</h3>
         <p className="mt-2 text-sm text-slate-600">Thanks for getting in touch — we&apos;ll reply as soon as we can.</p>
       </div>
     );
@@ -66,37 +66,37 @@ export function GeneralContactForm() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
-          <input name="fullName" required className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <input name="fullName" required className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
         </div>
         <div>
           <label className="block text-sm font-semibold text-slate-700">Email Address <span className="text-red-500">*</span></label>
-          <input name="email" type="email" required className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <input name="email" type="email" required className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
         </div>
         <div>
           <label className="block text-sm font-semibold text-slate-700">Telephone Number</label>
-          <input name="phone" type="tel" className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <input name="phone" type="tel" className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
         </div>
         <div>
           <label className="block text-sm font-semibold text-slate-700">Enquiry Type <span className="text-red-500">*</span></label>
-          <select name="enquiryType" required defaultValue="general" className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+          <select name="enquiryType" required defaultValue="general" className="mt-1.5 w-full border border-slate-300 bg-white px-3 py-2.5 text-sm logistics-input focus:outline-none">
             {ENQUIRY_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
           </select>
         </div>
       </div>
       <div>
         <label className="block text-sm font-semibold text-slate-700">Subject <span className="text-red-500">*</span></label>
-        <input name="subject" required className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+        <input name="subject" required className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
       </div>
       <div>
         <label className="block text-sm font-semibold text-slate-700">Message <span className="text-red-500">*</span></label>
-        <textarea name="message" required rows={5} className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+        <textarea name="message" required rows={5} className="mt-1.5 w-full border border-slate-300 px-3 py-2.5 text-sm logistics-input focus:outline-none" />
       </div>
       <label className="flex items-start gap-2.5 text-sm text-slate-600">
         <input type="checkbox" name="privacyAccepted" className="mt-0.5 h-4 w-4 rounded border-slate-300" />
         I confirm I have read the <a href="/privacy-notice" className="underline" style={{ color: LOGISTICS.colors.blue }}>Privacy Notice</a>.
       </label>
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
-      <button type="submit" disabled={submitting} className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-base font-bold text-white transition-colors disabled:opacity-60" style={{ backgroundColor: LOGISTICS.colors.blue }}>
+      <button type="submit" disabled={submitting} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold text-white transition-colors disabled:opacity-60" style={{ backgroundColor: LOGISTICS.colors.blue }}>
         {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
         Send Message
       </button>
