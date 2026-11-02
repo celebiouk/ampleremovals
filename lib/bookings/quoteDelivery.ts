@@ -16,6 +16,39 @@ import type { QuotePDFData, QuoteLineItem } from "@/types";
 
 const brandOrAmple = (slug?: string | null): Brand => (slug && BRAND_BY_SLUG[slug]) || AMPLE_BRAND;
 
+/** Short per-brand phrasing for the handful of lines every quote-delivery
+ *  message shares, so these don't read as the same email/SMS/WhatsApp with
+ *  only the company name swapped — see tasks/brand-playbook.md. */
+const QUOTE_VOICE: Record<string, { readyHeading: string; reserveIntro: (multi: boolean) => string; reservedHeading: string; confirmedHeading: string }> = {
+  ample: {
+    readyHeading: "Your quote is ready 🎉",
+    reserveIntro: (multi) => `Here's your quote${multi ? " — pick the option that suits you" : ""}. Your full quote is attached as a PDF.`,
+    reservedHeading: "You've reserved your date 🎉",
+    confirmedHeading: "Your deposit is confirmed ✅",
+  },
+  "thatcham-movers": {
+    readyHeading: "Here's your price 👍",
+    reserveIntro: (multi) => `Sorted — ${multi ? "here are your options, take your pick. " : "here's your price. "}Full breakdown's attached as a PDF.`,
+    reservedHeading: "Date reserved 👍",
+    confirmedHeading: "Deposit's in — you're booked ✅",
+  },
+  "newbury-removals": {
+    readyHeading: "Your Personalised Quote",
+    reserveIntro: (multi) => `Please find your quote${multi ? ", with the available options," : ""} below, with the full breakdown attached as a PDF.`,
+    reservedHeading: "Date Reserved — Thank You",
+    confirmedHeading: "Deposit Confirmed — Booking Secured",
+  },
+  manyvans: {
+    readyHeading: "Price's in 💪",
+    reserveIntro: (multi) => `${multi ? "Pick your option below — " : "Here's the number — "}full details in the attached PDF.`,
+    reservedHeading: "Locked in 💪",
+    confirmedHeading: "Deposit's through — you're set ✅",
+  },
+};
+function quoteVoice(slug: string) {
+  return QUOTE_VOICE[slug] ?? QUOTE_VOICE.ample;
+}
+
 /** Build the quote PDF + Standard/Premium figures for a booking. Best-effort:
  *  returns a null buffer if anything is missing so the email still sends. */
 async function buildQuoteAssets(bookingId: string, standardTotal: number): Promise<{ pdf: Buffer | null; premiumTotal: number; depositPercentage: number }> {
@@ -76,7 +109,7 @@ async function buildQuoteAssets(bookingId: string, standardTotal: number): Promi
 }
 
 /** The "what you get" crew block for a booking's quote emails (default-filled). */
-async function crewBlockHtml(bookingId: string): Promise<string> {
+async function crewBlockHtml(bookingId: string, primaryColor: string): Promise<string> {
   let crew;
   try {
     const supabase = createAdminClient();
@@ -90,13 +123,11 @@ async function crewBlockHtml(bookingId: string): Promise<string> {
     crew = resolveCrew({});
   }
   return `
-    <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 16px; margin: 20px 0; border-radius: 8px;">
-      <p style="margin: 0 0 6px 0; font-size: 15px; color: #6b21a8;"><strong>What you get:</strong> ${crew.line}</p>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; margin: 20px 0; border-radius: 8px;">
+      <p style="margin: 0 0 6px 0; font-size: 15px; color: ${primaryColor};"><strong>What you get:</strong> ${crew.line}</p>
       <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">${crew.blurb}</p>
     </div>`;
 }
-
-const PHONE = "0333 577 2070";
 
 /**
  * Moves a booking into "Quote Sent to Customer" once its instant quote exists,
@@ -198,7 +229,7 @@ export async function sendReserveMessages({
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const link = `${siteUrl}/quote/${bookingId}/${token}`;
   const standardAmount = formatCurrency(total);
-  const crewHtml = await crewBlockHtml(bookingId);
+  const crewHtml = await crewBlockHtml(bookingId, brand.colors.primary);
 
   // Quote PDF + Premium figure (best-effort — email still goes without them).
   const { pdf, premiumTotal, depositPercentage } = await buildQuoteAssets(bookingId, total);
@@ -223,20 +254,20 @@ export async function sendReserveMessages({
   const blocks: string[] = [];
   if (showStandard) {
     blocks.push(`
-        <div style="border: 2px solid #6b21a8; border-radius: 12px; padding: 18px; margin: 20px 0;">
+        <div style="border: 2px solid ${brand.colors.primary}; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
-            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">${multiOption ? "Standard Removal" : "Your Removal"}</td>
-            <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${standardAmount}</td>
+            <td style="font-size: 16px; font-weight: bold; color: ${brand.colors.primary};">${multiOption ? "Standard Removal" : "Your Removal"}</td>
+            <td style="text-align:right; font-size: 22px; font-weight: bold; color: ${brand.colors.primary};">${standardAmount}</td>
           </tr></table>
           <ul style="margin: 10px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${standardList}</ul>
         </div>`);
   }
   if (showPremium) {
     blocks.push(`
-        <div style="border: 2px solid #6b21a8; background:#faf5ff; border-radius: 12px; padding: 18px; margin: 20px 0;">
+        <div style="border: 2px solid ${brand.colors.primary}; background:#f8fafc; border-radius: 12px; padding: 18px; margin: 20px 0;">
           <table style="width:100%;"><tr>
-            <td style="font-size: 16px; font-weight: bold; color: #6b21a8;">${multiOption ? "Premium — Full Pack & Move" : "Your Removal (Premium — Full Pack & Move)"}</td>
-            <td style="text-align:right; font-size: 22px; font-weight: bold; color: #6b21a8;">${premiumAmount}</td>
+            <td style="font-size: 16px; font-weight: bold; color: ${brand.colors.primary};">${multiOption ? "Premium — Full Pack & Move" : "Your Removal (Premium — Full Pack & Move)"}</td>
+            <td style="text-align:right; font-size: 22px; font-weight: bold; color: ${brand.colors.primary};">${premiumAmount}</td>
           </tr></table>
           ${multiOption ? `<p style="margin: 8px 0 4px; font-size: 13px; font-weight: bold; color:#475569;">Everything in Standard, plus:</p>` : ""}
           <ul style="margin: 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 1.7;">${premiumList}</ul>
@@ -261,7 +292,7 @@ export async function sendReserveMessages({
   if (showStandard) {
     ctaButtons.push(`
         <p style="text-align: center; margin: 0 0 12px;">
-          <a href="${standardLink}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
+          <a href="${standardLink}" style="background: ${brand.colors.accent}; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
             Pay ${standardDepositAmount} deposit${multiOption ? " — Standard" : " to secure your date"}
           </a>
         </p>`);
@@ -269,23 +300,24 @@ export async function sendReserveMessages({
   if (showPremium) {
     ctaButtons.push(`
         <p style="text-align: center; margin: 0 0 12px;">
-          <a href="${premiumLink}" style="background: #6b21a8; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
+          <a href="${premiumLink}" style="background: ${brand.colors.primary}; color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block; width: 80%;">
             Pay ${premiumDepositAmount} deposit${multiOption ? " — Premium" : " to secure your date"}
           </a>
         </p>`);
   }
   const ctaHtml = ctaButtons.length > 0
     ? `<p style="font-size: 16px; margin: 20px 0 12px;">Ready to secure your date? A small deposit does it — <strong>the rest isn't due until moving day</strong>:</p>${ctaButtons.join("")}`
-    : `<p style="font-size: 16px; margin: 20px 0 12px; text-align: center;"><strong>Ready to book at the hourly rate?</strong><br/>Call us on <a href="tel:${PHONE.replace(/\s/g, "")}" style="color: #0f766e;">${PHONE}</a> and we'll get your date locked in.</p>`;
+    : `<p style="font-size: 16px; margin: 20px 0 12px; text-align: center;"><strong>Ready to book at the hourly rate?</strong><br/>Call us on <a href="${brand.phoneHref}" style="color: #0f766e;">${brand.phone}</a> and we'll get your date locked in.</p>`;
 
+  const voice = quoteVoice(brand.slug);
   const introLine = showHourly && activeCount === 1
     ? "Here's your hourly rate for the move. Your full quote is attached as a PDF."
-    : `Here's your quote${multiOption ? " — pick the option that suits you" : ""}. Your full quote is attached as a PDF.`;
+    : voice.reserveIntro(multiOption);
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-      <div style="background: #6b21a8; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px;">Your quote is ready 🎉</h1>
+      <div style="background: ${brand.colors.primary}; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 22px;">${voice.readyHeading}</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
@@ -294,8 +326,8 @@ export async function sendReserveMessages({
         ${quoteBlockHtml}
         ${bookingItemsBlockHtml(inventory)}
         ${ctaHtml}
-        <p style="font-size: 14px; color: #64748b;">Or open your quote any time: <a href="${link}" style="color: #6b21a8;">${link}</a></p>
-        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${PHONE}.<br><br>Daniel<br>${brand.name}</p>
+        <p style="font-size: 14px; color: #64748b;">Or open your quote any time: <a href="${link}" style="color: ${brand.colors.primary};">${link}</a></p>
+        <p style="font-size: 15px; margin-top: 24px;">Any questions? Just call us on ${brand.phone}.<br><br>Daniel<br>${brand.name}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
@@ -311,7 +343,7 @@ export async function sendReserveMessages({
   const smsLink = await shortenUrl(link);
   const smsCta = ctaButtons.length > 0
     ? `Pay a small deposit to secure your date (rest due on moving day): ${smsLink}`
-    : `Call ${PHONE} to book: ${smsLink}`;
+    : `Call ${brand.phone} to book: ${smsLink}`;
   const smsText = `Hi ${firstName}, your ${brand.name} quote: ${optionsText}. ${smsCta} — Ref ${reference}`;
 
   const whatsappLines: string[] = [];
@@ -320,7 +352,7 @@ export async function sendReserveMessages({
   if (showHourly) whatsappLines.push(`*Hourly rate (2 men & a van):* ${hourlyRateText} — call to book`);
   const whatsappCta = ctaButtons.length > 0
     ? `A small deposit secures your date — the rest isn't due until moving day:\n${link}`
-    : `Call us on ${PHONE} to get your date locked in:\n${link}`;
+    : `Call us on ${brand.phone} to get your date locked in:\n${link}`;
   const whatsappText = `Hi ${firstName}, your ${brand.name} quote is ready 🚚\n\n${whatsappLines.join("\n")}\n\n${whatsappCta}\n\nRef: ${reference}`;
 
   await Promise.allSettled([
@@ -377,7 +409,7 @@ export async function sendDepositMessages({
          <tr><td style="padding:6px 0; color:#64748b;">Account number</td><td style="padding:6px 0; font-weight:bold; text-align:right;">${BANK_DETAILS.accountNumber}</td></tr>
          <tr><td style="padding:6px 0; color:#64748b;">Reference</td><td style="padding:6px 0; font-weight:bold; text-align:right;">${reference}</td></tr>
        </table>`
-    : `<p style="font-size:15px;">Please call us on ${PHONE} to pay your deposit.</p>`;
+    : `<p style="font-size:15px;">Please call us on ${brand.phone} to pay your deposit.</p>`;
 
   // Bank transfer is Ample Removals only — the white-label brands are card
   // (+ Klarna) only.
@@ -394,23 +426,23 @@ export async function sendDepositMessages({
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
       <div style="background: ${brand.colors.primary}; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px;">You've reserved your date 🎉</h1>
+        <h1 style="color: #fff; margin: 0; font-size: 22px;">${quoteVoice(brand.slug).reservedHeading}</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
         <p style="font-size: 16px; margin: 16px 0;">${payChoiceLine}</p>
-        <div style="background: #f5f3ff; border-left: 4px solid ${brand.colors.primary}; padding: 16px; margin: 16px 0; border-radius: 4px;">
+        <div style="background: #f8fafc; border-left: 4px solid ${brand.colors.primary}; padding: 16px; margin: 16px 0; border-radius: 4px;">
           <p style="margin: 0 0 6px; font-size: 15px;">💳 <strong>Pay your ${amount} deposit by card</strong> — instant, reserves your date.</p>
           <p style="margin: 0 0 6px; font-size: 15px;">🅺 <strong>Pay in 3 with Klarna</strong> — split your whole move into 3 interest-free instalments.</p>
           ${bankBlock}
         </div>
         <p style="font-size: 14px; color: #475569;">${bankSmsNote}</p>
         <p style="text-align: center; margin: 24px 0;">
-          <a href="${link}" style="background: #16a34a; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
+          <a href="${link}" style="background: ${brand.colors.accent}; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
             Pay &amp; lock in my date
           </a>
         </p>
-        <p style="font-size: 14px; color: #64748b;"><strong>Don't worry — you can still change your date later.</strong> Any questions? Call us on ${PHONE}.</p>
+        <p style="font-size: 14px; color: #64748b;"><strong>Don't worry — you can still change your date later.</strong> Any questions? Call us on ${brand.phone}.</p>
         <p style="font-size: 15px; margin-top: 16px;">Daniel<br>${brand.name}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
@@ -446,6 +478,8 @@ export interface DepositConfirmedParams {
   moveDate?: string | null;
   moveTime?: string | null;
   isFlexibleDate?: boolean;
+  /** See ReserveMessageParams.brand. */
+  brand?: string;
 }
 
 /**
@@ -464,42 +498,50 @@ export async function sendDepositConfirmedMessages({
   moveDate,
   moveTime,
   isFlexibleDate,
+  brand: brandSlug,
 }: DepositConfirmedParams): Promise<void> {
+  const brand = brandOrAmple(brandSlug);
+  const voice = quoteVoice(brand.slug);
   const showWindow = Boolean(moveDate) && !isFlexibleDate;
   const windowStr = showWindow ? formatMoveTimeWindow(moveTime) : null;
   const changeNotice = "Need to change anything? Just call us at least 48 hours before your move date so we can rearrange the crew in time.";
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto;">
-      <div style="background: #16a34a; padding: 24px; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px;">Your deposit is confirmed ✅</h1>
+      <div style="background: ${brand.colors.accent}; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 22px;">${voice.confirmedHeading}</h1>
       </div>
       <div style="background: #fff; padding: 32px; border: 1px solid #e2e8f0; border-top: 0; border-radius: 0 0 12px 12px;">
         <p style="font-size: 16px;">Hi ${firstName},</p>
-        <p style="font-size: 16px; margin: 16px 0;">Great news — <strong>Ample Removals has confirmed your deposit</strong>, and your moving date is locked in. 🎉</p>
+        <p style="font-size: 16px; margin: 16px 0;">Great news — <strong>${brand.name} has confirmed your deposit</strong>, and your moving date is locked in. 🎉</p>
         ${windowStr ? `
-        <div style="background: #f0fdf4; border: 2px solid #16a34a; padding: 14px 18px; margin: 20px 0; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; font-size: 13px; color: #15803d; font-weight: bold;">⏰ ARRIVAL WINDOW</p>
-          <p style="margin: 4px 0 0; font-size: 20px; color: #14532d; font-weight: bold;">${windowStr}</p>
+        <div style="background: #f8fafc; border: 2px solid ${brand.colors.accent}; padding: 14px 18px; margin: 20px 0; border-radius: 8px; text-align: center;">
+          <p style="margin: 0; font-size: 13px; color: ${brand.colors.accent}; font-weight: bold;">⏰ ARRIVAL WINDOW</p>
+          <p style="margin: 4px 0 0; font-size: 20px; color: #1e293b; font-weight: bold;">${windowStr}</p>
         </div>` : ""}
         <p style="font-size: 16px; margin: 16px 0;">We'll be in touch with the final details as your move approaches.</p>
         <p style="font-size: 14px; margin: 16px 0; color: #475569;"><strong>${changeNotice}</strong></p>
-        <p style="font-size: 15px; margin-top: 16px;">Thank you for choosing us,<br>Daniel<br>Ample Removals · ${PHONE}</p>
+        <p style="font-size: 15px; margin-top: 16px;">Thank you for choosing us,<br>Daniel<br>${brand.name} · ${brand.phone}</p>
         <p style="font-size: 13px; color: #94a3b8;">Ref: ${reference}</p>
       </div>
     </div>`;
 
   const smsText =
-    `Ample Removals: your deposit is confirmed and your moving date is locked in${windowStr ? ` (arrival window ${windowStr})` : ""}! 🎉 Need to change anything? Call us at least 48hrs ahead. Questions? ${PHONE}. Ref ${reference}`;
+    `${brand.name}: your deposit is confirmed and your moving date is locked in${windowStr ? ` (arrival window ${windowStr})` : ""}! 🎉 Need to change anything? Call us at least 48hrs ahead. Questions? ${brand.phone}. Ref ${reference}`;
 
   const whatsappText =
-    `Hi ${firstName}, great news — *Ample Removals has confirmed your deposit* ✅\n\nYour moving date is locked in.${windowStr ? `\n⏰ Arrival window: ${windowStr}` : ""}\n\n${changeNotice}\n\nCall us on ${PHONE}.\n\nRef: ${reference}`;
+    `Hi ${firstName}, great news — *${brand.name} has confirmed your deposit* ✅\n\nYour moving date is locked in.${windowStr ? `\n⏰ Arrival window: ${windowStr}` : ""}\n\n${changeNotice}\n\nCall us on ${brand.phone}.\n\nRef: ${reference}`;
 
   await Promise.allSettled([
     resend.emails
-      .send({ from: resendFrom, to: email, subject: `Your deposit is confirmed — your move is booked! (${reference})`, html: emailHtml })
+      .send({
+        from: brand.slug === "ample" ? resendFrom : `${brand.emailFrom} <${brand.emailAddress}>`,
+        to: email,
+        subject: `Your deposit is confirmed — your move is booked! (${reference})`,
+        html: emailHtml,
+      })
       .catch((e) => console.warn("deposit-confirmed email failed:", e)),
-    sendSMS(phone, smsText),
-    sendWhatsApp(phone, whatsappText),
+    ...(brand.allowAutomatedSms ? [sendSMS(phone, smsText)] : []),
+    sendWhatsApp(phone, whatsappText, undefined, { title: `${brand.name} — deposit confirmed`, brand: brand.slug }),
   ]);
 }

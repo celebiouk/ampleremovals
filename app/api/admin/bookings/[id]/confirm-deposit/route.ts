@@ -23,7 +23,7 @@ export async function POST(
 
   const { data: booking, error } = await supabase
     .from("bookings")
-    .select("status, reference, move_date, move_time, is_flexible_date, customer:customers!inner(full_name, email, phone)")
+    .select("status, reference, move_date, move_time, is_flexible_date, brand, customer:customers!inner(full_name, email, phone)")
     .eq("id", bookingId)
     .single();
   if (error || !booking) {
@@ -82,6 +82,7 @@ export async function POST(
       moveDate: booking.move_date as string | null,
       moveTime: booking.move_time as string | null,
       isFlexibleDate: Boolean(booking.is_flexible_date),
+      brand: booking.brand as string | undefined,
     });
   }
 

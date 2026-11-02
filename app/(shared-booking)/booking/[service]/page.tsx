@@ -5,6 +5,7 @@ import { SERVICE_BY_SLUG } from "@/lib/services";
 import { BookingFlow } from "@/components/booking/BookingFlow";
 import { getCurrentBrand } from "@/lib/brand-context";
 import { brandPageMetadata } from "@/lib/brands";
+import type { BrandSlug } from "@/components/booking/wizard-configs";
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,16 @@ export async function generateMetadata({
   return brandPageMetadata(brand, title, "Free, no-obligation quote in a few quick steps.", `/booking/${params.service}`);
 }
 
-export default function BookingPage({
+// Intro sub-heading, per brand — small on-page thing, but identical wording
+// here would be a tell for anyone comparing brands side by side.
+const INTRO_SUBHEAD: Record<BrandSlug, string> = {
+  ample: "Free, no-obligation quote in a few quick steps.",
+  "thatcham-movers": "A few quick questions and we'll have your price.",
+  "newbury-removals": "Answer a few questions to receive your personalised quote.",
+  manyvans: "Quick questions, fast price. Let's go.",
+};
+
+export default async function BookingPage({
   params,
   searchParams,
 }: {
@@ -28,6 +38,8 @@ export default function BookingPage({
   if (!meta) notFound();
 
   const Icon = meta.icon;
+  const brand = await getCurrentBrand();
+  const brandSlug = brand.slug as BrandSlug;
 
   return (
     <div className="min-h-screen pb-24 pt-24 sm:pb-16 sm:pt-28" style={{ backgroundColor: "var(--bp-50, #f5f3ff)" }}>
@@ -49,7 +61,7 @@ export default function BookingPage({
                 {meta.title}
               </h1>
               <p className="text-sm text-slate-500">
-                Free, no-obligation quote in a few quick steps.
+                {INTRO_SUBHEAD[brandSlug] ?? INTRO_SUBHEAD.ample}
               </p>
             </div>
           </div>
@@ -58,6 +70,7 @@ export default function BookingPage({
         <BookingFlow
           slug={params.service}
           initialPostcode={searchParams.postcode ?? ""}
+          brandSlug={brandSlug}
         />
       </div>
     </div>

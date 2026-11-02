@@ -191,6 +191,67 @@ default to Ample's branding regardless of which domain it's reached from.
 Low priority today since no ad campaigns run for the new brands yet, but
 fix it the same way before that changes.
 
+## Disguising the wizard itself — why this exists
+
+An explicit, deliberate requirement from the owner: a customer who gets
+quotes from Ample, Thatcham Movers, Newbury Removals and ManyVans back to
+back should never be able to tell they're the same company. Colour
+theming alone doesn't achieve that — it's still visibly "the same form,
+recoloured" to anyone paying attention. So three more things vary per
+brand, on top of the colour theme:
+
+1. **Step order and grouping.** Every brand's wizard collects the exact
+   same fields into the exact same Zod schema (so the admin dashboard and
+   the database are completely unaffected), but the *order* those
+   questions are asked in genuinely differs. See `wizard-configs.tsx`:
+   each service (`removals`, `man-and-van`, `house-clearance`) has one
+   step dictionary (`id → {fields, element}`, identical for every brand)
+   and one review-sections list (also identical, referenced by step
+   `id` rather than a numeric index), plus a **separate order array per
+   brand**. `buildSteps()` assembles the final `WizardStep[]` from
+   whichever order is active and resolves each Review section's "Edit"
+   link by looking up `order.indexOf(id)` — so reordering can never
+   silently break an Edit link the way a hardcoded numeric `editStep`
+   could. House Cleaning and End of Tenancy aren't brand-variant (no
+   white-label brand offers them) and keep a single fixed order.
+2. **Step titles and wording.** Each brand has its own title string per
+   step id (see the `*Titles` maps in `wizard-configs.tsx`) — a different
+   voice, not just the same sentence restructured. The booking page's
+   intro sub-heading (`app/(shared-booking)/booking/[service]/page.tsx`)
+   and the confirmation email/SMS/WhatsApp copy (`lib/notifications.ts`'s
+   `BRAND_VOICE`, `lib/bookings/quoteDelivery.ts`'s `QUOTE_VOICE`) follow
+   the same pattern — genuinely different sentences per brand, not the
+   same template with the company name swapped in.
+3. **The wizard shell itself.** `BookingWizard.tsx`'s `SHELL_VARIANTS`
+   gives each brand a different progress indicator (a smooth percentage
+   bar for Ample, a numbered-dot row for Thatcham Movers, a compact
+   "X/Y" counter for Newbury Removals and ManyVans), different step-change
+   animation (slide / fade / scale / vertical-slide), different card
+   corner radius and border treatment, and different button wording
+   ("Continue"/"Submit booking" vs "Keep Going"/"Show Me The Price" etc).
+   Ample's entry reproduces the wizard's original look exactly, and the
+   admin-side `CompletionFlow` never passes a `brandSlug` at all, so
+   neither changes.
+
+**Adding this for a future brand**: add one entry to each `*Orders`
+map and each `*Titles` map in `wizard-configs.tsx` (for `removals`,
+`man-and-van`, and `house-clearance` — or whichever services that brand
+actually offers), one entry to `SHELL_VARIANTS` in `BookingWizard.tsx`,
+and one entry each to `BRAND_VOICE` (`lib/notifications.ts`) and
+`QUOTE_VOICE` (`lib/bookings/quoteDelivery.ts`). Falling back silently to
+Ample's entries for an unlisted brand slug would defeat the entire point
+— always add a real entry, never rely on the default.
+
+**Verifying a reorder is safe before shipping it**: the one thing that
+can silently break is a step id typo in an order array (a step that's in
+the dictionary but missing from some brand's order, or listed twice).
+Write a quick throwaway script that checks each brand's order array is
+exactly a permutation of the dictionary's keys + `"review"`, and that
+every review section's `editStepId` appears in that order — this caught
+nothing wrong when the first 3 brands were built, but it's a 2-minute
+check against a real mistake that `tsc`/`next build` cannot catch (the
+types don't know what a *valid* order looks like, only a well-typed one).
+
 ## Daily blog posts (future, once brands are live)
 
 Each brand's `TipArticle[]` array in its content file IS the blog. To add

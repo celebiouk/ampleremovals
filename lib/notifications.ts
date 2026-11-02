@@ -12,6 +12,69 @@ function resolveBrand(slug?: string | null): Brand {
   return (slug && BRAND_BY_SLUG[slug]) || AMPLE_BRAND;
 }
 
+/**
+ * Per-brand copy for the customer-facing confirmation email/SMS/WhatsApp —
+ * deliberately different sentence structure per brand, not the same
+ * template with the name swapped in. Someone comparing a quote request
+ * across Ample/Thatcham Movers/Newbury Removals/ManyVans should never see
+ * two messages that read as the same text with a different company name.
+ * Add an entry here for any future brand; falling back silently to
+ * Ample's voice for an unlisted slug would defeat the whole point.
+ */
+interface BrandVoice {
+  headerSubtitle: string;
+  /** The intro sentence's lead-in, before "<strong>{serviceLabel}</strong> request." */
+  intro: (brandName: string) => string;
+  nextSteps: [string, string, string];
+  ctaText: string;
+  footerNote: string;
+  smsTemplate: (customerName: string, serviceLabel: string, reference: string, assignmentShort: string, brandName: string) => string;
+  whatsappTemplate: (customerName: string, serviceLabel: string, reference: string, assignmentShort: string, phoneNote: string) => string;
+}
+
+const BRAND_VOICE: Record<string, BrandVoice> = {
+  ample: {
+    headerSubtitle: "Booking Request Received",
+    intro: (brandName) => `Thank you for choosing ${brandName}. We have received your`,
+    nextSteps: ["Your move coordinator reviews your request", "They call you to talk through your move and give you a quote", "Your booking is confirmed by email"],
+    ctaText: "We'll Call You Soon",
+    footerNote: "You are receiving this email because you submitted a booking request on our website.",
+    smsTemplate: (name, service, ref, short, brand) => `Hi ${name}, we've received your ${service} request (Ref: ${ref}). ${short} – ${brand}`,
+    whatsappTemplate: (name, service, ref, short, phoneNote) => `Hi ${name}! We've received your ${service} request (Ref: *${ref}*).\n\n${short}\n\n📞 ${phoneNote}`,
+  },
+  "thatcham-movers": {
+    headerSubtitle: "Got your request, thanks!",
+    intro: () => "Nice one — your",
+    nextSteps: ["We take a proper look at what you need", "You get a call from the local team to sort your price", "We lock in the job and confirm by email"],
+    ctaText: "We'll Be In Touch Shortly",
+    footerNote: "You're getting this because you asked for a quote on thatchammovers.co.uk.",
+    smsTemplate: (name, service, ref, short) => `Hi ${name}, got your ${service} request (${ref}) — cheers! ${short} Thatcham Movers`,
+    whatsappTemplate: (name, service, ref, short, phoneNote) => `Hi ${name}, thanks for the ${service} request! Ref *${ref}*.\n\n${short}\n\n☎️ ${phoneNote}`,
+  },
+  "newbury-removals": {
+    headerSubtitle: "Your request has been logged",
+    intro: () => "We've logged your",
+    nextSteps: ["Our team reviews the details you've provided", "A member of staff will contact you to finalise pricing", "You'll receive written confirmation once agreed"],
+    ctaText: "Awaiting Your Call",
+    footerNote: "This email was sent because a quote request was submitted via newburyremovals.co.uk.",
+    smsTemplate: (name, service, ref, short, brand) => `Dear ${name}, your ${service} enquiry (ref. ${ref}) has been received. ${short} Regards, ${brand}`,
+    whatsappTemplate: (name, service, ref, short, phoneNote) => `Hello ${name}, thank you for your ${service} enquiry (reference *${ref}*).\n\n${short}\n\n📞 ${phoneNote}`,
+  },
+  manyvans: {
+    headerSubtitle: "Got it — we're on it",
+    intro: () => "Request locked in! Your",
+    nextSteps: ["We check out what you've told us", "You get a call to nail down the price", "Booking's confirmed — job done"],
+    ctaText: "Expect A Call Soon",
+    footerNote: "Sent because a quote was requested at manyvans.com.",
+    smsTemplate: (name, service, ref, short, brand) => `Yo ${name} — got your ${service} request (${ref}). ${short} - ${brand}`,
+    whatsappTemplate: (name, service, ref, short, phoneNote) => `Hey ${name}! Your ${service} request *${ref}* is in.\n\n${short}\n\n📞 ${phoneNote}`,
+  },
+};
+
+function resolveVoice(slug: string): BrandVoice {
+  return BRAND_VOICE[slug] ?? BRAND_VOICE.ample;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 const SERVICE_LABEL: Record<ServiceType, string> = {
@@ -73,9 +136,10 @@ function customerEmailHtml(params: {
   const { customerName, reference, serviceLabel, dateText, originAddress, assignmentHeading, assignmentLine, phoneNote, brand } = params;
   const primary = brand.colors.primary;
   const accent = brand.colors.accent;
+  const voice = resolveVoice(brand.slug);
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Booking Request Received</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${voice.headerSubtitle}</title></head>
 <body style="margin:0;padding:0;background:#f5f4f8;font-family:'Helvetica Neue',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4f8;padding:32px 0;">
     <tr><td align="center">
@@ -84,14 +148,14 @@ function customerEmailHtml(params: {
         <!-- Header -->
         <tr><td style="background:${primary};border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
           <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">${brand.name}</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:14px;">Booking Request Received</p>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:14px;">${voice.headerSubtitle}</p>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="background:#ffffff;padding:40px;">
           <p style="margin:0 0 16px;font-size:16px;color:#1e1b4b;">Hi <strong>${customerName}</strong>,</p>
           <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-            Thank you for choosing ${brand.name}. We have received your <strong>${serviceLabel}</strong> request.
+            ${voice.intro(brand.name)} <strong>${serviceLabel}</strong> request.
           </p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
             <tr><td style="background:#f8fafc;border:2px solid ${accent};border-radius:10px;padding:18px 20px;">
@@ -135,17 +199,17 @@ function customerEmailHtml(params: {
           <!-- What happens next -->
           <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1e293b;">What happens next</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-            ${["Your move coordinator reviews your request", "They call you to talk through your move and give you a quote", "Your booking is confirmed by email"].map((step, i) => `
+            ${voice.nextSteps.map((stepText, i) => `
             <tr><td style="padding:8px 0;font-size:14px;color:#475569;">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:${primary};border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:10px;">${i + 1}</span>
-              ${step}
+              ${stepText}
             </td></tr>`).join("")}
           </table>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <span style="display:inline-block;background:${accent};border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">We&rsquo;ll Call You Soon</span>
+              <span style="display:inline-block;background:${accent};border-radius:10px;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;">${voice.ctaText}</span>
             </td></tr>
           </table>
         </td></tr>
@@ -155,7 +219,7 @@ function customerEmailHtml(params: {
           <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#ffffff;">${brand.name}</p>
           <p style="margin:0 0 4px;font-size:13px;color:rgba(255,255,255,0.75);">Tel: ${brand.phone}</p>
           <p style="margin:12px 0 0;font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;">
-            You are receiving this email because you submitted a booking request on our website.
+            ${voice.footerNote}
           </p>
         </td></tr>
 
@@ -462,9 +526,8 @@ export async function sendCustomerConfirmationSMS(
     const to = normaliseUKPhone(payload.phone);
 
     // Keep under 160 chars
-    const body =
-      `Hi ${payload.customerName}, we've received your ${serviceLabel} request (Ref: ${payload.reference}). ` +
-      `${getAssignmentMessage(brand.phone).short} – ${brand.name}`;
+    const voice = resolveVoice(brand.slug);
+    const body = voice.smsTemplate(payload.customerName, serviceLabel, payload.reference, getAssignmentMessage(brand.phone).short, brand.name);
 
     await twilioClient.messages.create({
       from: twilioFrom,
@@ -496,9 +559,8 @@ export async function sendCustomerConfirmationWhatsApp(
     const brand = resolveBrand(payload.brand);
     const serviceLabel = SERVICE_LABEL_SHORT[payload.serviceType];
     const assignment = getAssignmentMessage(brand.phone);
-    const body =
-      `Hi ${payload.customerName}! We've received your ${serviceLabel} request (Ref: *${payload.reference}*) with ${brand.name}.\n\n` +
-      `${assignment.short}\n\n📞 ${assignment.phoneNote}`;
+    const voice = resolveVoice(brand.slug);
+    const body = voice.whatsappTemplate(payload.customerName, serviceLabel, payload.reference, assignment.short, assignment.phoneNote);
 
     await sendWhatsApp(payload.phone, body, undefined, {
       bookingId: payload.bookingId,

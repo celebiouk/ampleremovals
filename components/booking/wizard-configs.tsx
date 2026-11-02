@@ -29,6 +29,21 @@ import {
   SingleDateStep,
 } from "@/components/booking/steps/extra-steps";
 
+/**
+ * Brand-aware wizard step order/wording — see tasks/brand-playbook.md,
+ * "The booking wizard itself" for the full explanation of why this exists
+ * and how to extend it to a future brand. Short version: every brand
+ * collects the exact same fields into the exact same schema (so the admin
+ * dashboard is identical regardless of brand), but the ORDER those
+ * questions are asked in, and the wording of each step's title, differs
+ * per brand — on purpose, so a customer comparing Ample/Thatcham
+ * Movers/Newbury Removals/ManyVans side by side never sees two identical
+ * forms. House Cleaning and End of Tenancy aren't brand-variant (no
+ * white-label brand offers them today) and keep their original single
+ * order/wording regardless of brandSlug.
+ */
+export type BrandSlug = "ample" | "thatcham-movers" | "newbury-removals" | "manyvans";
+
 const NO_EXTRAS = {
   packing_services: false,
   packing_materials: false,
@@ -61,163 +76,274 @@ const reviewStep = (sections: ReviewSection[]): WizardStep =>
 
 type Builder = (initialPostcode: string) => WizardConfig<FieldValues>;
 
-/* ── Removals (13 steps) ──────────────────────────────────── */
-const removals: Builder = (initialPostcode) => ({
-  service: "removals",
-  slug: "removals",
-  apiPath: "/api/bookings/removals",
-  schema: SERVICE_SCHEMAS.removals,
-  defaultValues: {
-    removalType: undefined,
-    originPostcode: initialPostcode,
-    originAddress: undefined,
-    propertyType: undefined,
-    bedrooms: undefined,
-    destinationPostcode: "",
-    destinationAddress: undefined,
-    inventory: [],
-    floor: undefined,
-    hasLift: false, // records "no lift" unless the customer selects Yes
-    parkingWithin20m: undefined,
-    specialInstructions: "",
-    destFloor: undefined,
-    destHasLift: false, // records "no lift" unless the customer selects Yes
-    destParkingWithin20m: undefined,
-    destAccessNotes: "",
-    additionalServices: NO_EXTRAS,
-    packingHours: 0,
-    packingMen: 1,
-    dismantleCount: 0,
-    assembleCount: 0,
-    description: "",
-    isFlexibleDate: false,
-    moveDate: undefined,
-    flexibleDateFrom: undefined,
-    flexibleDateTo: undefined,
-    fullName: "",
-    email: "",
-    phone: "",
-    confirmed: false,
-  } as DefaultValues<FieldValues>,
-  steps: [
-    step("removalType", "Removal type", ["removalType"], <RemovalTypeStep />),
-    step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
-    step("originAccess", "Access — current", [], <AccessStep title="Access at your current address" subtitle="Getting in & out where you're moving FROM. All optional — it helps our crew plan." />),
-    step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
-    step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="What is the address you are moving to?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
-    step("destAccess", "Access — new home", [], <AccessStep title="Access at the address you're moving to" subtitle="Getting in & out where you're moving TO. All optional — it helps our crew plan." floorField="destFloor" liftField="destHasLift" parkingField="destParkingWithin20m" notesField="destAccessNotes" />),
-    step("inventory", "What you're moving", [], <InventoryStep />),
-    step("extras", "Extra help", [], <ExtraHelpStep />),
-    step("description", "About your move", ["description"], <DescriptionStep />),
-    step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
-    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
-    step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
-    reviewStep([
-      { title: "Removal", editStep: 0, rows: [{ label: "Type", key: "removalType" }] },
-      { title: "From", editStep: 1, rows: [{ label: "Address", key: "originAddress" }] },
-      { title: "Pickup access", editStep: 2, rows: [{ label: "Floor", key: "floor" }, { label: "Lift", key: "hasLift" }, { label: "Parking ≤20m", key: "parkingWithin20m" }, { label: "Notes", key: "specialInstructions" }] },
-      { title: "Property", editStep: 3, rows: [{ label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "To", editStep: 4, rows: [{ label: "Address", key: "destinationAddress" }] },
-      { title: "Drop-off access", editStep: 5, rows: [{ label: "Floor", key: "destFloor" }, { label: "Lift", key: "destHasLift" }, { label: "Parking ≤20m", key: "destParkingWithin20m" }, { label: "Notes", key: "destAccessNotes" }] },
-      { title: "Items", editStep: 6, rows: [{ label: "Items", key: "inventory" }] },
-      { title: "Extra help", editStep: 7, rows: [{ label: "Services", key: "additionalServices" }, { label: "Packing", key: "packingHours" }, { label: "Dismantle", key: "dismantleCount" }, { label: "Assemble", key: "assembleCount" }] },
-      { title: "About", editStep: 8, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 9, rows: dateRows },
-      { title: "Contact", editStep: 11, rows: contactRows },
-    ]),
-  ],
-});
+/** One step's field list + rendered element — identical across every
+ *  brand variant of a service, since the DATA collected never changes. */
+interface StepDef {
+  fields: string[];
+  element: ReactNode;
+}
 
-/* ── Man & Van (10 steps) ─────────────────────────────────── */
-const manAndVan: Builder = (initialPostcode) => ({
-  service: "man_and_van",
-  slug: "man-and-van",
-  apiPath: "/api/bookings/man-and-van",
-  schema: SERVICE_SCHEMAS.man_and_van,
-  defaultValues: {
-    originPostcode: initialPostcode,
-    originAddress: undefined,
-    destinationPostcode: "",
-    destinationAddress: undefined,
-    vanType: undefined,
-    hoursNeeded: 2,
-    additionalServices: NO_EXTRAS,
-    description: "",
-    isFlexibleDate: false,
-    moveDate: undefined,
-    flexibleDateFrom: undefined,
-    flexibleDateTo: undefined,
-    fullName: "",
-    email: "",
-    phone: "",
-    confirmed: false,
-  } as DefaultValues<FieldValues>,
-  steps: [
-    step("originAddress", "Current address", ["originPostcode", "originAddress"], <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" />),
-    step("destAddress", "Destination address", ["destinationPostcode", "destinationAddress"], <AddressStep label="Where are you going?" postcodeField="destinationPostcode" addressField="destinationAddress" />),
-    step("vanType", "Van size", ["vanType"], <VanTypeStep />),
-    step("hours", "Hours needed", ["hoursNeeded"], <HoursNeededStep />),
-    step("extras", "Additional services", [], <AdditionalServicesStep />),
-    step("description", "About your move", ["description"], <DescriptionStep />),
-    step("date", "Move date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
-    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
-    step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
-    reviewStep([
-      { title: "From", editStep: 0, rows: [{ label: "Address", key: "originAddress" }] },
-      { title: "To", editStep: 1, rows: [{ label: "Address", key: "destinationAddress" }] },
-      { title: "Van", editStep: 2, rows: [{ label: "Size", key: "vanType" }] },
-      { title: "Hours", editStep: 3, rows: [{ label: "Hours needed", key: "hoursNeeded" }] },
-      { title: "Extras", editStep: 4, rows: [{ label: "Services", key: "additionalServices" }] },
-      { title: "About", editStep: 5, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 6, rows: dateRows },
-      { title: "Contact", editStep: 8, rows: contactRows },
-    ]),
-  ],
-});
+/** A Review section definition keyed by step id rather than a numeric
+ *  index — `buildSteps` resolves the real index from whichever brand's
+ *  order array is active, so "Edit" links can never drift out of sync
+ *  with a reordered wizard the way a hardcoded number could. */
+interface ReviewSectionDef {
+  title: string;
+  editStepId: string;
+  rows: { label: string; key: string }[];
+}
 
-/* ── House Clearance (9 steps) ────────────────────────────── */
-const houseClearance: Builder = (initialPostcode) => ({
-  service: "house_clearance",
-  slug: "house-clearance",
-  apiPath: "/api/bookings/house-clearance",
-  schema: SERVICE_SCHEMAS.house_clearance,
-  defaultValues: {
-    originPostcode: initialPostcode,
-    originAddress: undefined,
-    propertyType: undefined,
-    bedrooms: undefined,
-    clearanceType: undefined,
-    itemsOfNote: [],
-    description: "",
-    isFlexibleDate: false,
-    moveDate: undefined,
-    flexibleDateFrom: undefined,
-    flexibleDateTo: undefined,
-    fullName: "",
-    email: "",
-    phone: "",
-    confirmed: false,
-  } as DefaultValues<FieldValues>,
-  steps: [
-    step("originAddress", "Property address", ["originPostcode", "originAddress"], <AddressStep label="What is the address of the property to be cleared?" postcodeField="originPostcode" addressField="originAddress" />),
-    step("property", "Property details", ["propertyType", "bedrooms"], <PropertyDetailsStep showBedrooms />),
-    step("clearanceType", "Clearance type", ["clearanceType"], <ClearanceTypeStep />),
-    step("items", "Items of note", [], <ItemsOfNoteStep />),
-    step("description", "About the clearance", ["description"], <DescriptionStep />),
-    step("date", "Preferred date", ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], <MoveDateStep />),
-    step("cleaning-offer", "Add cleaning?", [], <CleaningUpsellStep />),
-    step("contact", "Contact details", ["fullName", "email", "phone"], <ContactDetailsStep />),
-    reviewStep([
-      { title: "Property", editStep: 0, rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
-      { title: "Clearance", editStep: 2, rows: [{ label: "Type", key: "clearanceType" }, { label: "Items", key: "itemsOfNote" }] },
-      { title: "About", editStep: 4, rows: [{ label: "Description", key: "description" }] },
-      { title: "Date", editStep: 5, rows: dateRows },
-      { title: "Contact", editStep: 7, rows: contactRows },
-    ]),
-  ],
-});
+function buildSteps(
+  order: string[],
+  dict: Record<string, StepDef>,
+  titles: Record<string, string>,
+  reviewSections: ReviewSectionDef[]
+): WizardStep[] {
+  return order.map((id) => {
+    if (id === "review") {
+      const sections: ReviewSection[] = reviewSections.map((s) => ({
+        title: s.title,
+        editStep: order.indexOf(s.editStepId),
+        rows: s.rows,
+      }));
+      return reviewStep(sections);
+    }
+    const def = dict[id];
+    return step(id, titles[id] ?? id, def.fields, def.element);
+  });
+}
 
-/* ── House Cleaning (9 steps) ─────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   REMOVALS (13 steps)
+   ════════════════════════════════════════════════════════════════════ */
+
+const removalsDict: Record<string, StepDef> = {
+  removalType: { fields: ["removalType"], element: <RemovalTypeStep /> },
+  originAddress: { fields: ["originPostcode", "originAddress"], element: <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" /> },
+  originAccess: { fields: [], element: <AccessStep title="Access at your current address" subtitle="Getting in & out where you're moving FROM. All optional — it helps our crew plan." /> },
+  property: { fields: ["propertyType", "bedrooms"], element: <PropertyDetailsStep showBedrooms /> },
+  destAddress: { fields: ["destinationPostcode", "destinationAddress"], element: <AddressStep label="What is the address you are moving to?" postcodeField="destinationPostcode" addressField="destinationAddress" /> },
+  destAccess: { fields: [], element: <AccessStep title="Access at the address you're moving to" subtitle="Getting in & out where you're moving TO. All optional — it helps our crew plan." floorField="destFloor" liftField="destHasLift" parkingField="destParkingWithin20m" notesField="destAccessNotes" /> },
+  inventory: { fields: [], element: <InventoryStep /> },
+  extras: { fields: [], element: <ExtraHelpStep /> },
+  description: { fields: ["description"], element: <DescriptionStep /> },
+  date: { fields: ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], element: <MoveDateStep /> },
+  "cleaning-offer": { fields: [], element: <CleaningUpsellStep /> },
+  contact: { fields: ["fullName", "email", "phone"], element: <ContactDetailsStep /> },
+};
+
+const removalsReviewSections: ReviewSectionDef[] = [
+  { title: "Removal", editStepId: "removalType", rows: [{ label: "Type", key: "removalType" }] },
+  { title: "From", editStepId: "originAddress", rows: [{ label: "Address", key: "originAddress" }] },
+  { title: "Pickup access", editStepId: "originAccess", rows: [{ label: "Floor", key: "floor" }, { label: "Lift", key: "hasLift" }, { label: "Parking ≤20m", key: "parkingWithin20m" }, { label: "Notes", key: "specialInstructions" }] },
+  { title: "Property", editStepId: "property", rows: [{ label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+  { title: "To", editStepId: "destAddress", rows: [{ label: "Address", key: "destinationAddress" }] },
+  { title: "Drop-off access", editStepId: "destAccess", rows: [{ label: "Floor", key: "destFloor" }, { label: "Lift", key: "destHasLift" }, { label: "Parking ≤20m", key: "destParkingWithin20m" }, { label: "Notes", key: "destAccessNotes" }] },
+  { title: "Items", editStepId: "inventory", rows: [{ label: "Items", key: "inventory" }] },
+  { title: "Extra help", editStepId: "extras", rows: [{ label: "Services", key: "additionalServices" }, { label: "Packing", key: "packingHours" }, { label: "Dismantle", key: "dismantleCount" }, { label: "Assemble", key: "assembleCount" }] },
+  { title: "About", editStepId: "description", rows: [{ label: "Description", key: "description" }] },
+  { title: "Date", editStepId: "date", rows: dateRows },
+  { title: "Contact", editStepId: "contact", rows: contactRows },
+];
+
+const removalsOrders: Record<BrandSlug, string[]> = {
+  ample: ["removalType", "originAddress", "originAccess", "property", "destAddress", "destAccess", "inventory", "extras", "description", "date", "cleaning-offer", "contact", "review"],
+  "thatcham-movers": ["contact", "removalType", "originAddress", "property", "originAccess", "destAddress", "destAccess", "date", "inventory", "description", "extras", "cleaning-offer", "review"],
+  "newbury-removals": ["date", "removalType", "property", "originAddress", "originAccess", "destAddress", "destAccess", "inventory", "extras", "description", "cleaning-offer", "contact", "review"],
+  manyvans: ["originAddress", "destAddress", "removalType", "inventory", "extras", "property", "originAccess", "destAccess", "description", "date", "cleaning-offer", "contact", "review"],
+};
+
+const removalsTitles: Record<BrandSlug, Record<string, string>> = {
+  ample: { removalType: "Removal type", originAddress: "Current address", originAccess: "Access — current", property: "Property details", destAddress: "Destination address", destAccess: "Access — new home", inventory: "What you're moving", extras: "Extra help", description: "About your move", date: "Move date", "cleaning-offer": "Add cleaning?", contact: "Contact details" },
+  "thatcham-movers": { removalType: "What's the move?", originAddress: "Where are you now?", originAccess: "Getting out of your place", property: "Tell us about your home", destAddress: "Where you're headed", destAccess: "Getting into the new place", inventory: "What's coming with you", extras: "Need a hand with anything?", description: "Anything else to know?", date: "When's moving day?", "cleaning-offer": "Fancy a clean too?", contact: "How do we reach you?" },
+  "newbury-removals": { removalType: "Your move type", originAddress: "Collection address", originAccess: "Collection access details", property: "About the property", destAddress: "Delivery address", destAccess: "Delivery access details", inventory: "Your belongings", extras: "Additional support", description: "Move notes", date: "Preferred moving date", "cleaning-offer": "Would you like a clean too?", contact: "Your details" },
+  manyvans: { removalType: "Pick your move", originAddress: "Pickup spot", originAccess: "Pickup access", property: "Your place", destAddress: "Drop-off spot", destAccess: "Drop-off access", inventory: "What's moving", extras: "Extra muscle?", description: "Anything we should know", date: "Pick a date", "cleaning-offer": "Add a clean?", contact: "Your contact info" },
+};
+
+function removalsBuilder(brandSlug: BrandSlug): Builder {
+  const order = removalsOrders[brandSlug] ?? removalsOrders.ample;
+  const titles = removalsTitles[brandSlug] ?? removalsTitles.ample;
+  return (initialPostcode) => ({
+    service: "removals",
+    slug: "removals",
+    apiPath: "/api/bookings/removals",
+    schema: SERVICE_SCHEMAS.removals,
+    defaultValues: {
+      removalType: undefined,
+      originPostcode: initialPostcode,
+      originAddress: undefined,
+      propertyType: undefined,
+      bedrooms: undefined,
+      destinationPostcode: "",
+      destinationAddress: undefined,
+      inventory: [],
+      floor: undefined,
+      hasLift: false, // records "no lift" unless the customer selects Yes
+      parkingWithin20m: undefined,
+      specialInstructions: "",
+      destFloor: undefined,
+      destHasLift: false, // records "no lift" unless the customer selects Yes
+      destParkingWithin20m: undefined,
+      destAccessNotes: "",
+      additionalServices: NO_EXTRAS,
+      packingHours: 0,
+      packingMen: 1,
+      dismantleCount: 0,
+      assembleCount: 0,
+      description: "",
+      isFlexibleDate: false,
+      moveDate: undefined,
+      flexibleDateFrom: undefined,
+      flexibleDateTo: undefined,
+      fullName: "",
+      email: "",
+      phone: "",
+      confirmed: false,
+    } as DefaultValues<FieldValues>,
+    steps: buildSteps(order, removalsDict, titles, removalsReviewSections),
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MAN & VAN (10 steps)
+   ════════════════════════════════════════════════════════════════════ */
+
+const manAndVanDict: Record<string, StepDef> = {
+  originAddress: { fields: ["originPostcode", "originAddress"], element: <AddressStep label="What is your current address?" postcodeField="originPostcode" addressField="originAddress" /> },
+  destAddress: { fields: ["destinationPostcode", "destinationAddress"], element: <AddressStep label="Where are you going?" postcodeField="destinationPostcode" addressField="destinationAddress" /> },
+  vanType: { fields: ["vanType"], element: <VanTypeStep /> },
+  hours: { fields: ["hoursNeeded"], element: <HoursNeededStep /> },
+  extras: { fields: [], element: <AdditionalServicesStep /> },
+  description: { fields: ["description"], element: <DescriptionStep /> },
+  date: { fields: ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], element: <MoveDateStep /> },
+  "cleaning-offer": { fields: [], element: <CleaningUpsellStep /> },
+  contact: { fields: ["fullName", "email", "phone"], element: <ContactDetailsStep /> },
+};
+
+const manAndVanReviewSections: ReviewSectionDef[] = [
+  { title: "From", editStepId: "originAddress", rows: [{ label: "Address", key: "originAddress" }] },
+  { title: "To", editStepId: "destAddress", rows: [{ label: "Address", key: "destinationAddress" }] },
+  { title: "Van", editStepId: "vanType", rows: [{ label: "Size", key: "vanType" }] },
+  { title: "Hours", editStepId: "hours", rows: [{ label: "Hours needed", key: "hoursNeeded" }] },
+  { title: "Extras", editStepId: "extras", rows: [{ label: "Services", key: "additionalServices" }] },
+  { title: "About", editStepId: "description", rows: [{ label: "Description", key: "description" }] },
+  { title: "Date", editStepId: "date", rows: dateRows },
+  { title: "Contact", editStepId: "contact", rows: contactRows },
+];
+
+const manAndVanOrders: Record<BrandSlug, string[]> = {
+  ample: ["originAddress", "destAddress", "vanType", "hours", "extras", "description", "date", "cleaning-offer", "contact", "review"],
+  "thatcham-movers": ["contact", "originAddress", "destAddress", "vanType", "hours", "date", "extras", "description", "cleaning-offer", "review"],
+  "newbury-removals": ["date", "vanType", "hours", "originAddress", "destAddress", "extras", "description", "cleaning-offer", "contact", "review"],
+  manyvans: ["originAddress", "destAddress", "vanType", "extras", "hours", "description", "date", "cleaning-offer", "contact", "review"],
+};
+
+const manAndVanTitles: Record<BrandSlug, Record<string, string>> = {
+  ample: { originAddress: "Current address", destAddress: "Destination address", vanType: "Van size", hours: "Hours needed", extras: "Additional services", description: "About your move", date: "Move date", "cleaning-offer": "Add cleaning?", contact: "Contact details" },
+  "thatcham-movers": { originAddress: "Where from?", destAddress: "Where to?", vanType: "Which van?", hours: "How long do you need us?", extras: "Anything extra?", description: "Anything else?", date: "When's the job?", "cleaning-offer": "Fancy a clean too?", contact: "How do we reach you?" },
+  "newbury-removals": { originAddress: "Collection point", destAddress: "Delivery point", vanType: "Choose your van", hours: "Estimated hours", extras: "Additional support", description: "Job notes", date: "Preferred date", "cleaning-offer": "Add a clean?", contact: "Your details" },
+  manyvans: { originAddress: "Pickup", destAddress: "Drop-off", vanType: "Pick your van", hours: "Hours", extras: "Extra help?", description: "Details", date: "Pick a date", "cleaning-offer": "Add a clean?", contact: "Contact info" },
+};
+
+function manAndVanBuilder(brandSlug: BrandSlug): Builder {
+  const order = manAndVanOrders[brandSlug] ?? manAndVanOrders.ample;
+  const titles = manAndVanTitles[brandSlug] ?? manAndVanTitles.ample;
+  return (initialPostcode) => ({
+    service: "man_and_van",
+    slug: "man-and-van",
+    apiPath: "/api/bookings/man-and-van",
+    schema: SERVICE_SCHEMAS.man_and_van,
+    defaultValues: {
+      originPostcode: initialPostcode,
+      originAddress: undefined,
+      destinationPostcode: "",
+      destinationAddress: undefined,
+      vanType: undefined,
+      hoursNeeded: 2,
+      additionalServices: NO_EXTRAS,
+      description: "",
+      isFlexibleDate: false,
+      moveDate: undefined,
+      flexibleDateFrom: undefined,
+      flexibleDateTo: undefined,
+      fullName: "",
+      email: "",
+      phone: "",
+      confirmed: false,
+    } as DefaultValues<FieldValues>,
+    steps: buildSteps(order, manAndVanDict, titles, manAndVanReviewSections),
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HOUSE CLEARANCE (9 steps)
+   ════════════════════════════════════════════════════════════════════ */
+
+const houseClearanceDict: Record<string, StepDef> = {
+  originAddress: { fields: ["originPostcode", "originAddress"], element: <AddressStep label="What is the address of the property to be cleared?" postcodeField="originPostcode" addressField="originAddress" /> },
+  property: { fields: ["propertyType", "bedrooms"], element: <PropertyDetailsStep showBedrooms /> },
+  clearanceType: { fields: ["clearanceType"], element: <ClearanceTypeStep /> },
+  items: { fields: [], element: <ItemsOfNoteStep /> },
+  description: { fields: ["description"], element: <DescriptionStep /> },
+  date: { fields: ["isFlexibleDate", "moveDate", "flexibleDateFrom", "flexibleDateTo"], element: <MoveDateStep /> },
+  "cleaning-offer": { fields: [], element: <CleaningUpsellStep /> },
+  contact: { fields: ["fullName", "email", "phone"], element: <ContactDetailsStep /> },
+};
+
+const houseClearanceReviewSections: ReviewSectionDef[] = [
+  { title: "Property", editStepId: "originAddress", rows: [{ label: "Address", key: "originAddress" }, { label: "Type", key: "propertyType" }, { label: "Bedrooms", key: "bedrooms" }] },
+  { title: "Clearance", editStepId: "clearanceType", rows: [{ label: "Type", key: "clearanceType" }, { label: "Items", key: "itemsOfNote" }] },
+  { title: "About", editStepId: "description", rows: [{ label: "Description", key: "description" }] },
+  { title: "Date", editStepId: "date", rows: dateRows },
+  { title: "Contact", editStepId: "contact", rows: contactRows },
+];
+
+const houseClearanceOrders: Record<BrandSlug, string[]> = {
+  ample: ["originAddress", "property", "clearanceType", "items", "description", "date", "cleaning-offer", "contact", "review"],
+  "thatcham-movers": ["contact", "originAddress", "clearanceType", "property", "items", "date", "description", "cleaning-offer", "review"],
+  "newbury-removals": ["date", "clearanceType", "originAddress", "property", "items", "description", "cleaning-offer", "contact", "review"],
+  manyvans: ["originAddress", "clearanceType", "items", "property", "description", "date", "cleaning-offer", "contact", "review"],
+};
+
+const houseClearanceTitles: Record<BrandSlug, Record<string, string>> = {
+  ample: { originAddress: "Property address", property: "Property details", clearanceType: "Clearance type", items: "Items of note", description: "About the clearance", date: "Preferred date", "cleaning-offer": "Add cleaning?", contact: "Contact details" },
+  "thatcham-movers": { originAddress: "Which property?", property: "Tell us about it", clearanceType: "What kind of clearance?", items: "Anything notable?", description: "Anything else?", date: "When works for you?", "cleaning-offer": "Fancy a clean too?", contact: "How do we reach you?" },
+  "newbury-removals": { originAddress: "Property to clear", property: "About the property", clearanceType: "Clearance scope", items: "Notable items", description: "Clearance notes", date: "Preferred date", "cleaning-offer": "Add a clean?", contact: "Your details" },
+  manyvans: { originAddress: "The property", property: "A bit about it", clearanceType: "Clearance type", items: "Worth flagging?", description: "Details", date: "Pick a date", "cleaning-offer": "Add a clean?", contact: "Contact info" },
+};
+
+function houseClearanceBuilder(brandSlug: BrandSlug): Builder {
+  const order = houseClearanceOrders[brandSlug] ?? houseClearanceOrders.ample;
+  const titles = houseClearanceTitles[brandSlug] ?? houseClearanceTitles.ample;
+  return (initialPostcode) => ({
+    service: "house_clearance",
+    slug: "house-clearance",
+    apiPath: "/api/bookings/house-clearance",
+    schema: SERVICE_SCHEMAS.house_clearance,
+    defaultValues: {
+      originPostcode: initialPostcode,
+      originAddress: undefined,
+      propertyType: undefined,
+      bedrooms: undefined,
+      clearanceType: undefined,
+      itemsOfNote: [],
+      description: "",
+      isFlexibleDate: false,
+      moveDate: undefined,
+      flexibleDateFrom: undefined,
+      flexibleDateTo: undefined,
+      fullName: "",
+      email: "",
+      phone: "",
+      confirmed: false,
+    } as DefaultValues<FieldValues>,
+    steps: buildSteps(order, houseClearanceDict, titles, houseClearanceReviewSections),
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HOUSE CLEANING (8 steps) — Ample only, no brand variants
+   ════════════════════════════════════════════════════════════════════ */
 const houseCleaning: Builder = (initialPostcode) => ({
   service: "house_cleaning",
   slug: "house-cleaning",
@@ -256,7 +382,9 @@ const houseCleaning: Builder = (initialPostcode) => ({
   ],
 });
 
-/* ── End of Tenancy (8 steps) ─────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   END OF TENANCY (7 steps) — Ample only, no brand variants
+   ════════════════════════════════════════════════════════════════════ */
 const endOfTenancy: Builder = (initialPostcode) => ({
   service: "end_of_tenancy",
   slug: "end-of-tenancy",
@@ -292,18 +420,20 @@ const endOfTenancy: Builder = (initialPostcode) => ({
   ],
 });
 
-const BUILDERS: Record<string, Builder> = {
-  removals,
-  "man-and-van": manAndVan,
-  "house-clearance": houseClearance,
-  "house-cleaning": houseCleaning,
-  "end-of-tenancy": endOfTenancy,
+const BUILDERS: Record<string, (brandSlug: BrandSlug) => Builder> = {
+  removals: removalsBuilder,
+  "man-and-van": manAndVanBuilder,
+  "house-clearance": houseClearanceBuilder,
+  "house-cleaning": () => houseCleaning,
+  "end-of-tenancy": () => endOfTenancy,
 };
 
 export function buildWizardConfig(
   slug: string,
-  initialPostcode = ""
+  initialPostcode = "",
+  brandSlug: BrandSlug = "ample"
 ): WizardConfig<FieldValues> | null {
-  const builder = BUILDERS[slug];
-  return builder ? builder(initialPostcode) : null;
+  const builderFactory = BUILDERS[slug];
+  if (!builderFactory) return null;
+  return builderFactory(brandSlug)(initialPostcode);
 }
