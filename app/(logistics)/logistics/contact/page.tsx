@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Truck, UserPlus, MessageCircle, Mail, Clock, MapPin } from "lucide-react";
+import { ArrowRight, Truck, UserPlus, MessageCircle, Mail, Clock, MapPin, Phone } from "lucide-react";
 import { LOGISTICS, BERKSHIRE_TOWNS, logisticsPageMetadata } from "@/lib/logistics";
 import { GeneralContactForm } from "@/components/logistics/GeneralContactForm";
 
@@ -53,7 +53,12 @@ export default function ContactPage() {
       </section>
 
       <section className="px-6 py-16">
-        <div className="container mx-auto grid max-w-4xl gap-6 sm:grid-cols-3">
+        <div className="container mx-auto grid max-w-5xl gap-6 sm:grid-cols-4">
+          <div className="text-center">
+            <Phone className="mx-auto h-5 w-5" style={{ color: LOGISTICS.colors.blue }} />
+            <p className="mt-2 text-sm font-semibold" style={{ color: LOGISTICS.colors.navy }}>Telephone</p>
+            <a href={LOGISTICS.phoneHref} className="mt-1 block text-sm text-slate-600 hover:underline">{LOGISTICS.phone}</a>
+          </div>
           <div className="text-center">
             <Mail className="mx-auto h-5 w-5" style={{ color: LOGISTICS.colors.blue }} />
             <p className="mt-2 text-sm font-semibold" style={{ color: LOGISTICS.colors.navy }}>Business Email</p>

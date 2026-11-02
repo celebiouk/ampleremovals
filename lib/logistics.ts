@@ -15,18 +15,22 @@ export const LOGISTICS = {
   emailFrom: "Ample Logistics",
   emailAddress: "hello@amplelogistics.co.uk",
   notifyEmail: "daniel@ampleremovals.com",
-  // Placeholder until the business confirms a real line — never invented
-  // as a "real" contact in copy, only used where a phone number is
-  // genuinely needed (e.g. tel: links use this until replaced).
+  // Ample Removals' own number, by design — unlike the white-label
+  // removal brands (which must never look connected to Ample), Ample
+  // Logistics is deliberately presented as part of the same company.
   phone: "0333 577 2070",
   phoneHref: "tel:03335772070",
+  // Ample's own purple/green — same reasoning as the phone number above:
+  // this brand is meant to visibly tie back to Ample, not disguise it.
+  // Property names kept as navy/blue/charcoal/amber so nothing else
+  // needs to change — only the values moved to Ample's palette.
   colors: {
-    navy: "#10243A",
-    blue: "#246BCE",
+    navy: "#581c87", // Ample purple-900 — headings, dark hero background
+    blue: "#16a34a", // Ample green-600 — CTAs, links, accents
     white: "#FFFFFF",
     lightGrey: "#F4F6F8",
-    charcoal: "#283341",
-    amber: "#F2A900",
+    charcoal: "#3b0764", // Ample purple-950 — deepest end of hero gradients
+    amber: "#22c55e", // Ample green-500 — lighter highlight variant
   },
 } as const;
 
