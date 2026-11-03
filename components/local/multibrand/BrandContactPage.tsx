@@ -31,12 +31,12 @@ export function BrandContactPage({
           intro="Call, WhatsApp, or email. A real person answers, not a call centre. Most questions get a straight answer in minutes."
         />
         <section className={ui.section}>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2">
             <PhoneTile phone={brand.phone} phoneHref={brand.phoneHref} className={tile} iconClassName={ui.icon} titleClassName={ui.cardTitle} bodyClassName={ui.cardBody} source={`${brand.slug}_contact_page`} />
             <div className={tile}>
               <Mail className={`h-6 w-6 ${ui.icon}`} />
               <p className={ui.cardTitle}>Email</p>
-              <a href={`mailto:${brand.emailAddress}`} className={`${ui.cardBody} break-all underline-offset-4 hover:underline`}>{brand.emailAddress}</a>
+              <a href={`mailto:${brand.emailAddress}`} className={`${ui.cardBody} break-words underline-offset-4 hover:underline`}>{brand.emailAddress}</a>
             </div>
             <div className={tile}>
               <MapPin className={`h-6 w-6 ${ui.icon}`} />

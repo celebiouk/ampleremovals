@@ -89,6 +89,13 @@ export function PageHero({
   return (
     <section className="relative overflow-hidden px-6 py-24 text-white" style={{ background: LOGISTICS.colors.ink }}>
       <HazardCorner />
+      <svg aria-hidden="true" viewBox="0 0 420 200" className="pointer-events-none absolute right-6 top-1/2 hidden w-[380px] -translate-y-1/2 opacity-60 lg:block">
+        <path d="M0 176 L90 146 L170 118 L270 78 L360 44 L420 24" fill="none" stroke={LOGISTICS.colors.blue} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M0 176 L90 146 L170 118 L270 78 L360 44 L420 24" fill="none" stroke="#fff" strokeOpacity="0.8" strokeWidth="1.5" strokeDasharray="7 7" strokeLinecap="round" strokeLinejoin="round" />
+        {[[90, 146], [170, 118], [270, 78], [360, 44]].map(([x, y]) => (
+          <circle key={x} cx={x} cy={y} r="6.5" fill={LOGISTICS.colors.ink} stroke="#fff" strokeWidth="2.5" />
+        ))}
+      </svg>
       <div className="container relative mx-auto max-w-4xl">
         <FadeIn>
           <Eyebrow dark>{eyebrow}</Eyebrow>
@@ -194,5 +201,69 @@ export function ArrowLink({ href, children, dark = false }: { href: string; chil
       {children}
       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
     </Link>
+  );
+}
+
+/** A UK-style number plate (yellow, with the blue country strip) — used for
+ *  licence categories so "C+E / C / C1" read instantly to anyone in haulage. */
+export function Plate({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-stretch overflow-hidden rounded-[4px] border-2 border-black/80 text-sm font-bold shadow-[0_2px_0_rgba(0,0,0,0.35)]"
+      style={{ fontFamily: "var(--font-logistics-mono)", background: "#f5c518", color: "#111" }}
+    >
+      <span className="flex items-center bg-[#1d4ed8] px-1.5 text-[9px] font-bold leading-none text-white">UK</span>
+      <span className="px-2.5 py-1 tracking-wider">{children}</span>
+    </span>
+  );
+}
+
+/** A motorway/A-road gantry sign: green panel, white inset border, rounded corners.
+ *  The page's closing call to action sits on one. */
+export function RoadSign({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={`relative mx-auto rounded-[14px] p-2 shadow-[0_26px_50px_-20px_rgba(0,0,0,0.7)] ${className}`}
+      style={{ background: "#0e5a2b" }}
+    >
+      <div className="rounded-[9px] border-[3px] border-white px-6 py-12 text-center text-white sm:px-14">{children}</div>
+      {/* gantry posts */}
+      <span aria-hidden="true" className="absolute -bottom-9 left-[14%] hidden h-9 w-3 bg-gradient-to-b from-white/25 to-transparent sm:block" />
+      <span aria-hidden="true" className="absolute -bottom-9 right-[14%] hidden h-9 w-3 bg-gradient-to-b from-white/25 to-transparent sm:block" />
+    </div>
+  );
+}
+
+const STEP_COLS = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4" } as const;
+
+/** A process shown as numbered stops joined by a dashed road: vertical on
+ *  phones/tablets, horizontal from `lg` up. Shared by every page with steps. */
+export function RouteSteps({ steps, columns }: { steps: { title: string; body: string }[]; columns: 3 | 4 }) {
+  const dash = (dir: "180deg" | "90deg") => ({
+    background: `repeating-linear-gradient(${dir}, ${LOGISTICS.colors.blue} 0 8px, transparent 8px 16px)`,
+  });
+  return (
+    <div className={`mt-16 grid gap-12 lg:gap-10 ${STEP_COLS[columns]}`}>
+      {steps.map((s, i) => (
+        <FadeIn key={s.title} delay={i * 0.1}>
+          <div className="relative pl-16 lg:pl-0 lg:pt-16">
+            <span
+              className="absolute left-0 top-0 flex h-11 w-11 items-center justify-center rounded-full border-[3px] text-sm font-bold"
+              style={{ background: LOGISTICS.colors.ink, borderColor: LOGISTICS.colors.blue, color: "#fff", fontFamily: "var(--font-logistics-mono)" }}
+            >
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            {i < steps.length - 1 && (
+              <>
+                <span aria-hidden="true" className="absolute left-[21px] top-11 h-[calc(100%+0.25rem)] w-[3px] lg:hidden" style={dash("180deg")} />
+                <span aria-hidden="true" className="absolute left-14 top-[20px] hidden h-[3px] w-[calc(100%-2rem)] lg:block" style={dash("90deg")} />
+              </>
+            )}
+            <h3 className="text-xl font-bold uppercase" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.ink }}>{s.title}</h3>
+            <p className="mt-2 text-sm text-slate-600">{s.body}</p>
+          </div>
+        </FadeIn>
+      ))}
+    </div>
   );
 }

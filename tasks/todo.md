@@ -144,15 +144,29 @@ content until JS runs (FadeIn → blank bands in a plain render). Goal: 4 genuin
   licence-class plates, visible-by-default content.
 
 ### Plan
-- [ ] Shared: `Reveal` (content visible by default, JS only enhances), theme interface + registry
-- [ ] Make BrandChrome / BrandPageShell / About / Contact / Tips delegate to a per-brand theme
+- [x] Shared: `Reveal` (content visible by default, JS only enhances), theme interface + registry
+- [x] Make BrandChrome / BrandPageShell / About / Contact / Tips delegate to a per-brand theme
       (keep JSON-LD, tracking, hrefs, sticky bar, shared booking journey chrome working)
-- [ ] ManyVans theme + per-brand fonts layout → screenshot 375 + 1440 → fix
-- [ ] Thatcham Movers theme → screenshot → fix
-- [ ] Newbury Removals theme → screenshot → fix
-- [ ] Ample Logistics redesign (hero, kit, chrome, FadeIn fix) → screenshot → fix
-- [ ] tsc + eslint on touched files; check booking journey chrome + tel/WhatsApp/quote hrefs
-- [ ] Commit + push per site; write Review
+- [x] ManyVans theme + per-brand fonts layout → screenshot 375 + 1440 → fix
+- [x] Thatcham Movers theme → screenshot → fix
+- [x] Newbury Removals theme → screenshot → fix
+- [x] Ample Logistics redesign (hero, kit, chrome, FadeIn fix) → screenshot → fix
+- [x] tsc + eslint on touched files; check booking journey chrome + tel/WhatsApp/quote hrefs
+- [x] Commit + push per site; write Review
 
 ### Review
-(filled in at the end)
+- All 4 sites redesigned; every plan item checked off except a full `next build` (see below).
+- Removals brands: new `BrandTheme` contract (`components/local/multibrand/themes/`). Each brand has its own
+  stylesheet, fonts (scoped to its route group), header/footer, service-page body and inner-page hero.
+  Shared shell keeps JSON-LD, tracking, CTA hrefs and the sticky call/WhatsApp bar. Hero buttons skin
+  themselves through CSS variables, so brand copy files stayed content-only.
+- Logistics: route-map hero (animated M4 truck, reduced-motion safe), yellow licence plates, route-stop
+  process (`RouteSteps`), bay grid, gantry-sign CTA, route trace on interior heroes.
+- Bugs found and fixed on the way: scroll reveals hid content until JS ran (new `Reveal`, visible by default);
+  Ample purple leaked onto brand "Call us" bars; Bodoni made "+" and em dashes invisible at headline size
+  (optical size pinned, italic lead moved to Jost); ManyVans About card titles were white on paper.
+- Verified by screenshots at 1440 and 390 for home, clearance, about, contact, tips and an article; host-header
+  checks confirm each domain resolves to its own theme; booking journey uses its own header, so it is untouched.
+- Watch: `next build` was not run (it would regenerate 900+ pages); `tsc` is clean for touched files.
+  Pre-existing tsc/eslint errors elsewhere (FormData.get typings, unused imports) were left alone.
+

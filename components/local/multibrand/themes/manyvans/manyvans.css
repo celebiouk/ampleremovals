@@ -3,6 +3,7 @@
    lettering on a van door; road markings and a driving fleet as the signature. */
 
 .mv-root {
+  min-height: 100vh;
   --mv-ground: #f3efe7;
   --mv-paper: #fbf9f4;
   --mv-ink: #14161b;

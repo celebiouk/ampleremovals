@@ -1,0 +1,83 @@
+/* Newbury Removals — "the members' enclosure".
+   Deep racing green, ivory and gold leaf. Symmetry, hairlines, roman numerals
+   and a harlequin racing-silks band: formal, premium, unmistakably Newbury. */
+
+.nb-root {
+  min-height: 100vh;
+  --nb-green: #0a2915;
+  --nb-green-2: #0f3a21;
+  --nb-green-3: #145232;
+  --nb-ivory: #f4efe2;
+  --nb-ivory-2: #ebe4d1;
+  --nb-gold: #d9a521;
+  --nb-gold-lite: #f0c04a;
+  --nb-gold-deep: #8a6408;
+  --nb-hair: rgba(240, 192, 74, 0.38);
+  background: var(--nb-green);
+  color: var(--nb-ivory);
+  font-family: var(--font-body), system-ui, sans-serif;
+  --cta-radius: 2px;
+  --cta-primary: var(--nb-gold);
+  --cta-primary-fg: #0a2915;
+  --cta-outline: rgba(244, 239, 226, 0.6);
+  --cta-fg: var(--nb-ivory);
+}
+.nb-root ::selection { background: var(--nb-gold); color: var(--nb-green); }
+.nb-root a:focus-visible, .nb-root summary:focus-visible, .nb-root button:focus-visible {
+  outline: 2px solid var(--nb-gold-lite); outline-offset: 4px;
+}
+
+.nb-display {
+  font-family: var(--font-display), "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  /* Bodoni's automatic optical size turns "+" and dashes into invisible
+     hairlines at headline sizes ("7+ years" read as "7 years"). Pin it lower. */
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 26;
+}
+.nb-italic { font-style: italic; }
+/* Long italic lead copy uses the sturdier text face: Bodoni italic drops "+" and dashes. */
+.nb-lead { font-family: var(--font-body), system-ui, sans-serif; font-style: italic; font-weight: 300; line-height: 1.5; }
+.nb-caps { text-transform: uppercase; letter-spacing: 0.28em; font-weight: 500; font-size: 11px; }
+.nb-gold { color: var(--nb-gold-lite); }
+
+/* Racing silks: a harlequin diamond band. */
+.nb-silks {
+  height: 26px;
+  background-color: var(--nb-green-2);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='52' height='26' viewBox='0 0 52 26'><path d='M13 0 26 13 13 26 0 13z' fill='%23d9a521'/><path d='M39 0 52 13 39 26 26 13z' fill='%23f4efe2' fill-opacity='0.9'/></svg>");
+  background-size: 52px 26px;
+}
+
+/* Gold double rule used above and below major blocks. */
+.nb-rule { border-top: 1px solid var(--nb-hair); border-bottom: 1px solid var(--nb-hair); position: relative; }
+.nb-rule::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; border-top: 1px solid var(--nb-hair); }
+
+/* Inset gold frame, like a members' badge. */
+.nb-frame { position: relative; border: 1px solid var(--nb-hair); }
+.nb-frame::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--nb-hair); pointer-events: none; }
+
+.nb-ornament { display: flex; align-items: center; gap: 14px; color: var(--nb-gold-lite); }
+.nb-ornament::before, .nb-ornament::after { content: ""; flex: 1; height: 1px; background: var(--nb-hair); }
+
+/* Centre whatever the shared hero CTA components render. */
+.nb-hero-actions > div { justify-content: center; margin-inline: auto; }
+
+/* Ivory interlude (light panel inside the dark site). */
+.nb-light { background: var(--nb-ivory); color: #12301f; }
+.nb-light ::selection { background: var(--nb-green); color: var(--nb-ivory); }
+.nb-light a:focus-visible, .nb-light summary:focus-visible { outline-color: var(--nb-green); }
+
+.nb-faq summary { list-style: none; cursor: pointer; }
+.nb-faq summary::-webkit-details-marker { display: none; }
+.nb-faq .nb-plus { transition: transform .3s ease, background-color .3s ease, color .3s ease; }
+.nb-faq details[open] .nb-plus { transform: rotate(45deg); background: var(--nb-green); color: var(--nb-ivory); }
+
+.nb-col + .nb-col { border-left: 1px solid var(--nb-hair); }
+@media (max-width: 767px) {
+  .nb-col + .nb-col { border-left: 0; border-top: 1px solid var(--nb-hair); }
+}
+.nb-col { transition: background-color .3s ease; }
+.nb-col:hover { background-color: rgba(240, 192, 74, 0.06); }

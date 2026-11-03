@@ -30,7 +30,7 @@ export function ContactCtaRow({
   source: string;
 }) {
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 max-sm:flex-col max-sm:items-stretch max-sm:[&>a]:justify-center">
       <Link
         href={quoteHref}
         onClick={() => trackQuoteClick(source)}

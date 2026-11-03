@@ -50,7 +50,7 @@ export async function BrandChrome({
           barBorder={theme.sticky.barBorder}
           hideQuotePill
         />
-        <theme.Header brand={brand} logo={<Logo />} homeHref={homeHref} links={links} quoteHref={quoteHref} />
+        <theme.Header brand={brand} logo={<Logo />} logoOnDark={<Logo variant="white" />} homeHref={homeHref} links={links} quoteHref={quoteHref} />
         {children}
         {/* pb clears the fixed bottom bar; it takes the footer's colour so no strip shows */}
         <div className="pb-20" style={{ background: theme.sticky.footerFill }}>

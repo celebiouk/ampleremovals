@@ -49,6 +49,18 @@ is `"color" | "white"`), an inline SVG mark (no stock icons), and a
 wordmark next to it using the brand's own two colours. Keep it genuinely
 different in shape/concept from the existing marks, not just a recolour.
 
+## Step 2b — Design a theme: `components/local/multibrand/themes/<brand>/`
+
+A brand's look is NOT a recolour of a shared template. Each brand gets its own
+theme (header, footer, service-page body, inner-page hero, class tokens) plus
+its own fonts, scoped to `app/(brands)/<slug>/layout.tsx` so other brands never
+download them. Follow `SKILL2.md` (concept first, one signature device, a
+distinct type pairing and layout skeleton) and register the theme in
+`themes/registry.ts`. A brand with no registered theme falls back to the
+original shared template, which works but looks like every other brand.
+Existing themes to compare against: ManyVans (van livery), Thatcham Movers
+(village noticeboard), Newbury Removals (racecourse enclosure).
+
 ## Step 3 — Middleware already handles routing
 
 `middleware.ts` resolves the brand from the `Host` header

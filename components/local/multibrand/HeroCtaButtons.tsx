@@ -26,7 +26,7 @@ export function HeroCtaButtons({
   align?: "start" | "center";
 }) {
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${align === "center" ? "justify-center" : "justify-start"}`}>
+    <div className={`flex flex-wrap items-center gap-3 max-sm:flex-col max-sm:items-stretch max-sm:[&>a]:justify-center ${align === "center" ? "justify-center" : "justify-start"}`}>
       <Link
         href={quoteHref}
         style={{ background: "var(--cta-primary, " + accent + ")" }}

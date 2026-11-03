@@ -1,0 +1,91 @@
+/* Thatcham Movers — "the village noticeboard".
+   Cream paper, navy enamel, amber pins. A soft, slightly wonky serif for the
+   voice of a local firm; rooftops of the town as the recurring silhouette. */
+
+.th-root {
+  min-height: 100vh;
+  --th-paper: #f6efdf;
+  --th-paper-lift: #fffdf6;
+  --th-navy: #1e3a5f;
+  --th-navy-deep: #13263f;
+  --th-amber: #d97706;
+  --th-amber-text: #a85a05;
+  --th-amber-light: #f59e0b;
+  --th-ink: #1b2430;
+  --th-ink-soft: #46515f;
+  --th-line: rgba(30, 58, 95, 0.2);
+  background: var(--th-paper);
+  color: var(--th-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  --cta-radius: 10px;
+  --cta-primary: var(--th-navy);
+  --cta-outline: var(--th-navy);
+  --cta-fg: var(--th-navy);
+}
+.th-root ::selection { background: var(--th-amber-light); color: var(--th-navy-deep); }
+.th-root a:focus-visible, .th-root summary:focus-visible, .th-root button:focus-visible {
+  outline: 3px solid var(--th-amber); outline-offset: 3px;
+}
+
+.th-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+.th-italic { font-style: italic; font-weight: 500; }
+.th-caps { text-transform: uppercase; letter-spacing: 0.22em; font-weight: 700; }
+
+/* A hand-inked amber underline under the town name in the headline. */
+.th-mark {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 8 C 40 2, 80 11, 120 5 S 180 3, 198 7' fill='none' stroke='%23d97706' stroke-width='5' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-size: 100% 0.34em;
+  background-position: 0 96%;
+  padding-bottom: 0.08em;
+}
+
+/* Rooftops of the town as a pale backdrop silhouette. */
+.th-roofs {
+  height: 64px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='360' height='64' viewBox='0 0 360 64'><g fill='%231e3a5f' fill-opacity='0.13'><path d='M0 64V40l22-18 22 18v24z'/><rect x='30' y='10' width='6' height='16'/><path d='M52 64V28L82 4l30 24v36z'/><rect x='94' y='6' width='7' height='14'/><path d='M120 64V44l18-14 18 14v20z'/><path d='M164 64V34l26-22 26 22v30z'/><rect x='200' y='8' width='6' height='13'/><path d='M226 64V46l16-12 16 12v18z'/><path d='M266 64V24l34-22 34 22v40z'/><rect x='312' y='4' width='7' height='15'/><path d='M338 64V42l11-9 11 9v22z'/></g></svg>");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: auto 100%;
+}
+
+/* Enamel street-name plate: raised navy, white inner rule. */
+.th-plate {
+  background: var(--th-navy);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 22px 40px -18px rgba(19, 38, 63, 0.7), 0 3px 0 var(--th-navy-deep);
+}
+
+/* Pinned notice cards. */
+.th-note {
+  background: var(--th-paper-lift);
+  box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 12px 24px -14px rgba(19, 38, 63, 0.55);
+  border: 1px solid var(--th-line);
+}
+.th-pin {
+  position: absolute; left: 50%; top: -7px; width: 14px; height: 14px; margin-left: -7px; border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #fbbf24, #d97706 60%, #a85a05);
+  box-shadow: 0 3px 4px rgba(0,0,0,.35);
+}
+
+/* Drop cap for the first story paragraph. */
+.th-dropcap::first-letter {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  font-weight: 700; color: var(--th-amber-text);
+  float: left; font-size: 4.6em; line-height: 0.82; padding: 0.06em 0.12em 0 0;
+}
+
+/* Ledger rows with dotted leaders. */
+.th-row { border-bottom: 2px dotted rgba(255, 255, 255, 0.32); transition: padding-left .25s ease, background-color .25s ease; }
+.th-row:hover { padding-left: 1rem; background-color: rgba(255,255,255,.06); }
+
+.th-faq summary { list-style: none; cursor: pointer; }
+.th-faq summary::-webkit-details-marker { display: none; }
+.th-faq .th-chev { transition: transform .25s ease; }
+.th-faq details[open] .th-chev { transform: rotate(180deg); }

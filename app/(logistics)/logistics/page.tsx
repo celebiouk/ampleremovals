@@ -4,7 +4,7 @@ import { Truck, Zap, Users2, ShieldCheck, MessageSquareText, Repeat, Building2, 
 import { LOGISTICS, BERKSHIRE_TOWNS, logisticsPageMetadata } from "@/lib/logistics";
 import { FadeIn } from "@/components/logistics/FadeIn";
 import { LogisticsHero } from "@/components/logistics/LogisticsHero";
-import { Eyebrow, SectionHeading, ManifestRow, PrimaryButton, GhostButton, Tag, HazardCorner } from "@/components/logistics/LogisticsKit";
+import { SectionHeading, ManifestRow, PrimaryButton, GhostButton, Tag, HazardCorner, RoadSign, RouteSteps } from "@/components/logistics/LogisticsKit";
 
 export const metadata: Metadata = logisticsPageMetadata(
   "Ample Logistics | HGV Driver Agency Berkshire",
@@ -58,34 +58,27 @@ export default function LogisticsHomePage() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it works — three stops along one route */}
       <section className="px-6 py-24" style={{ background: LOGISTICS.colors.lightGrey }}>
         <div className="container mx-auto max-w-5xl">
-          <SectionHeading eyebrow="Process" title="Three Steps To Covered Shifts" align="center" />
-          <div className="mt-14 grid gap-10 sm:grid-cols-3">
-            {STEPS.map((s, i) => (
-              <FadeIn key={s.title} delay={i * 0.1}>
-                <p className="text-5xl font-black" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.blue }}>
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="mt-3 text-lg font-bold" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.ink }}>{s.title}</h3>
-                <p className="mt-2 text-sm text-slate-600">{s.body}</p>
-              </FadeIn>
-            ))}
-          </div>
+          <SectionHeading eyebrow="Process" title="Three Stops To Covered Shifts" align="center" />
+          <RouteSteps steps={STEPS} columns={3} />
         </div>
       </section>
 
-      {/* Who we support */}
+      {/* Who we support — bays on a loading dock */}
       <section className="px-6 py-24">
-        <div className="container mx-auto max-w-5xl">
-          <SectionHeading eyebrow="Who We Support" title="Built For Operators Who Can't Afford Downtime" body="Actual service availability depends on the assignment and the drivers available." align="center" />
-          <div className="mx-auto mt-12 grid max-w-3xl gap-x-10">
+        <div className="container mx-auto max-w-6xl">
+          <SectionHeading eyebrow="Who We Support" title="Built For Operators Who Can't Afford Downtime" body="Actual service availability depends on the assignment and the drivers available." />
+          <div className="mt-12 grid gap-px border sm:grid-cols-2 lg:grid-cols-3" style={{ borderColor: LOGISTICS.colors.line, background: LOGISTICS.colors.line }}>
             {INDUSTRIES.map((i, idx) => (
               <FadeIn key={i.label} delay={idx * 0.04}>
-                <div className="flex items-center gap-4 border-t py-4" style={{ borderColor: LOGISTICS.colors.line }}>
-                  <i.icon className="h-5 w-5 shrink-0" style={{ color: LOGISTICS.colors.blue }} />
-                  <span className="font-semibold text-slate-800">{i.label}</span>
+                <div className="group flex h-full items-center gap-4 bg-white p-6 transition-colors hover:bg-[#121214] hover:text-white">
+                  <span className="text-xs font-semibold tabular-nums text-slate-400 group-hover:text-white/50" style={{ fontFamily: "var(--font-logistics-mono)" }}>
+                    BAY {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <i.icon className="h-6 w-6 shrink-0" style={{ color: LOGISTICS.colors.blue }} />
+                  <span className="font-semibold">{i.label}</span>
                 </div>
               </FadeIn>
             ))}
@@ -126,23 +119,25 @@ export default function LogisticsHomePage() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="relative overflow-hidden px-6 py-24 text-center text-white" style={{ background: LOGISTICS.colors.ink }}>
+      {/* Final CTA — on a gantry sign */}
+      <section className="relative overflow-hidden px-6 pb-28 pt-24 text-white" style={{ background: LOGISTICS.colors.ink }}>
         <div
           aria-hidden="true"
           className="absolute inset-x-0 bottom-0 h-1.5"
           style={{ backgroundImage: `repeating-linear-gradient(135deg, ${LOGISTICS.colors.blue} 0 14px, ${LOGISTICS.colors.navy} 14px 28px)` }}
         />
-        <FadeIn className="container relative mx-auto max-w-2xl">
-          <Eyebrow dark>Get Started</Eyebrow>
-          <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[0.98] tracking-tight sm:text-5xl" style={{ fontFamily: "var(--font-logistics-display)" }}>
-            Need A Driver For Your Next Shift?
-          </h2>
-          <p className="mt-4 text-white/65">Tell us about your staffing requirements and let our team explore the right solution for your business.</p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <PrimaryButton href="/businesses">Request a Driver</PrimaryButton>
-            <GhostButton href={LOGISTICS.phoneHref}><Phone className="h-4 w-4" /> {LOGISTICS.phone}</GhostButton>
-          </div>
+        <FadeIn className="container relative mx-auto max-w-4xl">
+          <RoadSign>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/80" style={{ fontFamily: "var(--font-logistics-mono)" }}>Get Started — Berkshire</p>
+            <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[0.98] tracking-tight sm:text-6xl" style={{ fontFamily: "var(--font-logistics-display)" }}>
+              Need A Driver For Your Next Shift?
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-white/85">Tell us about your staffing requirements and let our team explore the right solution for your business.</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/businesses" className="inline-flex items-center justify-center gap-2 bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-[#0e5a2b] transition-colors hover:bg-[#f5c518] hover:text-black">Request a Driver</Link>
+              <GhostButton href={LOGISTICS.phoneHref}><Phone className="h-4 w-4" /> {LOGISTICS.phone}</GhostButton>
+            </div>
+          </RoadSign>
         </FadeIn>
       </section>
     </>

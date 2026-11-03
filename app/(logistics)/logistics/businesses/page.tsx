@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertCircle, TrendingUp, Clock, FileText, Truck, Repeat, Zap, Calendar } from "lucide-react";
 import { LOGISTICS, logisticsPageMetadata } from "@/lib/logistics";
 import { BusinessRequestForm } from "@/components/logistics/BusinessRequestForm";
-import { PageHero, SectionHeading, ManifestRow, PrimaryButton, GhostButton } from "@/components/logistics/LogisticsKit";
+import { PageHero, SectionHeading, ManifestRow, PrimaryButton, GhostButton, RouteSteps } from "@/components/logistics/LogisticsKit";
 import { FadeIn } from "@/components/logistics/FadeIn";
 
 export const metadata: Metadata = logisticsPageMetadata(
@@ -78,16 +78,7 @@ export default function BusinessesPage() {
       <section className="px-6 py-20">
         <div className="container mx-auto max-w-5xl">
           <SectionHeading eyebrow="Process" title="How to Request a Driver" align="center" />
-          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            {REQUEST_STEPS.map((s, i) => (
-              <FadeIn key={s.title} delay={i * 0.08}>
-                <p className="text-4xl font-black" style={{ fontFamily: "var(--font-logistics-display)", color: LOGISTICS.colors.blue }}>
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <p className="mt-2 text-sm text-slate-600">{s.body}</p>
-              </FadeIn>
-            ))}
-          </div>
+          <RouteSteps steps={REQUEST_STEPS} columns={4} />
         </div>
       </section>
 

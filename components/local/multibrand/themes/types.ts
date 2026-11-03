@@ -17,7 +17,7 @@ export interface BrandTheme {
   /** Root class (also the CSS scope for the brand's stylesheet). */
   rootClass: string;
   /** Sticky header. Client component, so the logo arrives as an element. */
-  Header: ComponentType<{ brand: Brand; logo: ReactNode; homeHref: string; links: BrandNavLink[]; quoteHref: string }>;
+  Header: ComponentType<{ brand: Brand; logo: ReactNode; logoOnDark: ReactNode; homeHref: string; links: BrandNavLink[]; quoteHref: string }>;
   Footer: ComponentType<{ brand: Brand; logo: ReactNode; logoOnDark: ReactNode; links: BrandNavLink[] }>;
   /** The full body of a service page (hero to closing CTA). */
   Home: ComponentType<{ brand: Brand; basePath: string; content: BrandPageContent }>;

@@ -49,7 +49,7 @@ export const thatchamMoversRemovals: BrandPageContent = {
   ctaSub: "Takes under 2 minutes. No pushy sales call — just your price.",
   quoteHref: "/booking",
   whatsappMessage: "Hi, I'd like a quote for a house removal in Thatcham.",
-  heroAction: () => <HeroCtaButtons quoteHref="/booking" align="center" {...base} whatsappMessage="Hi, I'd like a quote for a house removal in Thatcham." />,
+  heroAction: () => <HeroCtaButtons quoteHref="/booking" {...base} whatsappMessage="Hi, I'd like a quote for a house removal in Thatcham." />,
 };
 
 export const thatchamMoversManAndVan: BrandPageContent = {
@@ -85,7 +85,7 @@ export const thatchamMoversManAndVan: BrandPageContent = {
   ctaSub: "Pick your hours and get an instant price — no admin, no waiting for a callback.",
   quoteHref: "/booking/man-and-van",
   whatsappMessage: "Hi, I'd like a quote for Man and Van in Thatcham.",
-  heroAction: () => <HeroCtaButtons quoteHref="/booking/man-and-van" align="center" {...base} whatsappMessage="Hi, I'd like a quote for Man and Van in Thatcham." />,
+  heroAction: () => <HeroCtaButtons quoteHref="/booking/man-and-van" {...base} whatsappMessage="Hi, I'd like a quote for Man and Van in Thatcham." />,
 };
 
 export const thatchamMoversHouseClearance: BrandPageContent = {
