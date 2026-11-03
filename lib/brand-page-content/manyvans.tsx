@@ -54,7 +54,6 @@ export const manyVansRemovals: BrandPageContent = {
   heroAction: () => (
     <div>
       <HeroCtaButtons quoteHref="/booking" {...base} whatsappMessage="Hi, I'd like a quote for a house removal (Newbury & Thatcham)." />
-      <ManyVansFleet tone="light" className="mt-10 h-auto w-full max-w-lg" />
     </div>
   ),
 };
@@ -95,7 +94,6 @@ export const manyVansManAndVan: BrandPageContent = {
   heroAction: () => (
     <div>
       <HeroCtaButtons quoteHref="/booking/man-and-van" {...base} whatsappMessage="Hi, I'd like a quote for Man and Van (Newbury & Thatcham)." />
-      <ManyVansFleet tone="light" className="mt-10 h-auto w-full max-w-lg" />
     </div>
   ),
 };
@@ -135,7 +133,6 @@ export const manyVansHouseClearance: BrandPageContent = {
   heroAction: () => (
     <div id="get-price" className="max-w-md">
       <InstantHourlyQuoteWidget service="house_clearance" standardRate={45} premiumRate={70} accent="green" minHours={1} allowFixedPrice />
-      <ManyVansFleet tone="light" className="mt-10 h-auto w-full max-w-lg" />
     </div>
   ),
 };

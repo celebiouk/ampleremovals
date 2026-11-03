@@ -7,6 +7,7 @@ import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
 import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
 import { breadcrumbSchema } from "@/lib/breadcrumb-schema";
 import type { BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
+import { getBrandTheme } from "@/components/local/multibrand/themes/registry";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -99,6 +100,16 @@ export async function BrandPageShell({
           ]),
     ],
   };
+
+  const theme = getBrandTheme(brand.slug);
+  if (theme) {
+    return (
+      <BrandChrome brand={brand} logo={Logo} navLinks={navLinks} quoteHref={content.quoteHref} whatsappMessage={content.whatsappMessage}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <theme.Home brand={brand} basePath={basePath} content={content} />
+      </BrandChrome>
+    );
+  }
 
   return (
     <BrandChrome brand={brand} logo={Logo} navLinks={navLinks} quoteHref={content.quoteHref} whatsappMessage={content.whatsappMessage}>

@@ -29,14 +29,14 @@ export function HeroCtaButtons({
     <div className={`flex flex-wrap items-center gap-3 ${align === "center" ? "justify-center" : "justify-start"}`}>
       <Link
         href={quoteHref}
-        style={{ background: accent }}
+        style={{ background: "var(--cta-primary, " + accent + ")" }}
         onClick={() => trackQuoteClick("hero")}
-        className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+        className="inline-flex items-center gap-2 rounded-[var(--cta-radius,0.75rem)] px-6 py-3.5 text-base font-bold text-[color:var(--cta-primary-fg,#fff)] shadow-lg transition-transform hover:-translate-y-0.5"
       >
         Get a free Quote <ArrowRight className="h-4 w-4" />
       </Link>
       <WhatsAppButton message={whatsappMessage} whatsappNumber={whatsappNumber} variant="outline" />
-      <a href={phoneHref} onClick={() => trackPhoneClick("hero")} className="inline-flex items-center gap-2 rounded-xl border border-white/70 px-6 py-3.5 font-semibold text-white hover:bg-white/10">
+      <a href={phoneHref} onClick={() => trackPhoneClick("hero")} className="inline-flex items-center gap-2 rounded-[var(--cta-radius,0.75rem)] border border-[color:var(--cta-outline,rgba(255,255,255,0.7))] px-6 py-3.5 font-semibold text-[color:var(--cta-fg,#fff)] hover:bg-white/10">
         <Phone className="h-4 w-4" /> {phone}
       </a>
     </div>

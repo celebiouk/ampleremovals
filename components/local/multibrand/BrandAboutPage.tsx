@@ -1,4 +1,5 @@
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
+import { getBrandTheme } from "@/components/local/multibrand/themes/registry";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -24,6 +25,39 @@ export function BrandAboutPage({
   logo: ComponentType<{ className?: string; variant?: "color" | "white" }>;
   content: BrandAboutContent;
 }) {
+  const theme = getBrandTheme(brand.slug);
+  if (theme) {
+    const { ui } = theme;
+    return (
+      <BrandChrome brand={brand} logo={Logo} quoteHref={content.quoteHref} whatsappMessage={content.whatsappMessage}>
+        <theme.PageHero eyebrow="About Us" title={content.h1} intro={content.intro} />
+        <section className={ui.section}>
+          {content.visual && (
+            <div className="mb-12">
+              <content.visual />
+            </div>
+          )}
+          <div className={`${ui.prose} max-w-3xl`}>
+            {content.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+          </div>
+        </section>
+        <section className={ui.sectionAlt}>
+          <div className={ui.section}>
+            <h2 className={ui.h2}>What matters to us</h2>
+            <div className="mt-10 grid gap-6 sm:grid-cols-3">
+              {content.values.map((v) => (
+                <div key={v.title} className={ui.card}>
+                  <h3 className={ui.cardTitle}>{v.title}</h3>
+                  <p className={ui.cardBody}>{v.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </BrandChrome>
+    );
+  }
+
   return (
     <BrandChrome brand={brand} logo={Logo} quoteHref={content.quoteHref} whatsappMessage={content.whatsappMessage}>
       <section className="px-6 pb-16 pt-14 text-white" style={{ background: `linear-gradient(135deg, ${brand.colors.primary}, ${brand.colors.primaryDark})` }}>

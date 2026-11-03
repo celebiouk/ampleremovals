@@ -2,6 +2,7 @@ import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
 import { PhoneTile } from "@/components/local/multibrand/PhoneTile";
+import { getBrandTheme } from "@/components/local/multibrand/themes/registry";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType } from "react";
 
@@ -17,6 +18,56 @@ export function BrandContactPage({
   whatsappMessage: string;
 }) {
   const mapQuery = encodeURIComponent(`${brand.address.line1}, ${brand.address.town}, ${brand.address.postcode}`);
+
+  const theme = getBrandTheme(brand.slug);
+  if (theme) {
+    const { ui } = theme;
+    const tile = "flex flex-col items-start gap-2 " + ui.card;
+    return (
+      <BrandChrome brand={brand} logo={Logo} quoteHref={quoteHref} whatsappMessage={whatsappMessage}>
+        <theme.PageHero
+          eyebrow="Contact Us"
+          title={`Talk to ${brand.name} directly`}
+          intro="Call, WhatsApp, or email. A real person answers, not a call centre. Most questions get a straight answer in minutes."
+        />
+        <section className={ui.section}>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <PhoneTile phone={brand.phone} phoneHref={brand.phoneHref} className={tile} iconClassName={ui.icon} titleClassName={ui.cardTitle} bodyClassName={ui.cardBody} source={`${brand.slug}_contact_page`} />
+            <div className={tile}>
+              <Mail className={`h-6 w-6 ${ui.icon}`} />
+              <p className={ui.cardTitle}>Email</p>
+              <a href={`mailto:${brand.emailAddress}`} className={`${ui.cardBody} break-all underline-offset-4 hover:underline`}>{brand.emailAddress}</a>
+            </div>
+            <div className={tile}>
+              <MapPin className={`h-6 w-6 ${ui.icon}`} />
+              <p className={ui.cardTitle}>Based at</p>
+              <p className={ui.cardBody}>{brand.address.line1}, {brand.address.town}, {brand.address.postcode}</p>
+            </div>
+            <div className={tile}>
+              <Clock className={`h-6 w-6 ${ui.icon}`} />
+              <p className={ui.cardTitle}>Serving</p>
+              <p className={ui.cardBody}>{brand.towns.join(" & ")}</p>
+            </div>
+          </div>
+          <div className="mt-10">
+            <WhatsAppButton message={whatsappMessage} whatsappNumber={brand.whatsappNumber} />
+          </div>
+        </section>
+        <section className="mx-auto w-full max-w-5xl px-5 pb-20 md:px-8">
+          <div className="overflow-hidden border border-black/10">
+            <iframe
+              title={`${brand.name} location`}
+              src={`https://maps.google.com/maps?q=${mapQuery}&output=embed`}
+              width="100%"
+              height="380"
+              style={{ border: 0 }}
+              loading="lazy"
+            />
+          </div>
+        </section>
+      </BrandChrome>
+    );
+  }
 
   return (
     <BrandChrome brand={brand} logo={Logo} quoteHref={quoteHref} whatsappMessage={whatsappMessage}>

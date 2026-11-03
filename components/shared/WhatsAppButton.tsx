@@ -20,10 +20,10 @@ interface Props {
  */
 export function WhatsAppButton({ message, className = "", variant = "solid", whatsappNumber }: Props) {
   const href = `https://wa.me/${whatsappNumber ?? WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-  const base = "inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-colors";
+  const base = "inline-flex items-center gap-2 rounded-[var(--cta-radius,0.75rem)] px-6 py-3 font-semibold transition-colors";
   const styles = variant === "solid"
     ? "bg-[#25D366] text-white hover:bg-[#1ebe57]"
-    : "border border-white text-white hover:bg-white/10";
+    : "border border-[color:var(--cta-outline,#fff)] text-[color:var(--cta-fg,#fff)] hover:bg-white/10";
 
   return (
     <a

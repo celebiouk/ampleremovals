@@ -1,9 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { Reveal } from "@/components/shared/Reveal";
 
-/** Consistent scroll-triggered reveal used across Ample Logistics' pages. */
+/** Scroll reveal used across Ample Logistics' pages. Content is visible by
+ *  default and only animates in after hydration — see components/shared/Reveal. */
 export function FadeIn({
   children,
   delay = 0,
@@ -18,15 +19,8 @@ export function FadeIn({
   style?: React.CSSProperties;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={className}
-      style={style}
-    >
+    <Reveal delay={delay} y={y} className={className} style={style}>
       {children}
-    </motion.div>
+    </Reveal>
   );
 }

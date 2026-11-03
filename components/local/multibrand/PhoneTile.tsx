@@ -11,21 +11,30 @@ export function PhoneTile({
   phoneHref,
   color,
   source,
+  className = "flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center hover:border-slate-300",
+  iconClassName,
+  titleClassName = "font-display font-bold text-slate-900",
+  bodyClassName = "text-sm text-slate-600",
 }: {
   phone: string;
   phoneHref: string;
-  color: string;
+  /** Icon colour for the default (unthemed) tile. */
+  color?: string;
   source: string;
+  className?: string;
+  iconClassName?: string;
+  titleClassName?: string;
+  bodyClassName?: string;
 }) {
   return (
     <a
       href={phoneHref}
       onClick={() => trackPhoneClick(source)}
-      className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-6 text-center hover:border-slate-300"
+      className={className}
     >
-      <Phone className="h-6 w-6" style={{ color }} />
-      <p className="font-display font-bold text-slate-900">Call</p>
-      <p className="text-sm text-slate-600">{phone}</p>
+      <Phone className={`h-6 w-6 ${iconClassName ?? ""}`} style={iconClassName ? undefined : { color }} />
+      <p className={titleClassName}>Call</p>
+      <p className={bodyClassName}>{phone}</p>
     </a>
   );
 }

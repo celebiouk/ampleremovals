@@ -124,3 +124,35 @@ needs real sites to attach to first. Scope for when we get there:
 
 ### Review
 (Filled in as each phase ships below.)
+
+
+---
+
+## Task: Redesign the 4 sites (ManyVans, Thatcham Movers, Newbury Removals, Ample Logistics)
+Method: `SKILL2.md` (new web design skill — SKILL.md is mobile-only, SKILL1.md is OpenAI APIs) + `frontend-design`.
+Problem found: the 3 removals brands share ONE template (BrandPageShell) with a colour swap; Logistics hides
+content until JS runs (FadeIn → blank bands in a plain render). Goal: 4 genuinely different companies.
+
+### Concepts (one each, one signature device each)
+- **ManyVans** — "livery on the side of a van". Light warm paper, charcoal, signal red. Expanded black sans (Archivo).
+  Signature: road-marking dash line with a van driving along it + big numbered side-panel services.
+- **Thatcham Movers** — "the village noticeboard / enamel street sign". Cream paper, navy, amber. Soft serif (Fraunces).
+  Signature: enamel street-name plate (THATCHAM · RG19) + pinned-card trust notes.
+- **Newbury Removals** — "racecourse members' enclosure". Deep racing-green dark theme, gold hairlines, ivory.
+  Bodoni Moda italic + Jost. Signature: harlequin racing-silks diamond band + roman-numeral rows.
+- **Ample Logistics** — "motorway gantry / control room". Keep the ink + signal system, add a route-line hero,
+  licence-class plates, visible-by-default content.
+
+### Plan
+- [ ] Shared: `Reveal` (content visible by default, JS only enhances), theme interface + registry
+- [ ] Make BrandChrome / BrandPageShell / About / Contact / Tips delegate to a per-brand theme
+      (keep JSON-LD, tracking, hrefs, sticky bar, shared booking journey chrome working)
+- [ ] ManyVans theme + per-brand fonts layout → screenshot 375 + 1440 → fix
+- [ ] Thatcham Movers theme → screenshot → fix
+- [ ] Newbury Removals theme → screenshot → fix
+- [ ] Ample Logistics redesign (hero, kit, chrome, FadeIn fix) → screenshot → fix
+- [ ] tsc + eslint on touched files; check booking journey chrome + tel/WhatsApp/quote hrefs
+- [ ] Commit + push per site; write Review
+
+### Review
+(filled in at the end)

@@ -19,6 +19,11 @@ interface Props {
    *  BrandNavbar, which is already sticky — set this to skip the duplicate
    *  floating pill and keep just the bottom WhatsApp/Call bar. */
   hideQuotePill?: boolean;
+  /** Brand pages: colour for the "Call us" outline (defaults to Ample purple). */
+  callColor?: string;
+  /** Brand pages: bar surface + border colours, for dark-themed brands. */
+  barBackground?: string;
+  barBorder?: string;
 }
 
 const PHONE_DISPLAY = "0333 577 2070";
@@ -27,7 +32,7 @@ const PHONE_HREF = "tel:03335772070";
 /** Sticky on every village location page: "Get a free Quote" pinned top-right,
  *  WhatsApp (left) and Call (right) pinned to the bottom — visible at all
  *  times while scrolling, the three ways a visitor can act on any page. */
-export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsappNumber, accentColor, hideQuotePill }: Props) {
+export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsappNumber, accentColor, hideQuotePill, callColor, barBackground, barBorder }: Props) {
   const isAnchor = quoteHref.startsWith("#");
   const hrefPhone = phoneHref ?? PHONE_HREF;
   const pillStyle = accentColor ? { backgroundColor: accentColor, boxShadow: "none" } : undefined;
@@ -58,12 +63,16 @@ export function StickyQuoteBar({ quoteHref, whatsappMessage, phoneHref, whatsapp
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur sm:p-4">
+      <div
+        style={barBackground || barBorder ? { background: barBackground, borderColor: barBorder } : undefined}
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur sm:p-4"
+      >
         <WhatsAppButton message={whatsappMessage} whatsappNumber={whatsappNumber} className="flex-1 justify-center text-sm sm:flex-none sm:text-base" />
         <a
           href={hrefPhone}
           onClick={() => trackPhoneClick("sticky_bar")}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-purple-800 px-4 py-3 text-sm font-bold text-brand-purple-800 transition-colors hover:bg-brand-purple-50 sm:flex-none sm:px-6 sm:text-base"
+          style={callColor ? { borderColor: callColor, color: callColor } : undefined}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-bold transition-colors sm:flex-none sm:px-6 sm:text-base ${callColor ? "hover:bg-black/5" : "border-brand-purple-800 text-brand-purple-800 hover:bg-brand-purple-50"}`}
         >
           Call us
         </a>

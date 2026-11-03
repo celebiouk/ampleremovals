@@ -34,8 +34,8 @@ export function ContactCtaRow({
       <Link
         href={quoteHref}
         onClick={() => trackQuoteClick(source)}
-        style={{ background: accent }}
-        className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+        style={{ background: "var(--cta-primary, " + accent + ")" }}
+        className="inline-flex items-center gap-2 rounded-[var(--cta-radius,0.75rem)] px-6 py-3.5 text-base font-bold text-[color:var(--cta-primary-fg,#fff)] shadow-lg transition-transform hover:-translate-y-0.5"
       >
         Get a free Quote <ArrowRight className="h-4 w-4" />
       </Link>
@@ -43,7 +43,7 @@ export function ContactCtaRow({
       <a
         href={phoneHref}
         onClick={() => trackPhoneClick(source)}
-        className="inline-flex items-center gap-2 rounded-xl border border-white px-6 py-3 font-semibold hover:bg-white/10"
+        className="inline-flex items-center gap-2 rounded-[var(--cta-radius,0.75rem)] border border-[color:var(--cta-outline,#fff)] px-6 py-3 font-semibold text-[color:var(--cta-fg,#fff)] hover:bg-white/10"
       >
         <Phone className="h-4 w-4" /> {phone}
       </a>

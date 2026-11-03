@@ -4,6 +4,7 @@ import { StickyQuoteBar } from "@/components/local/StickyQuoteBar";
 import { BrandNavbar, type BrandNavLink } from "@/components/local/multibrand/BrandNavbar";
 import { standardBrandNavLinks } from "@/components/local/multibrand/brand-nav-links";
 import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
+import { getBrandTheme } from "@/components/local/multibrand/themes/registry";
 import type { Brand } from "@/lib/brands";
 import type { ComponentType, ReactNode } from "react";
 
@@ -31,6 +32,33 @@ export async function BrandChrome({
   const basePath = await resolveBrandBasePath(brand);
   const links = (navLinks ?? standardBrandNavLinks()).map((l) => ({ ...l, href: brandHref(basePath, l.href) }));
   const homeHref = basePath || "/";
+  const theme = getBrandTheme(brand.slug);
+
+  // Themed brands own their whole frame (header, footer, tokens). Everything
+  // else below is the original shared chrome.
+  if (theme) {
+    return (
+      <div className={theme.rootClass} style={theme.vars}>
+        <StickyQuoteBar
+          quoteHref={quoteHref}
+          whatsappMessage={whatsappMessage}
+          whatsappNumber={brand.whatsappNumber}
+          phoneHref={brand.phoneHref}
+          accentColor={brand.colors.accent}
+          callColor={theme.sticky.callColor}
+          barBackground={theme.sticky.barBackground}
+          barBorder={theme.sticky.barBorder}
+          hideQuotePill
+        />
+        <theme.Header brand={brand} logo={<Logo />} homeHref={homeHref} links={links} quoteHref={quoteHref} />
+        {children}
+        {/* pb clears the fixed bottom bar; it takes the footer's colour so no strip shows */}
+        <div className="pb-20" style={{ background: theme.sticky.footerFill }}>
+          <theme.Footer brand={brand} logo={<Logo />} logoOnDark={<Logo variant="white" />} links={links} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-20">
