@@ -226,4 +226,48 @@ export const manyVansTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "same-day-man-and-van-what-it-actually-means",
+    title: "Same-Day Man and Van: What \"Same Day\" Actually Means in Newbury & Thatcham",
+    excerpt: "Plenty of sites advertise same-day man and van. Fewer explain what that actually depends on. Here's the honest version.",
+    readingTime: "4 min read",
+    publishedAt: "3 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "\"Same-day man and van\" gets advertised everywhere. It's almost never explained. So here's the straight version: what actually decides whether we can get to you today, and what doesn't.",
+        ],
+      },
+      {
+        heading: "What decides it: a free van, not a free day",
+        paragraphs: [
+          "Same-day isn't about whether it's Tuesday or Saturday. It's about whether a van from the fleet is sitting free at the right time. Mornings are the best bet — call before 10am and odds are good. Afternoons work too, if something's just wrapped up nearby. Evenings are tighter, but not impossible. The honest answer every time: call, tell us what's moving and where, and we'll say yes or no straight away. No \"let us check and call you back.\"",
+        ],
+      },
+      {
+        heading: "What makes same-day easier",
+        paragraphs: [
+          "Small jobs move faster through the day than big ones — a sofa or a single room slots into a gap between other bookings far easier than a full flat. Ready-to-go also matters more than people think: if it's boxed, dismantled where needed, and sitting by the door, a same-day job can start the second the van arrives instead of losing the first 40 minutes to packing. And flexibility on exact timing helps — \"anytime after 11\" gets you fitted in a lot easier than \"exactly 2pm or nothing.\"",
+        ],
+      },
+      {
+        heading: "What makes it harder",
+        paragraphs: [
+          "A full house on short notice is the hardest same-day ask there is — not because we won't try, but because a proper fleet-sized job genuinely needs planning, the right van, sometimes a second crew. If that's your situation, we'll tell you straight whether today's realistic or whether tomorrow gets you a better job done properly. Parking restrictions sprung on us last-minute don't help either — a permit zone we don't know about costs real time on the day.",
+        ],
+      },
+      {
+        heading: "Newbury or Thatcham — same fleet, same answer",
+        paragraphs: [
+          "Doesn't matter which side of the A339 you're on. One fleet covers both towns, so a same-day call gets checked against every van we've got, not just whichever's nearest. Single item, student move-out, last-minute flat clearance before new tenants arrive — this is exactly the kind of job [Man and Van](/man-and-van) was built for, and same-day is the normal way most of it gets booked, not the exception.",
+        ],
+      },
+      {
+        heading: "Bottom line",
+        paragraphs: [
+          "Don't guess. Call " + brand.phone + ", tell us what and where, and you'll know within a minute whether today's on. That's faster than most sites' online quote forms anyway.",
+        ],
+      },
+    ],
+  },
 ];

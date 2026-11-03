@@ -213,4 +213,48 @@ export const newburyRemovalsTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "man-and-van-newbury-one-driver-or-two",
+    title: "Man and Van in Newbury: One Driver or Two? It Changes More Than the Price",
+    excerpt: "A proper look at when one mover is genuinely enough, and when paying for a second changes how the job actually goes — by property type, not guesswork.",
+    readingTime: "4 min read",
+    publishedAt: "3 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Most people booking Man and Van in Newbury treat the choice between one driver and two as purely a question of budget — £45 an hour against £75. It's a fair instinct, but it's not quite the right question. The size of the crew changes how long the job takes, how carefully things get handled, and whether you end up helping carry a wardrobe down your own stairs. Here's how to get it right by property type, rather than guessing.",
+        ],
+      },
+      {
+        heading: "Town-centre terraces and Georgian conversions",
+        paragraphs: [
+          "A good deal of Newbury's housing near the centre is older — narrower staircases, tighter turns on the landing, doorways that weren't built with modern furniture in mind. One driver can manage a handful of light items here, but anything with real weight — a sofa, a chest of drawers, a double bed frame — genuinely needs two people, not because the item's unusually heavy, but because the geometry of the building makes a solo lift either slow or risky to your walls and banisters. This is the case where the second driver pays for itself in time saved, not just effort.",
+        ],
+      },
+      {
+        heading: "New-builds near Hambridge Road",
+        paragraphs: [
+          "The newer developments out towards Hambridge Road tend to have wider doorways, and often a lift — which genuinely changes the calculation. A one-bedroom flat here with modern, modestly-sized furniture is usually a comfortable job for a single driver, provided there's somewhere legal to park close to the entrance. Where it tips toward two is volume rather than access: if you're moving a full flat's worth of furniture plus several boxes, a second pair of hands shortens the job enough to be worth the extra rate.",
+        ],
+      },
+      {
+        heading: "Student and shared flats near the college",
+        paragraphs: [
+          "Most student moves — a single room, a desk, a bed frame, a handful of boxes — sit comfortably within the 2-hour minimum with one driver, and there's rarely a reason to pay for a second. The exception is move-out day at the end of term, when parking near the college gets genuinely difficult; if that's your situation, mention it when you book so we can plan the timing rather than lose half an hour circling for a space.",
+        ],
+      },
+      {
+        heading: "Villages around Newbury — Speen, Hungerford, Kintbury",
+        paragraphs: [
+          "Outside the town itself, access tends to be easier — more driveways, fewer parking restrictions — but distances between rooms and the van can be longer, particularly in older farmhouse-style properties. Here the decision comes down less to the building and more to volume: a single large item still suits one driver, but a proper clearout of a family home is worth the second pair of hands even if the access itself is straightforward.",
+        ],
+      },
+      {
+        heading: "If you're still not sure",
+        paragraphs: [
+          "Describe what you're moving and where from when you book, and we'll recommend one driver or two honestly — not whichever earns more. For anything approaching a full two-bedroom house, it's also worth asking about a [full removal](/) instead; past a certain volume, a fixed-price crew sized properly for the job tends to work out better value than an hourly rate stretched to cover it.",
+        ],
+      },
+    ],
+  },
 ];

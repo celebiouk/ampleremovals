@@ -46,4 +46,48 @@ export const ampleTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "what-a-man-and-van-booking-actually-includes",
+    title: "What a Man and Van Booking Actually Includes (and What It Doesn't)",
+    excerpt: "The parts of a Man and Van job most quotes gloss over — what counts toward your hours, what's included as standard, and where the small print usually hides.",
+    readingTime: "5 min read",
+    publishedAt: "3 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Search \"man and van Newbury\" or \"man and van Thatcham\" and you'll mostly get a wall of hourly rates — £20 here, £45 there — with very little explanation of what you're actually buying for that money. The rate only tells you the price per hour. Here's what's genuinely included in a proper Man and Van booking, where the boundaries usually sit, and the handful of things worth asking before you book rather than discovering on the day.",
+        ],
+      },
+      {
+        heading: "What's included as standard",
+        paragraphs: [
+          "You're choosing between two crew sizes — one driver working alone, or two if the job needs more muscle — with the van, fuel and mileage within the local area already built into the hourly rate rather than charged separately. Insurance covers your belongings for the whole job, not just the drive between addresses, so loading and unloading are covered too. Basic dismantling of flat-pack furniture — bed frames, wardrobes, that kind of thing — is normally included if you mention it when you book, not an add-on sprung on you with the van outside. Reassembly at the other end usually works the same way.",
+        ],
+      },
+      {
+        heading: "What actually counts toward your hours",
+        paragraphs: [
+          "The clock should start when the crew arrives and starts working, not from whenever they left their depot — worth confirming directly, because not every provider does it that way. Loading, the drive, and unloading at the destination all count toward your booked time. What doesn't disappear from the clock is waiting: for keys to be handed over, for a lift that's out of order, for a seller who isn't quite ready to leave. That's the single most common reason a job quoted at two hours runs to three, and it's rarely the crew's fault.",
+        ],
+      },
+      {
+        heading: "Worth clarifying before the day, not on it",
+        paragraphs: [
+          "Parking matters more than most people expect. A van forced to park two streets away because of restrictions near the address adds carrying time that eats into your paid hours for nothing — mention any permit zones or likely double-yellow problems when you book. If either address has stairs, a tight turn on the landing, or a lift that might not take a sofa, say so in advance, since it genuinely changes whether one person is enough or two is the safer call. And flag anything properly fragile or high-value — a piano, an antique cabinet, specialist electronics — because it may need handling differently from a standard load of boxes.",
+        ],
+      },
+      {
+        heading: "When it stops making sense as Man and Van",
+        paragraphs: [
+          "Somewhere around a full two-bedroom house — furniture in every room, boxes stacked waist-high — the arithmetic flips. A job that would genuinely take four or five hours on an hourly rate often ends up costing about the same, sometimes less, as a [full house removal](/) with a fixed price agreed before anyone turns up, and you're not watching a clock tick while it happens. If you're not sure which side of that line your move sits on, describing the job over the phone usually settles it in under a minute — a good company will tell you honestly, even if it means quoting the cheaper option.",
+        ],
+      },
+      {
+        heading: "The short version",
+        paragraphs: [
+          "A fair Man and Van quote should cover crew size, what counts toward the clock, parking and access, and what happens if the job runs long — all before you book, not after. If a quote you've been given doesn't answer those questions without you having to ask, that's worth noticing. It usually tells you something about how the rest of the job will go too.",
+        ],
+      },
+    ],
+  },
 ];

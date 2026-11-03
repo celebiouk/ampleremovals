@@ -4,7 +4,7 @@ import { BrandChrome } from "@/components/local/multibrand/BrandChrome";
 import { resolveBrandBasePath, brandHref } from "@/components/local/multibrand/brand-links";
 import { getBrandTheme } from "@/components/local/multibrand/themes/registry";
 import type { Brand } from "@/lib/brands";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 export interface TipArticle {
   slug: string;
@@ -13,6 +13,34 @@ export interface TipArticle {
   readingTime: string;
   publishedAt: string; // "DD Month YYYY", display only
   sections: { heading?: string; paragraphs: string[] }[];
+}
+
+/**
+ * Minimal, backward-compatible inline-link support for article body text:
+ * a paragraph can include "[link text](/man-and-van)" and it renders as a
+ * real, brand-aware <Link> (routed through brandHref so it still resolves
+ * correctly on a preview path). Plain paragraphs with no brackets render
+ * exactly as before — this never affects existing articles.
+ */
+const MD_LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
+function renderParagraph(text: string, basePath: string): ReactNode {
+  if (!text.includes("](")) return text;
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  MD_LINK_RE.lastIndex = 0;
+  while ((match = MD_LINK_RE.exec(text))) {
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    nodes.push(
+      <Link key={key++} href={brandHref(basePath, match[2])} className="underline underline-offset-2">
+        {match[1]}
+      </Link>
+    );
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
 }
 
 /**
@@ -113,7 +141,7 @@ export async function TipsArticleContent({ brand, article, quoteHref }: { brand:
             <div key={i}>
               {section.heading && <h2 className={`${ui.cardTitle} !text-2xl`}>{section.heading}</h2>}
               <div className={`${ui.prose} mt-3`}>
-                {section.paragraphs.map((p, j) => <p key={j}>{p}</p>)}
+                {section.paragraphs.map((p, j) => <p key={j}>{renderParagraph(p, basePath)}</p>)}
               </div>
             </div>
           ))}
@@ -145,7 +173,7 @@ export async function TipsArticleContent({ brand, article, quoteHref }: { brand:
             <div key={i}>
               {section.heading && <h2 className="font-display text-xl font-bold text-slate-900">{section.heading}</h2>}
               <div className="mt-3 space-y-4 text-slate-700">
-                {section.paragraphs.map((p, j) => <p key={j}>{p}</p>)}
+                {section.paragraphs.map((p, j) => <p key={j}>{renderParagraph(p, basePath)}</p>)}
               </div>
             </div>
           ))}

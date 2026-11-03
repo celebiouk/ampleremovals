@@ -203,4 +203,48 @@ export const thatchamMoversTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "man-and-van-thatcham-how-many-hours-do-you-need",
+    title: "Man and Van in Thatcham: How Many Hours Do You Actually Need?",
+    excerpt: "A real, job-by-job guide to booking the right number of hours — so you're not stuck paying for extra time, or coming up short halfway through.",
+    readingTime: "4 min read",
+    publishedAt: "3 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "The question we get asked more than any other when someone calls about Man and Van isn't \"how much,\" it's \"how long will it actually take.\" Fair enough — the rate's easy to find, £45/hr for one man and a van, £75/hr for two, 2-hour minimum either way. What's harder to guess is how many of those hours you'll actually need, so here's a proper answer instead of a shrug.",
+        ],
+      },
+      {
+        heading: "A single item or two",
+        paragraphs: [
+          "A sofa, a wardrobe, a washing machine — one item moving between two addresses in Thatcham, with decent access at both ends, is almost always inside the 2-hour minimum. One man and a van covers it unless it's genuinely heavy or awkward, in which case go with two. Don't overthink this one.",
+        ],
+      },
+      {
+        heading: "A studio or 1-bed flat",
+        paragraphs: [
+          "This is where it starts to depend on the flat. A straightforward ground-floor place with a van that can park right outside is usually 2-3 hours with two men. Anything in the flats around the station, where parking's tighter and there's often a flight of stairs with an awkward turn, tends to push toward the higher end of that — the lifting takes longer, not because there's more stuff, just because getting it out the door takes more trips.",
+        ],
+      },
+      {
+        heading: "A 2-bed flat or small house",
+        paragraphs: [
+          "Realistically 4-5 hours with two men, sometimes more if there's a full kitchen's worth of boxes on top of furniture. This is also the size of job where it's worth us being straight with you: if your place is fully furnished and fully boxed, a [full house removal](/) with a fixed price agreed upfront can work out similar in cost, or cheaper, and you're not watching the clock. We'll always tell you honestly which makes more sense for your specific move.",
+        ],
+      },
+      {
+        heading: "What adds time that people forget about",
+        paragraphs: [
+          "Distance within Thatcham barely matters — it's a small town. What does add time: a long carry from the van to the front door (common out towards Crookham and Cold Ash, where driveways and narrow lanes mean the van can't always get close), stairs with a tight turn, and anything that needs dismantling on the spot because nobody mentioned it when booking. Tell us about any of that upfront and we'll quote the hours accurately instead of guessing low and running over.",
+        ],
+      },
+      {
+        heading: "The honest rule of thumb",
+        paragraphs: [
+          "If in doubt, book slightly more than you think you need rather than less — going under means the job gets rushed, and going over just means we finish early and you've paid a fair hourly rate for the actual time. Or easier still, just call us on " + brand.phone + ", describe what's moving and from where in Thatcham, and we'll give you a straight number. No guessing required.",
+        ],
+      },
+    ],
+  },
 ];
