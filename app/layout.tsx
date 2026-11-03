@@ -91,6 +91,17 @@ export const metadata: Metadata = {
   // hardcoded override can't match. Ample's own pages set it explicitly
   // below, in (public)/layout.tsx and (admin)/admin/layout.tsx instead.
   manifest: "/site.webmanifest",
+  // Google Search Console site-ownership verification (HTML tag method) —
+  // these domains' DNS isn't on Vercel, so a TXT record isn't an option.
+  // Lives in the root layout (shared by every domain this app serves) so
+  // each brand/logistics domain's own Search Console property verifies
+  // against this same tag — one entry per domain, added here as it's
+  // verified. Safe to have all of them live on every domain at once.
+  verification: {
+    google: [
+      "jTgByxhwwzgAm8sZZ14OR2uBBE297o1SkiGdXbtN0D4", // thatchammovers.co.uk
+    ],
+  },
 };
 
 // Ample's own MovingCompany JSON-LD lives in app/(public)/layout.tsx, not
