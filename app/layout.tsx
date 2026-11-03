@@ -100,6 +100,10 @@ export const metadata: Metadata = {
   verification: {
     google: [
       "jTgByxhwwzgAm8sZZ14OR2uBBE297o1SkiGdXbtN0D4", // thatchammovers.co.uk
+      "a5V6phyDXEWP5IEjlqBSORBp4OKw1PF_tmb2hl60cKg", // newburyremovals.co.uk
+      "i8uib7X_ROAfdNrfMWF3Yk1-S1kn5Lo8GnAu4eU73RM", // manyvans.com
+      "9baWv36T6PxnpAFQtgOBgaXvblhWpdsPZQZOV8eNZ4k", // amplelogistics.co.uk
+      "cUWXKQS7uslKYHf7lccPbtGZk9cZYSqJY8qYGbgTXzM", // ampleremovals.com
     ],
   },
 };
