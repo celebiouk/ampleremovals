@@ -6,6 +6,7 @@ import { generateQuoteConfirmToken } from "@/lib/tokens";
 import { ukPhoneSchema } from "@/lib/schemas/booking";
 import { deriveSource } from "@/lib/attribution";
 import { logError } from "@/lib/log-error";
+import { getCurrentBrand } from "@/lib/brand-context";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = createServiceClient();
+    const brand = await getCurrentBrand();
 
     // Customer (upsert by email).
     const { data: customer, error: custErr } = await supabase
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     const source = attribution ? deriveSource(attribution) : "facebook_ad";
     const { data: booking, error: bookErr } = await supabase
       .from("bookings")
-      .insert({ reference, service_type: "removals", customer_id: customer.id, status: "inquiry", source })
+      .insert({ reference, service_type: "removals", customer_id: customer.id, status: "inquiry", source, brand: brand.slug })
       .select("id")
       .single();
     if (bookErr || !booking) throw new Error(bookErr?.message ?? "booking insert failed");

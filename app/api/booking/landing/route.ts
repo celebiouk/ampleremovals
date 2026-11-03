@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { RemovalsFormSchema, InventorySelectionSchema, AddressOptionSchema, postcodeSchema, ukPhoneSchema } from "@/lib/schemas/booking";
 import { logError } from "@/lib/log-error";
 import type { RemovalsForm } from "@/lib/schemas/booking";
+import { getCurrentBrand } from "@/lib/brand-context";
 
 const TOKEN_EXPIRY_HOURS = 24 * 30;
 
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Please check your details and try again." }, { status: 400 });
   }
   const d = parsed.data;
+  const brand = await getCurrentBrand();
   const rawAttribution = (raw as { attribution?: Record<string, string> } | null)?.attribution ?? null;
 
   // Shape into a full Removals form — house move assumed, postcode used as the
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
     flexibleDateTo: d.flexibleDateTo ? String(d.flexibleDateTo) : null,
     description: form.description,
     additionalServices: null,
+    brand: brand.slug,
   };
   // Admin alert fires immediately. The customer's own confirmation is NOT sent
   // here (no price — see lib/business-hours.ts) — the confirmation page the
@@ -161,6 +164,7 @@ export async function POST(req: NextRequest) {
         inventory: d.inventory,
         showStandard: true,
         showPremium: true,
+        brand: brand.slug,
       });
       quoteReady = true;
     } catch (e) {

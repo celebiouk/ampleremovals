@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { INVENTORY_CATALOG, type InventoryCategory, type InventorySelection } from "@/lib/inventory-catalog";
 import type { AddressOption } from "@/types";
+import type { Brand } from "@/lib/brands";
+import { BRAND_LOGO_BY_SLUG } from "@/components/shared/logos/brand-logo-registry";
 
 /* ── Config ───────────────────────────────────────────────── */
 
@@ -34,8 +36,9 @@ const REVIEW_STEP = 8;
 
 /* ── Root wizard ──────────────────────────────────────────── */
 
-export function LandingBooking() {
+export function LandingBooking({ brand }: { brand: Brand }) {
   const router = useRouter();
+  const BrandLogo = BRAND_LOGO_BY_SLUG[brand.slug];
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -194,8 +197,14 @@ export function LandingBooking() {
         {/* Brand + trust */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-purple-800 text-white"><Truck className="h-5 w-5" /></span>
-            <span className="font-display text-lg font-extrabold text-brand-purple-950">Ample Removals</span>
+            {BrandLogo ? (
+              <BrandLogo className="h-9" />
+            ) : (
+              <>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-purple-800 text-white"><Truck className="h-5 w-5" /></span>
+                <span className="font-display text-lg font-extrabold text-brand-purple-950">{brand.name}</span>
+              </>
+            )}
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-purple-800 shadow-sm">
             <Star className="h-3.5 w-3.5 fill-brand-green-500 text-brand-green-500" /> 5-star rated
