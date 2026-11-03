@@ -235,7 +235,7 @@ export const manyVansTips: TipArticle[] = [
     sections: [
       {
         paragraphs: [
-          "\"Same-day man and van\" gets advertised everywhere. It's almost never explained. So here's the straight version: what actually decides whether we can get to you today, and what doesn't.",
+          "\"Same-day man and van\" gets advertised everywhere. It's almost never explained. So here's the straight version: what actually decides whether we can get to you today, and what doesn't. No vague \"subject to availability\" small print, no quote form that leaves you waiting on an email reply. Just the real mechanics behind the yes or no.",
         ],
       },
       {
@@ -254,6 +254,42 @@ export const manyVansTips: TipArticle[] = [
         heading: "What makes it harder",
         paragraphs: [
           "A full house on short notice is the hardest same-day ask there is — not because we won't try, but because a proper fleet-sized job genuinely needs planning, the right van, sometimes a second crew. If that's your situation, we'll tell you straight whether today's realistic or whether tomorrow gets you a better job done properly. Parking restrictions sprung on us last-minute don't help either — a permit zone we don't know about costs real time on the day.",
+        ],
+      },
+      {
+        heading: "A realistic Tuesday",
+        paragraphs: [
+          "8am: a one-bed flat clearance near the station finishes early, van's free by 10. 10:15am: your call comes in — a sofa and a few boxes across town, two hours tops. 10:30am: you're booked for 11. That's not a best-case scenario, that's a fairly ordinary gap in the day. The jobs that don't fit neatly like that are the bigger ones — which is exactly why small, specific requests get the fastest yes.",
+        ],
+      },
+      {
+        heading: "Does same-day cost more?",
+        paragraphs: [
+          "No surcharge for booking today instead of next week. Same £45/hr for one driver, £75/hr for two, same 2-hour minimum. Some companies quietly add a last-minute premium — we don't. The price is the price, whenever you call. The only thing same-day changes is availability, not the rate.",
+        ],
+      },
+      {
+        heading: "The job we get asked for most, same-day",
+        paragraphs: [
+          "Tenancy turnaround. Keys handed back at midday, new tenants moving in that evening, and a tenant who left it later than planned. One room, maybe two, usually a bed and a sofa and a dozen bags. That's a textbook same-day Man and Van job — small, specific, and exactly the kind of thing that slots into a gap in the schedule. Students at the end of term run the same pattern, just with more of them calling on the same day. Book the earliest slot you can get, and it almost always gets sorted.",
+        ],
+      },
+      {
+        heading: "Why a fleet beats a single van",
+        paragraphs: [
+          "One-van companies hit a hard wall on same-day requests: if their one van's out, that's it, full stop, call someone else. A fleet doesn't work like that. We're not checking one driver's diary — we're checking every van we run, across both towns, for the exact window you need. More vans in play means more chances one's free when you call. That's the whole mechanical reason \"same-day\" means something different here than it does from a one-man operation — it's not a sales line, it's just how the maths of running several vans instead of one actually works out in your favour.",
+        ],
+      },
+      {
+        heading: "When we'll say no",
+        paragraphs: [
+          "Straight talk: sometimes the honest answer is \"not today.\" A full house on four hours' notice, every van already out, a job that genuinely needs two crews when we've only got one free — we'd rather tell you that upfront than overpromise and let you down at 4pm with half your flat still packed. What you get instead is a straight answer and, usually, the earliest slot that actually works, even if that's first thing tomorrow instead of this afternoon. A company that always says yes isn't being honest with you, and an overbooked job on moving day is worse than a straight \"no\" on the phone.",
+        ],
+      },
+      {
+        heading: "What to have ready when you call",
+        paragraphs: [
+          "Speeds everything up. Have the postcode you're moving from and to. Know roughly what's moving — \"a sofa and six boxes\" gets you a faster answer than \"not much really.\" Mention stairs, lifts, or parking restrictions straight away, not halfway through the call. And know your earliest and latest acceptable time — \"anytime today\" is easy to slot in, \"exactly 3pm\" is harder. Ninety seconds of detail gets you a real answer instead of a guess.",
         ],
       },
       {

@@ -240,6 +240,30 @@ export const thatchamMoversTips: TipArticle[] = [
         ],
       },
       {
+        heading: "What's actually included in the rate",
+        paragraphs: [
+          "The hourly rate covers the van, the fuel, and full insurance on your belongings for the whole job — loading, driving, unloading, all of it. Taking apart a bed frame or a flat-pack wardrobe so it fits through a doorway is included too, as long as you mention it when you book rather than it being a surprise once we're on site. What it doesn't include is us guessing what's in a sealed box or behind a door you haven't mentioned — the more accurate the picture you give us up front, the more accurate the hours we quote.",
+        ],
+      },
+      {
+        heading: "A real example",
+        paragraphs: [
+          "A recent job: a one-bed flat move from near the station to a house out past Midgham. Two men and a van, booked for 3 hours based on a flight of stairs at the flat and a longer carry at the new place since the driveway couldn't quite fit the van. Came in bang on 3 hours — £225. A similar flat with ground-floor access both ends, by contrast, would likely have finished closer to the 2-hour minimum at £150. Same amount of stuff, same town, nearly £75 difference — entirely down to access, which is exactly why we ask the questions we do when you book, not because we're being nosy about your furniture.",
+        ],
+      },
+      {
+        heading: "Weekday or weekend — does it change anything?",
+        paragraphs: [
+          "The hourly rate's the same either day. What changes is how far ahead you need to book. Weekends are when most people move, so a Saturday slot in a few weeks' time is easy, but a Saturday booked the night before is a genuine ask — we'll always try, but a weekday gives you far better odds of getting exactly the time you want, especially if the job's bigger than a single item. If your dates have any flexibility at all, a Tuesday or Wednesday move in Thatcham is usually the easiest booking of the week to slot in.",
+        ],
+      },
+      {
+        heading: "What if you run over your booked hours?",
+        paragraphs: [
+          "It happens, usually because a box turns out heavier than expected or a sofa doesn't fit round a corner the first time. You're simply billed for the extra time at the same hourly rate — there's no penalty rate for going over, and we'll tell you honestly as we go if it looks like the job's running longer than booked, rather than springing the extra cost on you at the end. If we can see early on that two hours clearly won't cover it, we'd rather say so after 20 minutes than let you find out when the invoice lands.",
+        ],
+      },
+      {
         heading: "The honest rule of thumb",
         paragraphs: [
           "If in doubt, book slightly more than you think you need rather than less — going under means the job gets rushed, and going over just means we finish early and you've paid a fair hourly rate for the actual time. Or easier still, just call us on " + brand.phone + ", describe what's moving and from where in Thatcham, and we'll give you a straight number. No guessing required.",

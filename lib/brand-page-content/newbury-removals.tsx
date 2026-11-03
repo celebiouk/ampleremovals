@@ -250,6 +250,25 @@ export const newburyRemovalsTips: TipArticle[] = [
         ],
       },
       {
+        heading: "What the second driver buys you, beyond speed",
+        paragraphs: [
+          "It's tempting to think of the second person purely as extra muscle, but the actual benefit is more specific than that. With two people, one can steady a piece of furniture round a tight corner while the other guides it — the kind of manoeuvre that, done solo, risks a scraped door frame or a dropped corner on a stair edge. It also changes the pace: a single driver working alone has to put items down, walk back, and start again, where two people moving in sequence barely stop. For anything you'd genuinely mind if it got marked or dented, that difference in handling is worth more than the extra £30 an hour suggests.",
+        ],
+      },
+      {
+        heading: "The cost comparison in practice",
+        paragraphs: [
+          "Take a one-bedroom flat near the town centre with a flight of stairs — bed, sofa, a chest of drawers, a dozen boxes. One driver alone would likely take 4-5 hours to manage it safely, working in stages; at £45/hr that's £180-£225. Two drivers typically clear the same flat in 2.5-3 hours at £75/hr — £188-£225. The total cost ends up similar either way, but the two-driver booking finishes sooner, handles the furniture more carefully on the stairs, and doesn't leave you lifting anything yourself. That's usually the more telling number, not just the headline hourly rate.",
+        ],
+      },
+      {
+        heading: "What's included, whichever you choose",
+        paragraphs: [
+          "One driver or two, the rate includes the van, fuel, and full insurance cover on your belongings from the moment loading starts to the moment the last item's through the door. Basic dismantling — bed frames, flat-pack wardrobes — is included too, provided you mention it when booking rather than it coming up as a surprise once the crew's on site. The only thing that genuinely changes between one driver and two is the pace and the handling, not what's covered.",
+          "It's also worth saying plainly: the rate doesn't change whether you're in a town-centre flat or one of the villages. We don't charge a premium for Newbury's more awkward streets, and we don't discount for an easier job out near Speen or Kintbury either. The number you're quoted reflects the hours the job genuinely needs, worked out from what you tell us when you book — not where on the map you happen to be.",
+        ],
+      },
+      {
         heading: "If you're still not sure",
         paragraphs: [
           "Describe what you're moving and where from when you book, and we'll recommend one driver or two honestly — not whichever earns more. For anything approaching a full two-bedroom house, it's also worth asking about a [full removal](/) instead; past a certain volume, a fixed-price crew sized properly for the job tends to work out better value than an hourly rate stretched to cover it.",

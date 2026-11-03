@@ -77,15 +77,27 @@ export const ampleTips: TipArticle[] = [
         ],
       },
       {
+        heading: "What \"fully insured\" actually covers",
+        paragraphs: [
+          "Every reputable Man and Van service will tell you they're insured, and almost always they are — but the word itself doesn't tell you much. Goods-in-transit cover protects your belongings while they're being carried or driven, which is the core of it. Public liability covers damage to the property itself — a scuffed door frame, a dented wall on the stairs. What's worth asking about specifically is any claims excess, since a policy with a high excess effectively means small breakages aren't worth claiming for anyway, and whether genuinely high-value single items — a decent amount of cash, important original documents, jewellery — are covered at all, because most general goods-in-transit policies either exclude these outright or cap them low. If you've got something like that, it's safer in your own car than in the van, regardless of what the policy says.",
+        ],
+      },
+      {
+        heading: "A worked example",
+        paragraphs: [
+          "Say you're moving from a two-bedroom flat in Newbury to a house a few miles away, with a sofa, a bed, a wardrobe, a dining table and around 20 boxes. Two men and a van at £75/hr, loading at a flat with no lift (two flights of stairs), is realistically a 3-4 hour job once you account for the stairs and the drive — call it £225-£300. The same move with easy ground-floor access at both ends might genuinely finish inside the 2-hour minimum at £150. The difference isn't the furniture, it's entirely down to access — which is exactly why two quotes for what sounds like \"the same size move\" can land so far apart, and why being specific about stairs and parking when you book gets you a number you can actually trust.",
+        ],
+      },
+      {
         heading: "When it stops making sense as Man and Van",
         paragraphs: [
-          "Somewhere around a full two-bedroom house — furniture in every room, boxes stacked waist-high — the arithmetic flips. A job that would genuinely take four or five hours on an hourly rate often ends up costing about the same, sometimes less, as a [full house removal](/) with a fixed price agreed before anyone turns up, and you're not watching a clock tick while it happens. If you're not sure which side of that line your move sits on, describing the job over the phone usually settles it in under a minute — a good company will tell you honestly, even if it means quoting the cheaper option.",
+          "Somewhere around a full two-bedroom house — furniture in every room, boxes stacked waist-high — the arithmetic flips. A job that would genuinely take four or five hours on an hourly rate often ends up costing about the same, sometimes less, as a [full house removal](/) with a fixed price agreed before anyone turns up, and you're not watching a clock tick while it happens. There's also a practical difference beyond price: a full removal crew is sized and scheduled for exactly that job, whereas a Man and Van booking that overruns its slot can bump into whatever's booked in after it, which occasionally means a rushed finish. If you're not sure which side of that line your move sits on, describing the job over the phone usually settles it in under a minute — a good company will tell you honestly, even if it means quoting the cheaper option.",
         ],
       },
       {
         heading: "The short version",
         paragraphs: [
-          "A fair Man and Van quote should cover crew size, what counts toward the clock, parking and access, and what happens if the job runs long — all before you book, not after. If a quote you've been given doesn't answer those questions without you having to ask, that's worth noticing. It usually tells you something about how the rest of the job will go too.",
+          "A fair Man and Van quote should cover crew size, what counts toward the clock, parking and access, what the insurance actually covers, and what happens if the job runs long — all before you book, not after. If a quote you've been given doesn't answer those questions without you having to ask, that's worth noticing. It usually tells you something about how the rest of the job will go too.",
         ],
       },
     ],
