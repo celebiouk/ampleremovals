@@ -18,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
     clean === LOGISTICS.domain
       ? `https://${LOGISTICS.domain}`
       : brandForHost(host) !== AMPLE_BRAND
-        ? `https://${brandForHost(host).domain.replace(/^www\./, "")}`
+        ? `https://${brandForHost(host).domain}`
         : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   return {
