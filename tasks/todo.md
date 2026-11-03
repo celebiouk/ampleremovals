@@ -170,3 +170,14 @@ content until JS runs (FadeIn → blank bands in a plain render). Goal: 4 genuin
 - Watch: `next build` was not run (it would regenerate 900+ pages); `tsc` is clean for touched files.
   Pre-existing tsc/eslint errors elsewhere (FormData.get typings, unused imports) were left alone.
 
+
+
+## Task: Newbury Removals redesign v2 (owner disliked the dark formal "enclosure" style)
+- [x] Asked for direction: chose "Fresh market town", keep green + gold used lightly on a light page
+- [x] New concept "market day": white + soft sage, striped market-stall awning under the header, shop-window arch
+      illustration (van + house), rounded cards and pills; Gabarito + Figtree; gold highlighter on the town name
+- [x] Theme tokens extended (`ctaButton`) so article CTA buttons contrast on every brand's panel (also fixed
+      the same invisible-button bug on Thatcham's navy panel)
+- [x] Verified at 1440 and 390: home, clearance, contact, article
+### Review
+Only the Newbury theme files changed (plus the shared `ctaButton` token). Other brands untouched visually.

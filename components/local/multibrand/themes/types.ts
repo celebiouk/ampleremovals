@@ -38,5 +38,7 @@ export interface BrandTheme {
     icon: string;
     meta: string;
     ctaPanel: string;
+    /** Button on the ctaPanel (must contrast with the panel, which is brand-dark). */
+    ctaButton: string;
   };
 }

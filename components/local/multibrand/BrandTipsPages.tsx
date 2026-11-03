@@ -122,8 +122,7 @@ export async function TipsArticleContent({ brand, article, quoteHref }: { brand:
           <p className={ui.cardTitle}>Ready to get a price?</p>
           <Link
             href={quoteHref}
-            style={{ background: brand.colors.primary }}
-            className="mt-5 inline-flex items-center gap-2 px-6 py-3 font-bold text-white"
+            className={`mt-5 inline-flex items-center gap-2 px-6 py-3 font-bold ${ui.ctaButton}`}
           >
             Get a free Quote <ArrowRight className="h-4 w-4" />
           </Link>

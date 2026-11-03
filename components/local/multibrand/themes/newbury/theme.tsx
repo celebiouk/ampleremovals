@@ -3,18 +3,15 @@ import { NewburyHome } from "./NewburyHome";
 import type { BrandTheme } from "@/components/local/multibrand/themes/types";
 import "./newbury.css";
 
-/** Inner-page hero: framed, centred, with the silks band beneath. */
+/** Inner-page hero: sage band, friendly headline, a pill for the section name. */
 function NewburyPageHero({ eyebrow, title, intro }: { eyebrow: string; title: string; intro?: string }) {
   return (
-    <section className="px-4 pt-5 md:px-8 md:pt-8">
-      <div className="nb-frame mx-auto w-full max-w-6xl px-6 py-14 text-center md:px-14 md:py-20">
-        <div className="nb-ornament mx-auto max-w-sm">
-          <span className="nb-caps px-1 text-center">{eyebrow}</span>
-        </div>
-        <h1 className="nb-display mx-auto mt-7 max-w-3xl break-words text-[clamp(2.1rem,5vw,4.2rem)]">{title}</h1>
-        {intro && <p className="mx-auto mt-6 max-w-2xl text-lg font-light leading-relaxed text-[var(--nb-ivory)]/85 md:text-xl">{intro}</p>}
+    <section className="nb-sage">
+      <div className="mx-auto w-full max-w-5xl px-5 pb-16 pt-16 md:px-8 md:pb-20 md:pt-20">
+        <span className="inline-block rounded-full border border-[var(--nb-sage-200)] bg-white px-4 py-1.5 text-sm font-bold text-[var(--nb-green)]">{eyebrow}</span>
+        <h1 className="nb-display mt-6 max-w-3xl break-words text-[clamp(2.2rem,5vw,4.2rem)] text-[var(--nb-green-deep)]">{title}</h1>
+        {intro && <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--nb-ink-soft)] md:text-xl">{intro}</p>}
       </div>
-      <div className="nb-silks -mx-4 mt-5 md:-mx-8 md:mt-8" aria-hidden="true" />
     </section>
   );
 }
@@ -22,22 +19,23 @@ function NewburyPageHero({ eyebrow, title, intro }: { eyebrow: string; title: st
 export const newburyTheme: BrandTheme = {
   rootClass: "nb-root",
   vars: {},
-  sticky: { callColor: "#f0c04a", barBackground: "#0a2915", barBorder: "rgba(240,192,74,0.38)", footerFill: "#0a2915" },
+  sticky: { callColor: "#14532d", barBackground: "#ffffff", barBorder: "#cfe1c7", footerFill: "#ffffff" },
   Header: NewburyHeader,
   Footer: NewburyFooter,
   Home: NewburyHome,
   PageHero: NewburyPageHero,
   ui: {
     section: "mx-auto w-full max-w-5xl px-5 py-16 md:px-8 md:py-24",
-    sectionAlt: "nb-light",
-    h2: "nb-display text-[clamp(1.8rem,3.4vw,2.8rem)] break-words",
-    prose: "space-y-5 text-[1.08rem] font-light leading-[1.85] text-[var(--nb-ivory)]/85",
-    card: "nb-frame bg-[var(--nb-green-2)] p-8 text-[var(--nb-ivory)]",
-    cardTitle: "nb-display text-xl !leading-snug text-[var(--nb-gold-lite)]",
-    cardBody: "mt-2 text-[15px] font-light leading-relaxed text-[var(--nb-ivory)]/80",
-    icon: "text-[var(--nb-gold-lite)]",
-    link: "nb-caps text-[var(--nb-gold-lite)] hover:underline",
-    meta: "text-xs text-[var(--nb-ivory)]/60",
-    ctaPanel: "nb-frame bg-[var(--nb-green-2)] p-10 text-center text-[var(--nb-ivory)]",
+    sectionAlt: "nb-sage",
+    h2: "nb-display text-[clamp(1.8rem,3.4vw,2.8rem)] text-[var(--nb-green-deep)] break-words",
+    prose: "space-y-5 text-[1.08rem] leading-[1.8] text-[var(--nb-ink-soft)]",
+    card: "nb-card p-7",
+    cardTitle: "nb-display text-xl !leading-snug text-[var(--nb-green-deep)]",
+    cardBody: "mt-2 text-[15px] leading-relaxed text-[var(--nb-ink-soft)]",
+    icon: "text-[var(--nb-green)]",
+    link: "text-sm font-bold text-[var(--nb-green)] hover:underline",
+    meta: "text-xs text-[var(--nb-ink-soft)]",
+    ctaPanel: "rounded-[2rem] bg-[var(--nb-green)] p-10 text-center text-white",
+    ctaButton: "rounded-full bg-[var(--nb-gold-lite)] text-[var(--nb-green-deep)]",
   },
 };

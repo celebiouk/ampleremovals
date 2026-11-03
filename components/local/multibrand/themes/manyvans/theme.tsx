@@ -37,5 +37,6 @@ export const manyVansTheme: BrandTheme = {
     link: "mv-tab text-[11px] text-[var(--mv-red)] hover:underline",
     meta: "text-xs text-[var(--mv-ink-soft)]",
     ctaPanel: "bg-[var(--mv-ink)] text-white p-8 text-center",
+    ctaButton: "mv-tab bg-[var(--mv-red)] text-white text-xs",
   },
 };

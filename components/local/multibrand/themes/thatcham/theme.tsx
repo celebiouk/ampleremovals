@@ -37,5 +37,6 @@ export const thatchamTheme: BrandTheme = {
     link: "text-sm font-bold text-[var(--th-navy)] underline decoration-[var(--th-amber)] decoration-2 underline-offset-4",
     meta: "text-xs text-[var(--th-ink-soft)]",
     ctaPanel: "rounded-[10px] bg-[var(--th-navy)] p-8 text-center text-white",
+    ctaButton: "rounded-[10px] bg-[var(--th-amber-light)] text-[var(--th-navy-deep)]",
   },
 };

@@ -1,18 +1,15 @@
-import { Bodoni_Moda, Jost } from "next/font/google";
+import { Gabarito, Figtree } from "next/font/google";
 
-// Newbury Removals: Bodoni Moda's high-contrast didone is the face of racecards
-// and members' badges; Jost (a Futura cousin) keeps the supporting text crisp.
-export const nbDisplay = Bodoni_Moda({
+// Newbury Removals: Gabarito is a friendly, rounded-geometric display face with
+// real character at heavy weights; Figtree keeps long copy open and easy to read.
+export const nbDisplay = Gabarito({
   subsets: ["latin"],
-  axes: ["opsz"],
-  style: ["normal", "italic"],
   variable: "--font-nb-display",
   display: "swap",
 });
 
-export const nbBody = Jost({
+export const nbBody = Figtree({
   subsets: ["latin"],
-  style: ["normal", "italic"],
   variable: "--font-nb-body",
   display: "swap",
 });
