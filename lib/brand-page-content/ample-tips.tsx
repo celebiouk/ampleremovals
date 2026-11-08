@@ -102,4 +102,66 @@ export const ampleTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "house-clearance-company-waste-carrier-licence-check",
+    title: "How to Make Sure a House Clearance Company Won't Leave You Liable for Fly-Tipping",
+    excerpt: "The one check almost nobody does before booking a clearance — and why skipping it can leave the liability sitting with you, not the company you paid.",
+    readingTime: "5 min read",
+    publishedAt: "8 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "Most people choosing a house clearance company compare price and maybe a few reviews, then book. That's understandable — the quotes all look similar, and nothing on a website tells you which ones are cutting corners. But there's one specific check that matters more than price, and almost nobody does it: whether the company is actually a registered waste carrier. Skip it, and if your rubbish ends up fly-tipped in a layby near Thatcham or dumped on waste ground outside Newbury, the legal liability doesn't stop with the firm you paid — under UK duty of care rules, it can come back to you as the person who produced the waste.",
+        ],
+      },
+      {
+        heading: "The rule most people don't know exists",
+        paragraphs: [
+          "Anyone who transports or disposes of waste on behalf of someone else, for money, is legally required to hold a waste carrier licence issued by the Environment Agency. That's not optional, and it's not the same as having a nice van with a logo on the side. The UK's 'duty of care' for waste means the person who originally produced it — you, as the homeowner or executor — stays responsible for making sure it's dealt with properly all the way through, even after you've handed it over and paid. If an unlicensed outfit dumps your old sofa and a dozen bin bags in a field, it's not just their problem. It can be yours too, with fines attached.",
+        ],
+      },
+      {
+        heading: "How to actually check a licence, not just ask for one",
+        paragraphs: [
+          "Asking \"are you licensed?\" gets you a yes almost every time, licensed or not — it costs nothing to say. The actual check takes about two minutes: the Environment Agency keeps a public register of registered waste carriers, searchable by company name or registration number. A legitimate firm will give you that number without hesitation, usually printed on their invoice or quote as a matter of course. If a company gets vague, says it's \"sorted through our supplier,\" or can't produce a number on the spot, that's the moment to walk away, not the moment to assume it'll be fine.",
+        ],
+      },
+      {
+        heading: "Why the cheapest quote is sometimes the most expensive one",
+        paragraphs: [
+          "A fully licensed clearance company has real costs an unlicensed one doesn't: tip fees, vehicle compliance, insurance, proper sorting for recycling. When a quote comes in dramatically below everyone else's for a house clearance in Newbury or Thatcham, that gap has to come from somewhere, and it's rarely goodwill. It's usually a sign that licensed disposal isn't actually part of the plan — which is exactly the scenario that leaves you, not them, holding the liability months later when a council traces fly-tipped waste back to your old address.",
+        ],
+      },
+      {
+        heading: "What a fair price actually looks like",
+        paragraphs: [
+          "As a rough guide across Newbury and Thatcham, a straightforward one-bedroom flat or a single room's worth of clearance typically runs £150–£300. A full 2–3 bedroom house generally lands between £275–£550, and a larger 4–5 bedroom property, especially one that's been lived in for decades, can run £500–£900 depending on how much there genuinely is to shift and dispose of. Properties with difficult access — a flat with no lift, a house with a long, narrow driveway — push toward the top of those ranges because they take longer to clear safely, not because the waste itself costs more to dispose of. If a quote sits well outside these ranges in either direction, it's worth asking why.",
+        ],
+      },
+      {
+        heading: "What a legitimate quote should include without you asking",
+        paragraphs: [
+          "A proper clearance quote should state, or be happy to confirm immediately: a waste carrier registration number, public liability insurance cover, and roughly where items go — donation, recycling, or licensed disposal. [House clearance](/house-clearance) jobs we quote for in Newbury and Thatcham include all three as standard, because leaving a customer to find out the hard way isn't how a company earns repeat business or a next-door neighbour's recommendation, both of which matter more in a town this size than a single cheap job ever could.",
+        ],
+      },
+      {
+        heading: "What this actually looks like when it goes wrong",
+        paragraphs: [
+          "It's not a hypothetical. Local councils across Berkshire and Hampshire have traced fly-tipped furniture, mattresses and bin bags back to the household that paid for their 'removal' — sometimes from paperwork found in the waste itself, sometimes from a neighbour's dashcam catching a van. The fine for fly-tipping can run into thousands of pounds, and separately, a council can issue a duty-of-care notice forcing the original householder to pay for proper disposal after the fact — effectively paying twice for the same job, once to the cowboy outfit and once to clean up after them.",
+        ],
+      },
+      {
+        heading: "A quick worked example",
+        paragraphs: [
+          "Two quotes land for the same garage clearance near Newbury: one at £180, one at £310. The £310 firm gives its waste carrier number unprompted and explains that roughly a third of what's cleared gets donated to a local charity shop, with the rest going through a licensed waste transfer station. The £180 firm says 'yeah we're insured, don't worry about it' and changes the subject when asked for a licence number. The £130 difference isn't profit margin — it's almost certainly the tip fees the cheaper firm isn't planning to pay, which means somebody else, quite possibly a layby near you, ends up paying them instead.",
+        ],
+      },
+      {
+        heading: "The short checklist",
+        paragraphs: [
+          "Before you book: ask for the waste carrier registration number and check it against the Environment Agency's public register yourself, rather than taking their word for it. Confirm public liability insurance is current, not just 'we're insured.' Ask roughly where items end up — a company that can't answer in a sentence probably hasn't thought about it either. And if a quote is dramatically cheaper than everyone else's for the same job, ask directly what's different about how they're planning to get rid of it — the answer tells you almost everything you need to know.",
+        ],
+      },
+    ],
+  },
 ];

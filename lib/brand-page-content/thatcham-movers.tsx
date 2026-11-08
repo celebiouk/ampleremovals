@@ -309,4 +309,84 @@ export const thatchamMoversTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "thatcham-house-clearance-cost-room-by-room",
+    title: "What a Thatcham House Clearance Actually Costs, Room by Room",
+    excerpt: "A real, local breakdown by room and property size, so the quote you get isn't the first time you've seen a number.",
+    readingTime: "4 min read",
+    publishedAt: "8 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "\"How much is a house clearance?\" is the question we get asked more than any other, and the honest answer is always \"it depends\" — which is true but useless on its own. So here's the actual breakdown, room by room and size by size, based on what clearances in Thatcham genuinely tend to cost, not a national average that doesn't account for your actual house.",
+        ],
+      },
+      {
+        heading: "Why the price swings so much between two 'similar' houses",
+        paragraphs: [
+          "Two three-bedroom houses on the same Thatcham street can cost very different amounts to clear, and it's almost never about the house itself — it's about how full it is. A house someone's lived in for six months looks nothing like one someone's lived in for forty years. Volume and access, not square footage, are what actually drive the price.",
+        ],
+      },
+      {
+        heading: "Room by room, roughly",
+        paragraphs: [
+          "A single bedroom with normal furniture — bed, wardrobe, drawers, some boxes — usually runs £80–£150 on its own. A lounge with a sofa, tables, and a cabinet or two tends to land around £100–£200. A kitchen, once you factor in appliances and the inevitable cupboard of things nobody's opened in years, is typically £120–£220. A garage or shed, especially one that's been used as general storage rather than parking an actual car, can be surprisingly expensive — £100–£250 — simply because it's rarely just a few items.",
+        ],
+      },
+      {
+        heading: "By whole property",
+        paragraphs: [
+          "A one-bedroom flat clearance in Thatcham generally comes to £150–£300 all in. A typical 2–3 bedroom house runs £275–£550. A larger 4–5 bedroom family home, particularly one that's been fully lived in for years, can run £450–£800 or more. These aren't made-up figures — they're the range we actually see on real jobs across Thatcham and the surrounding villages, not a national guide written for a different market.",
+        ],
+      },
+      {
+        heading: "What pushes a quote higher",
+        paragraphs: [
+          "Stairs add time, not just because of the carrying but because narrower staircases mean more careful handling. No parking right outside — common on some of the older streets near the Broadway — means a longer carry, which also adds time. And anything hoarded or heavily cluttered simply takes longer to sort, since it's rarely just \"load it and go\" — someone usually needs to check what's actually being thrown versus kept.",
+        ],
+      },
+      {
+        heading: "What brings it down",
+        paragraphs: [
+          "Having things already sorted into \"keep\" and \"go\" piles before we arrive saves real time, because we're not making those decisions for you on the day. Clear, close parking helps more than people expect. And being upfront about anything unusual — a piano, a large wardrobe that won't fit through a doorway whole — means we can plan for it rather than lose half an hour figuring it out on-site.",
+        ],
+      },
+      {
+        heading: "A real Thatcham example",
+        paragraphs: [
+          "A recent job: a three-bedroom semi near Crookham, cleared after the owner moved into assisted living. Two bedrooms, a lounge, kitchen, and a garage used for storage, nothing hoarded but genuinely full after years in one place. Two men, just under four hours, £320 including tip-run disposal. A similar-sized house with less in it — someone who'd already decluttered before calling us — came in closer to £240 for roughly the same rooms. Same size house, same crew, nearly £80 difference, entirely down to volume.",
+        ],
+      },
+      {
+        heading: "What's included in every quote, whatever the size",
+        paragraphs: [
+          "Whichever end of the price range your job lands in, the same things are covered: the labour to clear it, loading and transport, and responsible disposal — donated or recycled wherever possible rather than everything going straight to landfill. There's no separate 'collection fee' sprung on afterwards, and no charge-per-item once we're on site. The number we quote is the number on the invoice.",
+        ],
+      },
+      {
+        heading: "Probate and downsizing jobs cost more to plan for, not more per room",
+        paragraphs: [
+          "A clearance following a bereavement or a move into assisted living often costs more overall simply because there's more to go through carefully — paperwork to set aside, items a family wants kept, things that need a proper look before anyone decides they're rubbish. The per-room rate doesn't change; what changes is the time it takes to do it with the right care, which is exactly why we quote from photos and a conversation about the situation, not a one-size-fits-all formula.",
+        ],
+      },
+      {
+        heading: "A couple of questions people ask before booking",
+        paragraphs: [
+          "\"Do you charge extra if it turns out to be more than we thought?\" Not if it's roughly in line with what we discussed — we build a bit of headroom into every quote precisely because 'roughly a few boxes' sometimes turns out to be fifteen. \"What if we want to keep some things?\" Just point them out before we start — nothing goes that you haven't agreed should go, and we're used to working around a pile of 'definitely keeping these' in the corner of the room.",
+        ],
+      },
+      {
+        heading: "What's genuinely rubbish versus what's worth a second look",
+        paragraphs: [
+          "Before anything goes in the van, it's worth a quick pass for anything that isn't actually rubbish — old coins, jewellery tucked in a drawer, furniture that's older or better made than it looks, even first-edition books sitting on a shelf nobody's checked in years. We're not valuers, but we'll happily flag anything that looks worth a second opinion rather than just loading it, because a five-minute conversation beats finding out afterwards something had real value.",
+        ],
+      },
+      {
+        heading: "Getting an accurate number without the guesswork",
+        paragraphs: [
+          "The fastest way to a real number isn't a national calculator — it's sending us a few photos of what's actually there. We'll give you a fixed price from that, or you can pick your hours for a smaller job using our instant [house clearance](/house-clearance) quote tool. Either way, the price you're quoted is the price you pay, no surprise add-ons once the van's outside.",
+        ],
+      },
+    ],
+  },
 ];

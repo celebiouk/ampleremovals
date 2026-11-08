@@ -345,4 +345,78 @@ export const manyVansTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "skip-hire-vs-house-clearance-newbury-thatcham",
+    title: "Skip Hire vs a House Clearance Company: Which Is Actually Cheaper in Newbury & Thatcham",
+    excerpt: "The honest maths on skip hire vs a clearance crew — including the costs the skip hire calculators conveniently leave out.",
+    readingTime: "5 min read",
+    publishedAt: "8 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "A skip looks cheaper on paper. That's basically the whole pitch — a flat fee, delivered to your drive, fill it yourself. But \"cheaper on paper\" and \"cheaper in practice\" aren't the same thing, and most skip-hire comparisons conveniently stop adding up costs right where it gets inconvenient for them. Here's the full maths, for Newbury and Thatcham specifically.",
+        ],
+      },
+      {
+        heading: "What a skip actually costs once you add the extras",
+        paragraphs: [
+          "A small skip in this area typically runs £150–£250 for a week's hire. Sounds simple — until you add a permit if it's going on the road rather than a private drive (£20–£40 in most Berkshire council areas, and you'll need to apply ahead of time), the near-certainty that one skip isn't enough once you actually start filling it, and the fact that some materials — mattresses, fridges, certain electricals — aren't allowed in a standard skip at all and need separate, often paid, collection. Add it up and a \"£180 skip\" job regularly ends closer to £300–£400 by the time it's actually full and gone.",
+        ],
+      },
+      {
+        heading: "What a clearance crew costs instead",
+        paragraphs: [
+          "Across Newbury and Thatcham, a comparable clearance — a garage, a few rooms, a full house — runs roughly in line with the skip-plus-extras total, sometimes less, because it's one fixed price covering everything: labour, disposal, recycling, the lot. No permit to sort, no second skip to order when the first one's full by Wednesday.",
+        ],
+      },
+      {
+        heading: "The hidden cost skip-hire calculators never show you",
+        paragraphs: [
+          "Your own time and your own back. A skip means you're the one carrying everything out to it — up the stairs, through the door, across the drive — on your own schedule, around work and everything else going on. A clearance crew does that part. If your time's worth anything to you at all, and most people's is, that's a real cost a skip-hire price comparison simply never puts a number on.",
+        ],
+      },
+      {
+        heading: "When a skip genuinely wins",
+        paragraphs: [
+          "Garden waste, renovation rubble, and general DIY debris — stuff you're already generating steadily over a week or two rather than clearing all at once. If you want it sitting on the drive so you can keep adding to it as you go, a skip is the right tool. That's a genuinely different job to a house clearance, and it's the one case where a skip usually does come out ahead.",
+        ],
+      },
+      {
+        heading: "When a clearance crew wins",
+        paragraphs: [
+          "Anything that needs doing in one go — a house clearance, a garage that's been a dumping ground for a decade, a full property turnaround before a sale or new tenants move in. One visit, one price, and everything's gone the same day rather than sitting outside for a week. Across Newbury and Thatcham, that's the far more common situation people are actually calling about.",
+        ],
+      },
+      {
+        heading: "The real comparison, worked through",
+        paragraphs: [
+          "Take a full garage clear-out: a medium skip plus permit plus a near-certain second skip for the overflow lands around £350–£450 and takes the better part of a week sitting on your drive. The same garage with a crew from our fleet: a fixed quote from photos, usually £150–£300 depending on volume, done in a single visit, nothing left outside your house for the neighbours to wonder about. Cheaper, faster, and nothing to haul yourself.",
+        ],
+      },
+      {
+        heading: "What about recycling — does a skip actually do better?",
+        paragraphs: [
+          "Not necessarily, and this one surprises people. A general skip gets sorted at a waste transfer station after collection, same as most clearance loads, so the recycling outcome is often similar either way — it comes down to the individual waste company's process, not the container. Where a clearance crew does better is sorting as we go: furniture that's still usable gets set aside for donation on the spot, rather than thrown in alongside everything else and sorted later, if at all.",
+        ],
+      },
+      {
+        heading: "What people get wrong about skip permits",
+        paragraphs: [
+          "The permit itself is cheap — it's the planning most people skip that costs them. Local councils around Newbury and Thatcham generally want a permit applied for in advance, not sorted on the day the skip turns up, and a skip placed on the road without one can get you a fine on top of the permit fee you were trying to avoid paying. Private driveway placement avoids this, but then you're limited to however much drive space you've actually got free, which for a lot of houses here is 'not much.' Factor in the few days a permit application can take to clear, and a skip booked for 'this weekend' sometimes turns into a skip booked for next weekend instead.",
+        ],
+      },
+      {
+        heading: "The bit the price comparisons leave out entirely",
+        paragraphs: [
+          "A skip sitting outside for a week is also a week of your house looking like it's mid-clearout to every neighbour and passer-by, and a week of remembering to keep adding to it rather than just being done. A crew clearing the same job in one visit means it's handled and gone the same day — which has a value of its own that doesn't show up on either quote, but tends to matter once people actually compare the experience, not just the number.",
+        ],
+      },
+      {
+        heading: "Our honest take",
+        paragraphs: [
+          "If it's ongoing waste you're adding to over time, hire the skip. If it's a one-off clear-out — a garage, a house, a job you want finished today, not spread over a week — a [house clearance](/house-clearance) booked with us almost always works out cheaper once you count the permit, the second skip, and your own time properly. We'll give you a fixed price from a few photos before you decide either way, covering Newbury and Thatcham the same day you call.",
+        ],
+      },
+    ],
+  },
 ];

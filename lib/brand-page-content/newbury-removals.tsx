@@ -314,4 +314,72 @@ export const newburyRemovalsTips: TipArticle[] = [
       },
     ],
   },
+  {
+    slug: "clearing-a-loved-ones-home-in-newbury-guide-for-executors",
+    title: "Clearing a Loved One's Home in Newbury: A Practical Guide for Executors",
+    excerpt: "What to actually expect when you're the one responsible for clearing a family home — the legal parts, the emotional parts, and a sensible order to do them in.",
+    readingTime: "5 min read",
+    publishedAt: "8 November 2026",
+    sections: [
+      {
+        paragraphs: [
+          "If you're reading this because you've just been made an executor and now have to clear a parent's or relative's Newbury home, we're sorry for your loss, and we'll keep this practical rather than sentimental — because right now, practical is probably what helps most. There's a legal side to get right and an emotional side that doesn't follow a schedule, and the two don't always sit comfortably together. Here's a sensible order to approach it in.",
+        ],
+      },
+      {
+        heading: "What you're actually responsible for as executor",
+        paragraphs: [
+          "Legally, you're responsible for the estate's assets until probate is granted and everything is properly distributed — which means a house shouldn't be cleared and emptied casually before that's settled, however tempting it is to just get it done. Photograph the property and its contents before anything is moved, keep receipts for clearance costs (they're usually recoverable from the estate), and if there's any doubt about whether something has value — furniture, jewellery, art, even an old watch in a drawer — get it looked at before it goes anywhere. Executors have occasionally found themselves personally liable for mistakes made clearing an estate too quickly, so a little caution upfront is worth it.",
+        ],
+      },
+      {
+        heading: "The order that actually works",
+        paragraphs: [
+          "First, secure the property — locks changed if needed, insurance confirmed, post redirected. Second, locate and safeguard paperwork: wills, bank statements, deeds, anything that matters for probate, before a single box gets moved. Third, identify anything of significant value and have it assessed. Only after those three steps does the actual clearance make sense to book — not before, however much pressure there is to have the house ready for sale or handover.",
+        ],
+      },
+      {
+        heading: "What to value before anything is cleared",
+        paragraphs: [
+          "Furniture rarely holds the value people expect, but a handful of things often do: jewellery, watches, coins, original artwork, antique or well-made furniture pieces, and anything with genuine age to it. A quick valuation, even an informal one from a local auction house, costs little and prevents something genuinely worth money ending up in a clearance van by mistake. It's also worth checking lofts and garages specifically — they're where overlooked valuables most often turn up, tucked away and forgotten decades ago.",
+        ],
+      },
+      {
+        heading: "When family members disagree about what to keep",
+        paragraphs: [
+          "This is often the hardest part, and it's rarely about the item itself. A practical approach that tends to defuse it: photograph everything before the clearance, circulate the photos to anyone with an interest, and give a clear, reasonable deadline for claims — a week, not a month — before the clearance crew comes in. It moves the decision away from 'whoever shouts loudest in the room' and gives everyone a fair, documented chance, which matters more for keeping the peace than it does for the furniture itself.",
+        ],
+      },
+      {
+        heading: "What a Newbury clearance typically costs in this situation",
+        paragraphs: [
+          "Probate clearances in Newbury are priced the same way as any other — by volume and access — though they're often larger than an average job simply because they cover a whole life's worth of belongings rather than a few years'. A typical 3-bedroom family home runs £350–£650, a larger property with a garage and loft fully used can run £600–£1,000. We quote from photos wherever possible, specifically so you're not having to host a stranger walking through a parent's home during an already difficult time.",
+        ],
+      },
+      {
+        heading: "Dealing with sentimental items that have no financial value",
+        paragraphs: [
+          "Not everything worth keeping is worth money — a handwritten recipe card, old photographs, a worn-out armchair nobody else would look at twice. These are easy to overlook when the focus is on paperwork and valuations, but they're often the things people regret clearing without a second thought. Setting aside a single box for exactly this category before the main clearance, even if nobody's sure yet what should go in it, tends to prevent that particular regret.",
+        ],
+      },
+      {
+        heading: "If the house needs to be sold or handed back quickly",
+        paragraphs: [
+          "Sometimes there's real time pressure — a rental property needs returning to a landlord, or an estate agent wants the house empty before photographs and viewings. That's manageable, but it's worth saying plainly: the paperwork and valuables step still needs its moment, even if that moment is compressed into a single afternoon rather than a week. Rushing a clearance before probate items are safeguarded is the one shortcut that genuinely can come back on you as executor, so even under time pressure, do that part properly first and let the clearance itself move quickly once it does. An estate agent's deadline is real, but it's their deadline, not a legal one — it can usually flex by a day or two if you need it to.",
+        ],
+      },
+      {
+        heading: "A short, honest note on cost versus speed",
+        paragraphs: [
+          "A clearance booked with more notice is almost always a little cheaper and a little easier to schedule exactly when you want it, simply because we can plan the right crew and van size in advance. A genuinely urgent same-week clearance is still entirely possible — we do them regularly — but it's fair to expect slightly less flexibility on the exact day and time. If your situation allows even a few days' notice, it tends to go more smoothly for everyone, including you.",
+        ],
+      },
+      {
+        heading: "When to call us in",
+        paragraphs: [
+          "Once paperwork and valuables are secured and any family claims have had their fair chance, that's the point to book a [house clearance](/house-clearance). We handle probate clearances regularly, at whatever pace suits the family — some want it done within days, others need a few weeks to come to terms with it first, and both are entirely normal. We'll never rush you, and we'll always treat what's left with the respect it deserves, not as a job to get through quickly.",
+        ],
+      },
+    ],
+  },
 ];
