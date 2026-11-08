@@ -25,7 +25,7 @@ const BRAND_TIPS: Record<string, { slug: string }[]> = {
  */
 function brandSitemap(brand: Brand): MetadataRoute.Sitemap {
   const baseUrl = `https://${brand.domain}`;
-  const pages = ["", "/man-and-van", "/house-clearance", "/about", "/contact", "/tips"];
+  const pages = ["", "/man-and-van", "/house-clearance", "/rubbish-removal", "/about", "/contact", "/tips"];
   const tips = BRAND_TIPS[brand.slug] ?? [];
   return [
     ...pages.map((p) => ({

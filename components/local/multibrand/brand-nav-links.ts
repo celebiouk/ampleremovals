@@ -11,6 +11,7 @@ export function standardBrandNavLinks(): BrandNavLink[] {
     { label: "Removals", href: "/" },
     { label: "Man and Van", href: "/man-and-van" },
     { label: "House Clearance", href: "/house-clearance" },
+    { label: "Rubbish Removal", href: "/rubbish-removal" },
     { label: "Tips & Advice", href: "/tips" },
     { label: "About Us", href: "/about" },
     { label: "Contact Us", href: "/contact" },

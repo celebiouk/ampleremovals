@@ -66,8 +66,8 @@ Existing themes to compare against: ManyVans (van livery), Thatcham Movers
 `middleware.ts` resolves the brand from the `Host` header
 (`brandForHost()` in `lib/brands.ts`) and rewrites these paths to
 `/${brand.slug}${path}` for any non-Ample brand:
-`/`, `/man-and-van`, `/house-clearance`, `/about`, `/contact`, `/tips`,
-and anything under `/tips/`. **No changes needed here** unless a future
+`/`, `/man-and-van`, `/house-clearance`, `/rubbish-removal`, `/about`,
+`/contact`, `/tips`, and anything under `/tips/`. **No changes needed here** unless a future
 brand needs a genuinely different page set — if so, add the new path to
 `BRAND_PAGE_PATHS` or `BRAND_PAGE_PREFIXES` in `middleware.ts`.
 

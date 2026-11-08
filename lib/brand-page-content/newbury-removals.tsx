@@ -31,6 +31,7 @@ export const newburyRemovalsRemovals: BrandPageContent = {
     { title: "House Removals", body: "Full house moves of any size, anywhere in Newbury and the surrounding area.", href: "/" },
     { title: "Man and Van", body: "A mover and a van by the hour, for smaller jobs and single items.", href: "/man-and-van" },
     { title: "House Clearance", body: "Full or partial clearances with a fair, fixed price from photos.", href: "/house-clearance" },
+    { title: "Rubbish Removal", body: "Garden waste, old furniture, a garage clear-out — priced by the hour, no skip hire needed.", href: "/rubbish-removal" },
   ],
   faqHeading: "Removals in Newbury — common questions",
   faqs: [
@@ -69,6 +70,7 @@ export const newburyRemovalsManAndVan: BrandPageContent = {
   services: [
     { title: "Full House Removals", body: "Moving an entire home instead? Our full removals service fits better.", href: "/" },
     { title: "House Clearance", body: "Clearing a property rather than moving it? Get a fixed price from photos.", href: "/house-clearance" },
+    { title: "Rubbish Removal", body: "Just rubbish to shift, not furniture to move? Get an instant price by the hour.", href: "/rubbish-removal" },
     { title: "Call Us Direct", body: "Not sure which fits your job? Tell us about it and we'll point you the right way.", href: brand.phoneHref },
   ],
   faqHeading: "Man and Van in Newbury — FAQs",
@@ -103,6 +105,7 @@ export const newburyRemovalsHouseClearance: BrandPageContent = {
   services: [
     { title: "Full House Removals", body: "Moving house as well? We handle both the move and the clearance.", href: "/" },
     { title: "Man and Van", body: "Just a few items, not a full clearance? Man and Van by the hour.", href: "/man-and-van" },
+    { title: "Rubbish Removal", body: "Just rubbish, not a full clearance? Get an instant price by the hour.", href: "/rubbish-removal" },
     { title: "Call Us Direct", body: "Describe the job over the phone and we'll point you the right way.", href: brand.phoneHref },
   ],
   faqHeading: "House Clearance in Newbury — FAQs",
@@ -140,6 +143,7 @@ export const newburyRemovalsRubbishRemoval: BrandPageContent = {
   servicesHeading: "Other ways we can help",
   services: [
     { title: "Full House Removals", body: "Moving house as well as clearing rubbish? We handle both.", href: "/" },
+    { title: "Man and Van", body: "A single item or two to shift instead? Man and Van by the hour.", href: "/man-and-van" },
     { title: "House Clearance", body: "A whole property to clear, not just rubbish? Get a fixed price from photos.", href: "/house-clearance" },
     { title: "Call Us Direct", body: "Describe the job and we'll tell you honestly what it'll take.", href: brand.phoneHref },
   ],

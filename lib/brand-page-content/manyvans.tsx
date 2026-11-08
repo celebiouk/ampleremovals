@@ -33,6 +33,7 @@ export const manyVansRemovals: BrandPageContent = {
     { title: "House Removals", body: "Full house moves anywhere in Newbury and Thatcham, with the right-sized van sent for the job, not a one-size-fits-all guess.", href: "/" },
     { title: "Man and Van", body: "A mover and a van by the hour for smaller jobs, single items or a flat move — the same fleet, scaled down.", href: "/man-and-van" },
     { title: "House Clearance", body: "Full or partial clearances with a fixed price, cleared efficiently by a crew who know how to pack a van properly.", href: "/house-clearance" },
+    { title: "Rubbish Removal", body: "Garden waste, old furniture, a garage clear-out — priced by the hour, no skip hire needed.", href: "/rubbish-removal" },
   ],
   faqHeading: "Removals in Newbury & Thatcham — FAQs",
   faqs: [
@@ -76,6 +77,7 @@ export const manyVansManAndVan: BrandPageContent = {
   services: [
     { title: "Full House Removals", body: "Moving an entire home across Newbury or Thatcham? Our full fleet fits better.", href: "/" },
     { title: "House Clearance", body: "Clearing a property instead of moving it? Get a fixed price from photos.", href: "/house-clearance" },
+    { title: "Rubbish Removal", body: "Just rubbish to shift, not furniture to move? Get an instant price by the hour.", href: "/rubbish-removal" },
     { title: "Call Us Direct", body: "Tell us about the job and we'll send the right van for it.", href: brand.phoneHref },
   ],
   faqHeading: "Man and Van — FAQs",
@@ -115,6 +117,7 @@ export const manyVansHouseClearance: BrandPageContent = {
   services: [
     { title: "Full House Removals", body: "Moving house too? We handle the move and the clearance, across Newbury and Thatcham.", href: "/" },
     { title: "Man and Van", body: "Just a few items? Man and Van by the hour, covering Newbury and Thatcham.", href: "/man-and-van" },
+    { title: "Rubbish Removal", body: "Just rubbish, not a full clearance? Get an instant price by the hour.", href: "/rubbish-removal" },
     { title: "Call Us Direct", body: "Describe the job and we'll send the right van for it.", href: brand.phoneHref },
   ],
   faqHeading: "House Clearance — FAQs",
@@ -153,6 +156,7 @@ export const manyVansRubbishRemoval: BrandPageContent = {
   servicesHeading: "Other ways we can help",
   services: [
     { title: "Full House Removals", body: "Moving house as well as clearing rubbish? We handle both, across Newbury and Thatcham.", href: "/" },
+    { title: "Man and Van", body: "A single item or two to shift instead? Man and Van by the hour.", href: "/man-and-van" },
     { title: "House Clearance", body: "A whole property to clear, not just rubbish? Get a fixed price from photos.", href: "/house-clearance" },
     { title: "Call Us Direct", body: "Describe the job and we'll send the right van for it.", href: brand.phoneHref },
   ],
