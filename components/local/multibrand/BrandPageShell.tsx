@@ -95,7 +95,7 @@ export async function BrandPageShell({
         : [
             breadcrumbSchema([
               { name: "Home", url: `https://${brand.domain}` },
-              { name: path === "/man-and-van" ? "Man and Van" : path === "/house-clearance" ? "House Clearance" : content.eyebrow, url: `https://${brand.domain}${path}` },
+              { name: path === "/man-and-van" ? "Man and Van" : path === "/house-clearance" ? "House Clearance" : path === "/rubbish-removal" ? "Rubbish Removal" : content.eyebrow, url: `https://${brand.domain}${path}` },
             ]),
           ]),
     ],

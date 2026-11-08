@@ -127,6 +127,44 @@ export const thatchamMoversHouseClearance: BrandPageContent = {
   ),
 };
 
+export const thatchamMoversRubbishRemoval: BrandPageContent = {
+  layout: "classic",
+  eyebrow: "Rubbish Removal — Thatcham",
+  h1: "Rubbish Gone Today, Fixed Price",
+  subhead:
+    "Garden waste, old furniture, a garage clear-out — pick your hours below for an instant price, no skip hire and no waiting days for a slot.",
+  trustPoints: ["Instant hourly price", "1-hour minimum job", "Responsible disposal", "Based in Thatcham"],
+  storyHeading: "Rubbish gone, without the skip-hire hassle",
+  storyParagraphs: [
+    "A skip takes a booking, a permit if it's going on the road, and days sitting outside your house before it's collected. We do the same job faster: tell us roughly what needs clearing in Thatcham, pick your hours below, and a crew turns up, loads it, and takes it away the same visit.",
+    "Garden waste, old furniture, a garage or shed clear-out, builder's rubble from a small job — whatever it is, it's priced by the hour with a 1-hour minimum, and wherever possible we recycle or donate rather than send it straight to landfill.",
+  ],
+  servicesHeading: "Other ways we can help",
+  services: [
+    { title: "Full House Removals", body: "Moving house as well as clearing rubbish? We do both.", href: "/" },
+    { title: "House Clearance", body: "A whole property to clear, not just rubbish? Get a fixed price from photos.", href: "/house-clearance" },
+    { title: "Call Us Direct", body: "Describe the job and we'll tell you honestly what it'll take.", href: brand.phoneHref },
+  ],
+  faqHeading: "Rubbish Removal in Thatcham — FAQs",
+  faqs: [
+    { q: "How is the price worked out?", a: "Pick your hours below for an instant price. For a bigger job, send photos and we'll give you a fixed price instead." },
+    { q: "Do you take garden waste?", a: "Yes — garden waste, old furniture, general household rubbish, small amounts of builder's waste. Just not hazardous materials like asbestos or chemicals." },
+    { q: "Do I need to be present?", a: "It helps, but if you've told us exactly what's going and left it accessible, we can usually manage without you there." },
+    { q: "What happens to what you collect?", a: "Wherever possible it's recycled or donated rather than landfilled — disposed of responsibly in line with waste regulations." },
+    { q: "How quickly can you come?", a: "Often same-week, sometimes same-day — call " + brand.phone + " and we'll tell you honestly." },
+    { q: "Is there a minimum job?", a: "1 hour minimum, which covers most single-item or small clear-out jobs comfortably." },
+  ],
+  ctaHeading: "Get your rubbish removal price",
+  ctaSub: "Instant estimate below, or send photos for a bigger job.",
+  quoteHref: "#get-price",
+  whatsappMessage: "Hi, I have rubbish to remove in Thatcham. Can I send a photo and get a quote?",
+  heroAction: () => (
+    <div id="get-price" className="max-w-md">
+      <InstantHourlyQuoteWidget service="house_clearance" standardRate={45} premiumRate={70} accent="green" minHours={1} allowFixedPrice />
+    </div>
+  ),
+};
+
 export const thatchamMoversAbout: BrandAboutContent = {
   h1: "A Removal Company That's Actually From Thatcham",
   intro: "Thatcham Movers exists because the town deserved better than a call centre reading a postcode off a screen.",
