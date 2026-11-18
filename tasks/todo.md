@@ -58,26 +58,26 @@ daniel@ampleremovals.com. Decisions confirmed with owner:
 - Hosted at ampleremovals.com/logistics + a homepage mention, not a new brand/domain.
 
 ### Plan — Phase 1 (no external credentials needed, do now)
-- [ ] Migration `add_delivery_leads.sql`: tables `delivery_leads` (business_name, category,
+- [x] Migration `add_delivery_leads.sql`: tables `delivery_leads` (business_name, category,
       website, email, phone, address, postcode, distance_miles, source, discovered_at,
       score, band, status, capacity_notes, est_jobs_per_week, potential_value, excluded_reason),
       `delivery_lead_email_threads` (gmail_thread_id, lead_id, direction, classification,
       snippet, created_at), `delivery_lead_followups` (lead_id, due_at, sequence_step, sent_at),
       `delivery_lead_suppression` (email unique, reason, created_at). RLS: service-role only
       (no public/anon access — this is internal CRM data, no public insert path).
-- [ ] `lib/delivery-leads.ts`: types, the exclusion list (removal/man-and-van/house-clearance
+- [x] `lib/delivery-leads.ts`: types, the exclusion list (removal/man-and-van/house-clearance
       businesses), category labels, scoring weights (one-van capacity fit, distance,
       category priority).
-- [ ] Public page `app/(public)/logistics/page.tsx` — explains the delivery/collection
+- [x] Public page `app/(public)/logistics/page.tsx` — explains the delivery/collection
       subcontracting offer, who it's for, CTA = contact form (reuse existing contact
       patterns), one-van capacity framed honestly (no false fleet claims).
-- [ ] Homepage: add a small services-row card or footer link to `/logistics`.
-- [ ] Admin CRM: `app/(admin)/admin/delivery-leads/page.tsx` (list + filters: category,
+- [x] Homepage: add a small services-row card or footer link to `/logistics`.
+- [x] Admin CRM: `app/(admin)/admin/delivery-leads/page.tsx` (list + filters: category,
       distance, score band, status) and `[id]/page.tsx` (detail: contact info, score
       breakdown, email thread, follow-up tasks, manual status override).
-- [ ] `app/api/admin/delivery-leads/route.ts` + `[id]/route.ts` (list/detail/update, admin
+- [x] `app/api/admin/delivery-leads/route.ts` + `[id]/route.ts` (list/detail/update, admin
       session check like every other `/api/admin/*` route).
-- [ ] Typecheck/build, commit + push.
+- [x] Typecheck/build, commit + push.
 
 ### Plan — Phase 2 (needs owner to create a Google Cloud project + Places API key)
 - [ ] `lib/delivery-lead-discovery.ts`: Places API nearby-search by category around

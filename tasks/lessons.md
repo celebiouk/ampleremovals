@@ -216,3 +216,18 @@ If removing a route that pg_cron calls, also update
 `supabase/migrations/setup_pg_cron.sql` and re-apply it (a small tracked runner
 script, e.g. `scripts/apply-pg-cron.ts`, re-running that idempotent file is the
 reviewable way to do it — the same pattern as `scripts/run-migrations.ts`).
+
+## Lesson 17 — "/logistics" is a reserved internal path, not free real estate
+**What happened:** Owner asked for a new public page at ampleremovals.com/logistics
+for a new B2B delivery-subcontracting service. Built it there; `next build` failed
+with a parallel-route collision.
+**Root cause:** `/logistics` is already the middleware rewrite target for
+amplelogistics.co.uk's own homepage (`middleware.ts`'s `LOGISTICS_HOST` block
+rewrites `amplelogistics.co.uk/*` → `/logistics/*`, landing on
+`app/(logistics)/logistics/page.tsx`). A path can be "unused" on the domain the
+owner is picturing while already claimed by a different domain's middleware
+rewrite on the very same Next.js app.
+**Rule going forward:** Before creating any new top-level page under
+`app/(public)/<slug>/page.tsx`, grep `middleware.ts` and `app/(logistics)`,
+`app/(brands)` for that slug first — multi-tenant rewrites can own a path that
+looks free. Used `/delivery-partners` instead.
