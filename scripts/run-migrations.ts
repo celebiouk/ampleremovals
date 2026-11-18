@@ -237,6 +237,94 @@ const MIGRATIONS = [
   // 25 here backfills every existing booking to the rate they were actually
   // quoted at; new bookings overwrite it with the current rate on creation.
   { name: "bookings deposit_percentage", sql: "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_percentage NUMERIC(5,2) NOT NULL DEFAULT 25" },
+  // Delivery/collection subcontracting lead-gen CRM — see add_delivery_leads.sql
+  {
+    name: "delivery_leads table",
+    sql: `CREATE TABLE IF NOT EXISTS delivery_leads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      website TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      postcode TEXT,
+      search_centre TEXT,
+      distance_miles NUMERIC(5,2),
+      source TEXT NOT NULL,
+      source_place_id TEXT,
+      discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      score INTEGER NOT NULL DEFAULT 0,
+      band TEXT NOT NULL DEFAULT 'cold',
+      score_breakdown JSONB,
+      est_jobs_per_week TEXT,
+      delivery_frequency TEXT,
+      required_vehicle_type TEXT,
+      required_staff_count TEXT,
+      distance_per_job TEXT,
+      est_time_per_job TEXT,
+      potential_contract_value TEXT,
+      capacity_compatible BOOLEAN NOT NULL DEFAULT TRUE,
+      capacity_notes TEXT,
+      excluded BOOLEAN NOT NULL DEFAULT FALSE,
+      excluded_reason TEXT,
+      status TEXT NOT NULL DEFAULT 'discovered',
+      admin_notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  {
+    name: "delivery_lead_email_threads table",
+    sql: `CREATE TABLE IF NOT EXISTS delivery_lead_email_threads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      lead_id UUID NOT NULL REFERENCES delivery_leads(id) ON DELETE CASCADE,
+      gmail_thread_id TEXT,
+      gmail_message_id TEXT,
+      direction TEXT NOT NULL,
+      classification TEXT,
+      subject TEXT,
+      snippet TEXT,
+      ai_summary TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  {
+    name: "delivery_lead_followups table",
+    sql: `CREATE TABLE IF NOT EXISTS delivery_lead_followups (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      lead_id UUID NOT NULL REFERENCES delivery_leads(id) ON DELETE CASCADE,
+      sequence_step INTEGER NOT NULL DEFAULT 1,
+      due_at TIMESTAMPTZ NOT NULL,
+      sent_at TIMESTAMPTZ,
+      cancelled_at TIMESTAMPTZ,
+      cancelled_reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  {
+    name: "delivery_lead_suppression table",
+    sql: `CREATE TABLE IF NOT EXISTS delivery_lead_suppression (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT NOT NULL UNIQUE,
+      reason TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+  },
+  { name: "delivery_leads indexes", sql: `CREATE INDEX IF NOT EXISTS idx_delivery_leads_status ON delivery_leads(status);
+    CREATE INDEX IF NOT EXISTS idx_delivery_leads_category ON delivery_leads(category);
+    CREATE INDEX IF NOT EXISTS idx_delivery_leads_band ON delivery_leads(band);
+    CREATE INDEX IF NOT EXISTS idx_delivery_leads_excluded ON delivery_leads(excluded)` },
+  { name: "delivery_lead_email_threads index", sql: "CREATE INDEX IF NOT EXISTS idx_delivery_lead_threads_lead ON delivery_lead_email_threads(lead_id)" },
+  { name: "delivery_lead_followups index", sql: "CREATE INDEX IF NOT EXISTS idx_delivery_lead_followups_due ON delivery_lead_followups(due_at) WHERE sent_at IS NULL AND cancelled_at IS NULL" },
+  { name: "delivery_leads RLS", sql: "ALTER TABLE delivery_leads ENABLE ROW LEVEL SECURITY" },
+  { name: "delivery_lead_email_threads RLS", sql: "ALTER TABLE delivery_lead_email_threads ENABLE ROW LEVEL SECURITY" },
+  { name: "delivery_lead_followups RLS", sql: "ALTER TABLE delivery_lead_followups ENABLE ROW LEVEL SECURITY" },
+  { name: "delivery_lead_suppression RLS", sql: "ALTER TABLE delivery_lead_suppression ENABLE ROW LEVEL SECURITY" },
+  { name: "delivery_leads policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='delivery_leads' AND policyname='Admins full access to delivery leads') THEN CREATE POLICY "Admins full access to delivery leads" ON delivery_leads FOR ALL TO authenticated USING (true); END IF; END $$` },
+  { name: "delivery_lead_email_threads policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='delivery_lead_email_threads' AND policyname='Admins full access to delivery lead threads') THEN CREATE POLICY "Admins full access to delivery lead threads" ON delivery_lead_email_threads FOR ALL TO authenticated USING (true); END IF; END $$` },
+  { name: "delivery_lead_followups policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='delivery_lead_followups' AND policyname='Admins full access to delivery lead followups') THEN CREATE POLICY "Admins full access to delivery lead followups" ON delivery_lead_followups FOR ALL TO authenticated USING (true); END IF; END $$` },
+  { name: "delivery_lead_suppression policy", sql: `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='delivery_lead_suppression' AND policyname='Admins full access to delivery lead suppression') THEN CREATE POLICY "Admins full access to delivery lead suppression" ON delivery_lead_suppression FOR ALL TO authenticated USING (true); END IF; END $$` },
 ];
 
 async function run() {

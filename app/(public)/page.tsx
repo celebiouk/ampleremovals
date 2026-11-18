@@ -263,6 +263,33 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ════════════════ DELIVERY SUBCONTRACTING (B2B) ════════════════ */}
+      <section className="bg-brand-green-50 py-12">
+        <div className="container">
+          <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-6 rounded-2xl border border-brand-green-200 bg-white p-8 text-center shadow-sm sm:flex-row sm:text-left">
+            <div className="flex items-center gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-green-100 text-brand-green-700">
+                <Truck className="h-7 w-7" />
+              </span>
+              <div>
+                <h3 className="font-display text-xl font-bold text-brand-purple-950">
+                  Run a local business? We can deliver for you.
+                </h3>
+                <p className="mt-1 text-[0.95rem] text-slate-600">
+                  Luton van collection &amp; delivery support for retailers, couriers and warehouses around Thatcham and Newbury.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/delivery-partners"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-purple-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-purple-800"
+            >
+              See delivery partnerships <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ════════════════ HOME TOWNS ════════════════ */}
       <section className="bg-brand-purple-950 py-16">
         <div className="container">

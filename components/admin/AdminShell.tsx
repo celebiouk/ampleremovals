@@ -10,7 +10,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Bell, Plus, Search, Shield, Truck, PoundSterling, Sparkles,
   Calculator, TrendingDown, TrendingUp, Landmark, Route, UserPlus, Package, PhoneCall,
   PackageCheck, CheckCheck, User, MessageSquare, MessageCircle, Star, Wallet, Banknote, Activity,
-  Warehouse, FileUser,
+  Warehouse, FileUser, Send,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,13 @@ export const NAV_GROUPS = [
     items: [
       { href: "/admin/logistics/driver-requests", label: "Business Requests", icon: ClipboardList },
       { href: "/admin/logistics/driver-applications", label: "Driver Applications", icon: FileUser },
+    ],
+  },
+  {
+    label: "DELIVERY LEADS",
+    icon: Send,
+    items: [
+      { href: "/admin/delivery-leads", label: "Prospects", icon: Send },
     ],
   },
   {
